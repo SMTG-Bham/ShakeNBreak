@@ -1,0 +1,49 @@
+figure.figsize : 8, 6 #3.5, 3.5
+figure.dpi: 600
+
+axes.prop_cycle: cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf']) # Matplotlib default
+
+
+font.family : sans-serif
+font.sans-serif : Seaford, Whitney Light, Whitney Book, Helvetica, Catamaran, Liberation Sans, Andale Sans, Arial
+
+font.size : 16 
+
+text.usetex : False
+
+axes.titlesize : 10 #9
+axes.linewidth       : 1
+axes..unicode_minus  : False
+
+grid.linewidth       : 0.4
+grid.color           : black
+
+lines.linewidth      : 1.0
+
+xtick.major.size     : 12 #6
+xtick.minor.size     : 5
+xtick.major.width    : 0.2
+xtick.minor.width    : 0.2
+xtick.major.pad      : 6
+xtick.direction      : in
+xtick.top            : False
+xtick.bottom         : True
+xtick.labelsize      : 10 #8
+
+ytick.major.size     : 12 #6
+ytick.minor.size     : 5
+ytick.major.width    : 0.2
+ytick.minor.width    : 0.2
+ytick.major.pad      : 6
+ytick.direction      : in
+ytick.right          : False
+ytick.left           : True
+ytick.labelsize      : 10 #8
+
+pdf.fonttype : 42
+mathtext.fontset : stixsans
+mathtext.default : regular
+
+legend.handlelength  : 1.2
+legend.fontsize     : 13
+legend.frameon     : False
