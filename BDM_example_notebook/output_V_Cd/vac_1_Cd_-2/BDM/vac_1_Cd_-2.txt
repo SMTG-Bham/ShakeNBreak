@@ -1,0 +1,4 @@
+vac_1_Cd_-2_Unperturbed_Defect
+-202.79601759
+vac_1_Cd_-2_only_rattled
+-202.80230340
