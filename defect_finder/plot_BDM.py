@@ -1,7 +1,6 @@
 """
 Quick and _dirty_ collection of useful functions to plot BDM defect output & spot fancy distortions going on
 
-@author: Irea Mosquera
 """
 import matplotlib.pyplot as plt
 import seaborn as sns

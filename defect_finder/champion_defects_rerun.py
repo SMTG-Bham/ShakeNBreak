@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jun 19 15:25:01 2021
-
-@author: Irea
+Functions to apply the energy lowerinf distortion found for a certain charge state of a defect \
+    to the other charge states.
 """
 
 import numpy as np
@@ -11,14 +10,12 @@ from ase.io.vasp import read_vasp, write_vasp
 from pymatgen.io.ase import AseAtomsAdaptor, Structure
 from pymatgen.core.structure import Structure
 from doped import vasp_input
-from BDM.analyse_defects import *
-
-default_incar_settings={"ADDGRID": False, "ALGO": 'Normal', "EDIFFG": -0.01,
-                        "IBRION": 2, "ISPIN": 2, "POTIM": 0.2,
-                       "LVHAR": False, "LSUBROT": False, "LREAL": 'Auto', "LWAVE" : False}
+from defect_finder.analyse_defects import *
 
 def read_defects_directories(defect_path=None):
-    """Reads all defect folders in current directory and stores defect names and charge states in dictionary."""
+    """
+    Reads all defect folders in current directory and stores defect names and charge states in dictionary.
+    """
     if defect_path:
         path=defect_path
     else:
@@ -37,7 +34,9 @@ def read_defects_directories(defect_path=None):
 def compare_champion_BDM(defect_name, 
                          base_path,
                          energy_difference=-0.1):
-    """Checks if an energy lowering distortion was found by importing the gs of another charge state"""
+    """
+    Checks if an energy lowering distortion was found by importing the gs of another charge state
+    """
     dict_energies_BDM, e_drop_BDM , gs_dist_BDM = sort_data("{}{}/BDM/{}.txt".format(base_path, defect_name, defect_name ) )    
     dict_energies_champ, e_drop_champ, gs_dist_champ = sort_data("{}{}/champion/{}.txt".format(base_path, defect_name, defect_name ) )               
     
@@ -62,11 +61,14 @@ def compare_champion_BDM(defect_name,
 def get_champion_defects(defects, 
                          base_path, 
                          energy_difference=-0.1):
-    """Get defect names and charge states for which BDM found a ground-state missed by Unperturbed relaxation.
+    """
+    Get defect names and charge states for which BDM found a ground-state missed by Unperturbed relaxation.
     Args:
         defects (dict): defect dictionary mapping defect name to its charge states.
         base_path (str): path where the defect output is
-        energy_difference (float) : minimum energy difference of defect distortion relative to Unperturbed to select the distortions that will be further analysed """
+        energy_difference (float) : minimum energy difference of defect distortion relative to Unperturbed to \
+             select the distortions that will be further analysed 
+    """
     all_defects_structs = {}
     for defect in defects:
         for charge in defects[defect]:
