@@ -1,5 +1,6 @@
 """
-Code to generate rattle + BDM distorted structures & input files
+Code to generate rattle + bond distorted structures, \
+    as well as input files to run gamma_point relaxations with VASP
 
 """
 from typing import Optional

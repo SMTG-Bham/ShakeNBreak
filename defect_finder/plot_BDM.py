@@ -2,14 +2,17 @@
 Quick and _dirty_ collection of useful functions to plot BDM defect output & spot fancy distortions going on
 
 """
-import matplotlib.pyplot as plt
-import seaborn as sns
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+import seaborn as sns
 import numpy as np
+from typing import Optional
 import os
 import sys
 import json
-from BDM.analyse_defects import *
+from defect_finder.analyse_defects import *
 
 pretty_colors = {"turquoise":"#6CD8AE", "dark_green":"#639483","ligth salmon":"#FFA17A","brownish":"#E46C51"}
 dict_colors = {"turquoise":"#80DEB9",  "ligth salmon":"#F9966B", "blue_grey":"#b3d9ff", "grey":"#8585ad", "dark_green":"#4C787E",}
@@ -22,20 +25,21 @@ color1, color2, color3, color4 = list(pretty_colors.values())
 wd = os.path.dirname(os.path.realpath(__file__))
 plt.style.use(f"{wd}/BDM_mpl_style.mplstyle")
 plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace(0,1,10)))
-
-
     
-def plot_all_defects(defects: dict, 
-                     base_path: str,                      
-                     add_colorbar: bool = False, 
-                     rms: int = 1,
-                     bdm_type : str = 'BDM',
-                     plot_tag = True,
-                     max_energy_above_unperturbed = 0.5,
-                     units: str = "eV"):
-    """Quick function to easily analyse a myriad of defects and focus on the ones undergoing deep relaxations.
+def plot_all_defects(
+    defects: dict, 
+    base_path: str,                      
+    add_colorbar: bool = False, 
+    rms: int = 1,
+    bdm_type : Optional[str] = 'BDM',
+    plot_tag: Optional[bool] = True,
+    max_energy_above_unperturbed: Optional[float] = 0.5,
+    units: Optional[str] = "eV",
+    ) -> dict:
+    """
+    Quick function to easily analyse a myriad of defects and focus on the ones undergoing deep relaxations.
     Args:
-        defect (dict): 
+        defects (dict): 
             dictionary matching defect name to a list with its charge states. (e.g {"Int_Sb_1":[0,+1,+2]} )
         base_path (str): 
             path to the directory where your BDM defect output and BDM_metadata.txt file are
@@ -61,6 +65,7 @@ def plot_all_defects(defects: dict,
     with open(f"{base_path}/BDM_metadata.json") as json_file:
         BDM_metadata = json.load(json_file)
 
+    figures = {}
     for defect in defects:
         for charge in defects[defect]:
             defect_name = f"{defect}_{charge}" 
@@ -68,7 +73,6 @@ def plot_all_defects(defects: dict,
             file_energies = f"{base_path}{defect_name}/{bdm_type}/{defect_name}.txt"
             dict_energies, energy_diff, gs_distortion = sort_data(file_energies)
             
-            #if plot_tag and float(energy_diff) < -0.1 and ("rattled" not in dict_energies['distortions'].keys()) : #if a significant E drop occured and BDM was applied, then further analyse this fancy defect               
             # if a significant energy lowering distortion was found, and BDM was applied (i.e. not only rattle)
             # then further analyse this fancy defect
             if plot_tag and ("rattled" not in dict_energies['distortions'].keys()) and float(energy_diff) < -0.1:   
@@ -78,31 +82,38 @@ def plot_all_defects(defects: dict,
                     neighbour_atom = neighbour_atoms[0]
                 else:
                     neighbour_atom = "nn" # if different elements were distrorted, just use nearest neighbours (nn) for label
-                plot_defect(defect_name,
-                            charge,
-                            dict_energies,
-                            base_path, 
-                            neighbour_atom,
-                            num_neighbours,
-                            add_colorbar,
-                            rms,
-                            units = units,
-                            )
+                f = plot_defect(
+                    defect_name = defect_name,
+                    charge = charge,
+                    dict_energies = dict_energies,
+                    base_path = base_path, 
+                    neighbour_atom = neighbour_atom,
+                    num_neighbours = num_neighbours,
+                    add_colorbar = add_colorbar,
+                    rms = rms,
+                    units = units,
+                    max_energy_above_unperturbed = max_energy_above_unperturbed,
+                    )
+                figures[f'{defect_name}_{charge}'] = f
+    return figures
 
-def plot_defect(defect_name: str,
-                charge: int,
-                dict_energies: dict,
-                base_path: str, 
-                neighbour_atom: str = None,
-                num_neighbours: int = None,
-                add_colorbar: bool = False,
-                rms: int = 1,
-                max_energy_above_unperturbed: float=0.5,
-                include_site_num_in_name: bool = False,
-                save_tag = True,
-                y_axis="Energy (eV)",
-                units: str = "eV"):
-    """Quick and nasty function to easily plot BDM results for a defect.
+def plot_defect(
+    defect_name: str,
+    charge: int,
+    dict_energies: dict,
+    base_path: str = None, 
+    neighbour_atom: str = None,
+    num_neighbours: int = None,
+    add_colorbar: bool = False,
+    rms: int = 1,
+    max_energy_above_unperturbed: float = 0.5,
+    include_site_num_in_name: bool = False,
+    save_tag: bool = True,
+    y_axis: str = "Energy (eV)",
+    units: str = "eV",
+    ) -> Figure:
+    """
+    Quick and nasty function to easily plot BDM results for a defect.
     args:
         defect_name (str): 
             defect name e.g "Int_Sb_0",
@@ -111,7 +122,7 @@ def plot_defect(defect_name: str,
         dict_energies (dict): 
             dict matching BDM distortion to its energy (eV),
         base_path (str): 
-            str with path to the directory where your defect data is,
+            str with path to the directory where your defect data is (to get structures and calculate RMS),
         neighbour_atom (str): 
             name of distorted neighbours,
         num_neighbours (int): 
@@ -139,6 +150,7 @@ def plot_defect(defect_name: str,
         """
     
     if add_colorbar: # then get structures to compare their similarity
+        assert os.isdir(base_path)
         defect_structs = get_structures(defect_name, base_path )
         dict_rms = calculate_rms_dist(defect_structs, rms=rms ) # calculate root mean squared displacement and maximum displacement between paired sites
         if dict_rms : # if rms algorithms worked (sometimes strugles matching lattices)
@@ -152,16 +164,16 @@ def plot_defect(defect_name: str,
             print("Rms algorithm strugled matching lattices. Will do normal plot")
             add_colorbar = False # if rms displacement couldn't be calculated (didn't match lattices), then do normal plot
             
-    for key in list(dict_energies['distortions'].keys()): #remove high E points
+    for key in list(dict_energies['distortions'].keys()): # remove high E points
         if dict_energies['distortions'][key]  - dict_energies['Unperturbed'] > max_energy_above_unperturbed: 
             dict_energies['distortions'].pop(key)
             if add_colorbar:
                 dict_rms.pop(key)
 
     if charge > 0:
-        charge = "+"+str(charge) #show positive charges with a + 
+        charge = "+"+str(charge) # show positive charges with a + 
     defect_type = defect_name.split("_")[0] # vac, as or int
-    if defect_type == "Int": #for interstials name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
+    if defect_type == "Int": # for interstials name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
         site_element =  defect_name.split("_")[1]
         site = defect_name.split("_")[2]
         if include_site_num_in_name :
@@ -170,11 +182,11 @@ def plot_defect(defect_name: str,
             defect_name=f"{site_element}$_i^{{{charge}}}$"
     else:
         site = defect_name.split("_")[1] # number indicating defect site (as generated by doped)
-        site_element = defect_name.split("_")[2] #element in defect site
+        site_element = defect_name.split("_")[2] # element in defect site
     
-    if include_site_num_in_name : #whether to include the site number in defect name
+    if include_site_num_in_name : # whether to include the site number in defect name
         if defect_type == "vac":
-            defect_name=r"V$_{{{}_{}}}^{{{}}}$".format(site_element, site, charge) #double brackets to treat it literally (tex) and then add extra {} for python str formatting
+            defect_name=r"V$_{{{}_{}}}^{{{}}}$".format(site_element, site, charge) # double brackets to treat it literally (tex) and then add extra {} for python str formatting
         elif defect_type == "as":
             subs_element = defect_name.split("_")[4]
             defect_name=r"{}$_{{{}_{}}}^{{{}}}$".format(site_element,subs_element , site, charge)
@@ -183,7 +195,7 @@ def plot_defect(defect_name: str,
             defect_name=r"{}$_{{{}}}^{{{}}}$".format(site_element,subs_element ,  charge)
     else:
         if defect_type == "vac":
-            defect_name=r"V$_{{{}}}^{{{}}}$".format(site_element, charge) #double brackets to treat it literally (tex) and then add extra {} for python str formatting
+            defect_name=r"V$_{{{}}}^{{{}}}$".format(site_element, charge) # double brackets to treat it literally (tex) and then add extra {} for python str formatting
         elif defect_type == "as":
             subs_element = defect_name.split("_")[4]
             defect_name=r"{}$_{{{}}}^{{{}}}$".format(site_element,subs_element , charge)
@@ -201,45 +213,51 @@ def plot_defect(defect_name: str,
     
     if add_colorbar:
         max_displacement = max(list(dict_rms.values())) # get maximum displacement between paired sites
-        #dict_rms_array = np.array(np.array(list(dict_rms.values())))
-        plot_bdm_colorbar(dict_energies,
-                            dict_rms,
-                            number_neighbours = num_neighbours, 
-                            neighbour_atom = neighbour_atom, 
-                            dataset_labels = f"BDM: {num_neighbours} {neighbour_atom}", 
-                            rms = rms,
-                            defect_name= defect_name,
-                            title = defect_name, 
-                            save_tag = save_tag ,
-                            max_displacement = max_displacement,
-                            y_axis = y_axis,
-                            max_energy_above_unperturbed = max_energy_above_unperturbed)
+        f = plot_bdm_colorbar(
+            dict_energies,
+            dict_rms,
+            number_neighbours = num_neighbours, 
+            neighbour_atom = neighbour_atom, 
+            dataset_labels = f"BDM: {num_neighbours} {neighbour_atom}", 
+            rms = rms,
+            defect_name= defect_name,
+            title = defect_name, 
+            save_tag = save_tag ,
+            max_displacement = max_displacement,
+            y_axis = y_axis,
+            max_energy_above_unperturbed = max_energy_above_unperturbed,
+            )
     else:
-        plot_datasets([dict_energies], 
-                number_neighbours = num_neighbours, 
-                neighbour_atom = neighbour_atom, 
-                dataset_labels = [f"BDM: {num_neighbours} {neighbour_atom}"],
-                defect_name= defect_name,
-                title= defect_name, 
-                save_tag = save_tag ,
-                y_axis = y_axis,
-                max_energy_above_unperturbed=max_energy_above_unperturbed)
-    
+        f = plot_datasets(
+            [dict_energies], 
+            number_neighbours = num_neighbours, 
+            neighbour_atom = neighbour_atom, 
+            dataset_labels = [f"BDM: {num_neighbours} {neighbour_atom}"],
+            defect_name= defect_name,
+            title= defect_name, 
+            save_tag = save_tag ,
+            y_axis = y_axis,
+            max_energy_above_unperturbed=max_energy_above_unperturbed,
+            )
+    return f
 
-def plot_bdm_colorbar(dict_energies: dict, 
-                         dict_rms: dict , 
-                         number_neighbours: int,
-                         defect_name: str,
-                         neighbour_atom : str,  
-                         title: str=None,
-                         dataset_labels: str="RBDM", 
-                         rms: int=1,
-                         save_tag: bool =False,
-                         max_displacement: float = None,
-                         y_axis: str=None,
-                         max_energy_above_unperturbed : float=0.5,
-                         units: str = "eV"):
-    """Plot energy versus BDM distortion, adding a colorbar that shows structural similarity between different final configurations. 
+def plot_bdm_colorbar(
+    dict_energies: dict, 
+    dict_rms: dict , 
+    number_neighbours: int,
+    defect_name: str,
+    neighbour_atom : str,  
+    title: str=None,
+    dataset_labels: str="RBDM", 
+    rms: int=1,
+    save_tag: bool =False,
+    max_displacement: float = None,
+    y_axis: str=None,
+    max_energy_above_unperturbed : float=0.5,
+    units: str = "eV",
+    ) -> Figure:
+    """
+    Plot energy versus BDM distortion, adding a colorbar that shows structural similarity between different final configurations. 
     Args:
         dict_energies (dict): 
             dict maping distortion (format: float, e.g. 0.1) to final E (in eV)
@@ -295,7 +313,7 @@ def plot_bdm_colorbar(dict_energies: dict,
     vmedium = round((vmin + vmax)/2, 1)
     norm = mpl.colors.Normalize(vmin= vmin, vmax= vmax, clip=False)  
     
-    #all E relative to unperturbed one
+    # all E relative to unperturbed one
     for key,i in dict_energies['distortions'].items() :
             dict_energies['distortions'][key] = i - dict_energies['Unperturbed']
     dict_energies['Unperturbed'] = 0.0
@@ -321,7 +339,7 @@ def plot_bdm_colorbar(dict_energies: dict,
         color=color1, 
         label = dataset_labels
     )
-    color_unperturbed = colourmap(0) #get colour of unperturbed structure (corresponds to 0 as RMS is calculated with respect to this structure)
+    color_unperturbed = colourmap(0) # get colour of unperturbed structure (corresponds to 0 as RMS is calculated with respect to this structure)
     ax.scatter(
         0,
         dict_energies['Unperturbed'],
@@ -331,10 +349,8 @@ def plot_bdm_colorbar(dict_energies: dict,
         marker="d", # markersize=9,
         #cmap = colourmap,
         label = 'Unperturbed')
-        #norm = norm,
-        #alpha = 1)
     
-    #One decimal point if energy difference between max E and min E >0.4 eV, else 3
+    # One decimal point if energy difference between max E and min E >0.4 eV, else 3
     range_energies = [i for i in dict_energies['distortions'].values()]
     range_energies.append(dict_energies['Unperturbed'])
     if (max(range_energies)- min(range_energies)) > 0.4:
@@ -368,22 +384,26 @@ def plot_bdm_colorbar(dict_energies: dict,
         print(f"Plot saved to {wd}/plots/")
         plt.savefig(wd + "/plots/" + defect_name + ".svg", format="svg", transparent=True, bbox_inches='tight')
     plt.show()
+    return f
 
-def plot_datasets(datasets: list,  
-                    dataset_labels: list ,
-                    defect_name: str,
-                    neighbour_atom : str, 
-                    title: str = None,
-                    number_neighbours: int = None,                    
-                    max_energy_above_unperturbed: float=0.6,
-                    y_axis:str = r"Energy (eV)",
-                    markers: list = None,
-                    linestyles: list = None,
-                    colors: list = None,
-                    markersize: float = None,
-                    linewidth: float = None,
-                    save_tag: bool =False):
-    """"Quick and easy to plot several datatsets, relative energies (to Unperturbed) against BDM factor.
+def plot_datasets(
+    datasets: list,  
+    dataset_labels: list ,
+    defect_name: str,
+    neighbour_atom : str, 
+    title: str = None,
+    number_neighbours: int = None,                    
+    max_energy_above_unperturbed: float=0.6,
+    y_axis:str = r"Energy (eV)",
+    markers: list = None,
+    linestyles: list = None,
+    colors: list = None,
+    markersize: float = None,
+    linewidth: float = None,
+    save_tag: bool =False
+    ) -> Figure:
+    """"
+    Quick and easy to plot several datatsets, relative energies (to Unperturbed) against BDM factor.
     Args:
         datasets (list): 
             list of dictionaries to plot (each dictionary matching BDM distortion to final energy)
@@ -424,17 +444,17 @@ def plot_datasets(datasets: list,
     
     unperturbed_energies = {} # energies for unperturbed structure obtained with different methods
 
-    #all E relative to unperturbed one
+    # all E relative to unperturbed one
     for dataset_number, dataset in enumerate(datasets) : 
         
         for key, i in dataset['distortions'].items() :
-            dataset['distortions'][key] = i - datasets[0]['Unperturbed'] #Energies relative to unperturbed E of dataset 1
+            dataset['distortions'][key] = i - datasets[0]['Unperturbed'] # Energies relative to unperturbed E of dataset 1
 
         if dataset_number >= 1:
             dataset['Unperturbed'] = dataset['Unperturbed'] - datasets[0]['Unperturbed']
             unperturbed_energies[dataset_number] = dataset['Unperturbed']
         
-        for key in list(dataset['distortions'].keys()): #remove high E points
+        for key in list(dataset['distortions'].keys()): # remove high E points
             if dataset['distortions'][key]  > max_energy_above_unperturbed: 
                 dataset['distortions'].pop(key)
         
@@ -450,7 +470,7 @@ def plot_datasets(datasets: list,
                                   'linewidth': 1.0,
                                   'markersize': 6}
         for key, optional_style_settings in {'marker': markers, 'linestyle': linestyles, 'linewidth': linewidth,'markersize': markersize}.items():
-            if optional_style_settings : #if set by user
+            if optional_style_settings : # if set by user
                 if type(optional_style_settings) == list :
                     default_style_settings[key] = optional_style_settings[dataset_number]
                 else:
@@ -467,7 +487,7 @@ def plot_datasets(datasets: list,
             linewidth = default_style_settings['linewidth']
         )
     
-    datasets[0]['Unperturbed'] = 0.0 #plot unperturbed E of dataset 1, our 0 of E's
+    datasets[0]['Unperturbed'] = 0.0 # plot unperturbed E of dataset 1, our 0 of E's
     
     for key, value in unperturbed_energies.items():
         if abs(value) > 0.1 :
@@ -480,14 +500,17 @@ def plot_datasets(datasets: list,
             markersize=9,
             c=colors[key] )
     
-    ax.plot( #plot our zero of Energies
-    0,
-    datasets[0]['Unperturbed'],
-    ls="None",
-    marker="d",markersize=9,
-    c=colors[0], label = 'Unperturbed') # colors[-1] dark green
+    ax.plot( # plot our zero of Energies
+        0,
+        datasets[0]['Unperturbed'],
+        ls="None",
+        marker="d",
+        markersize=9,
+        c=colors[0], 
+        label = 'Unperturbed'
+        ) 
     
-    #One decimal point if energy difference between max E and min E >0.4 eV
+    # One decimal point if energy difference between max E and min E >0.4 eV
     range_energies = [i for i in datasets[0]['distortions'].values()]
     range_energies.append(datasets[0]['Unperturbed'])
     if (max(range_energies)- min(range_energies)) > 0.4:
@@ -504,6 +527,6 @@ def plot_datasets(datasets: list,
         print(f"Plot saved to {wd}/plots/")
         plt.savefig(wd + "/plots/" + defect_name + ".svg", format="svg", transparent=True, bbox_inches='tight')
     plt.show()
-
+    return f
 
                
