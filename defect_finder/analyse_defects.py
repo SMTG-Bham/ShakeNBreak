@@ -23,10 +23,10 @@ crystalNN = CrystalNN(distance_cutoffs=None, x_diff_weight=0.0, porous_adjustmen
 from ase.io.vasp import read_vasp
 
 #############################################################################################
-################################           GET DATA          ################################ 
-#############################################################################################
 
-def open_file(myfile: str):
+def open_file(
+    myfile: str
+    )-> list:
     """ Open file and split lines"""
     if os.path.isfile(myfile):
         with open(myfile) as ff:
@@ -36,8 +36,11 @@ def open_file(myfile: str):
     else:
         print(f"Path {myfile} does not exist")
 
-def organize_data(list_file: list):
-    """Creates dictionary maping distortion to final E. 
+def organize_data(
+    list_file: list
+    ) -> dict:
+    """
+    Creates dictionary maping distortion to final E. 
     Args:
         list_file (list): 
             list of lines in BDM output summary file (which includes BDM distortion and its final E)
@@ -63,8 +66,11 @@ def organize_data(list_file: list):
         sorted_dict['distortions'][key] = energies_dict['distortions'][key]
     return sorted_dict
 
-def get_gs_distortion(dict_energies: dict):
-    """Calculates energy difference between Unperturbed structure and most favourable distortion.
+def get_gs_distortion(
+    dict_energies: dict
+    ):
+    """
+    Calculates energy difference between Unperturbed structure and most favourable distortion.
     Returns energy drop of the ground-state relative to Unperturbed (in eV) and the BDM distortion that lead to ground-state.
     Args:
         dict_energies (dict): 
@@ -88,8 +94,11 @@ def get_gs_distortion(dict_energies: dict):
        
     return energy_diff, gs_distortion
         
-def sort_data(file_energies: str):
-    """ Organices BDM results in a dictionary, gets energy drop (of ground-state relative to Unperturbed, in eV) 
+def sort_data(
+    file_energies: str
+    ):
+    """ 
+    Organices BDM results in a dictionary, gets energy drop (of ground-state relative to Unperturbed, in eV) 
     and the BDM distortion that lead to ground-state.
     Args:
         file_energies : txt file with BDM distortions and final energies (in eV)
@@ -111,13 +120,16 @@ def sort_data(file_energies: str):
 
 #############################################################################################
 
-def grab_contcar(file_path: str):
-    """Read pmg structure from CONTCAR path
+def grab_contcar(
+    file_path: str
+    ) -> Structure:
+    """
+    Read pmg structure from CONTCAR path
     Args:
         file_path (str):
             path file to CONTCAR
     Returns:
-        pmg Structure"""
+        Structure"""
     abs_path = file_path
     abs_path_formated = abs_path.replace('\\','/') 
     #assert os.path.isfile(abs_path_formated)
@@ -134,11 +146,14 @@ def grab_contcar(file_path: str):
         mystruct = "Not converged"
     return mystruct
 
-def analyse_structure_from_site(name: str, 
-                      structure, 
-                      site_num: int = None,
-                      vac_site: list = None):
-    """ Analyse coordination environment and bond distances to nearest neighbours of defect 
+def analyse_structure_from_site(
+    name: str, 
+    structure: Structure, 
+    site_num: int = None,
+    vac_site: list = None,
+    ):
+    """ 
+    Analyse coordination environment and bond distances to nearest neighbours of defect 
     Args:  
         name (str): 
             name of defect
@@ -149,7 +164,6 @@ def analyse_structure_from_site(name: str,
         vac_site (list): 
             for vacancies, the fractional coordinates of the vacanct site.
             (default: None)
-      
     """
     #get defect site
     struct = deepcopy(structure)
@@ -184,11 +198,13 @@ def analyse_structure_from_site(name: str,
     #return crystalNN.get_local_order_parameters(struct,isite)
     #return bond_lengths
 
-def analyse_structure(defect_name: str, 
-                      structure, 
-                      output_path: str,
-                      ):
-    """Analyses the local distortion of a defect from its pmg Structure. 
+def analyse_structure(
+    defect_name: str, 
+    structure: Structure, 
+    output_path: str,
+    ):
+    """
+    Analyses the local distortion of a defect from its pmg Structure. 
     Requires access to BDM_metadata file generated with BDM to read info about defect site.
     If lacking this, can use `analyse_structure_from_site`.
     Args:
@@ -213,13 +229,14 @@ def analyse_structure(defect_name: str,
     
     return analyse_structure_from_site(defect_name, structure, site_num = defect_site)
 
-def compare_structures(defect_dict: dict,
-                       defect_energies: dict,
-                       compare_to: str = "Unperturbed", 
-                       norm_structure = None, 
-                       stol: float = 0.5,
-                       units: str = "eV",
-                       ):
+def compare_structures(
+    defect_dict: dict,
+    defect_energies: dict,
+    compare_to: str = "Unperturbed", 
+    norm_structure = None, 
+    stol: float = 0.5,
+    units: str = "eV",
+    ) -> pd.DataFrame:
     """ Compares BDM final structures with either Unperturbed or an external structure and calculated the root mean squared displacement and maximum distance between paired sites between them.
     Args:
         defect_dict (dict):
@@ -248,11 +265,6 @@ def compare_structures(defect_dict: dict,
         norm_struct = defect_dict[compare_to]
     assert norm_struct
 
-    #bdm_increment = int(bdm_increment*100) # transform to percentage and integer
-    #for distortion in range(-60, 80, bdm_increment):
-        #distortion = distortion/100
-        #if distortion == 0.7:
-        #    distortion = "Unperturbed"
     distortion_list = list(defect_energies['distortions'].keys())
     distortion_list.append("Unperturbed")
     for distortion in distortion_list:
@@ -269,8 +281,6 @@ def compare_structures(defect_dict: dict,
             try:
                 rms_displacement = round(sm.get_rms_dist(norm_struct, struct)[0], 3)
                 rms_dist_sites = round(sm.get_rms_dist(norm_struct, struct)[1], 3) # select rms displacement normalized by (Vol / nsites) ** (1/3)
-                #if rms_dist > 0.02 : # print significant distortions
-                #print(f"Distortion {distortion} differs from {compare_to} by a RMS displacement of {rms_dist:.3f}")   
             except TypeError: # lattices didn't match
                 rms_displacement = None
                 rms_dist_sites = None
@@ -279,14 +289,14 @@ def compare_structures(defect_dict: dict,
     return pd.DataFrame(rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"])
         
 ############################################################################
-############################################################################
     
-def get_structures(defect_name: str, 
-                   output_path: str, 
-                   bdm_increment: float=0.1,
-                   bdm_distortions: list = None,
-                   bdm_type="BDM",
-                   ):
+def get_structures(
+    defect_name: str, 
+    output_path: str, 
+    bdm_increment: float=0.1,
+    bdm_distortions: list = None,
+    bdm_type="BDM",
+    ) -> dict:
     """Imports all the structures found with BDM and stores them in a dictionary matching BDM distortion to final structure.
     Args:
         defect_name (str) : 
@@ -350,11 +360,12 @@ def get_structures(defect_name: str,
         defect_structures[key] = "Not converged"
     return defect_structures
 
-def get_energies(defect_name: str, 
-                output_path: str, 
-                bdm_type: str ="BDM",
-                units: str = "eV",
-                ):
+def get_energies(
+    defect_name: str, 
+    output_path: str, 
+    bdm_type: str ="BDM",
+    units: str = "eV",
+    ) -> dict:
     """Imports final energies for each BDM distortion and stores them in a dictionary matching BDM distortion to final E (eV).
     Args:
         defect_name (str) : 
@@ -377,9 +388,10 @@ def get_energies(defect_name: str,
 
     return dict_energies
 
-def calculate_rms_dist(defect_struct: dict, 
-                       rms: int = 1,
-                       ):
+def calculate_rms_dist(
+    defect_struct: dict, 
+    rms: int = 1,
+    ) -> dict:
     """Function to calculate the root mean squared displacement between each distorted structures and Unperturbed one.
     Args:
         defect_struct (dict) : 

@@ -12,7 +12,8 @@ from pymatgen.core.structure import Structure
 from doped import vasp_input
 from defect_finder.analyse_defects import *
 
-def read_defects_directories(defect_path=None):
+def read_defects_directories(
+    defect_path=None) -> dict:
     """
     Reads all defect folders in current directory and stores defect names and charge states in dictionary.
     """

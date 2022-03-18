@@ -3,13 +3,14 @@ Functions to apply the energy lowering dictortion found for a certain charge sta
 the other charge states.
 In progress
 """
-
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core.structure import Structure
 
 def get_deep_distortions(
     defect_charges: dict, 
     bdm_type: str='BDM',
     stol = 0.2,
-    ):
+    ) -> dict:
     """Quick and nasty function to easily spot defects undergoing a deep relaxation.
     Useful for trying the ground-state of a certain charge state for the other charge states.
     Args:
@@ -77,15 +78,16 @@ def get_deep_distortions(
     return fancy_defects  
 
 def compare_gs_struct_to_bdm_structs(
-    gs_contcar, 
+    gs_contcar: Structure, 
     defect_name: str, 
     base_path: str,
     stol: float = 0.2,
-    ):
-    """Compares the ground-state structure found for a certain charge state with all BDM structures found for other charge states
+    ) -> bool:
+    """
+    Compares the ground-state structure found for a certain charge state with all BDM structures found for other charge states
     to avoid trying the ground-state distortion when it has already been found.
     Args: 
-        gs_contcar (structure): 
+        gs_contcar (Structure): 
             structure of ground-state distortion
         defect_name (str): 
             name of defect including charge state (e.g. "vac_1_Sb_0")
@@ -110,29 +112,10 @@ def compare_gs_struct_to_bdm_structs(
             print("{} Structure not converged".format(key))
     return False # structure not found for this charge state
             
-def create_dict_deep_distortion_old(defect_dict: dict, 
-                                fancy_defects: dict,
-                                ):
-    """Imports the ground-state distortion found for a certain charge state in order to
-    try it for the other charge states.
-    Args:
-        defect_dict (dict): 
-            defect dict in doped format
-        fancy_defects (dict): 
-            dict containing the defects for which we found E lowering distortions
-        """
-    dict_deep_distortion  = {}
-    defect_dict_copy = defect_dict.copy()
-    for defect_type in fancy_defects.keys(): # for each defect type (vac, as , int)
-        
-        dict_deep_distortion[defect_type]  = import_deep_distortion_by_type(defect_dict_copy[defect_type],
-                                                                            fancy_defects[defect_type]) #defects for which we'll try the deep distortion found for one of the charge states      
-    return  dict_deep_distortion
-
 def import_deep_distortion_by_type(
     defect_list: list,
     fancy_defects: dict,
-    ):
+    ) -> list:
     """
     Imports the ground-state distortion found for a certain charge state in order to \
     try it for the other charge states.
