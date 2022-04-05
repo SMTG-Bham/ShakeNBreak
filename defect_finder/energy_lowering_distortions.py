@@ -25,7 +25,7 @@ def get_deep_distortions(
             dictionary of defects for which BDM found a deep distortion (missed with normal relaxation).
             The charge state with the distortion associated to the greatest E drop is selected 
         """
-    fancy_defects = {} #dict of defects undergoing deep distortions
+    fancy_defects = {} #dict of defects undergoing deep bond_distortions
     sm = StructureMatcher(ltol=0.2, stol=stol)
     for defect in defect_charges.keys():
         print("\n",defect)
@@ -123,7 +123,7 @@ def import_deep_distortion_by_type(
         defect_list (list): 
             defect dict in doped format of same type (vacancies, antisites or interstitials)
         fancy_defects (dict): 
-            dict containing the defects for which we found E lowering distortions (vacancies, or antisites or interstitials)
+            dict containing the defects for which we found E lowering bond_distortions (vacancies, or antisites or interstitials)
          """
     list_deep_distortion = []
     for i in defect_list: 

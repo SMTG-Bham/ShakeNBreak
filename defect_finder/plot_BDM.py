@@ -1,5 +1,5 @@
 """
-Quick and _dirty_ collection of useful functions to plot BDM defect output & spot fancy distortions going on
+Quick and _dirty_ collection of useful functions to plot BDM defect output & spot fancy bond_distortions going on
 
 """
 import matplotlib as mpl
@@ -29,8 +29,8 @@ plt.rcParams["axes.prop_cycle"] = plt.cycler("color", plt.cm.viridis(np.linspace
 def plot_all_defects(
     defects: dict, 
     base_path: str,                      
-    add_colorbar: bool = False, 
-    rms: int = 1,
+    add_colorbar: bool = False,
+    metric: str = "max_dist",
     bdm_type : Optional[str] = 'BDM',
     plot_tag: Optional[bool] = True,
     max_energy_above_unperturbed: Optional[float] = 0.5,
@@ -46,11 +46,11 @@ def plot_all_defects(
         add_colorbar (bool): 
             whether to add a colorbar indicating structural similarity between each structure and the unperturbed one.
             (default: False)
-        rms (int): 
-            If add_colorbar is set to True, rms defines the criteria for structural comparison. Can choose between
-            - root mean squared displacement for all sites (rms=0) or 
-            - maximum displacement between paired sites (rms=1).
-            (default: 1)
+        metric (:obj:`str`):
+            If add_colorbar is set to True, metric defines the criteria for structural comparison.
+            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            maximum distance between matched sites ('max_dist', default).
+            (Default: "max_dist")
         bdm_type (str): 
             'BDM' Whether to analyse BDM normal results or champion (when trying the deep distoriton found for another charge state)
         plot_tag (bool):
@@ -69,13 +69,13 @@ def plot_all_defects(
     for defect in defects:
         for charge in defects[defect]:
             defect_name = f"{defect}_{charge}" 
-            #print(f"Analysing {defect_name}")
+            #print(f"Analysing {defect_species}")
             file_energies = f"{base_path}{defect_name}/{bdm_type}/{defect_name}.txt"
             dict_energies, energy_diff, gs_distortion = sort_data(file_energies)
             
             # if a significant energy lowering distortion was found, and BDM was applied (i.e. not only rattle)
             # then further analyse this fancy defect
-            if plot_tag and ("rattled" not in dict_energies['distortions'].keys()) and float(energy_diff) < -0.1:   
+            if plot_tag and ("rattled" not in dict_energies['bond_distortions'].keys()) and float(energy_diff) < -0.1:
                 num_neighbours = BDM_metadata["defects"][defect]["charges"][str(charge)]["number_neighbours"]  # get number of distorted neighbours                    
                 neighbour_atoms = list(i[0] for i in BDM_metadata["defects"][defect]["charges"][str(charge)]["distorted_atoms"]) # get element distorted
                 if all(element == neighbour_atoms[0] for element in neighbour_atoms):
@@ -90,7 +90,7 @@ def plot_all_defects(
                     neighbour_atom = neighbour_atom,
                     num_neighbours = num_neighbours,
                     add_colorbar = add_colorbar,
-                    rms = rms,
+                    metric = metric,
                     units = units,
                     max_energy_above_unperturbed = max_energy_above_unperturbed,
                     )
@@ -105,7 +105,7 @@ def plot_defect(
     neighbour_atom: str = None,
     num_neighbours: int = None,
     add_colorbar: bool = False,
-    rms: int = 1,
+    metric: str = "max_dist",
     max_energy_above_unperturbed: float = 0.5,
     include_site_num_in_name: bool = False,
     save_tag: bool = True,
@@ -115,11 +115,11 @@ def plot_defect(
     """
     Quick and nasty function to easily plot BDM results for a defect.
     args:
-        defect_name (str): 
+        defect_species (str):
             defect name e.g "Int_Sb_0",
         charge (int) : 
             defect charge state,
-        dict_energies (dict): 
+        energies_dict (dict):
             dict matching BDM distortion to its energy (eV),
         base_path (str): 
             str with path to the directory where your defect data is (to get structures and calculate RMS),
@@ -129,12 +129,14 @@ def plot_defect(
             number of distorted neighbours 
         add_colorbar (bool): 
             whether to add a colorbar indicating structural similarity between each structure and the unperturbed one.
-        rms (int): 
-            If add_colorbar, it determines the criteria used for the structural comparison. 
-            Root mean squared displacement (rms=0) or maximum displacement between paired sites (rms=1)
+        metric (:obj:`str`):
+            If add_colorbar is True, determines the criteria used for the structural comparison.
+            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            maximum distance between matched sites ('max_dist', default).
+            (Default: "max_dist")
         max_energy_above_unperturbed (float): 
             maximum E of metastable defects displayed on the graph (relative to Unperturbed). 
-            Useful to avoid displaying really high energy distortions
+            Useful to avoid displaying really high energy bond_distortions
             (default: 0.5)
         include_site_num_in_name (bool): 
             Whether to include the site number (as generated by doped) in defect name.
@@ -152,21 +154,22 @@ def plot_defect(
     if add_colorbar: # then get structures to compare their similarity
         assert os.isdir(base_path)
         defect_structs = get_structures(defect_name, base_path )
-        dict_rms = calculate_rms_dist(defect_structs, rms=rms ) # calculate root mean squared displacement and maximum displacement between paired sites
+        dict_rms = calculate_struct_comparison(defect_structs, metric=metric) # calculate root mean
+        # squared displacement and maximum displacement between paired sites
         if dict_rms : # if rms algorithms worked (sometimes strugles matching lattices)
             for key in list(dict_rms.keys()): 
                 # remove any data point if its E is not in the energy dict (this may be due to relaxation not converged)
-                if ( key not in dict_energies['distortions'].keys() and key != "Unperturbed" ) or dict_rms[key] == "Not converged" or dict_rms[key] == None:
+                if ( key not in dict_energies['bond_distortions'].keys() and key != "Unperturbed" ) or dict_rms[key] == "Not converged" or dict_rms[key] == None:
                     dict_rms.pop(key)
-                    if key in dict_energies['distortions'].keys(): # remove it from energy dict as well
-                        dict_energies['distortions'].pop(key)
+                    if key in dict_energies['bond_distortions'].keys(): # remove it from energy dict as well
+                        dict_energies['bond_distortions'].pop(key)
         else:
             print("Rms algorithm strugled matching lattices. Will do normal plot")
             add_colorbar = False # if rms displacement couldn't be calculated (didn't match lattices), then do normal plot
             
-    for key in list(dict_energies['distortions'].keys()): # remove high E points
-        if dict_energies['distortions'][key]  - dict_energies['Unperturbed'] > max_energy_above_unperturbed: 
-            dict_energies['distortions'].pop(key)
+    for key in list(dict_energies['bond_distortions'].keys()): # remove high E points
+        if dict_energies['bond_distortions'][key]  - dict_energies['Unperturbed'] > max_energy_above_unperturbed:
+            dict_energies['bond_distortions'].pop(key)
             if add_colorbar:
                 dict_rms.pop(key)
 
@@ -207,8 +210,8 @@ def plot_defect(
         y_axis = y_axis.replace("eV", "meV")
         if max_energy_above_unperturbed < 1 :
             max_energy_above_unperturbed *= 1000 
-        for key in dict_energies["distortions"].keys():
-            dict_energies["distortions"][key] =   dict_energies["distortions"][key] *1000
+        for key in dict_energies["bond_distortions"].keys():
+            dict_energies["bond_distortions"][key] =   dict_energies["bond_distortions"][key] *1000
         dict_energies["Unperturbed"] = dict_energies["Unperturbed"] * 1000
     
     if add_colorbar:
@@ -219,7 +222,7 @@ def plot_defect(
             number_neighbours = num_neighbours, 
             neighbour_atom = neighbour_atom, 
             dataset_labels = f"BDM: {num_neighbours} {neighbour_atom}", 
-            rms = rms,
+            metric = metric,
             defect_name= defect_name,
             title = defect_name, 
             save_tag = save_tag ,
@@ -249,7 +252,7 @@ def plot_bdm_colorbar(
     neighbour_atom : str,  
     title: str=None,
     dataset_labels: str="RBDM", 
-    rms: int=1,
+    metric: str = "max_dist",
     save_tag: bool =False,
     max_displacement: float = None,
     y_axis: str=None,
@@ -262,7 +265,7 @@ def plot_bdm_colorbar(
         dict_energies (dict): 
             dict maping distortion (format: float, e.g. 0.1) to final E (in eV)
         dict_rms (dict): 
-            dict maping distortion to rms displacements (if rms=0) or maximum distance between paired sites (if rms=1)
+            dict maping distortion to metric displacements (if metric=0) or maximum distance between paired sites (if metric=1)
         defect_name (str): 
             name of defect (e.g '$V_{Cd}^0$')
         title (str): 
@@ -275,9 +278,11 @@ def plot_bdm_colorbar(
         dataset_labels (str): 
             label for legend
             (default: RBDM)
-        rms (int): 
-            0 if rms displacement, 1 if maximum displacement between sites
-            (default: 1)
+        metric (:obj:`str`):
+            Defines the criteria for structural comparison, used for the colorbar.
+            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            maximum distance between matched sites ('max_dist', default).
+            (Default: "max_dist")
         save_tag (bool): 
             whether plot is saved or not
             (default: False)
@@ -299,9 +304,9 @@ def plot_bdm_colorbar(
     if not y_axis:
         y_axis = r"Energy (eV)"
 
-    for key in list(dict_energies['distortions'].keys()): #remove high E points
-                    if dict_energies['distortions'][key]  - dict_energies['Unperturbed'] > max_energy_above_unperturbed: 
-                        dict_energies['distortions'].pop(key)
+    for key in list(dict_energies['bond_distortions'].keys()): #remove high E points
+                    if dict_energies['bond_distortions'][key]  - dict_energies['Unperturbed'] > max_energy_above_unperturbed:
+                        dict_energies['bond_distortions'].pop(key)
                         dict_rms.pop(key)
                         
     array_rms = np.array(np.array(list(dict_rms.values())))     
@@ -314,15 +319,15 @@ def plot_bdm_colorbar(
     norm = mpl.colors.Normalize(vmin= vmin, vmax= vmax, clip=False)  
     
     # all E relative to unperturbed one
-    for key,i in dict_energies['distortions'].items() :
-            dict_energies['distortions'][key] = i - dict_energies['Unperturbed']
+    for key,i in dict_energies['bond_distortions'].items() :
+            dict_energies['bond_distortions'][key] = i - dict_energies['Unperturbed']
     dict_energies['Unperturbed'] = 0.0
     
     ax.set_xlabel(f"BDM Distortion Factor (for {number_neighbours} {neighbour_atom} near {defect_name})", labelpad=10)
     ax.set_ylabel(y_axis, labelpad=10) # vasp_gam
     
     im = ax.scatter(
-        dict_energies['distortions'].keys(), dict_energies['distortions'].values(),
+        dict_energies['bond_distortions'].keys(), dict_energies['bond_distortions'].values(),
         c=array_rms[:-1], 
         ls="-", 
         s=50, 
@@ -332,8 +337,8 @@ def plot_bdm_colorbar(
         norm = norm, alpha = 1
     )
     ax.plot(
-        dict_energies['distortions'].keys(),
-        dict_energies['distortions'].values(),
+        dict_energies['bond_distortions'].keys(),
+        dict_energies['bond_distortions'].values(),
         ls="-", markersize=1,
         marker="o",
         color=color1, 
@@ -351,7 +356,7 @@ def plot_bdm_colorbar(
         label = 'Unperturbed')
     
     # One decimal point if energy difference between max E and min E >0.4 eV, else 3
-    range_energies = [i for i in dict_energies['distortions'].values()]
+    range_energies = [i for i in dict_energies['bond_distortions'].values()]
     range_energies.append(dict_energies['Unperturbed'])
     if (max(range_energies)- min(range_energies)) > 0.4:
         ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.1f}'))
@@ -366,8 +371,8 @@ def plot_bdm_colorbar(
     cbar = f.colorbar(im, ax=ax, boundaries = None, drawedges =False, aspect = 20, fraction =0.1, pad=0.08, shrink=0.8 )
     cbar.ax.tick_params(size=0)
     cbar.outline.set_visible(False)
-    if rms == 0: cmap_label = 'RMS'      
-    elif rms == 1: cmap_label = r"$d_{max}$ $(\AA)$"
+    if metric == "rms": cmap_label = 'RMS'
+    elif metric == "max_dist": cmap_label = r"$d_{max}$ $(\AA)$"
     cbar.ax.set_title(cmap_label, size="medium", loc='center',ha='center', va='center', pad=20.5)    
     if vmin != vmax :
         cbar.set_ticks([vmin, vmedium,  vmax])
@@ -416,7 +421,7 @@ def plot_datasets(
         number_neighbours (int):
             Number of distorted defect nearest neighbours
         max_energy_above_unperturbed (float):
-            maximum energy of BDM distortions displayed in graph (relative to Unperturbed)
+            maximum energy of BDM bond_distortions displayed in graph (relative to Unperturbed)
         y_axis (str):
             Label for y axis,
         markers (list):
@@ -447,16 +452,16 @@ def plot_datasets(
     # all E relative to unperturbed one
     for dataset_number, dataset in enumerate(datasets) : 
         
-        for key, i in dataset['distortions'].items() :
-            dataset['distortions'][key] = i - datasets[0]['Unperturbed'] # Energies relative to unperturbed E of dataset 1
+        for key, i in dataset['bond_distortions'].items() :
+            dataset['bond_distortions'][key] = i - datasets[0]['Unperturbed'] # Energies relative to unperturbed E of dataset 1
 
         if dataset_number >= 1:
             dataset['Unperturbed'] = dataset['Unperturbed'] - datasets[0]['Unperturbed']
             unperturbed_energies[dataset_number] = dataset['Unperturbed']
         
-        for key in list(dataset['distortions'].keys()): # remove high E points
-            if dataset['distortions'][key]  > max_energy_above_unperturbed: 
-                dataset['distortions'].pop(key)
+        for key in list(dataset['bond_distortions'].keys()): # remove high E points
+            if dataset['bond_distortions'][key]  > max_energy_above_unperturbed:
+                dataset['bond_distortions'].pop(key)
         
         if number_neighbours and neighbour_atom:
             x_label = f"BDM Distortion Factor (for {number_neighbours} {neighbour_atom} near {defect_name})"
@@ -477,8 +482,8 @@ def plot_datasets(
                     default_style_settings[key] = optional_style_settings
             
         ax.plot(
-            dataset['distortions'].keys(),
-            dataset['distortions'].values(), 
+            dataset['bond_distortions'].keys(),
+            dataset['bond_distortions'].values(),
             markersize = default_style_settings['markersize'],
             marker = default_style_settings['marker'],
             linestyle = default_style_settings['linestyle'],
@@ -511,7 +516,7 @@ def plot_datasets(
         ) 
     
     # One decimal point if energy difference between max E and min E >0.4 eV
-    range_energies = [i for i in datasets[0]['distortions'].values()]
+    range_energies = [i for i in datasets[0]['bond_distortions'].values()]
     range_energies.append(datasets[0]['Unperturbed'])
     if (max(range_energies)- min(range_energies)) > 0.4:
         ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter('{x:,.1f}'))
