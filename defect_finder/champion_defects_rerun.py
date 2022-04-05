@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Functions to apply the energy lowerinf distortion found for a certain charge state of a defect \
     to the other charge states.
@@ -43,12 +42,12 @@ def compare_champion_BDM(defect_name,
     
     # Check what distortion lead to the lowest E structure: Unperturbed, BDM or just rattled?
     if type(gs_dist_BDM) == float or gs_dist_BDM == 'rattled': 
-        min_energy_BDM = dict_energies_BDM["distortions"][gs_dist_BDM]
+        min_energy_BDM = dict_energies_BDM["bond_distortions"][gs_dist_BDM]
     else:
         min_energy_BDM = dict_energies_BDM["Unperturbed"]
     
     if type(gs_dist_champ) == float or gs_dist_champ == 'rattled':
-        min_energy_champ = dict_energies_champ["distortions"][gs_dist_champ]
+        min_energy_champ = dict_energies_champ["bond_distortions"][gs_dist_champ]
     else:
         min_energy_champ = dict_energies_champ["Unperturbed"]
     
@@ -68,7 +67,7 @@ def get_champion_defects(defects,
         defects (dict): defect dictionary mapping defect name to its charge states.
         base_path (str): path where the defect output is
         energy_difference (float) : minimum energy difference of defect distortion relative to Unperturbed to \
-             select the distortions that will be further analysed 
+             select the bond_distortions that will be further analysed
     """
     all_defects_structs = {}
     for defect in defects:

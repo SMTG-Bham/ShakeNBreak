@@ -35,7 +35,7 @@ def bdm(
             Index of defect site in structure (for substitutions or interstitials), counting from 1
         frac_coords (:obj:`numpy.ndarray`, optional):
             Fractional coordinates of the defect site in the structure (for vacancies)
-        distorted_element (:obj: `str`, optional):
+        distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
             be chosen. (default: None)
         verbose (:obj:`bool`, optional):
@@ -117,16 +117,16 @@ def bdm(
     distorted_atoms = [(i[1], i[2]) for i in nearest]  # element and site number
 
     # Create dictionary with distortion info & distorted structure
-    bdm_distorted_defect = {
+    bond_distorted_defect = {
         "distorted_structure": distorted_structure,
         "number_distorted_neighbours": num_nearest_neighbours,
         "distorted_atoms": distorted_atoms,
         "undistorted_structure": structure,
     }
     if site_index:
-        bdm_distorted_defect["defect_site_index"] = site_index
+        bond_distorted_defect["defect_site_index"] = site_index
     elif frac_coords:
-        bdm_distorted_defect["defect_frac_coords"] = frac_coords
+        bond_distorted_defect["defect_frac_coords"] = frac_coords
 
     if verbose:
         distorted = [(round(i[0], 2), i[1], i[2]) for i in distorted]
@@ -135,7 +135,7 @@ def bdm(
         print("     Original Neighbour Distances:", nearest)
         print("     Distorted Neighbour Distances:\n", distorted)
 
-    return bdm_distorted_defect
+    return bond_distorted_defect
 
 
 def rattle(structure: Structure, stdev: Optional[float] = 0.25) -> Structure:

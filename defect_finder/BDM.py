@@ -104,10 +104,10 @@ def calc_number_neighbours(num_electrons: int) -> int:
     change) neighbours.
 
     Args:
-        num_electrons (:obj: `int`): Number of extra/missing electrons for the defect species
+        num_electrons (:obj:`int`): Number of extra/missing electrons for the defect species
 
     Returns:
-        Number of neighbours to distort (:obj: `int`)
+        Number of neighbours to distort (:obj:`int`)
     """
 
     if abs(num_electrons) > 4:
@@ -132,18 +132,18 @@ def apply_rattle_bond_distortions(
             - defect site index (other defect types).
 
         Args:
-            defect_dict (:obj: `dict`):
+            defect_dict (:obj:`dict`):
                 Defect dictionary in the format of `doped.vasp_input.preprare_vasp_defect_dict`
-            num_nearest_neighbours (:obj: `int`):
+            num_nearest_neighbours (:obj:`int`):
                 Number of defect nearest neighbours to apply bond distortions to
-            distortion_factor (:obj: `float`):
+            distortion_factor (:obj:`float`):
                 The distortion factor to apply to the bond distance between the defect and nearest
                 neighbours. Typical choice is between 0.4 (-60%) and 1.4 (+60%).
-            stdev (:obj: `float`):
+            stdev (:obj:`float`):
                 Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
                 displacement distances are drawn.
                 (default: 0.25)
-            distorted_element (:obj: `str`, optional):
+            distorted_element (:obj:`str`, optional):
                 Neighbouring element to distort. If None, the closest neighbours to the defect will
                 be chosen. (default: None)
             verbose (:obj:`bool`):
@@ -196,17 +196,17 @@ def apply_distortions(
     structure (in `defect_dict`).
 
     Args:
-        defect_dict (:obj: `dict`):
+        defect_dict (:obj:`dict`):
             Defect dictionary in the format of `doped.vasp_input.preprare_vasp_defect_dict`
-        num_nearest_neighbours (:obj: `int`):
+        num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
-        bond_distortions (:obj: `list`):
+        bond_distortions (:obj:`list`):
             List of specific distortions to apply to defect nearest neighbours. (e.g. [-0.5, 0.5])
-        stdev (:obj: `float`):
+        stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
             (default: 0.25)
-        distorted_element (:obj: `str`, optional):
+        distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
             be chosen. (default: None)
         verbose (:obj:`bool`):
@@ -286,16 +286,16 @@ def create_vasp_input(
     Creates folders for storing VASP defect-finder files.
 
     Args:
-        defect_name (:obj: `str`):
+        defect_name (:obj:`str`):
             Folder name
-        distorted_defect_dict (:obj: `dict`):
+        distorted_defect_dict (:obj:`dict`):
             Dictionary with distorted defects
-        incar_settings (:obj: `dict`):
+        incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the `doped` defaults
-        potcar_settings (:obj: `dict`):
+        potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}).
-        distortion_type (:obj: `str`):
+        distortion_type (:obj:`str`):
             Type of distortion method.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
@@ -346,49 +346,49 @@ def apply_defect_finder(
     state of the defect, for reference.
 
     Args:
-        defects_dict (:obj: `dict`):
+        defects_dict (:obj:`dict`):
             Dictionary of defects as generated with `doped` `ChargedDefectsStructures()`
-        oxidation_states (:obj: `dict`):
+        oxidation_states (:obj:`dict`):
             Dictionary of oxidation states for species in your material, used to determine the
             number of defect neighbours to distort (e.g {"Cd": +2, "Te": -2}).
-        incar_settings (:obj: `dict`):
+        incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the `doped` defaults.
             Highly recommended to look at output `INCAR`s, or `doped.vasp_input` source code and
             `incar.yml`, to see what the default `INCAR` settings are.
-        dict_number_electrons_user (:obj: `dict`):
+        dict_number_electrons_user (:obj:`dict`):
             Optional argument to set the number of extra/missing charge (negative of electron count
-            change) for the input defects, as a dictionary with format {'defect_name':
+            change) for the input defects, as a dictionary with format {'defect_species':
             charge_change} where charge_change is the negative of the number of extra/missing
             electrons. (default: None)
-        distortion_increment (:obj: `float`):
+        distortion_increment (:obj:`float`):
             Bond distortion increment. Recommended values: 0.1-0.3 (default: 0.1)
-        bond_distortions (:obj: `list`):
-            List of distortions to apply to nearest neighbours, instead of the default set
+        bond_distortions (:obj:`list`):
+            List of bond distortions to apply to nearest neighbours, instead of the default set
             (e.g. [-0.5, 0.5]). (default: None)
-        stdev (:obj: `float`):
+        stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution from which random atomic
             displacement distances are drawn during rattling. Recommended values: 0.25, or 0.15
             for strongly-bound/ionic materials. (default: 0.25)
-        distorted_elements (:obj: `dict`):
+        distorted_elements (:obj:`dict`):
             Optional argument to specify the neighbouring elements to distort for each defect,
-            in the form of a dictionary with format {'defect_name': ['element1', 'element2',
+            in the form of a dictionary with format {'defect_species': ['element1', 'element2',
             ...]} (e.g {'vac_1_Cd': 'Te'}). If None, the closest neighbours to the defect are
             chosen. (default: None)
-        distortion_type (:obj: `str`) :
+        distortion_type (:obj:`str`) :
             Type of distortion method.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
             states of that defect – in which case only the unperturbed and rattled configurations of
             the relaxed other-charge defect structure(s) are calculated.
             (default: 'BDM')
-        potcar_settings (:obj: `dict`):
+        potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
             recommended to look at output `POTCAR`s, or `doped` `default_POTCARs.yaml`, to see what
             the default `POTCAR` settings are. (default: None)
-        write_files (:obj: `bool`):
+        write_files (:obj:`bool`):
             Whether to write output files (default: True)
-        verbose (:obj: `bool`):
+        verbose (:obj:`bool`):
             Whether to print distortion information (bond atoms and distances). (default: False)
 
     Returns:
@@ -400,13 +400,13 @@ def apply_defect_finder(
     )
     dict_defects = {}  # dict to store bond distortions for all defects
 
-    # If the user does not specify distortions, use distortion_increment to generate distortions:
+    # If the user does not specify bond_distortions, use distortion_increment:
     if not bond_distortions:
         bond_distortions = list(
             np.around(np.arange(-0.6, 0.601, distortion_increment), decimals=3)
         )
 
-    # Create dictionary to keep track of the distortions applied
+    # Create dictionary to keep track of the bond distortions applied
     distortion_metadata = {
         "distortion_parameters": {
             "distortion_increment": distortion_increment,
