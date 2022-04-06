@@ -386,17 +386,17 @@ def get_structures(
         output_path (:obj:`str`):
             Path to top-level directory containing `defect_species` subdirectories.
         distortion_increment (:obj:`float`):
-            Bond distortion increment. Recommended values: 0.1-0.3 (default: 0.1)
+            Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
         bond_distortions (:obj:`list`):
             List of distortions applied to nearest neighbours, instead of the default set
-            (e.g. [-0.5, 0.5]). (default: None)
+            (e.g. [-0.5, 0.5]). (Default: None)
         distortion_type (:obj:`str`) :
             Type of distortion method used.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
             states of that defect – in which case only the unperturbed and rattled configurations of
             the relaxed other-charge defect structure(s) are calculated.
-            (default: 'BDM')
+            (Default: 'BDM')
 
     Returns:
         Dictionary of bond distortions and corresponding final structures.
@@ -503,14 +503,14 @@ def get_energies(
         output_path (:obj:`str`):
             Path to top-level directory containing `defect_species` subdirectories.
         distortion_increment (:obj:`float`):
-            Bond distortion increment. Recommended values: 0.1-0.3 (default: 0.1)
+            Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
         distortion_type (:obj:`str`) :
             Type of distortion method used.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
             states of that defect – in which case only the unperturbed and rattled configurations of
             the relaxed other-charge defect structure(s) are calculated.
-            (default: 'BDM')
+            (Default: 'BDM')
         units (:obj:`str`):
             Energy units for outputs (either 'eV' or 'meV'). (Default: "eV")
 
@@ -548,12 +548,12 @@ def calculate_struct_comparison(
             (Default: "max_dist")
 
     Returns:
-        dict_rms (:obj:`dict`, optional):
+        rms_dict (:obj:`dict`, optional):
             Dictionary matching bond distortions to structure comparison metric (rms or
             max_dist). Will return None if the comparison metric couldn't be calculated for more
             than 5 distortions.
     """
-    dict_rms = {}
+    rms_dict = {}
     metric_dict = {"rms": 0, "max_dist": 1}
     sm = StructureMatcher(
         ltol=0.3, stol=0.5, angle_tol=5, primitive_cell=False, scale=True
@@ -561,21 +561,21 @@ def calculate_struct_comparison(
     for distortion in list(defect_struct_dict.keys()):
         if defect_struct_dict[distortion] != "Not converged":
             try:
-                dict_rms[distortion] = sm.get_rms_dist(
+                rms_dict[distortion] = sm.get_rms_dist(
                     defect_struct_dict["Unperturbed"], defect_struct_dict[distortion]
                 )[metric_dict[metric]]
             except TypeError:
-                dict_rms[
+                rms_dict[
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison metric to None
         else:
-            dict_rms[distortion] = "Not converged"  # Structure not converged
+            rms_dict[distortion] = "Not converged"  # Structure not converged
 
     if (
-        sum(value is None for value in dict_rms.values()) > 5
+        sum(value is None for value in rms_dict.values()) > 5
     ):  # If metric couldn't be calculated for more than 5 distortions, then return None
         return None
-    return dict_rms
+    return rms_dict
 # TODO: Why cutoff of 5 here? If the user uses a coarser mesh, or only some of the calculations
 #  converge, is there anything wrong with printing the comparison metric info for just the small
 #  set that did finish ok?

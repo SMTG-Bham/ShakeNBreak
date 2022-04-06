@@ -37,9 +37,9 @@ def bdm(
             Fractional coordinates of the defect site in the structure (for vacancies)
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
-            be chosen. (default: None)
+            be chosen. (Default: None)
         verbose (:obj:`bool`, optional):
-            Whether to print distortion information. (default: False)
+            Whether to print distortion information. (Default: False)
 
     Returns:
         Dictionary with distorted defect structure and the distortion parameters.
@@ -119,7 +119,7 @@ def bdm(
     # Create dictionary with distortion info & distorted structure
     bond_distorted_defect = {
         "distorted_structure": distorted_structure,
-        "number_distorted_neighbours": num_nearest_neighbours,
+        "num_distorted_neighbours": num_nearest_neighbours,
         "distorted_atoms": distorted_atoms,
         "undistorted_structure": structure,
     }
@@ -150,7 +150,7 @@ def rattle(structure: Structure, stdev: Optional[float] = 0.25) -> Structure:
         stdev (:obj:`float`, optional):
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
-            (default: 0.25)
+            (Default: 0.25)
 
     Returns:
         Rattled Structure object
@@ -184,7 +184,7 @@ def localized_rattle(
         stdev (:obj:`float`, optional):
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
-            (default: 0.25)
+            (Default: 0.25)
     Returns:
         Rattled Structure object"""
     aaa = AseAtomsAdaptor()
