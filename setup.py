@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-This is a setup.py script to install BDM
+This is a setup.py script to install defect-finder
 """
 
 from setuptools import setup, find_packages
 
-setup(name='BDM',
+setup(name='defect-finder',
       version='0.0',
-      description='Collection of python fucntions to generate and analyse distorted defect structures.',
-      author='Irea Mosquera',
+      description='Package to generate and analyse distorted defect structures, in order to '
+                  'identify ground-state and metastable defect configurations.',
+      author='Irea Mosquera, Seán Kavanagh',
       author_email='irea.lois.20@ucl.ac.uk',
-      py_modules=['BDM', 'plot_BDM', 'analyse_defects', 'champion_defects_rerun'],
       packages=find_packages(),
       license="MIT",
       install_requires=[
@@ -20,5 +20,6 @@ setup(name='BDM',
         "matplotlib",
         "ase",
         "pandas",
+        "seaborn",
     ],
       )

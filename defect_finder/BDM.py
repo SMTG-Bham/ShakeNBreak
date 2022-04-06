@@ -142,12 +142,12 @@ def apply_rattle_bond_distortions(
             stdev (:obj:`float`):
                 Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
                 displacement distances are drawn.
-                (default: 0.25)
+                (Default: 0.25)
             distorted_element (:obj:`str`, optional):
                 Neighbouring element to distort. If None, the closest neighbours to the defect will
-                be chosen. (default: None)
+                be chosen. (Default: None)
             verbose (:obj:`bool`):
-                Whether to print distortion information. (default: False)
+                Whether to print distortion information. (Default: False)
 
         Returns:
             Dictionary with distorted defect structure and the distortion parameters.
@@ -205,12 +205,12 @@ def apply_distortions(
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
-            (default: 0.25)
+            (Default: 0.25)
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
-            be chosen. (default: None)
+            be chosen. (Default: None)
         verbose (:obj:`bool`):
-            Whether to print distortion information. (default: False)
+            Whether to print distortion information. (Default: False)
 
         Returns:
             Dictionary with distorted defect structure and the distortion parameters.
@@ -241,7 +241,7 @@ def apply_distortions(
             distorted_defect_dict["distortion_parameters"] = {
                 "defect_index": bond_distorted_defect["defect_index"],
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
-                "number_distorted_neighbours": num_nearest_neighbours,
+                "num_distorted_neighbours": num_nearest_neighbours,
                 "distorted_atoms": bond_distorted_defect["distorted_atoms"],
             }
 
@@ -259,7 +259,7 @@ def apply_distortions(
         distorted_defect_dict["distortion_parameters"] = {
             "defect_index": defect_index,
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
-            "number_distorted_neighbours": num_nearest_neighbours,
+            "num_distorted_neighbours": num_nearest_neighbours,
             "distorted_atoms": None,
         }
     return distorted_defect_dict
@@ -301,7 +301,7 @@ def create_vasp_input(
             is used when relaxing a defect from the relaxed structure(s) found for other charge
             states of that defect – in which case only the unperturbed and rattled configurations of
             the relaxed other-charge defect structure(s) are calculated.
-            (default: 'BDM')
+            (Default: 'BDM')
     """
     create_folder(defect_name)  # create folder for defect
     create_folder(
@@ -359,37 +359,37 @@ def apply_defect_finder(
             Optional argument to set the number of extra/missing charge (negative of electron count
             change) for the input defects, as a dictionary with format {'defect_species':
             charge_change} where charge_change is the negative of the number of extra/missing
-            electrons. (default: None)
+            electrons. (Default: None)
         distortion_increment (:obj:`float`):
-            Bond distortion increment. Recommended values: 0.1-0.3 (default: 0.1)
+            Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
         bond_distortions (:obj:`list`):
             List of bond distortions to apply to nearest neighbours, instead of the default set
-            (e.g. [-0.5, 0.5]). (default: None)
+            (e.g. [-0.5, 0.5]). (Default: None)
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution from which random atomic
             displacement distances are drawn during rattling. Recommended values: 0.25, or 0.15
-            for strongly-bound/ionic materials. (default: 0.25)
+            for strongly-bound/ionic materials. (Default: 0.25)
         distorted_elements (:obj:`dict`):
             Optional argument to specify the neighbouring elements to distort for each defect,
             in the form of a dictionary with format {'defect_species': ['element1', 'element2',
             ...]} (e.g {'vac_1_Cd': 'Te'}). If None, the closest neighbours to the defect are
-            chosen. (default: None)
+            chosen. (Default: None)
         distortion_type (:obj:`str`) :
             Type of distortion method.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
             states of that defect – in which case only the unperturbed and rattled configurations of
             the relaxed other-charge defect structure(s) are calculated.
-            (default: 'BDM')
+            (Default: 'BDM')
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
             recommended to look at output `POTCAR`s, or `doped` `default_POTCARs.yaml`, to see what
-            the default `POTCAR` settings are. (default: None)
+            the default `POTCAR` settings are. (Default: None)
         write_files (:obj:`bool`):
-            Whether to write output files (default: True)
+            Whether to write output files (Default: True)
         verbose (:obj:`bool`):
-            Whether to print distortion information (bond atoms and distances). (default: False)
+            Whether to print distortion information (bond atoms and distances). (Default: False)
 
     Returns:
         Dictionary with defect distortion parameters.
@@ -498,7 +498,7 @@ def apply_defect_finder(
                 distortion_metadata["defects"][defect_name]["charges"].update(
                     {
                         int(charge): {
-                            "number_neighbours": num_nearest_neighbours,
+                            "num_nearest_neighbours": num_nearest_neighbours,
                             "distorted_atoms": distorted_structures[
                                 "distortion_parameters"
                             ]["distorted_atoms"],
