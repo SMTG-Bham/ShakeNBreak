@@ -1,145 +1,257 @@
 """ 
-Functions to apply the energy lowering dictortion found for a certain charge state of a defect to 
-the other charge states.
+Functions to apply energy lowering distortions found for a certain defect species (charge state)
+to other charge states of that defect.
 In progress
 """
+# TODO: Incorporate this in a different module / submodule for structure distortion
+# TODO: Flesh out function arguments and docstrings
+import copy
+
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
 
-def get_deep_distortions(
-    defect_charges: dict, 
-    bdm_type: str='BDM',
-    stol = 0.2,
-    ) -> dict:
-    """Quick and nasty function to easily spot defects undergoing a deep relaxation.
-    Useful for trying the ground-state of a certain charge state for the other charge states.
-    Args:
-        defect_charges (dict): 
-            dictionary matching defect name to a list with its charge states. (e.g {"Int_Sb_0":[0,+1,+2]} )
-        base_path (str): 
-            path to the directory where your BDM output files are (will need CONTCAR to check structural similarity of the final configurations)
-        bdm_type (str):
-            Allows to search in the 'BDM' (normal method) or 'champion' folders (when trying the energy-lowering distortion found for other charge state).
-   Returns:
-        fancy_defects (dict): 
-            dictionary of defects for which BDM found a deep distortion (missed with normal relaxation).
-            The charge state with the distortion associated to the greatest E drop is selected 
-        """
-    fancy_defects = {} #dict of defects undergoing deep bond_distortions
-    sm = StructureMatcher(ltol=0.2, stol=stol)
-    for defect in defect_charges.keys():
-        print("\n",defect)
-        for charge in defect_charges[defect]:
-            defect_name = "{}_{}".format(defect, str(charge)) #defect + "_" + str(charge)
-            file_energies = "{}{}/{}/{}.txt".format(base_path, defect_name, bdm_type ,defect_name ) 
-            dict_energies, energy_diff, gs_distortion = sort_data(file_energies)
-            
-            if float(energy_diff) < -0.1 : #if a significant E drop occured , then store this fancy defect
-                print("Deep distortion found for ", defect_name)    
-                if  gs_distortion != "rattle":
-                    bdm_distortion = str(round(gs_distortion * 100, 1)) #change distortion format to the one used in file name (eg from 0.1 to 10.0)
-                    if bdm_distortion == "0.0":
-                        bdm_distortion = "-0.0"
-                    file_path="{}{}/{}/{}_{}%_BDM_Distortion/vasp_gam/CONTCAR".format(base_path, defect_name, bdm_type ,defect_name, bdm_distortion) 
-                else:
-                    bdm_distortion = "only_rattled" # file naming format used for rattle
-                    file_path="{}{}/{}/{}_{}/vasp_gam/CONTCAR".format(base_path, defect_name, bdm_type ,defect_name, bdm_distortion) 
-                try:
-                    gs_struct = grab_contcar(file_path) # get the final structure of the E lowering distortion
-                    if gs_struct  == "Not converged":
-                        print(f"Problem grabbing gs structure for {bdm_distortion} of {defect_name}")
-                except FileNotFoundError:
-                    print("NO CONTCAR for ground-state distortion")
-                    break
-                if defect in fancy_defects.keys(): #check if defect already in dict (other charge state lead to a lower E structure)
-                    
-                    gs_struct_in_dict = fancy_defects[defect]["structure"]                        
-                  
-                    if energy_diff < fancy_defects[defect]["energy_diff"]: #if E drop is greater (more negative), then update the dict with the lowest E distortion
-                        print("Charge {} lead to greatest E lowering distortion".format(charge))
-                        fancy_defects[defect].update(
-                            {"structure": gs_struct, "BDM_distortion": gs_distortion,"energy_diff": energy_diff, "charges":[charge]}
-                            )   
-                            
-                elif defect not in fancy_defects.keys(): # if defect not in dict, add it
-                    print("New defect! Adding {} with charge {} to dict".format(defect, charge))
-                    fancy_defects[defect] = {"charges" : [charge], "structure": gs_struct, "energy_diff": energy_diff, "BDM_distortion": gs_distortion}
-        
-        #let's check that the gs structure wasn`t found already by BDM for the other charge states    
-        if defect in fancy_defects.keys(): # if the defect lead to an E lowering distortion
-            for charge in defect_charges[defect]: # for all charge states of the defect
-                if charge not in fancy_defects[defect]["charges"]: #if gs struct wasn't found already for that charge state
-                    defect_name = "{}_{}".format(defect, str(charge)) #defect + "_" + str(charge)
-                    gs_struct_in_dict = fancy_defects[defect]["structure"] 
-                    if compare_gs_struct_to_BDM_structs( gs_struct_in_dict, defect_name, base_path, stol = stol  ) : 
-                        # structure found in BDM calcs for this charge state. Add it to the list to avoid redundant work
-                        fancy_defects[defect]["charges"].append(charge)
-            #print("Ground-state structure found for {}_{} has been also found for the charge states: {}".format(defect, fancy_defects[defect]["charges"][0], fancy_defects[defect]["charges"] ))
-    return fancy_defects  
+from defect_finder.analyse_defects import sort_data, grab_contcar, get_structures
 
-def compare_gs_struct_to_bdm_structs(
-    gs_contcar: Structure, 
-    defect_name: str, 
+
+def get_deep_distortions(
+    defect_charges_dict: dict,
+    base_path: str,
+    distortion_type: str = "BDM",
+    stol=0.2,
+) -> dict:
+    """Convenience function to identify defect species undergoing energy-lowering distortions.
+     Useful for then testing this distorted structure for the other charge states of that defect.
+
+     Args:
+         defect_charges_dict (:obj:`dict`):
+             Dictionary matching defect name(s) to list(s) of their charge states. (e.g {
+             "Int_Sb_1":[0,+1,+2]} etc)
+         base_path (:obj:`str`):
+             Path to directory with your distorted defect calculations (need CONTCAR files for
+             structure matching) and distortion_metadata.txt
+         distortion_type (:obj:`str`):
+             Whether to search in the 'BDM' (standard method) or 'champion' folders (if
+             previously chosen) when testing the energy-lowering distortion found for other
+             defect charge states.
+             (Default: 'BDM')
+         stol (:obj:`float`):
+             Site-matching tolerance for structure matching. Site tolerance. Defined as the
+             fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
+             (Default: 0.2)
+
+    Returns:
+         low_energy_defects (:obj:`dict`):
+             Dictionary of defects for which bond distortion found a 'deep' distortion (missed with
+             normal unperturbed relaxation). The charge state with the distortion associated to
+             the greatest energy drop is selected.
+    """
+    low_energy_defects = (
+        {}
+    )  # dict of defects undergoing deep energy-lowering distortions
+    for defect in defect_charges_dict.keys():
+        print("\n", defect)
+        for charge in defect_charges_dict[defect]:
+            defect_name = f"{defect}_{charge}"
+            energies_file = (
+                f"{base_path}{defect_name}/{distortion_type}/{defect_name}.txt"
+            )
+            energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
+
+            if (
+                float(energy_diff) < -0.1
+            ):  # if a significant energy drop occurred, then store
+                # this distorted defect
+                # TODO: Make this cutoff energy an optional parameter
+                print("Deep distortion found for ", defect_name)
+                if gs_distortion != "rattle":
+                    bond_distortion = (
+                        f"{round(gs_distortion * 100, 1)}"  # change distortion
+                    )
+                    # format to the one used in file name (e.g. from 0.1 to 10.0)
+                    if bond_distortion == "0.0":
+                        bond_distortion = "-0.0"
+                else:
+                    bond_distortion = (
+                        "only_rattled"  # file naming format used for rattle
+                    )
+                try:
+                    file_path = (
+                        f"{base_path}{defect_name}/{distortion_type}/{defect_name}"
+                        f"_{bond_distortion}%_BDM_Distortion/vasp_gam/CONTCAR"
+                    )
+                    gs_struct = grab_contcar(
+                        file_path
+                    )  # get the final structure of the energy lowering distortion
+                    if gs_struct == "Not converged":
+                        print(
+                            f"Problem parsing final, low-energy structure for {bond_distortion} of"
+                            f" {defect_name} – Unconverged (check relaxation calculation)"
+                        )
+                except FileNotFoundError:
+                    print(
+                        f"NO CONTCAR found for low-energy distortion: {bond_distortion} of"
+                        f" {defect_name} – check folder"
+                    )
+                    break
+                if (
+                    defect in low_energy_defects
+                ):  # check if defect already in stored dict (i.e. a different charge state of
+                    # this defect gave a distorted lower energy structure)
+                    gs_struct_in_dict = low_energy_defects[defect]["structure"]
+
+                    if (
+                        energy_diff < low_energy_defects[defect]["energy_diff"]
+                    ):  # if energy drop for the current charge state is greater (more negative)
+                        # than the already-stored distorted low-energy structure) then replace
+                        # the stored structure with the current structure
+                        print(
+                            f"Energy lowering distortion found for {defect} with charge "
+                            f"{charge}, with a greater energy drop than the previously identified "
+                            f"{low_energy_defects[defect]['energy_diff']} charge state. Updating "
+                            f"low_energy_defects dictionary with this."
+                        )
+                        low_energy_defects[defect].update(
+                            {
+                                "structure": gs_struct,
+                                "bond_distortion": gs_distortion,
+                                "energy_diff": energy_diff,
+                                "charges": [charge],
+                            }
+                        )
+
+                elif defect not in low_energy_defects:  # if defect not in dict, add it
+                    print(
+                        f"Energy lowering distortion found for {defect} with charge {charge}. "
+                        f"Adding to low_energy_defects dictionary."
+                    )
+                    low_energy_defects[defect] = {
+                        "charges": [charge],
+                        "structure": gs_struct,
+                        "energy_diff": energy_diff,
+                        "bond_distortion": gs_distortion,
+                    }
+
+        # Check that the lower-energy distorted structure wasn't already found with bond
+        # distortions for the other charge states
+        if (
+            defect in low_energy_defects
+        ):  # if an energy lowering distortion was found for this
+            # defect
+            for charge in defect_charges_dict[
+                defect
+            ]:  # for all charge states of the defect
+                if (
+                    charge not in low_energy_defects[defect]["charges"]
+                ):  # if lower-energy
+                    # distorted structure wasn't already found for that charge state
+                    defect_name = f"{defect}_{charge}"
+                    gs_struct_in_dict = low_energy_defects[defect]["structure"]
+                    if compare_gs_struct_to_distorted_structs(
+                        gs_struct_in_dict, defect_name, base_path, stol=stol
+                    ):
+                        # structure found in distortion tests for this charge state. Add it to the
+                        # list to avoid redundant work
+                        low_energy_defects[defect]["charges"].append(charge)
+            # print("Ground-state structure found for {defect}_{low_energy_defects[defect][
+            # 'charges'][0]} has been also found for the charge states: {low_energy_defects[
+            # defect]['charges']}")
+    return low_energy_defects
+
+
+def compare_gs_struct_to_distorted_structs(  # TODO: Can we just use 'compare_structures' from
+    # 'defects_analysis' module here?
+    gs_struct: Structure,
+    defect_species: str,
     base_path: str,
     stol: float = 0.2,
-    ) -> bool:
+) -> bool:
     """
-    Compares the ground-state structure found for a certain charge state with all BDM structures found for other charge states
-    to avoid trying the ground-state distortion when it has already been found.
-    Args: 
-        gs_contcar (Structure): 
-            structure of ground-state distortion
-        defect_name (str): 
-            name of defect including charge state (e.g. "vac_1_Sb_0")
-        base_path: (str): 
-            path to the directory where your BDM defect output is (will need CONTCAR)
+    Compares the ground-state structure found for a certain defect charge state with all
+    relaxed bond-distorted structures for `defect_species`, to avoid redundant work (testing
+    this distorted structure for other charge states when it has already been found for them).
+
+    Args:
+        gs_struct (:obj:`~pymatgen.core.structure.Structure`):
+            Structure of ground-state distorted defect
+        defect_species (:obj:`str`):
+            Defect name including charge (e.g. 'vac_1_Cd_0')
+        base_path (:obj:`str`):
+            Path to directory with your distorted defect calculations (to calculate structure
+            comparisons – needs VASP CONTCAR files)
+
     Returns:
-        True if energy lowering distortion was found for the considered charge state, False otherwise
+        True if a match is found between the input structure and the relaxed bond-distorted
+        structures for `defect_species`, False otherwise.
     """
     sm = StructureMatcher(ltol=0.2, stol=stol)
-    defect_structures = get_structures(defect_name, base_path )
+    defect_structures = get_structures(defect_species, base_path)
     for key, structure in defect_structures.items():
-        if gs_contcar == "Not converged" :
-            print("gs_contcar not converged")
+        if gs_struct == "Not converged":
+            print("Input gs_struct not converged")
             break
-        elif structure != "Not converged" :
+        elif structure != "Not converged":
             try:
-                if sm.fit(gs_contcar, structure):
-                    return True #as soon as you find the structure, return True
+                if sm.fit(gs_struct, structure):
+                    return True  # as soon as a structure match is found, return True
             except AttributeError:
-                print("Fucking error grabbing structure")
+                print("Error matching structures")
         else:
-            print("{} Structure not converged".format(key))
-    return False # structure not found for this charge state
-            
+            print(f"{key} structure not converged")
+    return False  # structure match not found for this charge state
+
+
 def import_deep_distortion_by_type(
-    defect_list: list,
-    fancy_defects: dict,
-    ) -> list:
+    defect_dict: dict,
+    low_energy_defects: dict,
+) -> dict:
     """
-    Imports the ground-state distortion found for a certain charge state in order to \
-    try it for the other charge states.
+    Import the ground-state energy-lowering distortion found for certain defect charge states, in
+    order to test these structures for other charge states of those defects.
+
     Args:
-        defect_list (list): 
-            defect dict in doped format of same type (vacancies, antisites or interstitials)
-        fancy_defects (dict): 
-            dict containing the defects for which we found E lowering bond_distortions (vacancies, or antisites or interstitials)
-         """
-    list_deep_distortion = []
-    for i in defect_list: 
-                if i['name'] in fancy_defects.keys(): # if defect underwent a deep distortion
-                    defect_name = i['name']
-                    print(defect_name)
-                    i['supercell']['structure'] = fancy_defects[defect_name]['structure'] #structure of E lowering distortion
-                    print("Using the distortion found for charge state(s) {} with BDM distortion {}".format(fancy_defects[defect_name]['charges'],
-                                                                                                            fancy_defects[defect_name]["BDM_distortion"] ) )
-                    #remove the charge state of the E lowering distortion distortion
-                    if len(fancy_defects[i['name']]['charges']) > 1:
-                        print("Intial charge states of defect:", i['charges'], "Will remove the ones where the distortion was found...")
-                        [i['charges'].remove(charge) for charge in fancy_defects[defect_name]['charges']]
-                        print("Trying distortion for charge states:", i['charges'])
-                    else:   
-                        i['charges'].remove(fancy_defects[defect_name]['charges'][0])
-                    if i['charges']: #if list of charges to try deep distortion not empty, then add defect to the list
-                        list_deep_distortion.append(i)
-    return list_deep_distortion
+        defect_dict (:obj:`dict`):
+            Defect dictionary in the `doped.pycdt.core.defectsmaker.ChargedDefectsStructures()`
+            format.
+        low_energy_defects (:obj:`dict`):
+             Dictionary of defects for which bond distortion found a 'deep' energy-lowering
+             distortion (missed with normal unperturbed relaxation).
+
+    Returns:
+        Dictionary of deep-distorted defects with initial structures matching that of the
+        distorted ground-state for a different charge state of the same defect.
+    """
+    deep_distortion_dict = {}
+    for k, v in defect_dict.items():
+        if (
+            v["name"] in low_energy_defects.keys()
+        ):  # if defect underwent a deep distortion
+            defect_subdict = copy.deepcopy(v)  # copy the defect dict and use this
+            defect_name = defect_subdict["name"]
+            print(defect_name)
+            defect_subdict["supercell"]["structure"] = low_energy_defects[defect_name][
+                "structure"
+            ]  # structure of energy-lowering distortion
+            print(
+                f"Using the distortion found for charge state(s) "
+                f"{low_energy_defects[defect_name]['charges']} with bond distortion "
+                f"{low_energy_defects[defect_name]['bond_distortion']}"
+            )
+            # remove the charge state of the energy-lowering distortion
+            if len(low_energy_defects[defect_subdict["name"]]["charges"]) > 1:
+                print(
+                    "Initial charge states of defect:",
+                    defect_subdict["charges"],
+                    "Removing the ones where the distortion was found...",
+                )
+                for charge in low_energy_defects[defect_name]["charges"]:
+                    defect_subdict["charges"].remove(charge)
+                print("Trying distortion for charge states:", defect_subdict["charges"])
+            else:
+                defect_subdict["charges"].remove(
+                    low_energy_defects[defect_name]["charges"][0]
+                )
+            if defect_subdict[
+                "charges"
+            ]:  # if list of charges to try deep distortion not empty, then add defect to the dict
+                deep_distortion_dict[k] = defect_subdict
+    return deep_distortion_dict

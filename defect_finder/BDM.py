@@ -325,7 +325,7 @@ def create_vasp_input(
 
 
 def apply_defect_finder(
-    defects_dict: dict,
+    defect_dict: dict,
     oxidation_states: dict,
     incar_settings: dict = default_incar_settings,
     dict_number_electrons_user: Optional[dict] = None,
@@ -339,14 +339,14 @@ def apply_defect_finder(
     verbose: bool = False,
 ):
     """ 
-    Applies rattle and bond distortion to all defects in `defects_dict` (in `doped`
+    Applies rattle and bond distortion to all defects in `defect_dict` (in `doped`
     `ChargedDefectsStructures()` format), and generates the input files for `vasp_gam`
     relaxations of all output structures. Also creates a dictionary entries for each defect,
     which contain dictionaries with all bond-distorted (and undistorted) structures for each charge
     state of the defect, for reference.
 
     Args:
-        defects_dict (:obj:`dict`):
+        defect_dict (:obj:`dict`):
             Dictionary of defects as generated with `doped` `ChargedDefectsStructures()`
         oxidation_states (:obj:`dict`):
             Dictionary of oxidation states for species in your material, used to determine the
@@ -396,7 +396,7 @@ def apply_defect_finder(
         """
     # TODO: Refactor to use extra/missing electrons (not charge) here, to reduce potential confusion
     vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
-        copy.deepcopy(defects_dict)
+        copy.deepcopy(defect_dict)
     )
     dict_defects = {}  # dict to store bond distortions for all defects
 
@@ -423,9 +423,9 @@ def apply_defect_finder(
     )
 
     for defect_type in list(
-        defects_dict.keys()
+        defect_dict.keys()
     ):  # loop for vacancies, antisites, interstitials
-        for defect in defects_dict[defect_type]:  # loop for each defect in dict
+        for defect in defect_dict[defect_type]:  # loop for each defect in dict
 
             defect_name = defect["name"]  # name without charge state
             bulk_supercell_site = defect["bulk_supercell_site"]

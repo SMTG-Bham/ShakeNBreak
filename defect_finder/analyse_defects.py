@@ -390,7 +390,7 @@ def get_structures(
         bond_distortions (:obj:`list`):
             List of distortions applied to nearest neighbours, instead of the default set
             (e.g. [-0.5, 0.5]). (Default: None)
-        distortion_type (:obj:`str`) :
+        distortion_type (:obj:`str`):
             Type of distortion method used.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
             is used when relaxing a defect from the relaxed structure(s) found for other charge
