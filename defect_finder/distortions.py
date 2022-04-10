@@ -125,7 +125,7 @@ def bdm(
     }
     if site_index:
         bond_distorted_defect["defect_site_index"] = site_index
-    elif frac_coords:
+    elif isinstance(frac_coords, np.ndarray):
         bond_distorted_defect["defect_frac_coords"] = frac_coords
 
     if verbose:
