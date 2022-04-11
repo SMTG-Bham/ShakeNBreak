@@ -48,7 +48,7 @@ def get_deep_distortions(
     low_energy_defects = (
         {}
     )  # dict of defects undergoing deep energy-lowering distortions
-    for defect in defect_charges_dict.keys():
+    for defect in defect_charges_dict:
         print("\n", defect)
         for charge in defect_charges_dict[defect]:
             defect_name = f"{defect}_{charge}"
