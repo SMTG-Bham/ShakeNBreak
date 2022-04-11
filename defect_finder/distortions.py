@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
+from hiphive.structure_generation.rattle import generate_rattled_structures
 
 # TODO: from pymatgen.transformations.advanced_transformations import MonteCarloRattleTransformation
 
@@ -157,10 +158,12 @@ def rattle(structure: Structure, stdev: Optional[float] = 0.25) -> Structure:
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
-    ase_struct.rattle(stdev=stdev)
-    rattled_structure = aaa.get_structure(ase_struct)
+    rattled_ase_struct = generate_rattled_structures(ase_struct, 1, rattle_std=stdev)[0]
+    rattled_structure = aaa.get_structure(rattled_ase_struct)
 
     return rattled_structure
+# TODO: Add option to set rattle `seed` (and add this to tests), in case standard rattle seed
+#  gives high energy metastable structures (also note this as a possibility in package docs)
 
 
 def localized_rattle(
@@ -170,6 +173,12 @@ def localized_rattle(
     stdev: Optional[float] = 0.25,
 ):
     """
+    Currently broken! – Outputs structures where the elemental ordering has been changed,
+    so will mess up POSCAR/POTCAR orderings in VASP.
+    TODO: Switch to using hiphive's mc_rattle functions, which allow selecting a subset of atoms
+    to rattle, and check this issue is fixed.
+
+
     Given a pymatgen Structure object, apply random displacements to all atomic positions within
     a specified radius in Angstroms (default 5) from the defect site, with the displacement
     distances randomly drawn from a Gaussian distribution of standard deviation `stdev`.
