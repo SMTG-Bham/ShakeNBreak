@@ -77,9 +77,13 @@ def calc_number_electrons(
         # Consider interstitials as substituting a vacant (zero oxidation-state position)
         site_specie = "Vac"
 
-    elif defect_dict["defect_type"] in ["antisite", "substitution"]:
+    elif defect_dict["defect_type"] == "antisite":
         site_specie = str(defect_dict["site_specie"])
         substituting_specie = defect_dict["substituting_specie"]
+
+    elif defect_dict["defect_type"] == "substitution":
+        site_specie = str(defect_dict["site_specie"])
+        substituting_specie = defect_dict["substitution_specie"]
 
     num_electrons = (
         oxidation_states[substituting_specie] - oxidation_states[site_specie]
@@ -424,7 +428,7 @@ def apply_defect_finder(
 
     for defect_type in list(
         defect_dict.keys()
-    ):  # loop for vacancies, antisites, interstitials
+    ):  # loop for vacancies, antisites, interstitials, substitutions
         for defect in defect_dict[defect_type]:  # loop for each defect in dict
 
             defect_name = defect["name"]  # name without charge state
