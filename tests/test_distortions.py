@@ -22,7 +22,7 @@ class DistortionTestCase(unittest.TestCase):
             os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_0.1_Rattled_POSCAR")
+            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0.1_Rattled_POSCAR")
         )
 
     def test_bdm(self):
