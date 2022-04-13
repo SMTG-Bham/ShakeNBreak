@@ -190,6 +190,7 @@ def apply_rattle_bond_distortions(
             distorted_element=distorted_element,
             verbose=verbose,
         )
+
     # Apply rattle to the bond distorted structure
     if not d_min:
         defect_supercell = defect_dict["supercell"]["structure"]
@@ -204,11 +205,20 @@ def apply_rattle_bond_distortions(
                 f"{(1/0.85)*d_min} \u212B, which is almost certainly too small. "
                 f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
             )
+            d_min = 2.25
+    distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
+        bond_distorted_defect.get("defect_site_index")]  # Note this is VASP indexing here
+    distorted_atom_indices = [i-1 for i in distorted_atom_indices if i is not None]  # remove
+    # 'None' if defect is vacancy, and convert to python indexing
+    rattling_atom_indices = np.arange(0, len(defect_dict["supercell"]["structure"]))
+    idx = np.in1d(rattling_atom_indices, distorted_atom_indices) # returns True for matching indices
+    rattling_atom_indices = rattling_atom_indices[~idx] # remove matching indices
 
     bond_distorted_defect["distorted_structure"] = rattle(
         structure=bond_distorted_defect["distorted_structure"],
         stdev=stdev,
         d_min=d_min,
+        active_atoms=rattling_atom_indices,
         **kwargs,
     )
     return bond_distorted_defect
@@ -310,6 +320,7 @@ def apply_distortions(
                     f"Reverting to 2.25 \u212B. If this is too large, set `d_min` "
                     f"manually"
                 )
+                d_min = 2.25
         perturbed_structure = rattle(
             defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
         )
