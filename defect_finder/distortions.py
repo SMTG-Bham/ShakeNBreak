@@ -8,8 +8,6 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from hiphive.structure_generation.rattle import generate_mc_rattled_structures
 
-# TODO: from pymatgen.transformations.advanced_transformations import MonteCarloRattleTransformation
-
 
 def bdm(
     structure: Structure,
@@ -214,66 +212,6 @@ def rattle(
 
     return rattled_structure
 
+# TODO: Implement rattle function where the rattle amplitude tails off as a function of distance
+#  from the defect site, as an improved version of the localised rattle
 
-# TODO: Add option to set rattle `seed` (and add this to tests), in case standard rattle seed
-#  gives high energy metastable structures (also note this as a possibility in package docs)
-
-
-def localized_rattle(
-    structure: Structure,
-    defect_coords: np.array,
-    cutoff: Optional[float] = 5.0,
-    stdev: Optional[float] = 0.25,
-):
-    """
-    Currently broken! – Outputs structures where the elemental ordering has been changed,
-    so will mess up POSCAR/POTCAR orderings in VASP.
-    TODO: Switch to using hiphive's mc_rattle functions, which allow selecting a subset of atoms
-    to rattle, and check this issue is fixed.
-
-
-    Given a pymatgen Structure object, apply random displacements to all atomic positions within
-    a specified radius in Angstroms (default 5) from the defect site, with the displacement
-    distances randomly drawn from a Gaussian distribution of standard deviation `stdev`.
-
-    Args:
-        structure (:obj:`~pymatgen.core.structure.Structure`):
-            Structure as a pymatgen object
-        defect_coords (:obj:`np.array`):
-            Cartesian coordinates of the defect site
-        cutoff (:obj:`float`, optional):
-            Radius (in Angstroms) within which atomic displacements are applied.
-        stdev (:obj:`float`, optional):
-            Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
-            displacement distances are drawn.
-            (Default: 0.25)
-    Returns:
-        Rattled Structure object"""
-    aaa = AseAtomsAdaptor()
-    structure_copy = structure.copy()
-
-    # Classify sites in 2 lists: inside or outside cutoff sphere
-    sites_inside_cutoff, sites_outside_cutoff = [], []
-    for site in structure_copy:
-        distance, _image = site.distance_and_image_from_frac_coords(defect_coords)[:2]
-        if distance < cutoff:
-            sites_inside_cutoff.append(site)
-        else:
-            sites_outside_cutoff.append(site)
-
-    # Apply rattle to sites within cutoff sphere
-    structure_inside_cutoff = structure_copy.from_sites(sites_inside_cutoff)
-    ase_struct = aaa.get_atoms(structure_inside_cutoff)
-    ase_struct.rattle(stdev=stdev)
-    rattled_structure = aaa.get_structure(ase_struct)
-
-    # Add the sites outside the cutoff sphere to the rattled structure
-    for site_outside_cutoff in sites_outside_cutoff:
-        rattled_structure.append(
-            site_outside_cutoff.specie, site_outside_cutoff.frac_coords
-        )
-
-    return rattled_structure
-
-
-# TODO: Add MonteCarloRattleTransformation function
