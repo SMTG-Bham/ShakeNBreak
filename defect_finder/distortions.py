@@ -6,7 +6,7 @@ from typing import Optional
 import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-from hiphive.structure_generation.rattle import generate_rattled_structures
+from hiphive.structure_generation.rattle import generate_mc_rattled_structures
 
 # TODO: from pymatgen.transformations.advanced_transformations import MonteCarloRattleTransformation
 
@@ -44,7 +44,7 @@ def bdm(
 
     Returns:
         Dictionary with distorted defect structure and the distortion parameters.
-        """
+    """
     aaa = AseAtomsAdaptor()
     input_structure_ase = aaa.get_atoms(structure)
 
@@ -139,7 +139,18 @@ def bdm(
     return bond_distorted_defect
 
 
-def rattle(structure: Structure, stdev: Optional[float] = 0.25) -> Structure:
+def rattle(
+    structure: Structure,
+    stdev: float = 0.25,
+    d_min: float = 2.25,
+    n_iter: int = 1,
+    active_atoms: Optional[list] = None,
+    nbr_cutoff: float = 5,
+    width: float = 0.1,
+    max_attempts: int = 5000,
+    max_disp: float = 2.0,
+    seed: int = 42,
+) -> Structure:
     """
     Given a pymatgen Structure object, apply random displacements to all atomic positions,
     with the displacement distances randomly drawn from a Gaussian distribution of standard
@@ -148,20 +159,62 @@ def rattle(structure: Structure, stdev: Optional[float] = 0.25) -> Structure:
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Structure as a pymatgen object
-        stdev (:obj:`float`, optional):
+        stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
             (Default: 0.25)
+        d_min (:obj:`float`):
+            Minimum interatomic distance (in Angstroms). Monte Carlo rattle moves that put atoms at
+            distances less than this will be heavily penalised.
+            (Default: 2.25)
+        n_iter (:obj:`int`):
+            Number of Monte Carlo cycles to perform.
+            (Default: 1)
+        active_atoms (:obj:`list`, optional):
+            List of which atomic indices should undergo Monte Carlo rattling.
+            (Default: None)
+        nbr_cutoff (:obj:`float`):
+            The radial cutoff distance (in Angstroms) used to construct the list of atomic
+            neighbours for checking interatomic distances.
+            (Default: 5)
+        width (:obj:`float`):
+            Width of the Monte Carlo rattling error function, in Angstroms.
+            (Default: 0.1)
+        max_disp (:obj:`float`):
+            Maximum atomic displacement (in Angstroms) during Monte Carlo rattling. Rarely occurs
+            and is used primarily as a safety net.
+            (Default: 2.0)
+        max_attempts (:obj:`int`):
+            Maximum Monte Carlo rattle move attempts allowed for a single atom; if this limit is
+            reached an `Exception` is raised.
+            (Default: 5000)
+        seed (:obj:`int`):
+            Seed for NumPy random state from which random displacements are generated.
+            (Default: 42)
 
     Returns:
-        Rattled Structure object
+        Rattled pymatgen Structure object
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
-    rattled_ase_struct = generate_rattled_structures(ase_struct, 1, rattle_std=stdev)[0]
+    rattled_ase_struct = generate_mc_rattled_structures(
+        ase_struct,
+        n_configs=1,
+        rattle_std=stdev,
+        d_min=d_min,
+        n_iter=n_iter,
+        active_atoms=active_atoms,
+        nbr_cutoff=nbr_cutoff,
+        width=width,
+        max_attempts=max_attempts,
+        max_disp=max_disp,
+        seed=seed,
+    )[0]
     rattled_structure = aaa.get_structure(rattled_ase_struct)
 
     return rattled_structure
+
+
 # TODO: Add option to set rattle `seed` (and add this to tests), in case standard rattle seed
 #  gives high energy metastable structures (also note this as a possibility in package docs)
 

@@ -39,9 +39,12 @@ class DistortionTestCase(unittest.TestCase):
 
     def test_rattle(self):
         """Test structure rattle function"""
-        self.assertEqual(distortions.rattle(self.V_Cd_minus0pt5_struc),
+        defect_supercell = self.V_Cd_struc
+        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+        d_min = (0.85 * sorted_distances[len(defect_supercell) + 20])
+        self.assertEqual(distortions.rattle(self.V_Cd_minus0pt5_struc, d_min=d_min),
                          self.V_Cd_minus0pt5_struc_rattled)
-        self.assertEqual(distortions.rattle(self.V_Cd_minus0pt5_struc, stdev=0.1),
+        self.assertEqual(distortions.rattle(self.V_Cd_minus0pt5_struc, stdev=0.1, d_min=d_min),
                          self.V_Cd_minus0pt5_struc_0pt1_rattled)
 
 
