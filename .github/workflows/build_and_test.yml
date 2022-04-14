@@ -5,12 +5,12 @@ on:
     branches:
        - main
        - develop
- push:
-   branches:
-     - main
-     - develop
+  push:
+    branches:
+      - main
+      - develop
    
- workflow_dispatch
+  workflow_dispatch:
   
 jobs:
   build-linux:
