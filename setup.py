@@ -20,5 +20,10 @@ setup(name='BDM',
         "matplotlib",
         "ase",
         "pandas",
+        "seaborn",
+        "hiphive",
     ],
-      )
+    extras_require={
+        "tests": ["pytest"]      
+    },
+)
