@@ -23,4 +23,7 @@ setup(name='defect-finder',
         "seaborn",
         "hiphive",
     ],
-      )
+    extras_require={
+        "tests": ["pytest"]      
+    },
+)
