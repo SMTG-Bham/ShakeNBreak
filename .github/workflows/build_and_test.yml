@@ -11,9 +11,6 @@ on:
       - develop
    
   workflow_dispatch:
-    branches:
-      - main
-      - develop
   
 jobs:
   build-linux:
