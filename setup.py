@@ -6,7 +6,7 @@ This is a setup.py script to install defect-finder
 from setuptools import setup, find_packages
 
 setup(name='defect-finder',
-      version='0.0',
+      version='0.1',
       description='Package to generate and analyse distorted defect structures, in order to '
                   'identify ground-state and metastable defect configurations.',
       author='Irea Mosquera, Seán Kavanagh',
