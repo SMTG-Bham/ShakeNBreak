@@ -9,8 +9,6 @@ on:
       - develop
    
   workflow_dispatch:
-    branches:
-      - develop
   
 jobs:
   build-linux:
