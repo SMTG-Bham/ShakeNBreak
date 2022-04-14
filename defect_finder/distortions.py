@@ -195,6 +195,7 @@ def rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
+
     rattled_ase_struct = generate_mc_rattled_structures(
         ase_struct,
         n_configs=1,
@@ -214,4 +215,3 @@ def rattle(
 
 # TODO: Implement rattle function where the rattle amplitude tails off as a function of distance
 #  from the defect site, as an improved version of the localised rattle
-
