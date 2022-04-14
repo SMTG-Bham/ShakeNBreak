@@ -5,6 +5,7 @@ files to run Gamma point relaxations with VASP
 import os
 import copy
 import json
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -126,8 +127,10 @@ def apply_rattle_bond_distortions(
     num_nearest_neighbours: int,
     distortion_factor: float,
     stdev: float = 0.25,
+    d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
+    **kwargs,
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure (in `defect_dict`),
@@ -147,11 +150,18 @@ def apply_rattle_bond_distortions(
                 Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
                 displacement distances are drawn.
                 (Default: 0.25)
+            d_min (:obj:`float`):
+                Minimum interatomic distance (in Angstroms) in the rattled structure. Monte Carlo
+                rattle moves that put atoms at distances less than this will be heavily
+                penalised. Default is to set this to 85% of the nearest neighbour distance
+                in the defect supercell (ignoring interstitials).
             distorted_element (:obj:`str`, optional):
                 Neighbouring element to distort. If None, the closest neighbours to the defect will
                 be chosen. (Default: None)
             verbose (:obj:`bool`):
                 Whether to print distortion information. (Default: False)
+            **kwargs:
+                Additional keyword arguments to pass to `hiphive`'s `mc_rattle` function.
 
         Returns:
             Dictionary with distorted defect structure and the distortion parameters.
@@ -180,9 +190,36 @@ def apply_rattle_bond_distortions(
             distorted_element=distorted_element,
             verbose=verbose,
         )
+
     # Apply rattle to the bond distorted structure
+    if not d_min:
+        defect_supercell = defect_dict["supercell"]["structure"]
+        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+        d_min = (
+            0.85 * sorted_distances[len(defect_supercell) + 20]
+        )  # ignoring interstitials by
+        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
+        if d_min < 1:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1/0.85)*d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
+    distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
+        bond_distorted_defect.get("defect_site_index")]  # Note this is VASP indexing here
+    distorted_atom_indices = [i-1 for i in distorted_atom_indices if i is not None]  # remove
+    # 'None' if defect is vacancy, and convert to python indexing
+    rattling_atom_indices = np.arange(0, len(defect_dict["supercell"]["structure"]))
+    idx = np.in1d(rattling_atom_indices, distorted_atom_indices) # returns True for matching indices
+    rattling_atom_indices = rattling_atom_indices[~idx] # remove matching indices
+
     bond_distorted_defect["distorted_structure"] = rattle(
-        structure=bond_distorted_defect["distorted_structure"], stdev=stdev
+        structure=bond_distorted_defect["distorted_structure"],
+        stdev=stdev,
+        d_min=d_min,
+        active_atoms=rattling_atom_indices,
+        **kwargs,
     )
     return bond_distorted_defect
 
@@ -192,8 +229,10 @@ def apply_distortions(
     num_nearest_neighbours: int,
     bond_distortions: list,
     stdev: float = 0.25,
+    d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
+    **kwargs,
 ) -> dict:
     """
     Applies rattle and bond distortions to `num_nearest_neighbours` of the unperturbed defect
@@ -210,11 +249,18 @@ def apply_distortions(
             Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
             displacement distances are drawn.
             (Default: 0.25)
+        d_min (:obj:`float`, optional):
+            Minimum interatomic distance (in Angstroms) in the rattled structure. Monte Carlo
+            rattle moves that put atoms at distances less than this will be heavily
+            penalised. Default is to set this to 85% of the nearest neighbour distance
+            in the bulk supercell.
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
             be chosen. (Default: None)
         verbose (:obj:`bool`):
             Whether to print distortion information. (Default: False)
+        **kwargs:
+            Additional keyword arguments to pass to `hiphive`'s `mc_rattle` function.
 
         Returns:
             Dictionary with distorted defect structure and the distortion parameters.
@@ -236,8 +282,10 @@ def apply_distortions(
                 num_nearest_neighbours=num_nearest_neighbours,
                 distortion_factor=distortion_factor,
                 stdev=stdev,
+                d_min=d_min,
                 distorted_element=distorted_element,
                 verbose=verbose,
+                **kwargs,
             )
             distorted_defect_dict["Distortions"][
                 f"{distortion:.1%}_Bond_Distortion"
@@ -258,7 +306,24 @@ def apply_distortions(
             defect_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
-        perturbed_structure = rattle(defect_dict["supercell"]["structure"], stdev)
+        if not d_min:
+            defect_supercell = defect_dict["supercell"]["structure"]
+            sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+            d_min = (
+                0.85 * sorted_distances[len(defect_supercell) + 20]
+            )  # ignoring interstitials by
+            # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
+            if d_min < 1:
+                warnings.warn(
+                    f"Automatic bond-length detection gave a bulk bond length of "
+                    f"{(1 / 0.85) * d_min} \u212B, which is almost certainly too small. "
+                    f"Reverting to 2.25 \u212B. If this is too large, set `d_min` "
+                    f"manually"
+                )
+                d_min = 2.25
+        perturbed_structure = rattle(
+            defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
+        )
         distorted_defect_dict["Distortions"]["only_rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
             "defect_index": defect_index,
@@ -342,7 +407,7 @@ def apply_defect_finder(
     write_files: bool = True,
     verbose: bool = False,
 ):
-    """ 
+    """
     Applies rattle and bond distortion to all defects in `defect_dict` (in `doped`
     `ChargedDefectsStructures()` format), and generates the input files for `vasp_gam`
     relaxations of all output structures. Also creates a dictionary entries for each defect,
@@ -397,7 +462,7 @@ def apply_defect_finder(
 
     Returns:
         Dictionary with defect distortion parameters.
-        """
+    """
     # TODO: Refactor to use extra/missing electrons (not charge) here, to reduce potential confusion
     vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
         copy.deepcopy(defect_dict)
@@ -439,7 +504,7 @@ def apply_defect_finder(
                 except KeyError:
                     print(
                         "Problem reading the keys in distorted_elements.",
-                        "Are they the correct defect names (without charge states)?"
+                        "Are they the correct defect names (without charge states)?",
                     )
                     distorted_element = None
 

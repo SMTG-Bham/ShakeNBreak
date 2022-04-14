@@ -21,5 +21,6 @@ setup(name='defect-finder',
         "ase",
         "pandas",
         "seaborn",
+        "hiphive",
     ],
       )
