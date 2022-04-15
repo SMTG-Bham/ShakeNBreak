@@ -2,6 +2,7 @@ import unittest
 import os
 import pickle
 import copy
+from unittest.mock import patch
 
 import numpy as np
 
@@ -54,7 +55,8 @@ class BDMTestCase(unittest.TestCase):
                 charged_defect_dict["Transformation Dict"],
             )
 
-    def test_calc_number_electrons(self):
+    @patch('builtins.print')
+    def test_calc_number_electrons(self, mock_print):
         """Test calc_number_electrons function"""
         oxidation_states = {"Cd": +2, "Te": -2}
         for defect, electron_change in [
@@ -75,10 +77,14 @@ class BDMTestCase(unittest.TestCase):
                         if i["name"] == defect:
                             self.assertEqual(
                                 BDM.calc_number_electrons(
-                                    i, oxidation_states
+                                    i, oxidation_states, verbose=False  # test non-verbose
                                 ),
-                                -electron_change, # returns negative of electron change
+                                -electron_change,  # returns negative of electron change
                             )
+                            BDM.calc_number_electrons(i, oxidation_states, verbose=True)
+                            mock_print.assert_called_with(f"Number of extra/missing electrons of "
+                                                          f"defect {defect}: {electron_change} "
+                                                          f"-> Δq = {-electron_change}")
 
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
