@@ -295,7 +295,7 @@ def apply_distortions(
                 **kwargs,
             )
             distorted_defect_dict["Distortions"][
-                f"{distortion:.1%}_Bond_Distortion"
+                f"{distortion+0:.1%}_Bond_Distortion"
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,

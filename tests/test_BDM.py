@@ -50,12 +50,12 @@ class BDMTestCase(unittest.TestCase):
             output = BDM.update_struct_defect_dict(charged_defect_dict, struc, comment)
             self.assertEqual(output["Defect Structure"], struc)
             self.assertEqual(output["POSCAR Comment"], comment)
-            self.assertEqual(
+            self.assertDictEqual(
                 output["Transformation Dict"],
                 charged_defect_dict["Transformation Dict"],
             )
 
-    @patch('builtins.print')
+    @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
         """Test calc_number_electrons function"""
         oxidation_states = {"Cd": +2, "Te": -2}
@@ -77,14 +77,18 @@ class BDMTestCase(unittest.TestCase):
                         if i["name"] == defect:
                             self.assertEqual(
                                 BDM.calc_number_electrons(
-                                    i, oxidation_states, verbose=False  # test non-verbose
+                                    i,
+                                    oxidation_states,
+                                    verbose=False,  # test non-verbose
                                 ),
                                 -electron_change,  # returns negative of electron change
                             )
                             BDM.calc_number_electrons(i, oxidation_states, verbose=True)
-                            mock_print.assert_called_with(f"Number of extra/missing electrons of "
-                                                          f"defect {defect}: {electron_change} "
-                                                          f"-> Δq = {-electron_change}")
+                            mock_print.assert_called_with(
+                                f"Number of extra/missing electrons of "
+                                f"defect {defect}: {electron_change} "
+                                f"-> Δq = {-electron_change}"
+                            )
 
     def test_calc_number_neighbours(self):
         """Test calc_number_neighbours function"""
@@ -112,8 +116,9 @@ class BDMTestCase(unittest.TestCase):
         output = distortions.bdm(
             self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=False
         )
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict,
-                                 output)  # Shouldn't match because rattling not done yet
+        np.testing.assert_raises(
+            AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
+        )  # Shouldn't match because rattling not done yet
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.85 * sorted_distances[len(self.V_Cd_struc) + 20]
         rattling_atom_indices = np.arange(0, 63)
@@ -148,8 +153,12 @@ class BDMTestCase(unittest.TestCase):
         output = distortions.bdm(
             self.Int_Cd_1_struc, 2, 0.4, site_index=65, verbose=False
         )
-        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal,
-                                 Int_Cd_1_distorted_dict, output)  # Shouldn't match because
+        np.testing.assert_raises(
+            AssertionError,
+            np.testing.assert_array_equal,
+            Int_Cd_1_distorted_dict,
+            output,
+        )  # Shouldn't match because
         # rattling not done yet
         sorted_distances = np.sort(self.Int_Cd_1_struc.distance_matrix.flatten())
         d_min = 0.85 * sorted_distances[len(self.Int_Cd_1_struc) + 20]
@@ -173,6 +182,74 @@ class BDMTestCase(unittest.TestCase):
             self.Int_Cd_1_minus0pt6_struc_rattled,
         )
         self.assertDictEqual(output, Int_Cd_1_distorted_dict)
+
+    def test_apply_distortions_V_Cd(self):
+        """Test apply_distortions function for V_Cd"""
+        V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
+        V_Cd_distorted_dict = BDM.apply_distortions(
+            V_Cd_dict,
+            num_nearest_neighbours=2,
+            bond_distortions=[-0.5],
+            stdev=0.25,
+            verbose=True,
+        )
+        self.assertDictEqual(V_Cd_dict, V_Cd_distorted_dict["Unperturbed_Defect"])
+
+        distorted_V_Cd_struc = V_Cd_distorted_dict["Distortions"][
+            "-50.0%_Bond_Distortion"
+        ]
+        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
+        self.assertEqual(self.V_Cd_minus0pt5_struc_rattled, distorted_V_Cd_struc)
+
+        V_Cd_0pt1_distorted_dict = BDM.apply_distortions(
+            V_Cd_dict,
+            num_nearest_neighbours=2,
+            bond_distortions=[-0.5],
+            stdev=0.1,
+            verbose=True,
+        )
+        distorted_V_Cd_struc = V_Cd_0pt1_distorted_dict["Distortions"][
+            "-50.0%_Bond_Distortion"
+        ]
+        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
+        self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
+
+        V_Cd_distortion_parameters = {
+            "unique_site": np.array([0.0, 0.0, 0.0]),
+            "num_distorted_neighbours": 2,
+            "distorted_atoms": [(33, "Te"), (42, "Te")],
+        }
+        np.testing.assert_equal(
+            V_Cd_distorted_dict["distortion_parameters"], V_Cd_distortion_parameters
+        )
+
+        V_Cd_3_neighbours_distorted_dict = BDM.apply_distortions(
+            V_Cd_dict,
+            num_nearest_neighbours=3,
+            bond_distortions=[-0.5],
+            stdev=0.25,
+            verbose=True,
+        )
+        V_Cd_3_neighbours_distortion_parameters = V_Cd_distortion_parameters.copy()
+        V_Cd_3_neighbours_distortion_parameters["num_distorted_neighbours"] = 3
+        V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(52, 'Te')]
+        np.testing.assert_equal(
+            V_Cd_3_neighbours_distorted_dict["distortion_parameters"],
+            V_Cd_3_neighbours_distortion_parameters
+        )
+
+        distortion_range = np.arange(-0.6, 0.61, 0.1)
+        V_Cd_distorted_dict = BDM.apply_distortions(
+            V_Cd_dict,
+            num_nearest_neighbours=2,
+            bond_distortions=distortion_range,
+        )
+        for key in [f"{distortion:.1%}_Bond_Distortion" for distortion in distortion_range]:
+            self.assertIn(key, V_Cd_distorted_dict["Distortions"])
+        # plus some hard-coded checks
+        self.assertIn("-60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
 
 
 if __name__ == "__main__":
