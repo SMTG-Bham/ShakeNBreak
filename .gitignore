@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm
+.idea/
+
+# MacOS
+.DS_Store
+
+# Affinity Logo ideas
+Affinity/
