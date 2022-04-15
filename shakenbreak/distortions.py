@@ -1,6 +1,8 @@
 """
 Module containing functions for applying distortions to defect structures
 """
+import sys
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -29,7 +31,7 @@ def bdm(
             Number of defect nearest neighbours to apply bond distortions to
         distortion factor (:obj:`float`):
             The distortion factor to apply to the bond distance between the defect and nearest
-            neighbours. Typical choice is between 0.4 (-60%) and 1.4 (+60%).
+            neighbours. Typical choice is between 0.4 (-60%) and 1.6 (+60%).
         site_index (:obj:`int`, optional):
             Index of defect site in structure (for substitutions or interstitials), counting from 1
         frac_coords (:obj:`numpy.ndarray`, optional):
@@ -93,10 +95,19 @@ def bdm(
             elif len(nearest) == (neighbours - 1):
                 break
         # if the number of nearest neighbours not reached, add other neighbouring elements
-        while len(nearest) < (neighbours - 1):
+        if len(nearest) < (neighbours - 1):
             for i in distances[1:]:
                 if i not in nearest and i[0] < 4.5:
                     nearest.append(i)
+            warnings.warn(
+                f"{distorted_element} was specified as the nearest neighbour element to distort, "
+                f"with `distortion_factor` {distortion_factor} but did not find "
+                f"`num_nearest_neighbours` ({num_nearest_neighbours}) of these elements within "
+                f"4.5 \u212B of the defect site. For the remaining neighbours to distort, "
+                f"we ignore the elemental identity. The final distortion information is:"
+            )
+            sys.stderr.flush()  # ensure warning message printed before distortion info
+            verbose = True
     else:
         nearest = distances[
             1:neighbours

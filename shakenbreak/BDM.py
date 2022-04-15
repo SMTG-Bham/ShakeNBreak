@@ -280,7 +280,7 @@ def apply_distortions(
 
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
-            distortion = round(distortion, ndigits=3)
+            distortion = round(distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
@@ -295,7 +295,7 @@ def apply_distortions(
                 **kwargs,
             )
             distorted_defect_dict["Distortions"][
-                f"{distortion+0:.1%}_Bond_Distortion"
+                f"{distortion:.1%}_Bond_Distortion"
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
