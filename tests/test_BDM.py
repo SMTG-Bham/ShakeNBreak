@@ -112,6 +112,8 @@ class BDMTestCase(unittest.TestCase):
         output = distortions.bdm(
             self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=False
         )
+        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict,
+                                 output)  # Shouldn't match because rattling not done yet
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.85 * sorted_distances[len(self.V_Cd_struc) + 20]
         rattling_atom_indices = np.arange(0, 63)
@@ -146,6 +148,9 @@ class BDMTestCase(unittest.TestCase):
         output = distortions.bdm(
             self.Int_Cd_1_struc, 2, 0.4, site_index=65, verbose=False
         )
+        np.testing.assert_raises(AssertionError, np.testing.assert_array_equal,
+                                 Int_Cd_1_distorted_dict, output)  # Shouldn't match because
+        # rattling not done yet
         sorted_distances = np.sort(self.Int_Cd_1_struc.distance_matrix.flatten())
         d_min = 0.85 * sorted_distances[len(self.Int_Cd_1_struc) + 20]
         rattling_atom_indices = np.arange(

@@ -207,7 +207,9 @@ def apply_rattle_bond_distortions(
     distorted_atom_indices = [
         i[0] for i in bond_distorted_defect["distorted_atoms"]
     ] + [
-        bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
+        bond_distorted_defect.get(
+            "defect_site_index"
+        )  # only adds defect site if not vacancy
     ]  # Note this is VASP indexing here
     distorted_atom_indices = [
         i - 1 for i in distorted_atom_indices if i is not None
