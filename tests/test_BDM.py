@@ -86,6 +86,17 @@ class BDMTestCase(unittest.TestCase):
                                                           f"defect {defect}: {electron_change} "
                                                           f"-> Δq = {-electron_change}")
 
+    def test_calc_number_neighbours(self):
+        """Test calc_number_neighbours function"""
+        self.assertEqual(BDM.calc_number_neighbours(0), 0)
+        self.assertEqual(BDM.calc_number_neighbours(-2), 2)
+        self.assertEqual(BDM.calc_number_neighbours(2), 2)
+        self.assertEqual(BDM.calc_number_neighbours(6), 2)
+        self.assertEqual(BDM.calc_number_neighbours(-6), 2)
+        self.assertEqual(BDM.calc_number_neighbours(8), 0)
+        self.assertEqual(BDM.calc_number_neighbours(-8), 0)
+        self.assertEqual(BDM.calc_number_neighbours(4), 4)
+        self.assertEqual(BDM.calc_number_neighbours(-4), 4)
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
         """Test apply_rattle_bond_distortions function for V_Cd"""
