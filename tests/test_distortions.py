@@ -1,6 +1,7 @@
 import unittest
 import os
 import pickle
+from unittest.mock import patch
 
 import numpy as np
 
@@ -47,11 +48,12 @@ class DistortionTestCase(unittest.TestCase):
             self.cdte_defect_dict["interstitials"][1]["supercell"]["structure"],
         )
 
-    def test_bdm_V_Cd(self):
+    @patch("builtins.print")
+    def test_bdm_V_Cd(self, mock_print):
         """Test bond distortion function for V_Cd"""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.bdm(
-            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=False
+            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords
         )
         self.assertEqual(output["distorted_structure"], self.V_Cd_minus0pt5_struc)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
@@ -59,8 +61,13 @@ class DistortionTestCase(unittest.TestCase):
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
         self.assertCountEqual(output["distorted_atoms"], [(33, "Te"), (42, "Te")])
+        distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True)
+        mock_print.assert_called_with(f"""\tDefect Site Index / Frac Coords: {vac_coords}
+        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]
+        Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]""")
 
-    def test_bdm_Int_Cd_1(self):
+    @patch("builtins.print")
+    def test_bdm_Int_Cd_1(self, mock_print):
         """Test bond distortion function for Int_Cd_1"""
         site_index = 65  # Cd interstitial site index (VASP indexing)
         output = distortions.bdm(
@@ -72,6 +79,10 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["defect_site_index"], 65)
         self.assertEqual(output.get("defect_frac_coords"), None)
         self.assertCountEqual(output["distorted_atoms"], [(10, "Cd"), (22, "Cd")])
+        distortions.bdm(self.Int_Cd_1_struc, 2, 0.4, site_index=site_index, verbose=True)
+        mock_print.assert_called_with(f"""\tDefect Site Index / Frac Coords: {site_index}
+        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]
+        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]""")
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""
