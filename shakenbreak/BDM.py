@@ -207,7 +207,7 @@ def apply_rattle_bond_distortions(
     distorted_atom_indices = [
         i[0] for i in bond_distorted_defect["distorted_atoms"]
     ] + [
-        bond_distorted_defect.get("defect_site_index")
+        bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
     ]  # Note this is VASP indexing here
     distorted_atom_indices = [
         i - 1 for i in distorted_atom_indices if i is not None
@@ -296,19 +296,24 @@ def apply_distortions(
                 f"{distortion:.1%}_Bond_Distortion"
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
-                "defect_index": bond_distorted_defect["defect_index"],
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
                 "num_distorted_neighbours": num_nearest_neighbours,
                 "distorted_atoms": bond_distorted_defect["distorted_atoms"],
             }
+            if bond_distorted_defect.get(
+                "defect_site_index"
+            ):  # only add site index if vacancy
+                distorted_defect_dict["distortion_parameters"][
+                    "defect_site_index"
+                ] = bond_distorted_defect["defect_site_index"]
 
     elif (
         num_nearest_neighbours == 0
     ):  # when no extra/missing electrons, just rattle the structure. Likely to be a shallow defect.
         if defect_dict["defect_type"] == "vacancy":
-            defect_index = None
+            defect_site_index = None
         else:
-            defect_index = len(
+            defect_site_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
         if not d_min:
@@ -331,11 +336,14 @@ def apply_distortions(
         )
         distorted_defect_dict["Distortions"]["only_rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
-            "defect_index": defect_index,
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
             "distorted_atoms": None,
         }
+        if defect_site_index:  # only add site index if vacancy
+            distorted_defect_dict["distortion_parameters"][
+                "defect_site_index"
+            ] = defect_site_index
     return distorted_defect_dict
 
 
@@ -564,11 +572,13 @@ def apply_shakenbreak(
                     distorted_element=distorted_element,
                     verbose=verbose,
                 )
-                distortion_metadata["defects"][defect_name][
-                    "defect_index"
-                ] = distorted_structures["distortion_parameters"][
-                    "defect_index"
-                ]  # store site number of defect
+                defect_site_index = distorted_structures["distortion_parameters"].get(
+                    "defect_site_index"
+                )
+                if defect_site_index:
+                    distortion_metadata["defects"][defect_name][
+                        "defect_site_index"
+                    ] = defect_site_index  # store site index of defect if not vacancy
                 distortion_metadata["defects"][defect_name]["charges"].update(
                     {
                         int(charge): {

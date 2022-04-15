@@ -263,10 +263,9 @@ def analyse_structure(
     with open(f"{output_path}/distortion_metadata.json", "r") as json_file:
         distortion_metadata = json.load(json_file)
 
-    defect_site = distortion_metadata["defects"][defect_name_without_charge][
-        "defect_index"
-    ]  # VASP indexing (starts counting from 1)
-    if not defect_site:  # for vacancies, get fractional coordinates
+    defect_site = distortion_metadata["defects"][defect_name_without_charge].get(
+        "defect_site_index")  # VASP indexing (starts counting from 1)
+    if defect_site is None:  # for vacancies, get fractional coordinates
         defect_frac_coords = distortion_metadata["defects"][defect_name_without_charge][
             "unique_site"
         ]
