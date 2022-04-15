@@ -1,10 +1,12 @@
 import unittest
 import os
 import pickle
+import copy
 
 import numpy as np
 
 from pymatgen.core.structure import Structure
+from doped import vasp_input
 from shakenbreak import BDM, distortions
 
 
@@ -31,6 +33,53 @@ class BDMTestCase(unittest.TestCase):
         self.Int_Cd_1_minus0pt6_struc_rattled = Structure.from_file(
             os.path.join(DATA_DIR, "CdTe_Int_Cd_1_-60%_Distortion_Rattled_POSCAR")
         )
+
+    def test_update_struct_defect_dict(self):
+        """Test update_struct_defect_dict function"""
+        vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
+            copy.deepcopy(self.cdte_defect_dict)
+        )
+        for key, struc, comment in [
+            ("vac_1_Cd_0", self.V_Cd_struc, "V_Cd Undistorted"),
+            ("vac_1_Cd_0", self.V_Cd_minus0pt5_struc_rattled, "V_Cd Rattled"),
+            ("vac_1_Cd_-2", self.V_Cd_struc, "V_Cd_-2 Undistorted"),
+            ("Int_Cd_1_1", self.Int_Cd_1_minus0pt6_struc_rattled, "Int_Cd_1 Rattled"),
+        ]:
+            charged_defect_dict = vasp_defect_inputs[key]
+            output = BDM.update_struct_defect_dict(charged_defect_dict, struc, comment)
+            self.assertEqual(output["Defect Structure"], struc)
+            self.assertEqual(output["POSCAR Comment"], comment)
+            self.assertEqual(
+                output["Transformation Dict"],
+                charged_defect_dict["Transformation Dict"],
+            )
+
+    def test_calc_number_electrons(self):
+        """Test calc_number_electrons function"""
+        oxidation_states = {"Cd": +2, "Te": -2}
+        for defect, electron_change in [
+            ("vac_1_Cd", -2),
+            ("vac_2_Te", 2),
+            ("as_1_Cd_on_Te", 4),
+            ("as_1_Te_on_Cd", -4),
+            ("Int_Cd_1", 2),
+            ("Int_Cd_2", 2),
+            ("Int_Cd_3", 2),
+            ("Int_Te_1", -2),
+            ("Int_Te_2", -2),
+            ("Int_Te_3", -2),
+        ]:
+            for defect_type, defect_list in self.cdte_defect_dict.items():
+                if defect_type != "bulk":
+                    for i in defect_list:
+                        if i["name"] == defect:
+                            self.assertEqual(
+                                BDM.calc_number_electrons(
+                                    i, oxidation_states
+                                ),
+                                -electron_change, # returns negative of electron change
+                            )
+
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
         """Test apply_rattle_bond_distortions function for V_Cd"""
