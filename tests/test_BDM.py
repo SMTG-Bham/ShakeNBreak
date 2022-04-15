@@ -5,11 +5,11 @@ import pickle
 import numpy as np
 
 from pymatgen.core.structure import Structure
-from defect_finder import BDM, distortions
+from shakenbreak import BDM, distortions
 
 
 class BDMTestCase(unittest.TestCase):
-    """Test defect-finder structure distortion helper functions"""
+    """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
         DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")

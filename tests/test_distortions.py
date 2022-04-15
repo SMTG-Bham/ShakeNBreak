@@ -5,11 +5,11 @@ import pickle
 import numpy as np
 
 from pymatgen.core.structure import Structure
-from defect_finder import distortions
+from shakenbreak import distortions
 
 
 class DistortionTestCase(unittest.TestCase):
-    """Test defect-finder structure distortion functions"""
+    """Test shakenbreak structure distortion functions"""
 
     def setUp(self):
         DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
