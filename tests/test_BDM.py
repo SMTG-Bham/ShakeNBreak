@@ -109,12 +109,10 @@ class BDMTestCase(unittest.TestCase):
             V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
-            stdev=0.25,
-            verbose=True,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.bdm(
-            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=False
+            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords
         )
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
@@ -147,11 +145,9 @@ class BDMTestCase(unittest.TestCase):
             Int_Cd_1_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
-            stdev=0.25,
-            verbose=True,
         )
         output = distortions.bdm(
-            self.Int_Cd_1_struc, 2, 0.4, site_index=65, verbose=False
+            self.Int_Cd_1_struc, 2, 0.4, site_index=65
         )
         np.testing.assert_raises(
             AssertionError,
@@ -238,25 +234,31 @@ class BDMTestCase(unittest.TestCase):
             V_Cd_3_neighbours_distortion_parameters
         )
 
-        distortion_range = np.arange(-0.6, 0.61, 0.1)
-        V_Cd_distorted_dict = BDM.apply_distortions(
-            V_Cd_dict,
-            num_nearest_neighbours=2,
-            bond_distortions=distortion_range,
-        )
-        prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"]["structure"]
-        for key in [f"{round(distortion,3)+0:.1%}_Bond_Distortion" for distortion in
-                    distortion_range]:
-            self.assertIn(key, V_Cd_distorted_dict["Distortions"])
-            self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
-            prev_struc = V_Cd_distorted_dict["Distortions"][key]  # different structure for each
-            # distortion
+        with patch("builtins.print") as mock_print:
+            distortion_range = np.arange(-0.6, 0.61, 0.1)
+            V_Cd_distorted_dict = BDM.apply_distortions(
+                V_Cd_dict,
+                num_nearest_neighbours=2,
+                bond_distortions=distortion_range,
+                verbose=True,
+            )
+            prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"]["structure"]
+            for distortion in distortion_range:
+                key = f"{round(distortion,3)+0:.1%}_Bond_Distortion"
+                self.assertIn(key, V_Cd_distorted_dict["Distortions"])
+                self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
+                prev_struc = V_Cd_distorted_dict["Distortions"][key]  # different structure for each
+                # distortion
+                mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
 
         # plus some hard-coded checks
         self.assertIn("-60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
         self.assertIn("60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
         # test zero distortion is written as positive zero (not "-0.0%")
         self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+
+        # test that correct kwargs are passed to distortions.bdm()
+
 
 
 if __name__ == "__main__":
