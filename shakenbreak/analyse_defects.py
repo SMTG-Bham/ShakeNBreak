@@ -243,7 +243,7 @@ def analyse_structure(
 ):
     """
     Analyse the local distortion of the input defect structure. Requires access to the
-    distortion_metadata.json file generated with defect-finder to read info about defect site.
+    distortion_metadata.json file generated with ShakeNBreak to read info about defect site.
     If lacking this, can alternatively use `analyse_defect_site`.
 
     Args:
@@ -301,7 +301,7 @@ def compare_structures(
         ref_structure:
             Structure used as reference structure for comparison. This allows the user to compare
             final bond-distorted structures with a specific external structure not obtained using
-            `defect-finder`.
+            `shakenbreak`.
             (Default: None)
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`).
@@ -318,7 +318,7 @@ def compare_structures(
     rms_list = []
     if (
         ref_structure
-    ):  # if we give an external structure (not obtained with `defect-finder`)
+    ):  # if we give an external structure (not obtained with `shakenbreak`)
         norm_struct = ref_structure
     else:  # else we take reference structure from defect dictionary
         norm_struct = defect_dict[compare_to]
