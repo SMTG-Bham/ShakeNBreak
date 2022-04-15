@@ -133,3 +133,6 @@ dmypy.json
 
 # Mac OS Files
 .DS_Store
+
+# Affinity Designer
+Affinity/
