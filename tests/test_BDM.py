@@ -244,11 +244,18 @@ class BDMTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             bond_distortions=distortion_range,
         )
-        for key in [f"{distortion:.1%}_Bond_Distortion" for distortion in distortion_range]:
+        prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"]["structure"]
+        for key in [f"{round(distortion,3)+0:.1%}_Bond_Distortion" for distortion in
+                    distortion_range]:
             self.assertIn(key, V_Cd_distorted_dict["Distortions"])
+            self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
+            prev_struc = V_Cd_distorted_dict["Distortions"][key]  # different structure for each
+            # distortion
+
         # plus some hard-coded checks
         self.assertIn("-60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
         self.assertIn("60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+        # test zero distortion is written as positive zero (not "-0.0%")
         self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
 
 
