@@ -1,6 +1,7 @@
 import unittest
 import os
 import pickle
+import warnings
 from unittest.mock import patch
 
 import numpy as np
@@ -29,14 +30,14 @@ class DistortionTestCase(unittest.TestCase):
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
         )
-        self.Int_Cd_1_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_1_POSCAR")
+        self.Int_Cd_2_struc = Structure.from_file(
+            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
-        self.Int_Cd_1_minus0pt6_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_1_-60%_Distortion_Unrattled_POSCAR")
+        self.Int_Cd_2_minus0pt6_struc = Structure.from_file(
+            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR")
         )
-        self.Int_Cd_1_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_1_-60%_Distortion_Rattled_POSCAR")
+        self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
+            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
         )
         # Confirm correct structures and pickle dict:
         self.assertEqual(
@@ -44,17 +45,17 @@ class DistortionTestCase(unittest.TestCase):
             self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
         )
         self.assertEqual(
-            self.Int_Cd_1_struc,
+            self.Int_Cd_2_struc,
             self.cdte_defect_dict["interstitials"][1]["supercell"]["structure"],
         )
+
+        warnings.simplefilter("always")  # Cause all warnings to always be triggered.
 
     @patch("builtins.print")
     def test_bdm_V_Cd(self, mock_print):
         """Test bond distortion function for V_Cd"""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.bdm(
-            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords
-        )
+        output = distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         self.assertEqual(output["distorted_structure"], self.V_Cd_minus0pt5_struc)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
@@ -62,27 +63,92 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output.get("defect_site_index"), None)
         self.assertCountEqual(output["distorted_atoms"], [(33, "Te"), (42, "Te")])
         distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True)
-        mock_print.assert_called_with(f"""\tDefect Site Index / Frac Coords: {vac_coords}
+        mock_print.assert_called_with(
+            f"""\tDefect Site Index / Frac Coords: {vac_coords}
         Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]
-        Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]""")
+        Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"""
+        )
 
     @patch("builtins.print")
     def test_bdm_Int_Cd_1(self, mock_print):
         """Test bond distortion function for Int_Cd_1"""
         site_index = 65  # Cd interstitial site index (VASP indexing)
         output = distortions.bdm(
-            self.Int_Cd_1_struc, 2, 0.4, site_index=site_index, verbose=False
+            self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=False
         )
-        self.assertEqual(output["distorted_structure"], self.Int_Cd_1_minus0pt6_struc)
-        self.assertEqual(output["undistorted_structure"], self.Int_Cd_1_struc)
+        self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_struc)
+        self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
         self.assertEqual(output["defect_site_index"], 65)
         self.assertEqual(output.get("defect_frac_coords"), None)
         self.assertCountEqual(output["distorted_atoms"], [(10, "Cd"), (22, "Cd")])
-        distortions.bdm(self.Int_Cd_1_struc, 2, 0.4, site_index=site_index, verbose=True)
-        mock_print.assert_called_with(f"""\tDefect Site Index / Frac Coords: {site_index}
+        distortions.bdm(
+            self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True
+        )
+        mock_print.assert_called_with(
+            f"""\tDefect Site Index / Frac Coords: {site_index}
         Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]
-        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]""")
+        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"""
+        )
+
+    def test_bdm_warnings(self):
+        """Test warning messages for bond distortion function"""
+        site_index = 65  # Cd interstitial site index (VASP indexing)
+        for missing_element in ["C", "O", "H", "N", "S", "P", "X"]:
+            for num_neighbours in range(8):
+                for distortion_factor in np.arange(-0.6, 0.61, 0.1):
+                    with warnings.catch_warnings(record=True) as w:
+                        distortions.bdm(
+                            self.Int_Cd_2_struc,  # cause warning for no `missing_element`
+                            # neighbours
+                            num_nearest_neighbours=num_neighbours,
+                            distortion_factor=distortion_factor,
+                            site_index=site_index,
+                            distorted_element=missing_element,
+                        )
+                        warning_message = (
+                            f"{missing_element} was specified as the nearest neighbour element to "
+                            f"distort, with `distortion_factor` {distortion_factor} but did not "
+                            f"find `num_nearest_neighbours` ({num_neighbours}) of these elements "
+                            f"within 4.5 Å of the defect site. For the remaining neighbours to "
+                            f"distort, we ignore the elemental identity. The final distortion "
+                            f"information is:"
+                        )
+                        if num_neighbours > 0:
+                            self.assertEqual(len(w), 1)
+                            self.assertEqual(w[0].category, UserWarning)
+                            self.assertIn(warning_message, str(w[0].message))
+                        else:
+                            self.assertEqual(len(w), 0) # No warning if we distort none
+
+        # test the case where we do have some of the `distorted_element` neighbours, but less than
+        # `num_nearest_neighbours` of them with 4.5 Å of the defect site
+        for num_neighbours in range(8):
+            for distortion_factor in np.arange(-0.6, 0.61, 0.1):
+                with warnings.catch_warnings(record=True) as w:
+                    distortions.bdm(
+                        self.Int_Cd_2_struc,  # we have 3 Cd at 2.71 Å, 4 Cd at 4.25 Å from the
+                        # defect site
+                        num_nearest_neighbours=num_neighbours,
+                        distortion_factor=distortion_factor,
+                        site_index=site_index,
+                        distorted_element="Cd",
+                    )
+                    warning_message = (
+                        f"Cd was specified as the nearest neighbour element to "
+                        f"distort, with `distortion_factor` {distortion_factor} but did not "
+                        f"find `num_nearest_neighbours` ({num_neighbours}) of these elements "
+                        f"within 4.5 Å of the defect site. For the remaining neighbours to "
+                        f"distort, we ignore the elemental identity. The final distortion "
+                        f"information is:"
+                    )
+                    if num_neighbours > 7:  # should only give warning when more than 7 distorted
+                        # neighbours requested
+                        self.assertEqual(len(w), 1)
+                        self.assertEqual(w[0].category, UserWarning)
+                        self.assertIn(warning_message, str(w[0].message))
+                    else:
+                        self.assertEqual(len(w), 0)  # No warning if we distort none
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""
@@ -115,8 +181,8 @@ class DistortionTestCase(unittest.TestCase):
 
     def test_rattle_Int_Cd_1(self):
         """Test structure rattle function for Int_Cd_1"""
-        sorted_distances = np.sort(self.Int_Cd_1_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.Int_Cd_1_struc) + 20]
+        sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
+        d_min = 0.85 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
 
         rattling_atom_indices = np.arange(
             0, 64
@@ -128,11 +194,11 @@ class DistortionTestCase(unittest.TestCase):
 
         self.assertEqual(
             distortions.rattle(
-                self.Int_Cd_1_minus0pt6_struc,
+                self.Int_Cd_2_minus0pt6_struc,
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
             ),
-            self.Int_Cd_1_minus0pt6_struc_rattled,
+            self.Int_Cd_2_minus0pt6_struc_rattled,
         )
 
 

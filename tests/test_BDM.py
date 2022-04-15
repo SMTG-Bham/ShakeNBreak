@@ -28,12 +28,16 @@ class BDMTestCase(unittest.TestCase):
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
         )
-        self.Int_Cd_1_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_1_POSCAR")
+        self.Int_Cd_2_struc = Structure.from_file(
+            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
-        self.Int_Cd_1_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_1_-60%_Distortion_Rattled_POSCAR")
+        self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
+            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
         )
+        # Note that Int_Cd_2 has been chosen as a test case, because the first few nonzero bond
+        # distances are the interstitial bonds, rather than the bulk bond length, so here we are
+        # also testing that the package correctly ignores these and uses the bulk bond length of
+        # 2.8333... for d_min in the structure rattling functions.
 
     def test_update_struct_defect_dict(self):
         """Test update_struct_defect_dict function"""
@@ -44,7 +48,7 @@ class BDMTestCase(unittest.TestCase):
             ("vac_1_Cd_0", self.V_Cd_struc, "V_Cd Undistorted"),
             ("vac_1_Cd_0", self.V_Cd_minus0pt5_struc_rattled, "V_Cd Rattled"),
             ("vac_1_Cd_-2", self.V_Cd_struc, "V_Cd_-2 Undistorted"),
-            ("Int_Cd_1_1", self.Int_Cd_1_minus0pt6_struc_rattled, "Int_Cd_1 Rattled"),
+            ("Int_Cd_2_1", self.Int_Cd_2_minus0pt6_struc_rattled, "Int_Cd_2 Rattled"),
         ]:
             charged_defect_dict = vasp_defect_inputs[key]
             output = BDM.update_struct_defect_dict(charged_defect_dict, struc, comment)
@@ -64,7 +68,7 @@ class BDMTestCase(unittest.TestCase):
             ("vac_2_Te", 2),
             ("as_1_Cd_on_Te", 4),
             ("as_1_Te_on_Cd", -4),
-            ("Int_Cd_1", 2),
+            ("Int_Cd_2", 2),
             ("Int_Cd_2", 2),
             ("Int_Cd_3", 2),
             ("Int_Te_1", -2),
@@ -138,29 +142,29 @@ class BDMTestCase(unittest.TestCase):
             self.V_Cd_minus0pt5_struc_rattled,
         )
 
-    def test_apply_rattle_bond_distortions_Int_Cd_1(self):
-        """Test apply_rattle_bond_distortions function for Int_Cd_1"""
-        Int_Cd_1_dict = self.cdte_defect_dict["interstitials"][1]
-        Int_Cd_1_distorted_dict = BDM.apply_rattle_bond_distortions(
-            Int_Cd_1_dict,
+    def test_apply_rattle_bond_distortions_Int_Cd_2(self):
+        """Test apply_rattle_bond_distortions function for Int_Cd_2"""
+        Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+        Int_Cd_2_distorted_dict = BDM.apply_rattle_bond_distortions(
+            Int_Cd_2_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
         )
         output = distortions.bdm(
-            self.Int_Cd_1_struc, 2, 0.4, site_index=65
+            self.Int_Cd_2_struc, 2, 0.4, site_index=65
         )
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
-            Int_Cd_1_distorted_dict,
+            Int_Cd_2_distorted_dict,
             output,
         )  # Shouldn't match because
         # rattling not done yet
-        sorted_distances = np.sort(self.Int_Cd_1_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.Int_Cd_1_struc) + 20]
+        sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
+        d_min = 0.85 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
         rattling_atom_indices = np.arange(
             0, 64
-        )  # not including index 64 which is Int_Cd_1
+        )  # not including index 64 which is Int_Cd_2
         idx = np.in1d(rattling_atom_indices, [i - 1 for i in [10, 22]])
         rattling_atom_indices = rattling_atom_indices[
             ~idx
@@ -172,12 +176,12 @@ class BDMTestCase(unittest.TestCase):
             d_min=d_min,
             active_atoms=rattling_atom_indices,
         )
-        np.testing.assert_equal(Int_Cd_1_distorted_dict, output)
+        np.testing.assert_equal(Int_Cd_2_distorted_dict, output)
         self.assertEqual(
-            Int_Cd_1_distorted_dict["distorted_structure"],
-            self.Int_Cd_1_minus0pt6_struc_rattled,
+            Int_Cd_2_distorted_dict["distorted_structure"],
+            self.Int_Cd_2_minus0pt6_struc_rattled,
         )
-        self.assertDictEqual(output, Int_Cd_1_distorted_dict)
+        self.assertDictEqual(output, Int_Cd_2_distorted_dict)
 
     def test_apply_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""
