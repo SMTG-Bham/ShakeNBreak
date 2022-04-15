@@ -1,10 +1,11 @@
-ADDGRID: False, 
-ALGO: Normal, 
-EDIFFG: -0.01,
-IBRION: 2, 
-ISPIN: 2, 
-POTIM: 0.2,
-LVHAR: False, 
-LSUBROT: False, 
-LREAL: Auto, 
+ADDGRID: False
+ALGO: Normal
+EDIFFG: -0.01
+IBRION: 2
+ISPIN: 2
+POTIM: 0.2
+LVHAR: False
+LSUBROT: False
+LREAL: Auto
 LWAVE : False
+NELM: 40
