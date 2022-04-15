@@ -44,6 +44,7 @@ def bdm(
 
     Returns:
         Dictionary with distorted defect structure and the distortion parameters.
+        :rtype: object
     """
     aaa = AseAtomsAdaptor()
     input_structure_ase = aaa.get_atoms(structure)
@@ -85,19 +86,18 @@ def bdm(
     ):  # filter the neighbours that match the element criteria and are
         # closer than 4.5 Angstroms
         nearest = []
-        for i in distances[1:]:
+        for dist, index, element in distances[1:]:
             if (
-                len(nearest) < (neighbours - 1)
-                and i[2] == distorted_element
-                and i[0] < 4.5
+                element == distorted_element
+                and dist < 4.5
+                and len(nearest) < num_nearest_neighbours
             ):
-                nearest.append(i)
-            elif len(nearest) == (neighbours - 1):
-                break
+                nearest.append((dist, index, element))
+
         # if the number of nearest neighbours not reached, add other neighbouring elements
-        if len(nearest) < (neighbours - 1):
+        if len(nearest) < num_nearest_neighbours:
             for i in distances[1:]:
-                if i not in nearest and i[0] < 4.5:
+                if len(nearest) < num_nearest_neighbours and i not in nearest and i[0] < 4.5:
                     nearest.append(i)
             warnings.warn(
                 f"{distorted_element} was specified as the nearest neighbour element to distort, "
