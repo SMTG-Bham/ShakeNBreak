@@ -363,6 +363,8 @@ def apply_defect_finder(
                 except KeyError:
                     print(f"Problem reading the keys in distorted_elements. Are they the correct defect names (without charge states)?")
                     distorted_element = None
+            else:
+                distorted_element = None
             
             # If the user does not specify the number of missing/extra electrons in your defect, we calculate it
             if dict_number_electrons_user :
