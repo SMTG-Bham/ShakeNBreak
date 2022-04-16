@@ -502,7 +502,8 @@ def apply_shakenbreak(
 
     print(
         "Applying ShakeNBreak...",
-        f"Will apply the following bond distortions: {bond_distortions}.",
+        f"Will apply the following bond distortions: "
+        f"{[f'{round(i,3)+0}' for i in bond_distortions]}.",
         f"Then, will rattle with a std dev of {stdev} \u212B \n",
     )
 
@@ -520,8 +521,11 @@ def apply_shakenbreak(
                     print(
                         "Problem reading the keys in distorted_elements.",
                         "Are they the correct defect names (without charge states)?",
+                        "Proceeding without discriminating which neighbour elements to distort."
                     )
                     distorted_element = None
+            else:
+                distorted_element = None
 
             # If the user does not specify the electron count change, we calculate it:
             if dict_number_electrons_user:
