@@ -421,6 +421,7 @@ def apply_shakenbreak(
     potcar_settings: Optional[dict] = None,
     write_files: bool = True,
     verbose: bool = False,
+    **kwargs,
 ):
     """
     Applies rattle and bond distortion to all defects in `defect_dict` (in `doped`
@@ -474,6 +475,8 @@ def apply_shakenbreak(
             Whether to write output files (Default: True)
         verbose (:obj:`bool`):
             Whether to print distortion information (bond atoms and distances). (Default: False)
+        **kwargs:
+            Additional keyword arguments to pass to `hiphive`'s `mc_rattle` function.
 
     Returns:
         Dictionary with defect distortion parameters.
@@ -573,6 +576,7 @@ def apply_shakenbreak(
                     stdev=stdev,
                     distorted_element=distorted_element,
                     verbose=verbose,
+                    **kwargs,
                 )
                 defect_site_index = distorted_structures["distortion_parameters"].get(
                     "defect_site_index"
