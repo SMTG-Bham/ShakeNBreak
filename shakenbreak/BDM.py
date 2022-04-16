@@ -138,7 +138,7 @@ def apply_rattle_bond_distortions(
 
         Args:
             defect_dict (:obj:`dict`):
-                Defect dictionary in the format of `doped.vasp_input.preprare_vasp_defect_dict`
+                Defect dictionary in the format of `doped.vasp_input.prepare_vasp_defect_dict`
             num_nearest_neighbours (:obj:`int`):
                 Number of defect nearest neighbours to apply bond distortions to
             distortion_factor (:obj:`float`):
@@ -247,7 +247,7 @@ def apply_distortions(
 
     Args:
         defect_dict (:obj:`dict`):
-            Defect dictionary in the format of `doped.vasp_input.preprare_vasp_defect_dict`
+            Defect dictionary in the format of `doped.vasp_input.prepare_vasp_defect_dict`
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -543,15 +543,11 @@ def apply_shakenbreak(
                 )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
-                poscar_comment = vasp_defect_inputs[f"{defect_name}_{charge}"][
-                    "POSCAR Comment"
-                ]
-                charged_defect = {}
+                charged_defect = {"Unperturbed_Defect": copy.deepcopy(
+                    vasp_defect_inputs[f"{defect_name}_{charge}"]
+                )}
 
                 # Entry for the unperturbed defect to compare
-                charged_defect["Unperturbed_Defect"] = copy.deepcopy(
-                    vasp_defect_inputs[f"{defect_name}_{charge}"]
-                )
 
                 # Generate perturbed structures
                 # Calculate extra/missing electrons accounting for the charge state of the defect
