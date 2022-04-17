@@ -126,6 +126,7 @@ def apply_rattle_bond_distortions(
     distortion_factor: float,
     stdev: float = 0.25,
     d_min: Optional[float] = None,
+    active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
     **kwargs,
@@ -153,6 +154,10 @@ def apply_rattle_bond_distortions(
                 rattle moves that put atoms at distances less than this will be heavily
                 penalised. Default is to set this to 85% of the nearest neighbour distance
                 in the defect supercell (ignoring interstitials).
+            active_atoms (:obj:`list`, optional):
+                List (or array) of which atomic indices should undergo Monte Carlo rattling.
+                Default is to apply rattle to all atoms except the defect and the bond-distorted
+                neighbours.
             distorted_element (:obj:`str`, optional):
                 Neighbouring element to distort. If None, the closest neighbours to the defect will
                 be chosen. (Default: None)
@@ -204,28 +209,30 @@ def apply_rattle_bond_distortions(
                 f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
             )
             d_min = 2.25
-    distorted_atom_indices = [
-        i[0] for i in bond_distorted_defect["distorted_atoms"]
-    ] + [
-        bond_distorted_defect.get(
-            "defect_site_index"
-        )  # only adds defect site if not vacancy
-    ]  # Note this is VASP indexing here
-    distorted_atom_indices = [
-        i - 1 for i in distorted_atom_indices if i is not None
-    ]  # remove
-    # 'None' if defect is vacancy, and convert to python indexing
-    rattling_atom_indices = np.arange(0, len(defect_dict["supercell"]["structure"]))
-    idx = np.in1d(
-        rattling_atom_indices, distorted_atom_indices
-    )  # returns True for matching indices
-    rattling_atom_indices = rattling_atom_indices[~idx]  # remove matching indices
+
+    if active_atoms is None:
+        distorted_atom_indices = [
+            i[0] for i in bond_distorted_defect["distorted_atoms"]
+        ] + [
+            bond_distorted_defect.get(
+                "defect_site_index"
+            )  # only adds defect site if not vacancy
+        ]  # Note this is VASP indexing here
+        distorted_atom_indices = [
+            i - 1 for i in distorted_atom_indices if i is not None
+        ]  # remove
+        # 'None' if defect is vacancy, and convert to python indexing
+        rattling_atom_indices = np.arange(0, len(defect_dict["supercell"]["structure"]))
+        idx = np.in1d(
+            rattling_atom_indices, distorted_atom_indices
+        )  # returns True for matching indices
+        active_atoms = rattling_atom_indices[~idx]  # remove matching indices
 
     bond_distorted_defect["distorted_structure"] = rattle(
         structure=bond_distorted_defect["distorted_structure"],
         stdev=stdev,
         d_min=d_min,
-        active_atoms=rattling_atom_indices,
+        active_atoms=active_atoms,
         **kwargs,
     )
     return bond_distorted_defect
