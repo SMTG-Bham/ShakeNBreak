@@ -3,10 +3,12 @@ import os
 import pickle
 import copy
 from unittest.mock import patch
+import shutil
 
 import numpy as np
 
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
 from doped import vasp_input
 from shakenbreak import BDM, distortions
 
@@ -56,7 +58,7 @@ class BDMTestCase(unittest.TestCase):
         self.Int_Cd_2_NN_10_distortion_parameters = {
             "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 10,
-            "distorted_atoms":   [
+            "distorted_atoms": [
                 (10, "Cd"),
                 (22, "Cd"),
                 (29, "Cd"),
@@ -75,6 +77,12 @@ class BDMTestCase(unittest.TestCase):
         # distances are the interstitial bonds, rather than the bulk bond length, so here we are
         # also testing that the package correctly ignores these and uses the bulk bond length of
         # 2.8333... for d_min in the structure rattling functions.
+
+    def tearDown(self) -> None:
+        if os.path.exists(
+            "./vac_1_Cd_0"
+        ):  # remove test-generated vac_1_Cd_0 folder if present
+            shutil.rmtree("./vac_1_Cd_0")
 
     def test_update_struct_defect_dict(self):
         """Test update_struct_defect_dict function"""
@@ -324,7 +332,8 @@ class BDMTestCase(unittest.TestCase):
         self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
 
         np.testing.assert_equal(
-            V_Cd_distorted_dict["distortion_parameters"], self.V_Cd_distortion_parameters
+            V_Cd_distorted_dict["distortion_parameters"],
+            self.V_Cd_distortion_parameters,
         )
 
         V_Cd_3_neighbours_distorted_dict = BDM.apply_distortions(
@@ -449,15 +458,88 @@ class BDMTestCase(unittest.TestCase):
             seed=20,
             verbose=True,
         )
-        self.assertDictEqual(self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed_Defect"])
+        self.assertDictEqual(
+            self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed_Defect"]
+        )
         distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["Distortions"][
             "-50.0%_Bond_Distortion"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_kwarged, distorted_V_Cd_struc)
         np.testing.assert_equal(
-            V_Cd_kwarg_distorted_dict["distortion_parameters"], self.V_Cd_distortion_parameters
+            V_Cd_kwarg_distorted_dict["distortion_parameters"],
+            self.V_Cd_distortion_parameters,
         )
+
+    # test create_folder and create_vasp_input simultaneously:
+    def test_create_vasp_input(self):
+        """Test create_vasp_input function"""
+        vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
+            copy.deepcopy(self.cdte_defect_dict)
+        )
+        V_Cd_updated_charged_defect_dict = BDM.update_struct_defect_dict(
+            vasp_defect_inputs["vac_1_Cd_0"],
+            self.V_Cd_minus0pt5_struc_rattled,
+            "V_Cd Rattled",
+        )
+        V_Cd_charged_defect_dict = {
+            "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
+        }
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        BDM.create_vasp_input(
+            "vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            incar_settings=BDM.default_incar_settings,
+        )
+        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        self.assertTrue(os.path.exists(V_Cd_gam_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
+        # check if default INCAR is subset of INCAR:
+        self.assertTrue(
+            BDM.default_incar_settings.items() <= V_Cd_INCAR.as_dict().items()
+        )
+
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
+        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
+
+        # test with kwargs: (except POTCAR settings because we can't have this on the GitHub test
+        # server)
+        kwarg_incar_settings = {
+            "NELECT": 3,
+            "IBRION": 42,
+            "LVHAR": True,
+            "LWAVE": True,
+            "LCHARG": True,
+        }
+        kwarged_incar_settings = BDM.default_incar_settings.copy()
+        kwarged_incar_settings.update(kwarg_incar_settings)
+        BDM.create_vasp_input(
+            "vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            incar_settings=kwarged_incar_settings,
+            distortion_type="kwarged",
+        )
+        V_Cd_kwarg_gam_folder = (
+            "vac_1_Cd_0/kwarged/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        )
+        self.assertTrue(os.path.exists(V_Cd_kwarg_gam_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_gam_folder + "/POSCAR")
+        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+        V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_gam_folder + "/INCAR")
+        # check if default INCAR is subset of INCAR:
+        self.assertFalse(
+            BDM.default_incar_settings.items() <= V_Cd_INCAR.as_dict().items()
+        )
+        self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.as_dict().items())
+
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_gam_folder + "/KPOINTS")
+        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
 
 
 if __name__ == "__main__":
