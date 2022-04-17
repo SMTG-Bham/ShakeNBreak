@@ -115,9 +115,7 @@ class BDMTestCase(unittest.TestCase):
             distortion_factor=0.5,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.bdm(
-            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords
-        )
+        output = distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
@@ -150,9 +148,7 @@ class BDMTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             distortion_factor=0.4,
         )
-        output = distortions.bdm(
-            self.Int_Cd_2_struc, 2, 0.4, site_index=65
-        )
+        output = distortions.bdm(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -232,10 +228,10 @@ class BDMTestCase(unittest.TestCase):
         )
         V_Cd_3_neighbours_distortion_parameters = V_Cd_distortion_parameters.copy()
         V_Cd_3_neighbours_distortion_parameters["num_distorted_neighbours"] = 3
-        V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(52, 'Te')]
+        V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(52, "Te")]
         np.testing.assert_equal(
             V_Cd_3_neighbours_distorted_dict["distortion_parameters"],
-            V_Cd_3_neighbours_distortion_parameters
+            V_Cd_3_neighbours_distortion_parameters,
         )
 
         with patch("builtins.print") as mock_print:
@@ -246,12 +242,16 @@ class BDMTestCase(unittest.TestCase):
                 bond_distortions=distortion_range,
                 verbose=True,
             )
-            prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"]["structure"]
+            prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"][
+                "structure"
+            ]
             for distortion in distortion_range:
                 key = f"{round(distortion,3)+0:.1%}_Bond_Distortion"
                 self.assertIn(key, V_Cd_distorted_dict["Distortions"])
                 self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
-                prev_struc = V_Cd_distorted_dict["Distortions"][key]  # different structure for each
+                prev_struc = V_Cd_distorted_dict["Distortions"][
+                    key
+                ]  # different structure for each
                 # distortion
                 mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
 
@@ -261,8 +261,39 @@ class BDMTestCase(unittest.TestCase):
         # test zero distortion is written as positive zero (not "-0.0%")
         self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
 
-        # test that correct kwargs are passed to distortions.bdm()
+    def test_apply_distortions_Int_Cd_2(self):
+        """Test apply_distortions function for Int_Cd_2"""
+        Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+        Int_Cd_2_distorted_dict = BDM.apply_distortions(
+            Int_Cd_2_dict,
+            num_nearest_neighbours=2,
+            bond_distortions=[-0.6],
+            stdev=0.25,
+            verbose=True,
+        )
+        self.assertDictEqual(
+            Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed_Defect"]
+        )
 
+        distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
+            "-60.0%_Bond_Distortion"
+        ]
+        self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
+        self.assertEqual(
+            self.Int_Cd_2_minus0pt6_struc_rattled, distorted_Int_Cd_2_struc
+        )
+
+        Int_Cd_2_distortion_parameters = {
+            "unique_site": Int_Cd_2_dict["unique_site"].frac_coords,
+            "num_distorted_neighbours": 2,
+            "distorted_atoms": [(10, "Cd"), (22, "Cd")],
+            "defect_site_index": 65,
+        }
+
+        np.testing.assert_equal(
+            Int_Cd_2_distorted_dict["distortion_parameters"],
+            Int_Cd_2_distortion_parameters,
+        )
 
 
 if __name__ == "__main__":
