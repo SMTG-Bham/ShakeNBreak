@@ -287,7 +287,9 @@ def apply_distortions(
 
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
-            distortion = round(distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
+            distortion = (
+                round(distortion, ndigits=3) + 0
+            )  # ensure positive zero (not "-0.0%")
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
@@ -531,7 +533,7 @@ def apply_shakenbreak(
                     print(
                         "Problem reading the keys in distorted_elements.",
                         "Are they the correct defect names (without charge states)?",
-                        "Proceeding without discriminating which neighbour elements to distort."
+                        "Proceeding without discriminating which neighbour elements to distort.",
                     )
                     distorted_element = None
             else:
@@ -557,9 +559,11 @@ def apply_shakenbreak(
                 )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
-                charged_defect = {"Unperturbed_Defect": copy.deepcopy(
-                    vasp_defect_inputs[f"{defect_name}_{charge}"]
-                )}
+                charged_defect = {
+                    "Unperturbed_Defect": copy.deepcopy(
+                        vasp_defect_inputs[f"{defect_name}_{charge}"]
+                    )
+                }
 
                 # Entry for the unperturbed defect to compare
 

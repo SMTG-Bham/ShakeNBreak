@@ -97,7 +97,11 @@ def bdm(
         # if the number of nearest neighbours not reached, add other neighbouring elements
         if len(nearest) < num_nearest_neighbours:
             for i in distances[1:]:
-                if len(nearest) < num_nearest_neighbours and i not in nearest and i[0] < 4.5:
+                if (
+                    len(nearest) < num_nearest_neighbours
+                    and i not in nearest
+                    and i[0] < 4.5
+                ):
                     nearest.append(i)
             warnings.warn(
                 f"{distorted_element} was specified as the nearest neighbour element to distort, "
@@ -141,9 +145,11 @@ def bdm(
     if verbose:
         distorted = [(round(i[0], 2), i[1], i[2]) for i in distorted]
         nearest = [(round(i[0], 2), i[1], i[2]) for i in nearest]  # round numbers
-        print(f"""\tDefect Site Index / Frac Coords: {site_index or frac_coords}
+        print(
+            f"""\tDefect Site Index / Frac Coords: {site_index or frac_coords}
         Original Neighbour Distances: {nearest}
-        Distorted Neighbour Distances:\n\t{distorted}""")
+        Distorted Neighbour Distances:\n\t{distorted}"""
+        )
 
     return bond_distorted_defect
 
@@ -223,6 +229,7 @@ def rattle(
     rattled_structure = aaa.get_structure(rattled_ase_struct)
 
     return rattled_structure
+
 
 # TODO: Implement rattle function where the rattle amplitude tails off as a function of distance
 #  from the defect site, as an improved version of the localised rattle

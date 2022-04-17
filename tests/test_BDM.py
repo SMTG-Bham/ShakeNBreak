@@ -200,9 +200,11 @@ class BDMTestCase(unittest.TestCase):
         )
         self.assertEqual(
             Int_Cd_2_distorted_dict["distorted_structure"],
-            self.Int_Cd_2_minus0pt6_NN_10_struc_rattled
+            self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
         )
-        self.assertEqual(Int_Cd_2_distorted_dict["undistorted_structure"], self.Int_Cd_2_struc)
+        self.assertEqual(
+            Int_Cd_2_distorted_dict["undistorted_structure"], self.Int_Cd_2_struc
+        )
         self.assertEqual(Int_Cd_2_distorted_dict["num_distorted_neighbours"], 10)
         self.assertEqual(Int_Cd_2_distorted_dict["defect_site_index"], 65)
         self.assertEqual(Int_Cd_2_distorted_dict.get("defect_frac_coords"), None)
@@ -222,13 +224,13 @@ class BDMTestCase(unittest.TestCase):
             ],
         )
         mock_print.assert_called_with(
-            f"\tDefect Site Index / Frac Coords: 65\n" +
-            "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), " +
-            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, " +
-            "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n" +
-            "        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), " +
-            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), " +
-            "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
+            f"\tDefect Site Index / Frac Coords: 65\n"
+            + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            + "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
+            + "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n"
+            + "        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            + "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
+            + "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
         )
 
         # test all possible rattling kwargs with V_Cd
@@ -247,17 +249,21 @@ class BDMTestCase(unittest.TestCase):
             width=0.3,
             max_attempts=10000,
             max_disp=1.0,
-            seed=20)
+            seed=20,
+        )
 
         self.assertEqual(
             V_Cd_kwarg_distorted_dict["distorted_structure"],
-            self.V_Cd_minus0pt5_struc_kwarged
+            self.V_Cd_minus0pt5_struc_kwarged,
         )
-        self.assertEqual(V_Cd_kwarg_distorted_dict["undistorted_structure"], self.V_Cd_struc)
+        self.assertEqual(
+            V_Cd_kwarg_distorted_dict["undistorted_structure"], self.V_Cd_struc
+        )
         self.assertEqual(V_Cd_kwarg_distorted_dict["num_distorted_neighbours"], 2)
         self.assertEqual(V_Cd_kwarg_distorted_dict.get("defect_site_index"), None)
-        np.testing.assert_array_equal(V_Cd_kwarg_distorted_dict.get("defect_frac_coords"),
-                                      vac_coords)
+        np.testing.assert_array_equal(
+            V_Cd_kwarg_distorted_dict.get("defect_frac_coords"), vac_coords
+        )
 
     def test_apply_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""

@@ -152,13 +152,13 @@ class DistortionTestCase(unittest.TestCase):
             verbose=True,
         )
         mock_print.assert_called_with(
-            f"\tDefect Site Index / Frac Coords: {site_index}\n" +
-            "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), " +
-            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, " +
-            "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n" +
-            "        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), " +
-            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), " +
-            "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
+            f"\tDefect Site Index / Frac Coords: {site_index}\n"
+            + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            + "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
+            + "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n"
+            + "        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            + "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
+            + "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
         )
 
     def test_bdm_warnings(self):
@@ -273,7 +273,9 @@ class DistortionTestCase(unittest.TestCase):
             self.Int_Cd_2_minus0pt6_struc_rattled,
         )
 
-    def test_rattle_kwargs(self): # test all possible kwargs and explicitly check output
+    def test_rattle_kwargs(
+        self,
+    ):  # test all possible kwargs and explicitly check output
         """Test structure rattle function with all possible kwargs"""
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
@@ -290,7 +292,8 @@ class DistortionTestCase(unittest.TestCase):
             width=0.3,
             max_attempts=10000,
             max_disp=1.0,
-            seed=20)
+            seed=20,
+        )
 
         self.assertEqual(V_Cd_kwarg_rattled, self.V_Cd_minus0pt5_struc_kwarged)
 
