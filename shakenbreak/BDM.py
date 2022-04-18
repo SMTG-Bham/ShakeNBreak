@@ -11,6 +11,7 @@ from typing import Optional
 import numpy as np
 from doped import vasp_input
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from monty.serialization import loadfn
 
 from shakenbreak.distortions import bdm, rattle
@@ -18,6 +19,8 @@ from shakenbreak.distortions import bdm, rattle
 # Load default INCAR settings for the shakenbreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_incar_settings = loadfn(os.path.join(MODULE_DIR, "incar.yml"))
+
+warnings.filterwarnings("ignore", category=UnknownPotcarWarning)  # Ignore pymatgen POTCAR warnings
 
 
 def update_struct_defect_dict(

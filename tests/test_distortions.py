@@ -57,6 +57,9 @@ class DistortionTestCase(unittest.TestCase):
 
         warnings.simplefilter("always")  # Cause all warnings to always be triggered.
 
+    def tearDown(self):
+        warnings.resetwarnings()  # Reset warnings to default state.
+
     @patch("builtins.print")
     def test_bdm_V_Cd(self, mock_print):
         """Test bond distortion function for V_Cd"""
