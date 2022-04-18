@@ -20,7 +20,9 @@ from shakenbreak.distortions import bdm, rattle
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_incar_settings = loadfn(os.path.join(MODULE_DIR, "incar.yml"))
 
-warnings.filterwarnings("ignore", category=UnknownPotcarWarning)  # Ignore pymatgen POTCAR warnings
+warnings.filterwarnings(
+    "ignore", category=UnknownPotcarWarning
+)  # Ignore pymatgen POTCAR warnings
 
 
 def update_struct_defect_dict(
@@ -243,7 +245,7 @@ def apply_rattle_bond_distortions(
         if "attempts" in str(e):
             distorted_defect_struc = bond_distorted_defect["distorted_structure"]
             sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
-            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (2*stdev)
+            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (2 * stdev)
             bond_distorted_defect["distorted_structure"] = rattle(
                 structure=bond_distorted_defect["distorted_structure"],
                 stdev=stdev,
@@ -251,9 +253,11 @@ def apply_rattle_bond_distortions(
                 active_atoms=active_atoms,
                 **kwargs,
             )
-            warnings.warn(f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                          f"significantly smaller than this present), setting d_min to "
-                          f"{reduced_d_min:.2f} \u212B for this defect.")
+            warnings.warn(
+                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                f"significantly smaller than this present), setting d_min to "
+                f"{reduced_d_min:.2f} \u212B for this defect."
+            )
         else:
             raise e
 
