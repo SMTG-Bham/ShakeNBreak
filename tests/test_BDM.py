@@ -13,6 +13,11 @@ from doped import vasp_input
 from shakenbreak import BDM, distortions
 
 
+def if_present_rm(path):
+    if os.path.exists(path):
+        shutil.rmtree(path)
+
+
 class BDMTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
@@ -78,11 +83,74 @@ class BDMTestCase(unittest.TestCase):
         # also testing that the package correctly ignores these and uses the bulk bond length of
         # 2.8333... for d_min in the structure rattling functions.
 
+        self.cdte_defect_folders = [
+            "as_1_Cd_on_Te_-1",
+            "as_1_Cd_on_Te_-2",
+            "as_1_Cd_on_Te_0",
+            "as_1_Cd_on_Te_1",
+            "as_1_Cd_on_Te_2",
+            "as_1_Cd_on_Te_3",
+            "as_1_Cd_on_Te_4",
+            "as_1_Te_on_Cd_-1",
+            "as_1_Te_on_Cd_-2",
+            "as_1_Te_on_Cd_0",
+            "as_1_Te_on_Cd_1",
+            "as_1_Te_on_Cd_2",
+            "as_1_Te_on_Cd_3",
+            "as_1_Te_on_Cd_4",
+            "Int_Cd_1_0",
+            "Int_Cd_1_1",
+            "Int_Cd_1_2",
+            "Int_Cd_2_0",
+            "Int_Cd_2_1",
+            "Int_Cd_2_2",
+            "Int_Cd_3_0",
+            "Int_Cd_3_1",
+            "Int_Cd_3_2",
+            "Int_Te_1_-1",
+            "Int_Te_1_-2",
+            "Int_Te_1_0",
+            "Int_Te_1_1",
+            "Int_Te_1_2",
+            "Int_Te_1_3",
+            "Int_Te_1_4",
+            "Int_Te_1_5",
+            "Int_Te_1_6",
+            "Int_Te_2_-1",
+            "Int_Te_2_-2",
+            "Int_Te_2_0",
+            "Int_Te_2_1",
+            "Int_Te_2_2",
+            "Int_Te_2_3",
+            "Int_Te_2_4",
+            "Int_Te_2_5",
+            "Int_Te_2_6",
+            "Int_Te_3_-1",
+            "Int_Te_3_-2",
+            "Int_Te_3_0",
+            "Int_Te_3_1",
+            "Int_Te_3_2",
+            "Int_Te_3_3",
+            "Int_Te_3_4",
+            "Int_Te_3_5",
+            "Int_Te_3_6",
+            "vac_1_Cd_-1",
+            "vac_1_Cd_-2",
+            "vac_1_Cd_0",
+            "vac_1_Cd_1",
+            "vac_1_Cd_2",
+            "vac_2_Te_-1",
+            "vac_2_Te_-2",
+            "vac_2_Te_0",
+            "vac_2_Te_1",
+            "vac_2_Te_2",
+        ]
+
     def tearDown(self) -> None:
-        if os.path.exists(
-            "./vac_1_Cd_0"
-        ):  # remove test-generated vac_1_Cd_0 folder if present
-            shutil.rmtree("./vac_1_Cd_0")
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
+        if os.path.exists("distortion_metadata.json"):
+            os.remove("distortion_metadata.json")
 
     def test_update_struct_defect_dict(self):
         """Test update_struct_defect_dict function"""
@@ -500,7 +568,7 @@ class BDMTestCase(unittest.TestCase):
         V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
         self.assertTrue(
-            BDM.default_incar_settings.items() <= V_Cd_INCAR.as_dict().items()
+            BDM.default_incar_settings.items() <= V_Cd_INCAR.items()
         )
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
@@ -534,12 +602,98 @@ class BDMTestCase(unittest.TestCase):
         V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_gam_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
         self.assertFalse(
-            BDM.default_incar_settings.items() <= V_Cd_INCAR.as_dict().items()
+            BDM.default_incar_settings.items() <= V_Cd_INCAR.items()
         )
-        self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.as_dict().items())
+        self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_gam_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
+
+    @patch("builtins.print")
+    def test_apply_shakenbreak(self, mock_print):
+        """Test apply_shakenbreak function"""
+        oxidation_states = {"Cd": +2, "Te": -2}
+        bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
+
+        bdm_defect_dict = BDM.apply_shakenbreak(
+            self.cdte_defect_dict,
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+            verbose=False,
+        )
+
+        # check if expected folders were created:
+        self.assertTrue(set(self.cdte_defect_folders).issubset(set(os.listdir())))
+        # check expected info printing:
+        mock_print.assert_any_call("Applying ShakeNBreak...",
+                                   "Will apply the following bond distortions:",
+                                   "['-0.6', '-0.55', '-0.5', '-0.45', '-0.4', '-0.35', '-0.3', "
+                                   "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
+                                   "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
+                                   "'0.5', '0.55', '0.6'].",
+                                   "Then, will rattle with a std dev of 0.25 Å \n")
+        mock_print.assert_any_call("\nDefect:", "vac_1_Cd")
+        mock_print.assert_any_call("Number of missing electrons in neutral state: 2")
+        mock_print.assert_any_call("\nDefect vac_1_Cd in charge state: -2. Number of distorted "
+                                   "neighbours: 0")
+        mock_print.assert_any_call("\nDefect vac_1_Cd in charge state: -1. Number of distorted "
+                                   "neighbours: 1")
+        mock_print.assert_any_call("\nDefect vac_1_Cd in charge state: 0. Number of distorted "
+                                   "neighbours: 2")
+        # test correct distorted neighbours based on oxidation states:
+        mock_print.assert_any_call("\nDefect vac_2_Te in charge state: -2. Number of distorted "
+                                   "neighbours: 4")
+        mock_print.assert_any_call("\nDefect as_1_Cd_on_Te in charge state: -2. Number of "
+                                   "distorted neighbours: 2")
+        mock_print.assert_any_call("\nDefect as_1_Te_on_Cd in charge state: -2. Number of "
+                                   "distorted neighbours: 2")
+        mock_print.assert_any_call("\nDefect Int_Cd_1 in charge state: 0. Number of distorted "
+                                   "neighbours: 2")
+        mock_print.assert_any_call("\nDefect Int_Te_1 in charge state: -2. Number of distorted "
+                                   "neighbours: 0")
+
+        # check if correct files were created:
+        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        self.assertTrue(os.path.exists(V_Cd_gam_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        self.assertEqual(V_Cd_POSCAR.comment,
+                         "-50.0%_Bond__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2")  # default
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
+        # check if default INCAR is subset of INCAR: (not here because we set IBRION and EDIFF)
+        self.assertFalse(
+            BDM.default_incar_settings.items() <= V_Cd_INCAR.items()
+        )
+        self.assertEqual(V_Cd_INCAR.pop("ENCUT"), 212)
+        self.assertEqual(V_Cd_INCAR.pop("IBRION"), 0)
+        self.assertEqual(V_Cd_INCAR.pop("EDIFF"), 1e-4)
+        modified_default_incar_settings = BDM.default_incar_settings.copy()
+        modified_default_incar_settings.pop("IBRION")
+        modified_default_incar_settings.pop("EDIFF")
+        self.assertTrue(
+            modified_default_incar_settings.items() <= V_Cd_INCAR.items()  # matches after removing
+            # kwarg settings
+        )
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
+        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
+
+        Int_Cd_2_gam_folder = "Int_Cd_2_0/BDM/Int_Cd_2_0_-60.0%_Bond_Distortion/vasp_gam"
+        self.assertTrue(os.path.exists(Int_Cd_2_gam_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_gam_folder + "/POSCAR")
+        self.assertEqual(Int_Cd_2_POSCAR.comment,
+                         "-60.0%_Bond__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2")
+        self.assertEqual(Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled)
+
+        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
+        Int_Cd_2_INCAR = Incar.from_file(Int_Cd_2_gam_folder + "/INCAR")
+        # neutral even-electron INCARs the same except for NELECT:
+        for incar in [V_Cd_INCAR, Int_Cd_2_INCAR]:
+            incar.pop("NELECT")
+        self.assertEqual(V_Cd_INCAR, Int_Cd_2_INCAR)
+        Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_gam_folder + "/KPOINTS")
+        self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
 
 
 if __name__ == "__main__":

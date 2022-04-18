@@ -537,7 +537,7 @@ def apply_shakenbreak(
 
     print(
         "Applying ShakeNBreak...",
-        f"Will apply the following bond distortions: "
+        f"Will apply the following bond distortions:",
         f"{[f'{round(i,3)+0}' for i in bond_distortions]}.",
         f"Then, will rattle with a std dev of {stdev} \u212B \n",
     )
