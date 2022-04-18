@@ -420,7 +420,7 @@ def create_vasp_input(
 def apply_shakenbreak(
     defect_dict: dict,
     oxidation_states: dict,
-    incar_settings: dict = default_incar_settings,
+    incar_settings: dict = {},
     dict_number_electrons_user: Optional[dict] = None,
     distortion_increment: float = 0.1,
     bond_distortions: Optional[list] = None,
@@ -446,7 +446,8 @@ def apply_shakenbreak(
             Dictionary of oxidation states for species in your material, used to determine the
             number of defect neighbours to distort (e.g {"Cd": +2, "Te": -2}).
         incar_settings (:obj:`dict`):
-            Dictionary of user VASP INCAR settings, to overwrite/update the `doped` defaults.
+            Dictionary of user VASP INCAR settings (e.g. {"ENCUT": 300, ...}), to overwrite the
+            `shakenbreak` defaults for those tags.
             Highly recommended to look at output `INCAR`s, or `doped.vasp_input` source code and
             `incar.yml`, to see what the default `INCAR` settings are.
         dict_number_electrons_user (:obj:`dict`):
@@ -519,9 +520,8 @@ def apply_shakenbreak(
         f"Then, will rattle with a std dev of {stdev} \u212B \n",
     )
 
-    for defect_type in list(
-        defect_dict.keys()
-    ):  # loop for vacancies, antisites, interstitials, substitutions
+    for defect_type in [key for key in defect_dict.keys() if key != "bulk"]:
+        # loop for vacancies, antisites, interstitials, substitutions
         for defect in defect_dict[defect_type]:  # loop for each defect in dict
 
             defect_name = defect["name"]  # name without charge state
@@ -628,11 +628,13 @@ def apply_shakenbreak(
                 dict_defects[defect_name][
                     f"{defect_name}_{charge}"
                 ] = charged_defect  # add charged defect entry to dict
+                incar_dict = default_incar_settings.copy()
+                incar_dict.update(incar_settings)
                 if write_files:
                     create_vasp_input(
                         defect_name=f"{defect_name}_{charge}",
                         distorted_defect_dict=charged_defect,
-                        incar_settings=incar_settings,
+                        incar_settings=incar_dict,
                         potcar_settings=potcar_settings,
                         distortion_type=distortion_type,
                     )
