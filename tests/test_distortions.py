@@ -228,7 +228,7 @@ class DistortionTestCase(unittest.TestCase):
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.V_Cd_struc) + 20]
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
 
         rattling_atom_indices = np.arange(0, 63)
         idx = np.in1d(rattling_atom_indices, [i - 1 for i in [33, 42]])
@@ -257,7 +257,7 @@ class DistortionTestCase(unittest.TestCase):
     def test_rattle_Int_Cd_2(self):
         """Test structure rattle function for Int_Cd_2"""
         sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
+        d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
 
         rattling_atom_indices = np.arange(
             0, 64
