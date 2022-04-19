@@ -529,11 +529,13 @@ def apply_shakenbreak(
         bond_distortions = list(
             np.flip(np.around(np.arange(0, 0.601, distortion_increment), decimals=3)) * -1
         )[:-1] + list(np.around(np.arange(0, 0.601, distortion_increment), decimals=3))
+    else:
+        distortion_increment = None  # user specified bond_distortions, so no increment
 
     # Create dictionary to keep track of the bond distortions applied
     distortion_metadata = {
         "distortion_parameters": {
-            "distortion_increment": distortion_increment,
+            "distortion_increment": distortion_increment,  # None if user specified bond_distortions
             "bond_distortions": bond_distortions,
             "rattle_stdev": stdev,
         },
