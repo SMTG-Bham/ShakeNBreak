@@ -148,7 +148,7 @@ class BDMTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
-            if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
+            if_present_rm(i)  # remove test-generated defect folders if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
 
@@ -682,21 +682,107 @@ class BDMTestCase(unittest.TestCase):
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
-        # # test kwargs:
-        # reduced_defect_dict = {"vacancies": [self.V_Cd_dict], "interstitials": [self.Int_Cd_2_dict]}
-        # #  one with V_Cd, one with Int_Cd_2 NN 10, one with fcked dict_number_electrons_user
-        #
-        #
-        # dict_number_electrons_user: Optional[dict] = None,
-        # distortion_increment: float = 0.1,
-        # bond_distortions: Optional[list] = None,
-        # stdev: float = 0.25,
-        # distorted_elements: Optional[dict] = None,
-        # distortion_type: str = "BDM",
-        # potcar_settings: Optional[dict] = None,
-        # write_files: bool = True,
-        # verbose: bool = False,
-        # ** kwargs,
+        # test rattle kwargs:
+        reduced_V_Cd_dict = self.V_Cd_dict.copy()
+        reduced_V_Cd_dict["charges"] = [0]
+        rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
+        bdm_defect_dict = BDM.apply_shakenbreak(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            verbose=False,
+            stdev=0.15,
+            d_min=0.75 * 2.8333683853583165,
+            nbr_cutoff=3.4,
+            n_iter=3,
+            active_atoms=rattling_atom_indices,
+            width=0.3,
+            max_attempts=10000,
+            max_disp=1.0,
+            seed=20,
+        )
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
+
+        # test other kwargs:
+        reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
+        reduced_Int_Cd_2_dict["charges"] = [1]
+
+        with patch("builtins.print") as mock_Int_Cd_2_print:
+            bdm_defect_dict = BDM.apply_shakenbreak(
+                {"interstitials": [reduced_Int_Cd_2_dict]},
+                oxidation_states=oxidation_states,
+                distortion_increment=0.25,
+                verbose=True,
+                distortion_type="kwarged",
+                distorted_elements={"Int_Cd_2": ["Cd"]},
+                dict_number_electrons_user={"Int_Cd_2": 3},
+            )
+            kwarged_Int_Cd_2_dict = {
+                "distortion_parameters": {
+                    "distortion_increment": 0.25,
+                    "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                    "rattle_stdev": 0.25,
+                },
+                "defects": {
+                    "Int_Cd_2": {
+                        "unique_site": reduced_Int_Cd_2_dict[
+                            "bulk_supercell_site"
+                        ].frac_coords,
+                        "charges": {
+                            1: {
+                                "num_nearest_neighbours": 4,
+                                "distorted_atoms": [
+                                    (10, "Cd"),
+                                    (22, "Cd"),
+                                    (29, "Cd"),
+                                    (38, "Te"),
+                                ],
+                            }
+                        },
+                        "defect_site_index": 65,
+                    }
+                },
+            }
+            np.testing.assert_equal(bdm_defect_dict, kwarged_Int_Cd_2_dict)
+            # check expected info printing:
+            mock_Int_Cd_2_print.assert_any_call(
+                "Applying ShakeNBreak...",
+                "Will apply the following bond distortions:",
+                "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
+                "Then, will rattle with a std dev of 0.25 Å \n",
+            )
+            mock_Int_Cd_2_print.assert_any_call("\nDefect:", "Int_Cd_2")
+            mock_Int_Cd_2_print.assert_any_call("Number of missing electrons in neutral state: 3")
+            mock_Int_Cd_2_print.assert_any_call(
+                "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
+            )
+            mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
+            mock_Int_Cd_2_print.assert_any_call(
+                f"\tDefect Site Index / Frac Coords: 65\n"
+                + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+                + "(2.71, 29, 'Cd'), (2.71, 38, 'Te')]\n"
+                + "        Distorted Neighbour Distances:\n\t[(1.36, 10, 'Cd'), (1.36, 22, 'Cd'), "
+                + "(1.36, 29, 'Cd'), (1.36, 38, 'Te')]"
+            )
+            # check correct folder was created:
+            self.assertTrue(os.path.exists("Int_Cd_2_1/kwarged"))
+
+        # check files are not written if write_files=False:
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+        bdm_defect_dict = BDM.apply_shakenbreak(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            verbose=False,
+            write_files=False,
+        )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
 
 
 if __name__ == "__main__":
