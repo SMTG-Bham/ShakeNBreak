@@ -157,7 +157,7 @@ def apply_rattle_bond_distortions(
             d_min (:obj:`float`):
                 Minimum interatomic distance (in Angstroms) in the rattled structure. Monte Carlo
                 rattle moves that put atoms at distances less than this will be heavily
-                penalised. Default is to set this to 85% of the nearest neighbour distance
+                penalised. Default is to set this to 80% of the nearest neighbour distance
                 in the defect supercell (ignoring interstitials).
             active_atoms (:obj:`list`, optional):
                 List (or array) of which atomic indices should undergo Monte Carlo rattling.
@@ -204,13 +204,13 @@ def apply_rattle_bond_distortions(
         defect_supercell = defect_dict["supercell"]["structure"]
         sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
         d_min = (
-            0.85 * sorted_distances[len(defect_supercell) + 20]
+            0.8 * sorted_distances[len(defect_supercell) + 20]
         )  # ignoring interstitials by
         # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
         if d_min < 1:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.85)*d_min} \u212B, which is almost certainly too small. "
+                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
                 f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
             )
             d_min = 2.25
@@ -292,7 +292,7 @@ def apply_distortions(
         d_min (:obj:`float`, optional):
             Minimum interatomic distance (in Angstroms) in the rattled structure. Monte Carlo
             rattle moves that put atoms at distances less than this will be heavily
-            penalised. Default is to set this to 85% of the nearest neighbour distance
+            penalised. Default is to set this to 80% of the nearest neighbour distance
             in the bulk supercell.
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to the defect will
@@ -357,13 +357,13 @@ def apply_distortions(
             defect_supercell = defect_dict["supercell"]["structure"]
             sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
             d_min = (
-                0.85 * sorted_distances[len(defect_supercell) + 20]
+                0.8 * sorted_distances[len(defect_supercell) + 20]
             )  # ignoring interstitials by
             # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
             if d_min < 1:
                 warnings.warn(
                     f"Automatic bond-length detection gave a bulk bond length of "
-                    f"{(1 / 0.85) * d_min} \u212B, which is almost certainly too small. "
+                    f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
                     f"Reverting to 2.25 \u212B. If this is too large, set `d_min` "
                     f"manually"
                 )
