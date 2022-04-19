@@ -232,7 +232,7 @@ class BDMTestCase(unittest.TestCase):
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.V_Cd_struc) + 20]
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         rattling_atom_indices = np.arange(0, 63)
         idx = np.in1d(rattling_atom_indices, [i - 1 for i in [33, 42]])
         rattling_atom_indices = rattling_atom_indices[
@@ -268,7 +268,7 @@ class BDMTestCase(unittest.TestCase):
         )  # Shouldn't match because
         # rattling not done yet
         sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
-        d_min = 0.85 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
+        d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
         rattling_atom_indices = np.arange(
             0, 64
         )  # not including index 64 which is Int_Cd_2
@@ -447,6 +447,7 @@ class BDMTestCase(unittest.TestCase):
         self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
 
     def test_apply_distortions_Int_Cd_2(self):
+
         """Test apply_distortions function for Int_Cd_2"""
         Int_Cd_2_distorted_dict = BDM.apply_distortions(
             self.Int_Cd_2_dict,
@@ -713,6 +714,22 @@ class BDMTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_INCAR, Int_Cd_2_INCAR)
         Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_gam_folder + "/KPOINTS")
         self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
+
+        # # test kwargs:
+        # reduced_defect_dict = {"vacancies": [self.V_Cd_dict], "interstitials": [self.Int_Cd_2_dict]}
+        # #  one with V_Cd, one with Int_Cd_2 NN 10, one with fcked dict_number_electrons_user
+        #
+        #
+        # dict_number_electrons_user: Optional[dict] = None,
+        # distortion_increment: float = 0.1,
+        # bond_distortions: Optional[list] = None,
+        # stdev: float = 0.25,
+        # distorted_elements: Optional[dict] = None,
+        # distortion_type: str = "BDM",
+        # potcar_settings: Optional[dict] = None,
+        # write_files: bool = True,
+        # verbose: bool = False,
+        # ** kwargs,
 
 
 if __name__ == "__main__":
