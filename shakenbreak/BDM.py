@@ -478,11 +478,12 @@ def apply_shakenbreak(
             `incar.yml`, to see what the default `INCAR` settings are.
         dict_number_electrons_user (:obj:`dict`):
             Optional argument to set the number of extra/missing charge (negative of electron count
-            change) for the input defects, as a dictionary with format {'defect_species':
+            change) for the input defects, as a dictionary with format {'defect_name':
             charge_change} where charge_change is the negative of the number of extra/missing
             electrons. (Default: None)
         distortion_increment (:obj:`float`):
-            Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
+            Bond distortion increment. Distortion factors will range from 0 to +/-0.6,
+            in increments of `distortion_increment`. Recommended values: 0.1-0.3 (Default: 0.1)
         bond_distortions (:obj:`list`):
             List of bond distortions to apply to nearest neighbours, instead of the default set
             (e.g. [-0.5, 0.5]). (Default: None)
@@ -492,8 +493,8 @@ def apply_shakenbreak(
             for strongly-bound/ionic materials. (Default: 0.25)
         distorted_elements (:obj:`dict`):
             Optional argument to specify the neighbouring elements to distort for each defect,
-            in the form of a dictionary with format {'defect_species': ['element1', 'element2',
-            ...]} (e.g {'vac_1_Cd': 'Te'}). If None, the closest neighbours to the defect are
+            in the form of a dictionary with format {'defect_name': ['element1', 'element2',
+            ...]} (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to the defect are
             chosen. (Default: None)
         distortion_type (:obj:`str`) :
             Type of distortion method.
@@ -526,8 +527,8 @@ def apply_shakenbreak(
     # If the user does not specify bond_distortions, use distortion_increment:
     if not bond_distortions:
         bond_distortions = list(
-            np.around(np.arange(-0.6, 0.601, distortion_increment), decimals=3)
-        )
+            np.flip(np.around(np.arange(0, 0.601, distortion_increment), decimals=3)) * -1
+        )[:-1] + list(np.around(np.arange(0, 0.601, distortion_increment), decimals=3))
 
     # Create dictionary to keep track of the bond distortions applied
     distortion_metadata = {
