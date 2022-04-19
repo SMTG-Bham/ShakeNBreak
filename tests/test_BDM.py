@@ -8,7 +8,7 @@ import shutil
 import numpy as np
 
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar, Kpoints
+from pymatgen.io.vasp.inputs import Poscar
 from doped import vasp_input
 from shakenbreak import BDM, distortions
 
@@ -565,9 +565,7 @@ class BDMTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
-        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
-        # only test POSCAR and KPOINTS as INCAR and POTCAR not written on GitHub actions,
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
         # test with kwargs: (except POTCAR settings because we can't have this on the GitHub test
@@ -594,9 +592,7 @@ class BDMTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_gam_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_gam_folder + "/KPOINTS")
-        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
-        # only test POSCAR and KPOINTS as INCAR and POTCAR not written on GitHub actions,
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
     @patch("builtins.print")
@@ -668,9 +664,7 @@ class BDMTestCase(unittest.TestCase):
             "-50.0%_Bond__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
-        self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
-        # only test POSCAR and KPOINTS as INCAR and POTCAR not written on GitHub actions,
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
         Int_Cd_2_gam_folder = (
@@ -685,9 +679,7 @@ class BDMTestCase(unittest.TestCase):
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
-        Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_gam_folder + "/KPOINTS")
-        self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
-        # only test POSCAR and KPOINTS as INCAR and POTCAR not written on GitHub actions,
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
         # # test kwargs:
