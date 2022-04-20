@@ -156,14 +156,13 @@ def grab_contcar(file_path: str) -> Structure:
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
         print(f"{abs_path_formatted} file doesn't exist. Check path & relaxation")
-    try:
-        struct = Structure.from_file(abs_path_formatted)
-    except (FileNotFoundError or IndexError or ValueError):
         struct = "Not converged"
-        print(f"Path to structure {abs_path_formatted}")
-    except:
-        print(f"Problem obtaining structure from: {abs_path_formatted}.")
-        struct = "Not converged"
+    else:
+        try:
+            struct = Structure.from_file(abs_path_formatted)
+        except:
+            print(f"Problem obtaining structure from: {abs_path_formatted}, check file & relaxation")
+            struct = "Not converged"
     return struct
 
 

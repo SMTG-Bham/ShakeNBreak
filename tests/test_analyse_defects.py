@@ -7,6 +7,7 @@ import shutil
 
 import numpy as np
 
+from pymatgen.core.structure import Structure
 from shakenbreak import analyse_defects
 
 
@@ -135,6 +136,35 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             sorted_In_Cd_1_distortion_data,
             (self.organized_In_Cd_1_distortion_data, *gs_distortion),
         )
+
+    def test_grab_contcar(self):
+        """Test grab_contcar() function."""
+        with patch("builtins.print") as mock_print:
+            output = analyse_defects.grab_contcar("fake_file")
+            mock_print.assert_called_once_with(
+                "fake_file file doesn't exist. Check path & relaxation"
+            )
+            self.assertEqual(output, "Not converged")
+
+        with patch("builtins.print") as mock_print:
+            output = analyse_defects.grab_contcar(
+                os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+            )
+            mock_print.assert_called_once_with(
+                f"Problem obtaining structure from: "
+                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, check file & relaxation"
+            )
+            self.assertEqual(output, "Not converged")
+
+        with patch("builtins.print") as mock_print:
+            output = analyse_defects.grab_contcar(
+                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+            )
+            V_Cd_struc = Structure.from_file(
+                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+            )
+            mock_print.assert_not_called()
+            self.assertEqual(output, V_Cd_struc)
 
 
 if __name__ == "__main__":
