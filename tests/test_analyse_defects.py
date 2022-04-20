@@ -17,15 +17,15 @@ def if_present_rm(path):
 
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
-        DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
         self.V_Cd_distortion_data = analyse_defects.open_file(
-            os.path.join(DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
         self.organized_V_Cd_distortion_data = analyse_defects.organize_data(
             self.V_Cd_distortion_data
         )
         self.In_Cd_1_distortion_data = analyse_defects.open_file(
-            os.path.join(DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+            os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
         self.organized_In_Cd_1_distortion_data = analyse_defects.organize_data(
             self.In_Cd_1_distortion_data
@@ -101,8 +101,40 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         gs_distortion = analyse_defects.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data
         )
-        self.assertEqual(gs_distortion, (-0.006500369999997702, 'rattled'))
+        self.assertEqual(gs_distortion, (-0.006500369999997702, "rattled"))
 
+    @patch("builtins.print")
+    def test_sort_data(self, mock_print):
+        """Test sort_data() function."""
+        # test V_Cd_distortion_data:
+        gs_distortion = analyse_defects.get_gs_distortion(
+            self.organized_V_Cd_distortion_data
+        )
+        sorted_V_Cd_distortion_data = analyse_defects.sort_data(
+            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+        )
+        self.assertEqual(
+            sorted_V_Cd_distortion_data,
+            (self.organized_V_Cd_distortion_data, *gs_distortion),
+        )
+        mock_print.assert_called_once_with(
+            "CdTe_vac_1_Cd_0_stdev_0.25: E diff. between minimum found with -0.55 RBDM and "
+            "unperturbed: -0.76 eV.\n"
+        )
+
+        # test In_Cd_1:
+        gs_distortion = analyse_defects.get_gs_distortion(
+            self.organized_In_Cd_1_distortion_data
+        )
+        with patch("builtins.print") as mock_In_Cd_print:
+            sorted_In_Cd_1_distortion_data = analyse_defects.sort_data(
+                os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
+            )
+            mock_In_Cd_print.assert_not_called()
+        self.assertEqual(
+            sorted_In_Cd_1_distortion_data,
+            (self.organized_In_Cd_1_distortion_data, *gs_distortion),
+        )
 
 
 if __name__ == "__main__":
