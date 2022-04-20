@@ -7,9 +7,6 @@ import shutil
 
 import numpy as np
 
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar
-from doped import vasp_input
 from shakenbreak import analyse_defects
 
 
@@ -23,6 +20,15 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
         self.V_Cd_distortion_data = analyse_defects.open_file(
             os.path.join(DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+        )
+        self.organized_V_Cd_distortion_data = analyse_defects.organize_data(
+            self.V_Cd_distortion_data
+        )
+        self.In_Cd_1_distortion_data = analyse_defects.open_file(
+            os.path.join(DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+        )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
+        self.organized_In_Cd_1_distortion_data = analyse_defects.organize_data(
+            self.In_Cd_1_distortion_data
         )
 
     @patch("builtins.print")
@@ -43,28 +49,60 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual("-205.72311458", self.V_Cd_distortion_data[-1])
 
+        # test In_Cd_1 parsing:
+        self.assertListEqual(
+            self.In_Cd_1_distortion_data,
+            [
+                "sub_1_In_on_Cd_1_only_rattled",
+                "-214.88259023",
+                "sub_1_In_on_Cd_1_Unperturbed_Defect",
+                "-214.87608986",
+            ],
+        )
+
     def test_organize_data(self):
         """Test organize_data() function."""
-        organized_V_Cd_distortion_data = analyse_defects.organize_data(
-            self.V_Cd_distortion_data
-        )
         empty_dict = {"distortions": [], "Unperturbed": []}
-        self.assertTrue(isinstance(organized_V_Cd_distortion_data, dict))
-        self.assertTrue(empty_dict.keys() == organized_V_Cd_distortion_data.keys())
-        self.assertEqual(len(organized_V_Cd_distortion_data), 2)
-        self.assertEqual(len(organized_V_Cd_distortion_data["distortions"]), 25)
-        self.assertEqual(organized_V_Cd_distortion_data["Unperturbed"], -205.72311458)
+        self.assertTrue(isinstance(self.organized_V_Cd_distortion_data, dict))
+        self.assertTrue(empty_dict.keys() == self.organized_V_Cd_distortion_data.keys())
+        self.assertEqual(len(self.organized_V_Cd_distortion_data), 2)
+        self.assertEqual(len(self.organized_V_Cd_distortion_data["distortions"]), 25)
+        self.assertEqual(
+            self.organized_V_Cd_distortion_data["Unperturbed"], -205.72311458
+        )
         # test distortions subdict has (distortion) keys and (energy) values as floats:
         self.assertSetEqual(
-            set(map(type, organized_V_Cd_distortion_data["distortions"].values())),
+            set(map(type, self.organized_V_Cd_distortion_data["distortions"].values())),
             {float},
         )
         self.assertSetEqual(
-            set(map(type, organized_V_Cd_distortion_data["distortions"].keys())),
+            set(map(type, self.organized_V_Cd_distortion_data["distortions"].keys())),
             {float},
         )
         # test one entry:
-        self.assertEqual(organized_V_Cd_distortion_data["distortions"][-0.35], -206.47790687)
+        self.assertEqual(
+            self.organized_V_Cd_distortion_data["distortions"][-0.35], -206.47790687
+        )
+
+        # test In_Cd_1:
+        self.assertDictEqual(
+            self.organized_In_Cd_1_distortion_data,
+            {"distortions": {"rattled": -214.88259023}, "Unperturbed": -214.87608986},
+        )
+
+    def test_get_gs_distortion(self):
+        """Test get_gs_distortion() function."""
+        gs_distortion = analyse_defects.get_gs_distortion(
+            self.organized_V_Cd_distortion_data
+        )
+        self.assertEqual(gs_distortion, (-0.7551820700000178, -0.55))
+
+        # test In_Cd_1:
+        gs_distortion = analyse_defects.get_gs_distortion(
+            self.organized_In_Cd_1_distortion_data
+        )
+        self.assertEqual(gs_distortion, (-0.006500369999997702, 'rattled'))
+
 
 
 if __name__ == "__main__":
