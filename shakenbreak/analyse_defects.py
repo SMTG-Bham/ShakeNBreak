@@ -181,8 +181,8 @@ def grab_contcar(file_path: str) -> Structure:
 
 
 def analyse_defect_site(
-    name: str,
     structure: Structure,
+    name: str = "Unnamed Defect",
     site_num: Optional[int] = None,
     vac_site: Optional[list] = None,
 ):
@@ -190,10 +190,10 @@ def analyse_defect_site(
     Analyse coordination environment and bond distances to nearest neighbours of defect site.
 
     Args:
-        name (:obj:`str`):
-            Defect name
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
+        name (:obj:`str`):
+            Defect name for printing. (Default: "Unnamed Defect")
         site_num (:obj:`int`):
             Defect site index in the structure, starting from 1 (VASP rather than python
             indexing). (Default: None)
@@ -244,7 +244,7 @@ def analyse_defect_site(
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
     if isipython():
         display(bond_length_df)
-    print()
+        print()  # spacing
     if coordination is not None:
         return pd.DataFrame(coord_list), bond_length_df
     else:
@@ -286,9 +286,9 @@ def analyse_structure(
             "unique_site"
         ]
         return analyse_defect_site(
-            defect_species, structure, vac_site=defect_frac_coords
+            structure, name=defect_species, vac_site=defect_frac_coords
         )
-    return analyse_defect_site(defect_species, structure, site_num=defect_site)
+    return analyse_defect_site(structure, name=defect_species, site_num=defect_site)
 
 
 def compare_structures(

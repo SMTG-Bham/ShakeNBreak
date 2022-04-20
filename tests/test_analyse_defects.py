@@ -6,8 +6,9 @@ from unittest.mock import patch
 import shutil
 
 import numpy as np
+import pandas as pd
 
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Element
 from shakenbreak import analyse_defects
 
 
@@ -25,11 +26,17 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.organized_V_Cd_distortion_data = analyse_defects.organize_data(
             self.V_Cd_distortion_data
         )
+        self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+        )
         self.In_Cd_1_distortion_data = analyse_defects.open_file(
             os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
         self.organized_In_Cd_1_distortion_data = analyse_defects.organize_data(
             self.In_Cd_1_distortion_data
+        )
+        self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
+            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
         )
 
     @patch("builtins.print")
@@ -152,7 +159,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             mock_print.assert_called_once_with(
                 f"Problem obtaining structure from: "
-                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, check file & relaxation"
+                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, check file & "
+                f"relaxation"
             )
             self.assertEqual(output, "Not converged")
 
@@ -165,6 +173,114 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             mock_print.assert_not_called()
             self.assertEqual(output, V_Cd_struc)
+
+    def test_analyse_defect_site(self):
+        """Test analyse_defect_site() function."""
+        # test V_Cd:
+        with patch("builtins.print") as mock_print:
+            output = analyse_defects.analyse_defect_site(
+                self.V_Cd_minus0pt5_struc_rattled, name="Test pop", vac_site=[0, 0, 0]
+            )
+            mock_print.assert_any_call("==> ", "Test pop structural analysis ", " <==")
+            self.assertEqual(
+                mock_print.call_args_list[1][0][:2], ("Analysing site", Element("V"))
+            )
+            np.testing.assert_array_equal(
+                mock_print.call_args_list[1][0][2], np.array([0, 0, 0]),
+            )
+            mock_print.assert_any_call(
+                "Local order parameters (i.e. resemblance to given "
+                "structural motif, via CrystalNN):"
+            )
+            mock_print.assert_called_with(
+                "\nBond-lengths (in \u212B) to nearest neighbours: "
+            )
+
+            expected_V_Cd_crystalNN_coord_df = pd.DataFrame(
+                {
+                    "Coordination": {
+                        0: "square co-planar",
+                        1: "tetrahedral",
+                        2: "rectangular see-saw-like",
+                        3: "see-saw-like",
+                        4: "trigonal pyramidal",
+                    },
+                    "Factor": {
+                        0: 0.21944138045080427,
+                        1: 0.8789337233604618,
+                        2: 0.11173135591518825,
+                        3: 0.3876174560001795,
+                        4: 0.3965691083975486,
+                    },
+                }
+            )
+            pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_coord_df, output[0])
+            expected_V_Cd_crystalNN_bonding_df = pd.DataFrame(
+                {
+                    "Element": {0: "Te", 1: "Te", 2: "Te", 3: "Te"},
+                    "Distance": {0: "1.417", 1: "1.417", 2: "2.620", 3: "3.008"},
+                }
+            )
+            pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_bonding_df, output[1])
+            self.assertEqual(len(output), 2)
+
+        # test Int_Cd_2:
+        with patch("builtins.print") as mock_print:
+            output = analyse_defects.analyse_defect_site(
+                self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
+                name="Int_Cd_2",
+                site_num=65,
+            )
+            mock_print.assert_any_call("==> ", "Int_Cd_2 structural analysis ", " <==")
+            self.assertEqual(
+                mock_print.call_args_list[1][0][:2], ("Analysing site", Element("Cd"))
+            )
+            np.testing.assert_array_equal(
+                mock_print.call_args_list[1][0][2], np.array([0.8125, 0.1875, 0.8125]),
+            )
+
+            expected_Int_Cd_2_NN_10_crystalNN_coord_df = pd.DataFrame(
+                {
+                    "Coordination": {
+                        0: "hexagonal planar",
+                        1: "octahedral",
+                        2: "pentagonal pyramidal",
+                    },
+                    "Factor": {
+                        0: 0.778391113850372,
+                        1: 0.014891251252011014,
+                        2: 0.058350214482398306,
+                    },
+                }
+            )
+            pd.testing.assert_frame_equal(
+                expected_Int_Cd_2_NN_10_crystalNN_coord_df, output[0]
+            )
+            expected_Int_Cd_2_NN_10_crystalNN_bonding_df = pd.DataFrame(
+                {
+                    "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
+                    "Distance": {
+                        0: "1.085",
+                        1: "1.085",
+                        2: "1.085",
+                        3: "1.085",
+                        4: "1.085",
+                        5: "1.085",
+                    },
+                }
+            )
+            pd.testing.assert_frame_equal(
+                expected_Int_Cd_2_NN_10_crystalNN_bonding_df, output[1]
+            )
+            self.assertEqual(len(output), 2)
+
+        # test error catching:
+        with self.assertRaises(ValueError):
+            analyse_defects.analyse_defect_site(
+                self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
+                name="Int_Cd_2",
+                # no site_num or vac_coords specified
+            )
 
 
 if __name__ == "__main__":
