@@ -14,36 +14,36 @@ class DistortionTestCase(unittest.TestCase):
     """Test shakenbreak structure distortion functions"""
 
     def setUp(self):
-        DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        with open(os.path.join(DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+        with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
             self.cdte_defect_dict = pickle.load(fp)
 
         self.V_Cd_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
         self.V_Cd_minus0pt5_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Unrattled_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Unrattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
         self.Int_Cd_2_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
-            os.path.join(DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
         )
         # Confirm correct structures and pickle dict:
         self.assertEqual(
