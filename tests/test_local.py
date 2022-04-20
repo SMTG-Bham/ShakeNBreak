@@ -337,28 +337,12 @@ class BDMLocalTestCase(unittest.TestCase):
         Int_Cd_2_INCAR = Incar.from_file(Int_Cd_2_gam_folder + "/INCAR")
         # neutral even-electron INCARs the same except for NELECT:
         for incar in [V_Cd_INCAR, Int_Cd_2_INCAR]:
-            incar.pop("NELECT")
+            incar.pop("NELECT")  # https://tenor.com/bgVv9.gif
         self.assertEqual(V_Cd_INCAR, Int_Cd_2_INCAR)
         Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_gam_folder + "/KPOINTS")
         self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
         # check if POTCARs have been written:
         self.assertTrue(os.path.isfile(Int_Cd_2_gam_folder + "/POTCAR"))
-
-        # # test kwargs:
-        # reduced_defect_dict = {"vacancies": [self.V_Cd_dict], "interstitials": [self.Int_Cd_2_dict]}
-        # #  one with V_Cd, one with Int_Cd_2 NN 10, one with fcked dict_number_electrons_user
-        #
-        #
-        # dict_number_electrons_user: Optional[dict] = None,
-        # distortion_increment: float = 0.1,
-        # bond_distortions: Optional[list] = None,
-        # stdev: float = 0.25,
-        # distorted_elements: Optional[dict] = None,
-        # distortion_type: str = "BDM",
-        # potcar_settings: Optional[dict] = None,
-        # write_files: bool = True,
-        # verbose: bool = False,
-        # ** kwargs,
 
 
 if __name__ == "__main__":
