@@ -9,7 +9,6 @@ from copy import deepcopy
 from typing import Optional
 
 import pandas as pd
-from IPython.display import display
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -17,6 +16,19 @@ from pymatgen.core.structure import Structure
 crystalNN = CrystalNN(
     distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5
 )
+
+# using stackoverflow.com/questions/15411967/
+# how-can-i-check-if-code-is-executed-in-the-ipython-notebook
+def isipython():
+    try:
+        get_ipython().__class__.__name__
+        return True
+    except NameError:
+        return False  # Probably standard Python interpreter
+
+
+if isipython():
+    from IPython.display import display
 
 
 ###################################################################################################
@@ -161,7 +173,9 @@ def grab_contcar(file_path: str) -> Structure:
         try:
             struct = Structure.from_file(abs_path_formatted)
         except:
-            print(f"Problem obtaining structure from: {abs_path_formatted}, check file & relaxation")
+            print(
+                f"Problem obtaining structure from: {abs_path_formatted}, check file & relaxation"
+            )
             struct = "Not converged"
     return struct
 
@@ -215,7 +229,8 @@ def analyse_defect_site(
         print(
             "Local order parameters (i.e. resemblance to given structural motif, via CrystalNN):"
         )
-        display(pd.DataFrame(coord_list))  # display in Jupyter notebook
+        if isipython():
+            display(pd.DataFrame(coord_list))  # display in Jupyter notebook
     # Bond Lengths:
     bond_lengths = []
     for i in crystalNN.get_nn_info(struct, isite):
@@ -227,7 +242,8 @@ def analyse_defect_site(
         )
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
-    display(bond_length_df)
+    if isipython():
+        display(bond_length_df)
     print()
     if coordination is not None:
         return pd.DataFrame(coord_list), bond_length_df
@@ -263,7 +279,8 @@ def analyse_structure(
         distortion_metadata = json.load(json_file)
 
     defect_site = distortion_metadata["defects"][defect_name_without_charge].get(
-        "defect_site_index")  # VASP indexing (starts counting from 1)
+        "defect_site_index"
+    )  # VASP indexing (starts counting from 1)
     if defect_site is None:  # for vacancies, get fractional coordinates
         defect_frac_coords = distortion_metadata["defects"][defect_name_without_charge][
             "unique_site"
@@ -354,11 +371,13 @@ def compare_structures(
             rms_list.append(
                 [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2)]
             )
-    display(
-        pd.DataFrame(
-            rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"]
+    if isipython():
+        display(
+            pd.DataFrame(
+                rms_list,
+                columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"],
+            )
         )
-    )
     return pd.DataFrame(
         rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"]
     )
@@ -467,16 +486,16 @@ def get_structures(
                 defect_structures_dict[key] = "Not converged"
     try:
         unperturbed_path = (
-                output_path
-                + "/"
-                + defect_species
-                + "/"
-                + distortion_type
-                + "/"
-                + defect_species
-                + "_"
-                + "Unperturbed_Defect"
-                + "/vasp_gam/CONTCAR"
+            output_path
+            + "/"
+            + defect_species
+            + "/"
+            + distortion_type
+            + "/"
+            + defect_species
+            + "_"
+            + "Unperturbed_Defect"
+            + "/vasp_gam/CONTCAR"
         )
         defect_structures_dict["Unperturbed"] = grab_contcar(unperturbed_path)
     except FileNotFoundError:
@@ -515,14 +534,17 @@ def get_energies(
     Returns:
         Dictionary matching bond distortions to final energies in eV.
     """
-    energy_file_path = f"{output_path}/{defect_species}/{distortion_type}/{defect_species}.txt"
+    energy_file_path = (
+        f"{output_path}/{defect_species}/{distortion_type}/{defect_species}.txt"
+    )
     energies_dict = sort_data(energy_file_path)[0]  # TODO: Add try except warning here
     for distortion, energy in energies_dict["distortions"].items():
         energies_dict["distortions"][distortion] = energy - energies_dict["Unperturbed"]
     energies_dict["Unperturbed"] = 0.0
     if units == "meV":
-        energies_dict["distortions"] = {k: v * 1000 for k, v in energies_dict[
-            "distortions"].items()}
+        energies_dict["distortions"] = {
+            k: v * 1000 for k, v in energies_dict["distortions"].items()
+        }
 
     return energies_dict
 
@@ -574,6 +596,8 @@ def calculate_struct_comparison(
     ):  # If metric couldn't be calculated for more than 5 distortions, then return None
         return None
     return rms_dict
+
+
 # TODO: Why cutoff of 5 here? If the user uses a coarser mesh, or only some of the calculations
 #  converge, is there anything wrong with printing the comparison metric info for just the small
 #  set that did finish ok?
