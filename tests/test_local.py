@@ -41,7 +41,9 @@ class BDMLocalTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
+            os.path.join(
+                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")

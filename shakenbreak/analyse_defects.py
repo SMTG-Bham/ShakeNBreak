@@ -10,6 +10,7 @@ from typing import Optional
 import warnings
 
 import pandas as pd
+import numpy as np
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -21,6 +22,7 @@ crystalNN = CrystalNN(
 # format warnings output:
 def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
+
 
 warnings.formatwarning = warning_on_one_line
 
@@ -307,14 +309,15 @@ def analyse_structure(
 def get_structures(
     defect_species: str,
     output_path: str = "./",
-    distortion_increment: float = 0.1,
+    distortion_increment: Optional[float] = None,
     bond_distortions: Optional[list] = None,
     distortion_type="BDM",
 ) -> dict:
     """
     Import all structures found with rattling & bond distortions, and store them in a dictionary
     matching the bond distortion to the final structure. By default, will read the
-    `distortion_metadata.json` file (generated with ShakeNBreak)if present in the current directory.
+    `distortion_metadata.json` file (generated with ShakeNBreak) if present in the current
+    directory (and `distortion_increment` and `bond_distortions` not specified.
 
     Args:
         defect_species (:obj:`str`):
@@ -323,7 +326,8 @@ def get_structures(
             Path to top-level directory containing `defect_species` subdirectories. (Default is
             current directory)
         distortion_increment (:obj:`float`):
-            Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
+            Bond distortion increment used. Assumes range of +/-60% (otherwise use
+            `bond_distortions`). (Default:None)
         bond_distortions (:obj:`list`):
             List of distortions applied to nearest neighbours, instead of the default set
             (e.g. [-0.5, 0.5]). (Default: None)
@@ -339,18 +343,23 @@ def get_structures(
         Dictionary of bond distortions and corresponding final structures.
     """
     defect_structures_dict = {}
-    try:
-        # Read distortion parameters from distortion_metadata.json
-        with open(f"{output_path}/distortion_metadata.json") as json_file:
-            distortion_parameters = json.load(json_file)["distortion_parameters"]
-            bond_distortions = distortion_parameters["bond_distortions"]
-            bond_distortions = [i * 100 for i in bond_distortions]
-    except:  # if there's not a distortion metadata file
+    if distortion_increment is None and bond_distortions is None:
+        try:  # Read distortion parameters from distortion_metadata.json
+            with open(f"{output_path}/distortion_metadata.json") as json_file:
+                distortion_parameters = json.load(json_file)["distortion_parameters"]
+                bond_distortions = distortion_parameters["bond_distortions"]
+                bond_distortions = [i * 100 for i in bond_distortions]
+        except:
+            raise Exception(
+                f"No `distortion_metadata.json` file found in {output_path}. Please specify "
+                f"`distortion_increment` or `bond_distortions`."
+            )
+    else:  # if user specifies values
         if bond_distortions:
             bond_distortions = [i * 100 for i in bond_distortions]
         else:
-            bond_distortions = range(
-                -60, 69, distortion_increment * 100
+            bond_distortions = np.arange(
+                -60, 60.1, distortion_increment * 100
             )  # if user didn't specify bond_distortions, assume default range
 
     rattle_dir_path = (
@@ -378,8 +387,8 @@ def get_structures(
             defect_structures_dict["rattle"] = "Not converged"
     else:
         for i in bond_distortions:
-            key = (
-                i / 100
+            key = round(
+                i / 100, 3
             )  # Dictionary key in the same format as the {distortions: final energies} dictionary
             i = f"{i+0:.1f}"  # 1 decimal place
             path = (
