@@ -673,6 +673,7 @@ def apply_shakenbreak(
                     "________________________________________________________"
                 )  # output easier to read
 
-    with open("distortion_metadata.json", "w") as metadata_file:
+    with open("distortion_metadata.json", "w") as metadata_file:  # TODO: Need to change this to
+        # not overwrite / save previously existing versions, and add test
         metadata_file.write(json.dumps(distortion_metadata))
     return distortion_metadata  # TODO: Return both distorted defect structures and metadata
