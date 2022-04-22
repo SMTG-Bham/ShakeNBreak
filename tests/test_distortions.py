@@ -28,7 +28,9 @@ class DistortionTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
+            os.path.join(
+                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
@@ -37,7 +39,9 @@ class DistortionTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR")
+            os.path.join(
+                self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR"
+            )
         )
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")

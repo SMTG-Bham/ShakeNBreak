@@ -28,6 +28,7 @@ warnings.filterwarnings(
 def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
+
 warnings.formatwarning = warning_on_one_line
 
 
@@ -532,10 +533,13 @@ def apply_shakenbreak(
 
     if bond_distortions:
         distortion_increment = None  # user specified bond_distortions, so no increment
-        bond_distortions = list(np.around(bond_distortions, 3))  # round to 3 decimal places
+        bond_distortions = list(
+            np.around(bond_distortions, 3)
+        )  # round to 3 decimal places
     else:  # If the user does not specify bond_distortions, use distortion_increment:
         bond_distortions = list(
-            np.flip(np.around(np.arange(0, 0.601, distortion_increment), decimals=3)) * -1
+            np.flip(np.around(np.arange(0, 0.601, distortion_increment), decimals=3))
+            * -1
         )[:-1] + list(np.around(np.arange(0, 0.601, distortion_increment), decimals=3))
 
     # Create dictionary to keep track of the bond distortions applied
@@ -679,7 +683,9 @@ def apply_shakenbreak(
                     "________________________________________________________"
                 )  # output easier to read
 
-    with open("distortion_metadata.json", "w") as metadata_file:  # TODO: Need to change this to
+    with open(
+        "distortion_metadata.json", "w"
+    ) as metadata_file:  # TODO: Need to change this to
         # not overwrite / save previously existing versions, and add test
         metadata_file.write(json.dumps(distortion_metadata))
     return distortion_metadata  # TODO: Return both distorted defect structures and metadata
