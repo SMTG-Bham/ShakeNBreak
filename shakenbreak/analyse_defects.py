@@ -154,7 +154,7 @@ def sort_data(energies_file: str):
     if energy_diff < -0.1:
         defect_name = energies_file.split("/")[-1].split(".txt")[0]
         print(
-            f"{defect_name}: E diff. between minimum found with {gs_distortion} RBDM and "
+            f"{defect_name}: Energy difference between minimum found with {gs_distortion} RBDM and "
             f"unperturbed: {energy_diff:+.2f} eV.\n"
         )
     return energies_dict, energy_diff, gs_distortion

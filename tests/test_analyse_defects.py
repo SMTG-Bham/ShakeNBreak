@@ -127,8 +127,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             (self.organized_V_Cd_distortion_data, *gs_distortion),
         )
         mock_print.assert_called_once_with(
-            "CdTe_vac_1_Cd_0_stdev_0.25: E diff. between minimum found with -0.55 RBDM and "
-            "unperturbed: -0.76 eV.\n"
+            "CdTe_vac_1_Cd_0_stdev_0.25: Energy difference between minimum found with -0.55 RBDM "
+            "and unperturbed: -0.76 eV.\n"
         )
 
         # test In_Cd_1:
@@ -376,6 +376,36 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
             )
             self.assertIn(wrong_path_exception, e.exception)
+
+    def test_get_energies(self):
+        """Test get_energies() function."""
+        # V_Cd_0 with defaults (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
+        defect_energies_dict = analyse_defects.get_energies(
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+        )
+        energies_dict_keys_dict = {"distortions": None, "Unperturbed": None}
+        self.assertTrue(defect_energies_dict.keys() == energies_dict_keys_dict.keys())
+        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        self.assertEqual(
+            list(defect_energies_dict["distortions"].keys()), bond_distortions
+        )
+        # test some specific energies:
+        self.assertEqual(defect_energies_dict["distortions"][-0.5], -0.005116870000023255)
+        self.assertEqual(defect_energies_dict["distortions"][-0.2], -0.003605090000007749)
+        self.assertEqual(defect_energies_dict["Unperturbed"], 0)
+
+        # V_Cd_0 with meV (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
+        defect_energies_meV_dict = analyse_defects.get_energies(
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
+        )
+        self.assertTrue(defect_energies_meV_dict.keys() == energies_dict_keys_dict.keys())
+        self.assertEqual(
+            list(defect_energies_meV_dict["distortions"].keys()), bond_distortions
+        )
+        # test some specific energies:
+        self.assertEqual(defect_energies_meV_dict["distortions"][-0.5], -5.116870000023255)
+        self.assertEqual(defect_energies_meV_dict["distortions"][-0.2], -3.605090000007749)
+        self.assertEqual(defect_energies_meV_dict["Unperturbed"], 0)
 
 
 if __name__ == "__main__":
