@@ -292,6 +292,49 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 # no site_num or vac_coords specified
             )
 
+    def test_get_structures(self):
+        """Test get_structures() function."""
+        # V_Cd_0:
+        defect_structures_dict = analyse_defects.get_structures(
+            defect_species="vac_1_Cd_0",
+            output_path=self.DATA_DIR,
+            distortion_increment=0.025,
+            distortion_type="BDM",
+        )
+        self.assertEqual(len(defect_structures_dict), 26)
+        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        self.assertEqual(
+            list(defect_structures_dict.keys()), bond_distortions + ["Unperturbed"]
+        )
+        relaxed_0pt5_V_Cd_structure = Structure.from_file(
+            os.path.join(
+                self.DATA_DIR,
+                "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/CONTCAR",
+            )
+        )
+        self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
+
+        # test warnings:
+        with warnings.catch_warnings(record=True) as w:
+            wrong_defect_structures_dict = analyse_defects.get_structures(
+                defect_species="vac_1_Cd_1",  # wrong defect species
+                output_path=self.DATA_DIR,
+                distortion_increment=0.025,
+            )
+            self.assertEqual(len(w), 26)
+            for warning in w:
+                self.assertEqual(warning.category, UserWarning)
+            final_warning_message = "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/vasp_gam" \
+                                    "/CONTCAR file doesn't exist, storing as 'Not converged'. " \
+                                    "Check path & relaxation"
+            self.assertIn(final_warning_message, str(w[-1].message))
+            penultimate_warning_message = "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/" \
+                                    "vasp_gam/CONTCAR file doesn't exist, storing as 'Not " \
+                                    "converged'. Check path & relaxation"
+            self.assertIn(penultimate_warning_message, str(w[-1].message))
+            for val in wrong_defect_structures_dict.values():
+                self.assertEqual(val, "Not converged")
+
 
 if __name__ == "__main__":
     unittest.main()
