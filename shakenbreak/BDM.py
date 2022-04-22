@@ -24,6 +24,12 @@ warnings.filterwarnings(
     "ignore", category=UnknownPotcarWarning
 )  # Ignore pymatgen POTCAR warnings
 
+# format warnings output:
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
+
+warnings.formatwarning = warning_on_one_line
+
 
 def update_struct_defect_dict(
     defect_dict: dict, structure: Structure, poscar_comment: str
@@ -524,13 +530,13 @@ def apply_shakenbreak(
     )
     dict_defects = {}  # dict to store bond distortions for all defects
 
-    # If the user does not specify bond_distortions, use distortion_increment:
-    if not bond_distortions:
+    if bond_distortions:
+        distortion_increment = None  # user specified bond_distortions, so no increment
+        bond_distortions = list(np.around(bond_distortions, 3))  # round to 3 decimal places
+    else:  # If the user does not specify bond_distortions, use distortion_increment:
         bond_distortions = list(
             np.flip(np.around(np.arange(0, 0.601, distortion_increment), decimals=3)) * -1
         )[:-1] + list(np.around(np.arange(0, 0.601, distortion_increment), decimals=3))
-    else:
-        distortion_increment = None  # user specified bond_distortions, so no increment
 
     # Create dictionary to keep track of the bond distortions applied
     distortion_metadata = {

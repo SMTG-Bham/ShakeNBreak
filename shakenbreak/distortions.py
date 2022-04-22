@@ -11,6 +11,12 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from hiphive.structure_generation.rattle import generate_mc_rattled_structures
 
 
+# format warnings output:
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
+
+warnings.formatwarning = warning_on_one_line
+
 def bdm(
     structure: Structure,
     num_nearest_neighbours: int,
