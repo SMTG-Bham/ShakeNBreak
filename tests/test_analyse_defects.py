@@ -294,12 +294,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_structures(self):
         """Test get_structures() function."""
-        # V_Cd_0:
+        # V_Cd_0 with defaults (reading from `distortion_metadata.json`):
         defect_structures_dict = analyse_defects.get_structures(
-            defect_species="vac_1_Cd_0",
-            output_path=self.DATA_DIR,
-            distortion_increment=0.025,
-            distortion_type="BDM",
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
         bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
@@ -314,26 +311,71 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
 
-        # test warnings:
+        # V_Cd_0 with a defined subset (using `bond_distortions`):
+        defect_structures_dict = analyse_defects.get_structures(
+            defect_species="vac_1_Cd_0",
+            output_path=self.DATA_DIR,
+            bond_distortions=[-0.5, -0.25, 0],
+        )
+        self.assertEqual(
+            len(defect_structures_dict), 4
+        )  # 3 distortions plus unperturbed
+        relaxed_0pt5_V_Cd_structure = Structure.from_file(
+            os.path.join(
+                self.DATA_DIR,
+                "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/CONTCAR",
+            )
+        )
+        self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
+
+        # V_Cd_0 with a defined subset (using `distortion_increment`):
+        with warnings.catch_warnings(record=True) as w:
+            defect_structures_dict = analyse_defects.get_structures(
+                defect_species="vac_1_Cd_0",
+                output_path=self.DATA_DIR,
+                distortion_increment=0.2,
+            )  # only read 20% increments
+            self.assertEqual(
+                len(defect_structures_dict), 8
+            )  # 7 distortions plus unperturbed
+            self.assertEqual(len(w), 3)  # 3 warnings for positive distortions
+            self.assertEqual(defect_structures_dict[0.4], "Not converged")
+
+        # test warnings for wrong defect species:
         with warnings.catch_warnings(record=True) as w:
             wrong_defect_structures_dict = analyse_defects.get_structures(
                 defect_species="vac_1_Cd_1",  # wrong defect species
                 output_path=self.DATA_DIR,
                 distortion_increment=0.025,
             )
-            self.assertEqual(len(w), 26)
+            self.assertEqual(len(w), 50)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
-            final_warning_message = "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/vasp_gam" \
-                                    "/CONTCAR file doesn't exist, storing as 'Not converged'. " \
-                                    "Check path & relaxation"
+            final_warning_message = (
+                "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/vasp_gam"
+                "/CONTCAR file doesn't exist, storing as 'Not converged'. "
+                "Check path & relaxation"
+            )
             self.assertIn(final_warning_message, str(w[-1].message))
-            penultimate_warning_message = "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/" \
-                                    "vasp_gam/CONTCAR file doesn't exist, storing as 'Not " \
-                                    "converged'. Check path & relaxation"
-            self.assertIn(penultimate_warning_message, str(w[-1].message))
+            penultimate_warning_message = (  # assumes range of +/- 60%
+                "vac_1_Cd_1/BDM/vac_1_Cd_1_60.0%_Bond_Distortion/"
+                "vasp_gam/CONTCAR file doesn't exist, storing as 'Not "
+                "converged'. Check path & relaxation"
+            )
+            self.assertIn(penultimate_warning_message, str(w[-2].message))
             for val in wrong_defect_structures_dict.values():
                 self.assertEqual(val, "Not converged")
+
+        # test error catching:
+        wrong_path_exception = Exception(
+            f"No `distortion_metadata.json` file found in wrong_path. Please specify "
+            f"`distortion_increment` or `bond_distortions`."
+        )
+        with self.assertRaises(Exception) as e:
+            analyse_defects.get_structures(
+                defect_species="vac_1_Cd_0", output_path="wrong_path"
+            )
+            self.assertIn(wrong_path_exception, e.exception)
 
 
 if __name__ == "__main__":
