@@ -6,7 +6,7 @@ Module containing functions to analyse rattled and bond-distorted defect structu
 import json
 import os
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Union
 import warnings
 
 import pandas as pd
@@ -70,42 +70,46 @@ def organize_data(distortion_list: list) -> dict:
     """
     # TODO: Update docstrings here when we implement CLI parsing functions to generate this
     #  output file
-    energies_dict = {"distortions": {}}
+    defect_energies_dict = {"distortions": {}}
     for i in range(len(distortion_list) // 2):
         i *= 2
         if "rattle" in distortion_list[i]:
             key = "rattled"
-            energies_dict["distortions"][key] = float(distortion_list[i + 1])
+            defect_energies_dict["distortions"][key] = float(distortion_list[i + 1])
         else:
             if "Unperturbed" in distortion_list[i]:
-                energies_dict["Unperturbed"] = float(distortion_list[i + 1])
+                defect_energies_dict["Unperturbed"] = float(distortion_list[i + 1])
             else:
                 key = distortion_list[i].split("_Bond")[0].split("%")[0]
                 key = float(key.split("_")[-1]) / 100  # from % to decimal
-                energies_dict["distortions"][key] = float(distortion_list[i + 1])
-    sorted_dict = {"distortions": {}, "Unperturbed": energies_dict["Unperturbed"]}
+                defect_energies_dict["distortions"][key] = float(distortion_list[i + 1])
+    sorted_dict = {
+        "distortions": {},
+        "Unperturbed": defect_energies_dict["Unperturbed"],
+    }
     for key in sorted(
-        energies_dict["distortions"].keys()
+        defect_energies_dict["distortions"].keys()
     ):  # Order dict items by key (e.g. from -0.6 to 0 to +0.6)
-        sorted_dict["distortions"][key] = energies_dict["distortions"][key]
+        sorted_dict["distortions"][key] = defect_energies_dict["distortions"][key]
     return sorted_dict
 
 
-def get_gs_distortion(energies_dict: dict):
+def get_gs_distortion(defect_energies_dict: dict):
     """
     Calculate energy difference between `Unperturbed` structure and lowest energy distortion.
     Returns the energy (in eV) and bond distortion of the ground-state relative to `Unperturbed`.
 
     Args:
-        energies_dict (:obj:`dict`):
+        defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as produced by `organize_data()`.
 
     Returns:
         (Energy difference, ground state bond distortion)
     """
-    if len(energies_dict["distortions"]) == 1:
+    if len(defect_energies_dict["distortions"]) == 1:
         energy_diff = (
-            energies_dict["distortions"]["rattled"] - energies_dict["Unperturbed"]
+            defect_energies_dict["distortions"]["rattled"]
+            - defect_energies_dict["Unperturbed"]
         )
         if energy_diff < 0:
             gs_distortion = "rattled"  # just rattle (no bond distortion)
@@ -113,14 +117,16 @@ def get_gs_distortion(energies_dict: dict):
             gs_distortion = "Unperturbed"
     else:
         lowest_E_distortion = min(
-            energies_dict["distortions"].values()
+            defect_energies_dict["distortions"].values()
         )  # lowest energy obtained with bond distortions
-        energy_diff = lowest_E_distortion - energies_dict["Unperturbed"]
+        energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
         if (
-            lowest_E_distortion < energies_dict["Unperturbed"]
+            lowest_E_distortion < defect_energies_dict["Unperturbed"]
         ):  # if energy lower than Unperturbed
-            gs_distortion = list(energies_dict["distortions"].keys())[
-                list(energies_dict["distortions"].values()).index(lowest_E_distortion)
+            gs_distortion = list(defect_energies_dict["distortions"].keys())[
+                list(defect_energies_dict["distortions"].values()).index(
+                    lowest_E_distortion
+                )
             ]  # bond distortion that led to ground-state
         else:
             gs_distortion = "Unperturbed"
@@ -140,22 +146,22 @@ def sort_data(energies_file: str):
             `BDM_parsing_script.sh`.
 
     Returns:
-        energies_dict (:obj:`dict`):
+        defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as produced by `organize_data()`
         energy_diff (:obj:`float`):
             Energy difference between minimum energy structure and `Unperturbed` (in eV)
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
-    energies_dict = organize_data(open_file(energies_file))
-    energy_diff, gs_distortion = get_gs_distortion(energies_dict)
+    defect_energies_dict = organize_data(open_file(energies_file))
+    energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     if energy_diff < -0.1:
         defect_name = energies_file.split("/")[-1].split(".txt")[0]
         print(
             f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
             f"distortion, and unperturbed: {energy_diff:+.2f} eV.\n"
         )
-    return energies_dict, energy_diff, gs_distortion
+    return defect_energies_dict, energy_diff, gs_distortion
 
 
 ###################################################################################################
@@ -468,22 +474,26 @@ def get_energies(
     energy_file_path = (
         f"{output_path}/{defect_species}/{distortion_type}/{defect_species}.txt"
     )
-    energies_dict = sort_data(energy_file_path)[0]  # TODO: Add try except warning here
-    for distortion, energy in energies_dict["distortions"].items():
-        energies_dict["distortions"][distortion] = energy - energies_dict["Unperturbed"]
-    energies_dict["Unperturbed"] = 0.0
+    defect_energies_dict = sort_data(energy_file_path)[
+        0
+    ]  # TODO: Add try except warning here
+    for distortion, energy in defect_energies_dict["distortions"].items():
+        defect_energies_dict["distortions"][distortion] = (
+            energy - defect_energies_dict["Unperturbed"]
+        )
+    defect_energies_dict["Unperturbed"] = 0.0
     if units == "meV":
-        energies_dict["distortions"] = {
-            k: v * 1000 for k, v in energies_dict["distortions"].items()
+        defect_energies_dict["distortions"] = {
+            k: v * 1000 for k, v in defect_energies_dict["distortions"].items()
         }
 
-    return energies_dict
+    return defect_energies_dict
 
 
 # TODO: Add ref_structure option to calculate_struct_comparison
 # TODO: Refactor to use total (summed) RMS, not average RMS (to remove supercell size dependence)
 def calculate_struct_comparison(
-    defect_struct_dict: dict,
+    defect_structures_dict: dict,
     metric: str = "max_dist",
 ) -> Optional[dict]:
     """
@@ -492,7 +502,7 @@ def calculate_struct_comparison(
     distorted structure in `defect_struct_dict`, and the Unperturbed structure.
 
     Args:
-        defect_struct_dict (:obj:`dict`):
+        defect_structures_dict (:obj:`dict`):
             Dictionary of bond distortions and corresponding (final) structures (as pymatgen
             Structure objects).
         metric (:obj:`str`):
@@ -510,18 +520,21 @@ def calculate_struct_comparison(
     sm = StructureMatcher(
         ltol=0.3, stol=0.5, angle_tol=5, primitive_cell=False, scale=True
     )
-    for distortion in list(defect_struct_dict.keys()):
-        if defect_struct_dict[distortion] != "Not converged":
+    for distortion in list(defect_structures_dict.keys()):
+        if defect_structures_dict[distortion] != "Not converged":
             try:
                 rms_dict[distortion] = sm.get_rms_dist(
-                    defect_struct_dict["Unperturbed"], defect_struct_dict[distortion]
+                    defect_structures_dict["Unperturbed"],
+                    defect_structures_dict[distortion],
                 )[metric_dict[metric]]
             except TypeError:
                 rms_dict[
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison metric to None
-                warnings.warn(f"pymatgen StructureMatcher could not match lattices for between "
-                              f"unperturbed and {distortion} structures.")
+                warnings.warn(
+                    f"pymatgen StructureMatcher could not match lattices for between "
+                    f"unperturbed and {distortion} structures."
+                )
         else:
             rms_dict[distortion] = "Not converged"  # Structure not converged
 
@@ -529,10 +542,9 @@ def calculate_struct_comparison(
 
 
 def compare_structures(
-    defect_dict: dict,
-    defect_energies: dict,
-    compare_to: str = "Unperturbed",
-    ref_structure: Optional[Structure] = None,
+    defect_structures_dict: dict,
+    defect_energies_dict: dict,
+    ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
     units: str = "eV",
 ) -> pd.DataFrame:
@@ -542,19 +554,15 @@ def compare_structures(
     distance between matched atomic sites.
 
     Args:
-        defect_dict (:obj:`dict`):
+        defect_structures_dict (:obj:`dict`):
             Dictionary mapping bond distortion to (relaxed) structure
-        defect_energies (:obj:`dict`):
+        defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
-        compare_to (:obj:`str`):
-            Name of reference structure used for comparison (recommended to compared with relaxed
-            'Unperturbed' defect structure).
-            (Default: "Unperturbed")
         ref_structure:
-            Structure used as reference structure for comparison. This allows the user to compare
-            final bond-distorted structures with a specific external structure not obtained using
-            `shakenbreak`.
-            (Default: None)
+            Structure to use as a reference for comparison (to compute RMS and max distance).
+            Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
+            compare with a specific external structure).
+            (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`).
             (Default: 0.5 Angstrom)
@@ -565,42 +573,50 @@ def compare_structures(
         DataFrame containing structural comparison results (
         RMS displacement and maximum distance between matched atomic sites), and relative energies.
     """
-    print(f"Comparing structures to {compare_to}...")
+    if isinstance(ref_structure, str) or isinstance(ref_structure, float):
+        if isinstance(ref_structure, str):
+            ref_name = ref_structure
+        else:
+            ref_name = f"{ref_structure:.1%} bond distorted structure"
+        try:
+            ref_structure = defect_structures_dict[ref_structure]
+        except KeyError:
+            raise KeyError(
+                f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
+            )
+        if ref_structure == "Not converged":
+            raise ValueError(
+                f"Specified reference structure (with key '{ref_structure}') is not converged"
+                "and cannot be used for structural comparison."
+            )
+    elif isinstance(ref_structure, Structure):
+        ref_name = f"specified ref_structure ({ref_structure.composition})"
+    print(f"Comparing structures to {ref_name}...")
 
     rms_list = []
-    if (
-        ref_structure
-    ):  # if we give an external structure (not obtained with `shakenbreak`)
-        norm_struct = ref_structure
-    else:  # else we take reference structure from defect dictionary
-        norm_struct = defect_dict[compare_to]
-    assert norm_struct
-
-    distortion_list = list(defect_energies["distortions"].keys())
+    distortion_list = list(defect_energies_dict["distortions"].keys())
     distortion_list.append("Unperturbed")
     for distortion in distortion_list:
         if distortion == "Unperturbed":
-            rel_energy = defect_energies[distortion]
+            rel_energy = defect_energies_dict[distortion]
         else:
             try:
-                rel_energy = defect_energies["distortions"][distortion]
+                rel_energy = defect_energies_dict["distortions"][distortion]
             except KeyError:  # if relaxation didn't converge for this bond distortion, store it
                 # as NotANumber
                 rel_energy = float("nan")
-        struct = defect_dict[distortion]
+        struct = defect_structures_dict[distortion]
         if (
             struct
             and struct != "Not converged"
-            and norm_struct
-            and norm_struct != "Not converged"
         ):
             new_sm = StructureMatcher(
                 ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
             )  # higher stol for calculating rms
             try:
-                rms_displacement = round(new_sm.get_rms_dist(norm_struct, struct)[0], 3)
+                rms_displacement = round(new_sm.get_rms_dist(ref_structure, struct)[0], 3)
                 rms_dist_sites = round(
-                    new_sm.get_rms_dist(norm_struct, struct)[1], 3
+                    new_sm.get_rms_dist(ref_structure, struct)[1], 3
                 )  # select rms displacement normalized by (Vol / nsites) ** (1/3)
             except TypeError:  # lattices didn't match
                 rms_displacement = None
@@ -612,14 +628,15 @@ def compare_structures(
         display(
             pd.DataFrame(
                 rms_list,
-                columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"],
+                columns=[
+                    "Bond Dist.",
+                    "RMS",
+                    "Max. dist (\u212B)",
+                    f"Rel. E ({units})",
+                ],
             )
         )
     return pd.DataFrame(
-        rms_list, columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"]
+        rms_list,
+        columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"],
     )
-
-
-# TODO: Why cutoff of 5 here? If the user uses a coarser mesh, or only some of the calculations
-#  converge, is there anything wrong with printing the comparison metric info for just the small
-#  set that did finish ok?
