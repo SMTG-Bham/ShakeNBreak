@@ -80,10 +80,8 @@ def organize_data(distortion_list: list) -> dict:
             if "Unperturbed" in distortion_list[i]:
                 energies_dict["Unperturbed"] = float(distortion_list[i + 1])
             else:
-                key = distortion_list[i].split("_BDM")[0].split("%")[0]
+                key = distortion_list[i].split("_Bond")[0].split("%")[0]
                 key = float(key.split("_")[-1]) / 100  # from % to decimal
-                if key == -0.0:
-                    key = 0.0
                 energies_dict["distortions"][key] = float(distortion_list[i + 1])
     sorted_dict = {"distortions": {}, "Unperturbed": energies_dict["Unperturbed"]}
     for key in sorted(
@@ -114,16 +112,16 @@ def get_gs_distortion(energies_dict: dict):
         else:
             gs_distortion = "Unperturbed"
     else:
-        lowest_E_RBDM = min(
+        lowest_E_distortion = min(
             energies_dict["distortions"].values()
-        )  # lowest energy obtained with RBDM
-        energy_diff = lowest_E_RBDM - energies_dict["Unperturbed"]
+        )  # lowest energy obtained with bond distortions
+        energy_diff = lowest_E_distortion - energies_dict["Unperturbed"]
         if (
-            lowest_E_RBDM < energies_dict["Unperturbed"]
+            lowest_E_distortion < energies_dict["Unperturbed"]
         ):  # if energy lower than Unperturbed
             gs_distortion = list(energies_dict["distortions"].keys())[
-                list(energies_dict["distortions"].values()).index(lowest_E_RBDM)
-            ]  # BDM distortion that led to ground-state
+                list(energies_dict["distortions"].values()).index(lowest_E_distortion)
+            ]  # bond distortion that led to ground-state
         else:
             gs_distortion = "Unperturbed"
 
@@ -154,8 +152,8 @@ def sort_data(energies_file: str):
     if energy_diff < -0.1:
         defect_name = energies_file.split("/")[-1].split(".txt")[0]
         print(
-            f"{defect_name}: Energy difference between minimum found with {gs_distortion} RBDM and "
-            f"unperturbed: {energy_diff:+.2f} eV.\n"
+            f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
+            f"distortion, and unperturbed: {energy_diff:+.2f} eV.\n"
         )
     return energies_dict, energy_diff, gs_distortion
 
@@ -586,7 +584,7 @@ def compare_structures(
         else:
             try:
                 rel_energy = defect_energies["distortions"][distortion]
-            except KeyError:  # if relaxation didn't converge for this BDM distortion, store it
+            except KeyError:  # if relaxation didn't converge for this bond distortion, store it
                 # as NotANumber
                 rel_energy = float("nan")
         struct = defect_dict[distortion]
@@ -614,11 +612,11 @@ def compare_structures(
         display(
             pd.DataFrame(
                 rms_list,
-                columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"],
+                columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"],
             )
         )
     return pd.DataFrame(
-        rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"]
+        rms_list, columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"]
     )
 
 
