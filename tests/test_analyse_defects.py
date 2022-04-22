@@ -127,8 +127,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             (self.organized_V_Cd_distortion_data, *gs_distortion),
         )
         mock_print.assert_called_once_with(
-            "CdTe_vac_1_Cd_0_stdev_0.25: Energy difference between minimum found with -0.55 RBDM "
-            "and unperturbed: -0.76 eV.\n"
+            "CdTe_vac_1_Cd_0_stdev_0.25: Energy difference between minimum, "
+            + "found with -0.55 bond distortion, and unperturbed: -0.76 eV.\n"
         )
 
         # test In_Cd_1:
@@ -391,20 +391,28 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # test some specific energies:
         self.assertEqual(defect_energies_dict["distortions"][-0.4], -0.7548057600000107)
-        self.assertEqual(defect_energies_dict["distortions"][-0.2], -0.003605090000007749)
+        self.assertEqual(
+            defect_energies_dict["distortions"][-0.2], -0.003605090000007749
+        )
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
 
         # V_Cd_0 with meV (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
         defect_energies_meV_dict = analyse_defects.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
         )
-        self.assertEqual(defect_energies_meV_dict.keys(), energies_dict_keys_dict.keys())
+        self.assertEqual(
+            defect_energies_meV_dict.keys(), energies_dict_keys_dict.keys()
+        )
         self.assertEqual(
             list(defect_energies_meV_dict["distortions"].keys()), bond_distortions
         )
         # test some specific energies:
-        self.assertEqual(defect_energies_meV_dict["distortions"][-0.4], -754.8057600000107)
-        self.assertEqual(defect_energies_meV_dict["distortions"][-0.2], -3.605090000007749)
+        self.assertEqual(
+            defect_energies_meV_dict["distortions"][-0.4], -754.8057600000107
+        )
+        self.assertEqual(
+            defect_energies_meV_dict["distortions"][-0.2], -3.605090000007749
+        )
         self.assertEqual(defect_energies_meV_dict["Unperturbed"], 0)
 
     def test_calculate_struct_comparison(self):
@@ -413,20 +421,56 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         defect_structures_dict = analyse_defects.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
-        max_dist_dict = analyse_defects.calculate_struct_comparison(defect_structures_dict)
-        self.assertEqual(len(max_dist_dict), len(defect_structures_dict))  # one for each
-        self.assertEqual(max_dist_dict.keys(), defect_structures_dict.keys())  # one for each
+        max_dist_dict = analyse_defects.calculate_struct_comparison(
+            defect_structures_dict
+        )
+        self.assertEqual(
+            len(max_dist_dict), len(defect_structures_dict)
+        )  # one for each
+        self.assertEqual(
+            max_dist_dict.keys(), defect_structures_dict.keys()
+        )  # one for each
         self.assertEqual(max_dist_dict[-0.4], 0.24573512684427087)
         self.assertEqual(max_dist_dict[-0.2], 0.007657854604646658)
         self.assertEqual(max_dist_dict["Unperturbed"], 5.320996143118748e-16)
 
         # V_Cd_0 with 'rms' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
-        rms_dict = analyse_defects.calculate_struct_comparison(defect_structures_dict, "rms")
+        rms_dict = analyse_defects.calculate_struct_comparison(
+            defect_structures_dict, "rms"
+        )
         self.assertEqual(len(rms_dict), len(defect_structures_dict))  # one for each
         self.assertEqual(rms_dict.keys(), defect_structures_dict.keys())  # one for each
         self.assertEqual(rms_dict[-0.4], 0.0666267898227637)
         self.assertEqual(rms_dict[-0.2], 0.0023931134449495075)
         self.assertEqual(rms_dict["Unperturbed"], 1.4198258237093096e-16)
+
+    def test_compare_structures(self):
+        """Test compare_structures() function."""
+        # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
+        defect_structures_dict = analyse_defects.get_structures(
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+        )
+        defect_energies_dict = analyse_defects.get_energies(
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+        )
+        with patch("builtins.print") as mock_print:
+            struct_comparison_df = analyse_defects.compare_structures(
+                defect_structures_dict, defect_energies_dict
+            )
+            mock_print.assert_called_with("Comparing structures to Unperturbed...")
+        self.assertIsInstance(struct_comparison_df, pd.DataFrame)
+        self.assertEqual(len(struct_comparison_df), len(defect_structures_dict))
+        self.assertEqual(
+            struct_comparison_df["Bond Dist."].to_list(),
+            list(defect_structures_dict.keys()),
+        )
+        # spot check:
+        self.assertEqual(
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.002, 0.008, -0.0]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.067, 0.246, -0.75]
+        )
 
 
 if __name__ == "__main__":
