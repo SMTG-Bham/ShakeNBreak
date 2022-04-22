@@ -4,6 +4,7 @@ import pickle
 import copy
 from unittest.mock import patch
 import shutil
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -146,32 +147,39 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_grab_contcar(self):
         """Test grab_contcar() function."""
-        with patch("builtins.print") as mock_print:
+        with warnings.catch_warnings(record=True) as w:
             output = analyse_defects.grab_contcar("fake_file")
-            mock_print.assert_called_once_with(
-                "fake_file file doesn't exist. Check path & relaxation"
+            warning_message = (
+                "fake_file file doesn't exist, storing as 'Not converged'. Check "
+                "path & relaxation"
             )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, "Not converged")
 
-        with patch("builtins.print") as mock_print:
+        with warnings.catch_warnings(record=True) as w:
             output = analyse_defects.grab_contcar(
                 os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
             )
-            mock_print.assert_called_once_with(
+            warning_message = (
                 f"Problem obtaining structure from: "
-                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, check file & "
-                f"relaxation"
+                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, storing as 'Not "
+                f"converged'. Check file & relaxation"
             )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, "Not converged")
 
-        with patch("builtins.print") as mock_print:
+        with warnings.catch_warnings(record=True) as w:
             output = analyse_defects.grab_contcar(
                 os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
             V_Cd_struc = Structure.from_file(
                 os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
-            mock_print.assert_not_called()
+            self.assertEqual(len(w), 0)
             self.assertEqual(output, V_Cd_struc)
 
     def test_analyse_defect_site(self):
@@ -186,7 +194,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("V"))
             )
             np.testing.assert_array_equal(
-                mock_print.call_args_list[1][0][2], np.array([0, 0, 0]),
+                mock_print.call_args_list[1][0][2],
+                np.array([0, 0, 0]),
             )
             mock_print.assert_any_call(
                 "Local order parameters (i.e. resemblance to given "
@@ -236,7 +245,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("Cd"))
             )
             np.testing.assert_array_equal(
-                mock_print.call_args_list[1][0][2], np.array([0.8125, 0.1875, 0.8125]),
+                mock_print.call_args_list[1][0][2],
+                np.array([0.8125, 0.1875, 0.8125]),
             )
 
             expected_Int_Cd_2_NN_10_crystalNN_coord_df = pd.DataFrame(

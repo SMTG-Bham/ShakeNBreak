@@ -35,7 +35,9 @@ class BDMTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR")
+            os.path.join(
+                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
@@ -707,6 +709,11 @@ class BDMTestCase(unittest.TestCase):
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
+        rounded_bond_distortions = np.around(bond_distortions, 3)
+        np.testing.assert_equal(
+            bdm_defect_dict["distortion_parameters"]["bond_distortions"],
+            rounded_bond_distortions,
+        )
 
         # test other kwargs:
         reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
@@ -757,7 +764,9 @@ class BDMTestCase(unittest.TestCase):
                 "Then, will rattle with a std dev of 0.25 Å \n",
             )
             mock_Int_Cd_2_print.assert_any_call("\nDefect:", "Int_Cd_2")
-            mock_Int_Cd_2_print.assert_any_call("Number of missing electrons in neutral state: 3")
+            mock_Int_Cd_2_print.assert_any_call(
+                "Number of missing electrons in neutral state: 3"
+            )
             mock_Int_Cd_2_print.assert_any_call(
                 "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
             )

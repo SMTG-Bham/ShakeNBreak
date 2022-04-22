@@ -7,6 +7,7 @@ import json
 import os
 from copy import deepcopy
 from typing import Optional
+import warnings
 
 import pandas as pd
 from pymatgen.analysis.local_env import CrystalNN
@@ -16,6 +17,12 @@ from pymatgen.core.structure import Structure
 crystalNN = CrystalNN(
     distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5
 )
+
+# format warnings output:
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
+
+warnings.formatwarning = warning_on_one_line
 
 # using stackoverflow.com/questions/15411967/
 # how-can-i-check-if-code-is-executed-in-the-ipython-notebook
@@ -167,14 +174,18 @@ def grab_contcar(file_path: str) -> Structure:
     """
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
-        print(f"{abs_path_formatted} file doesn't exist. Check path & relaxation")
+        warnings.warn(
+            f"{abs_path_formatted} file doesn't exist, storing as 'Not converged'. Check path & "
+            f"relaxation"
+        )
         struct = "Not converged"
     else:
         try:
             struct = Structure.from_file(abs_path_formatted)
         except:
-            print(
-                f"Problem obtaining structure from: {abs_path_formatted}, check file & relaxation"
+            warnings.warn(
+                f"Problem obtaining structure from: {abs_path_formatted}, storing as 'Not "
+                f"converged'. Check file & relaxation"
             )
             struct = "Not converged"
     return struct
@@ -291,117 +302,26 @@ def analyse_structure(
     return analyse_defect_site(structure, name=defect_species, site_num=defect_site)
 
 
-def compare_structures(
-    defect_dict: dict,
-    defect_energies: dict,
-    compare_to: str = "Unperturbed",
-    ref_structure: Optional[Structure] = None,
-    stol: float = 0.5,
-    units: str = "eV",
-) -> pd.DataFrame:
-    """
-    Compare final bond-distorted structures with either 'Unperturbed' or a specified structure (
-    `ref_structure`), and calculate the root-mean-squared-displacement (RMS disp.) and maximum
-    distance between matched atomic sites.
-
-    Args:
-        defect_dict (:obj:`dict`):
-            Dictionary mapping bond distortion to (relaxed) structure
-        defect_energies (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
-        compare_to (:obj:`str`):
-            Name of reference structure used for comparison (recommended to compared with relaxed
-            'Unperturbed' defect structure).
-            (Default: "Unperturbed")
-        ref_structure:
-            Structure used as reference structure for comparison. This allows the user to compare
-            final bond-distorted structures with a specific external structure not obtained using
-            `shakenbreak`.
-            (Default: None)
-        stol (:obj:`float`):
-            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`).
-            (Default: 0.5 Angstrom)
-        units (:obj:`str`):
-            Energy units for outputs (either 'eV' or 'meV'). (Default: "eV")
-
-    Returns:
-        DataFrame containing structural comparison results (
-        RMS displacement and maximum distance between matched atomic sites), and relative energies.
-    """
-    print(f"Comparing structures to {compare_to}...")
-
-    rms_list = []
-    if (
-        ref_structure
-    ):  # if we give an external structure (not obtained with `shakenbreak`)
-        norm_struct = ref_structure
-    else:  # else we take reference structure from defect dictionary
-        norm_struct = defect_dict[compare_to]
-    assert norm_struct
-
-    distortion_list = list(defect_energies["distortions"].keys())
-    distortion_list.append("Unperturbed")
-    for distortion in distortion_list:
-        if distortion == "Unperturbed":
-            rel_energy = defect_energies[distortion]
-        else:
-            try:
-                rel_energy = defect_energies["distortions"][distortion]
-            except KeyError:  # if relaxation didn't converge for this BDM distortion, store it
-                # as NotANumber
-                rel_energy = float("nan")
-        struct = defect_dict[distortion]
-        if (
-            struct
-            and struct != "Not converged"
-            and norm_struct
-            and norm_struct != "Not converged"
-        ):
-            new_sm = StructureMatcher(
-                ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
-            )  # higher stol for calculating rms
-            try:
-                rms_displacement = round(new_sm.get_rms_dist(norm_struct, struct)[0], 3)
-                rms_dist_sites = round(
-                    new_sm.get_rms_dist(norm_struct, struct)[1], 3
-                )  # select rms displacement normalized by (Vol / nsites) ** (1/3)
-            except TypeError:  # lattices didn't match
-                rms_displacement = None
-                rms_dist_sites = None
-            rms_list.append(
-                [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2)]
-            )
-    if isipython():
-        display(
-            pd.DataFrame(
-                rms_list,
-                columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"],
-            )
-        )
-    return pd.DataFrame(
-        rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"]
-    )
-
-
-############################################################################
-
-
+# TODO: Refactor `get_structures` to read the distortions present from the subfolders,
+#  rather than requiring it to be specified in the function argument.
 def get_structures(
     defect_species: str,
-    output_path: str,
+    output_path: str = "./",
     distortion_increment: float = 0.1,
     bond_distortions: Optional[list] = None,
     distortion_type="BDM",
 ) -> dict:
     """
     Import all structures found with rattling & bond distortions, and store them in a dictionary
-    matching the bond distortion to the final structure.
+    matching the bond distortion to the final structure. By default, will read the
+    `distortion_metadata.json` file (generated with ShakeNBreak)if present in the current directory.
 
     Args:
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing `defect_species` subdirectories.
+            Path to top-level directory containing `defect_species` subdirectories. (Default is
+            current directory)
         distortion_increment (:obj:`float`):
             Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
         bond_distortions (:obj:`list`):
@@ -452,16 +372,16 @@ def get_structures(
             path = rattle_dir_path + "/vasp_gam/CONTCAR"
             defect_structures_dict["rattle"] = grab_contcar(path)
         except:
-            print(f"Unable to parse CONTCAR at {path}")
+            warnings.warn(
+                f"Unable to parse CONTCAR at {path}, storing as 'Not converged'"
+            )
             defect_structures_dict["rattle"] = "Not converged"
     else:
         for i in bond_distortions:
             key = (
                 i / 100
             )  # Dictionary key in the same format as the {distortions: final energies} dictionary
-            i = f"{i:.1f}"  # 1 decimal place
-            if i == "0.0":
-                i = "-0.0"  # this is the format used in defect folder names
+            i = f"{i+0:.1f}"  # 1 decimal place
             path = (
                 output_path
                 + "/"
@@ -472,17 +392,19 @@ def get_structures(
                 + defect_species
                 + "_"
                 + str(i)
-                + "%_BDM_Distortion/vasp_gam/CONTCAR"
+                + "%_Bond_Distortion/vasp_gam/CONTCAR"
             )
             try:
                 defect_structures_dict[key] = grab_contcar(path)
             except FileNotFoundError or IndexError or ValueError:
-                print("Error grabbing structure.")
-                print("Your defect path is: ", path)
+                warnings.warn(
+                    f"Unable to parse structure at {path}, storing as 'Not converged'"
+                )
                 defect_structures_dict[key] = "Not converged"
             except:
-                print("Problem in get_structures")
-                print("Your defect path is: ", path)
+                warnings.warn(
+                    f"Problem parsing structure at {path}, storing as 'Not converged'"
+                )
                 defect_structures_dict[key] = "Not converged"
     try:
         unperturbed_path = (
@@ -499,7 +421,9 @@ def get_structures(
         )
         defect_structures_dict["Unperturbed"] = grab_contcar(unperturbed_path)
     except FileNotFoundError:
-        print("Unable to parse CONTCAR at", unperturbed_path)
+        warnings.warn(
+            f"Unable to parse structure at {unperturbed_path}, storing as 'Not converged'"
+        )
         defect_structures_dict["Unperturbed"] = "Not converged"
     return defect_structures_dict
 
@@ -596,6 +520,98 @@ def calculate_struct_comparison(
     ):  # If metric couldn't be calculated for more than 5 distortions, then return None
         return None
     return rms_dict
+
+
+def compare_structures(
+    defect_dict: dict,
+    defect_energies: dict,
+    compare_to: str = "Unperturbed",
+    ref_structure: Optional[Structure] = None,
+    stol: float = 0.5,
+    units: str = "eV",
+) -> pd.DataFrame:
+    """
+    Compare final bond-distorted structures with either 'Unperturbed' or a specified structure (
+    `ref_structure`), and calculate the root-mean-squared-displacement (RMS disp.) and maximum
+    distance between matched atomic sites.
+
+    Args:
+        defect_dict (:obj:`dict`):
+            Dictionary mapping bond distortion to (relaxed) structure
+        defect_energies (:obj:`dict`):
+            Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
+        compare_to (:obj:`str`):
+            Name of reference structure used for comparison (recommended to compared with relaxed
+            'Unperturbed' defect structure).
+            (Default: "Unperturbed")
+        ref_structure:
+            Structure used as reference structure for comparison. This allows the user to compare
+            final bond-distorted structures with a specific external structure not obtained using
+            `shakenbreak`.
+            (Default: None)
+        stol (:obj:`float`):
+            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`).
+            (Default: 0.5 Angstrom)
+        units (:obj:`str`):
+            Energy units for outputs (either 'eV' or 'meV'). (Default: "eV")
+
+    Returns:
+        DataFrame containing structural comparison results (
+        RMS displacement and maximum distance between matched atomic sites), and relative energies.
+    """
+    print(f"Comparing structures to {compare_to}...")
+
+    rms_list = []
+    if (
+        ref_structure
+    ):  # if we give an external structure (not obtained with `shakenbreak`)
+        norm_struct = ref_structure
+    else:  # else we take reference structure from defect dictionary
+        norm_struct = defect_dict[compare_to]
+    assert norm_struct
+
+    distortion_list = list(defect_energies["distortions"].keys())
+    distortion_list.append("Unperturbed")
+    for distortion in distortion_list:
+        if distortion == "Unperturbed":
+            rel_energy = defect_energies[distortion]
+        else:
+            try:
+                rel_energy = defect_energies["distortions"][distortion]
+            except KeyError:  # if relaxation didn't converge for this BDM distortion, store it
+                # as NotANumber
+                rel_energy = float("nan")
+        struct = defect_dict[distortion]
+        if (
+            struct
+            and struct != "Not converged"
+            and norm_struct
+            and norm_struct != "Not converged"
+        ):
+            new_sm = StructureMatcher(
+                ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
+            )  # higher stol for calculating rms
+            try:
+                rms_displacement = round(new_sm.get_rms_dist(norm_struct, struct)[0], 3)
+                rms_dist_sites = round(
+                    new_sm.get_rms_dist(norm_struct, struct)[1], 3
+                )  # select rms displacement normalized by (Vol / nsites) ** (1/3)
+            except TypeError:  # lattices didn't match
+                rms_displacement = None
+                rms_dist_sites = None
+            rms_list.append(
+                [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2)]
+            )
+    if isipython():
+        display(
+            pd.DataFrame(
+                rms_list,
+                columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"],
+            )
+        )
+    return pd.DataFrame(
+        rms_list, columns=["BDM Dist.", "rms", "max. dist (A)", f"Rel. E ({units})"]
+    )
 
 
 # TODO: Why cutoff of 5 here? If the user uses a coarser mesh, or only some of the calculations
