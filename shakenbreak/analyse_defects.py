@@ -482,6 +482,8 @@ def get_energies(
     return energies_dict
 
 
+# TODO: Add ref_structure option to calculate_struct_comparison
+# TODO: Refactor to use total (summed) RMS, not average RMS (to remove supercell size dependence)
 def calculate_struct_comparison(
     defect_struct_dict: dict,
     metric: str = "max_dist",
@@ -503,8 +505,7 @@ def calculate_struct_comparison(
     Returns:
         rms_dict (:obj:`dict`, optional):
             Dictionary matching bond distortions to structure comparison metric (rms or
-            max_dist). Will return None if the comparison metric couldn't be calculated for more
-            than 5 distortions.
+            max_dist).
     """
     rms_dict = {}
     metric_dict = {"rms": 0, "max_dist": 1}
@@ -521,13 +522,11 @@ def calculate_struct_comparison(
                 rms_dict[
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison metric to None
+                warnings.warn(f"pymatgen StructureMatcher could not match lattices for between "
+                              f"unperturbed and {distortion} structures.")
         else:
             rms_dict[distortion] = "Not converged"  # Structure not converged
 
-    if (
-        sum(value is None for value in rms_dict.values()) > 5
-    ):  # If metric couldn't be calculated for more than 5 distortions, then return None
-        return None
     return rms_dict
 
 
