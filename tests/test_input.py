@@ -10,7 +10,7 @@ import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
 from doped import vasp_input
-from shakenbreak import BDM, distortions
+from shakenbreak import input, distortions
 
 
 def if_present_rm(path):
@@ -166,7 +166,9 @@ class BDMTestCase(unittest.TestCase):
             ("Int_Cd_2_1", self.Int_Cd_2_minus0pt6_struc_rattled, "Int_Cd_2 Rattled"),
         ]:
             charged_defect_dict = vasp_defect_inputs[key]
-            output = BDM.update_struct_defect_dict(charged_defect_dict, struc, comment)
+            output = input.update_struct_defect_dict(
+                charged_defect_dict, struc, comment
+            )
             self.assertEqual(output["Defect Structure"], struc)
             self.assertEqual(output["POSCAR Comment"], comment)
             self.assertDictEqual(
@@ -195,14 +197,16 @@ class BDMTestCase(unittest.TestCase):
                     for i in defect_list:
                         if i["name"] == defect:
                             self.assertEqual(
-                                BDM.calc_number_electrons(
+                                input.calc_number_electrons(
                                     i,
                                     oxidation_states,
                                     verbose=False,  # test non-verbose
                                 ),
                                 -electron_change,  # returns negative of electron change
                             )
-                            BDM.calc_number_electrons(i, oxidation_states, verbose=True)
+                            input.calc_number_electrons(
+                                i, oxidation_states, verbose=True
+                            )
                             mock_print.assert_called_with(
                                 f"Number of extra/missing electrons of "
                                 f"defect {defect}: {electron_change} "
@@ -211,25 +215,25 @@ class BDMTestCase(unittest.TestCase):
 
     def test_calc_number_neighbours(self):
         """Test calc_number_neighbours function"""
-        self.assertEqual(BDM.calc_number_neighbours(0), 0)
-        self.assertEqual(BDM.calc_number_neighbours(-2), 2)
-        self.assertEqual(BDM.calc_number_neighbours(2), 2)
-        self.assertEqual(BDM.calc_number_neighbours(6), 2)
-        self.assertEqual(BDM.calc_number_neighbours(-6), 2)
-        self.assertEqual(BDM.calc_number_neighbours(8), 0)
-        self.assertEqual(BDM.calc_number_neighbours(-8), 0)
-        self.assertEqual(BDM.calc_number_neighbours(4), 4)
-        self.assertEqual(BDM.calc_number_neighbours(-4), 4)
+        self.assertEqual(input.calc_number_neighbours(0), 0)
+        self.assertEqual(input.calc_number_neighbours(-2), 2)
+        self.assertEqual(input.calc_number_neighbours(2), 2)
+        self.assertEqual(input.calc_number_neighbours(6), 2)
+        self.assertEqual(input.calc_number_neighbours(-6), 2)
+        self.assertEqual(input.calc_number_neighbours(8), 0)
+        self.assertEqual(input.calc_number_neighbours(-8), 0)
+        self.assertEqual(input.calc_number_neighbours(4), 4)
+        self.assertEqual(input.calc_number_neighbours(-4), 4)
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
         """Test apply_rattle_bond_distortions function for V_Cd"""
-        V_Cd_distorted_dict = BDM.apply_rattle_bond_distortions(
+        V_Cd_distorted_dict = input.apply_rattle_bond_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
+        output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
@@ -256,12 +260,12 @@ class BDMTestCase(unittest.TestCase):
 
     def test_apply_rattle_bond_distortions_Int_Cd_2(self):
         """Test apply_rattle_bond_distortions function for Int_Cd_2"""
-        Int_Cd_2_distorted_dict = BDM.apply_rattle_bond_distortions(
+        Int_Cd_2_distorted_dict = input.apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
         )
-        output = distortions.bdm(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
+        output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -296,7 +300,7 @@ class BDMTestCase(unittest.TestCase):
     def test_apply_rattle_bond_distortions_kwargs(self, mock_print):
         """Test apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
-        Int_Cd_2_distorted_dict = BDM.apply_rattle_bond_distortions(
+        Int_Cd_2_distorted_dict = input.apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=10,
             distortion_factor=0.4,
@@ -343,7 +347,7 @@ class BDMTestCase(unittest.TestCase):
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
 
-        V_Cd_kwarg_distorted_dict = BDM.apply_rattle_bond_distortions(
+        V_Cd_kwarg_distorted_dict = input.apply_rattle_bond_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
@@ -373,7 +377,7 @@ class BDMTestCase(unittest.TestCase):
 
     def test_apply_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""
-        V_Cd_distorted_dict = BDM.apply_distortions(
+        V_Cd_distorted_dict = input.apply_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
@@ -388,7 +392,7 @@ class BDMTestCase(unittest.TestCase):
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_rattled, distorted_V_Cd_struc)
 
-        V_Cd_0pt1_distorted_dict = BDM.apply_distortions(
+        V_Cd_0pt1_distorted_dict = input.apply_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
@@ -406,7 +410,7 @@ class BDMTestCase(unittest.TestCase):
             self.V_Cd_distortion_parameters,
         )
 
-        V_Cd_3_neighbours_distorted_dict = BDM.apply_distortions(
+        V_Cd_3_neighbours_distorted_dict = input.apply_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=3,
             bond_distortions=[-0.5],
@@ -423,7 +427,7 @@ class BDMTestCase(unittest.TestCase):
 
         with patch("builtins.print") as mock_print:
             distortion_range = np.arange(-0.6, 0.61, 0.1)
-            V_Cd_distorted_dict = BDM.apply_distortions(
+            V_Cd_distorted_dict = input.apply_distortions(
                 self.V_Cd_dict,
                 num_nearest_neighbours=2,
                 bond_distortions=distortion_range,
@@ -451,7 +455,7 @@ class BDMTestCase(unittest.TestCase):
     def test_apply_distortions_Int_Cd_2(self):
 
         """Test apply_distortions function for Int_Cd_2"""
-        Int_Cd_2_distorted_dict = BDM.apply_distortions(
+        Int_Cd_2_distorted_dict = input.apply_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.6],
@@ -478,7 +482,7 @@ class BDMTestCase(unittest.TestCase):
     def test_apply_distortions_kwargs(self, mock_print):
         """Test apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
-        Int_Cd_2_distorted_dict = BDM.apply_distortions(
+        Int_Cd_2_distorted_dict = input.apply_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=10,
             bond_distortions=[-0.6],
@@ -514,7 +518,7 @@ class BDMTestCase(unittest.TestCase):
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
 
-        V_Cd_kwarg_distorted_dict = BDM.apply_distortions(
+        V_Cd_kwarg_distorted_dict = input.apply_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
@@ -548,7 +552,7 @@ class BDMTestCase(unittest.TestCase):
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = BDM.update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = input.update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -557,10 +561,10 @@ class BDMTestCase(unittest.TestCase):
             "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        BDM.create_vasp_input(
+        input.create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=BDM.default_incar_settings,
+            incar_settings=input.default_incar_settings,
         )
         V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
         self.assertTrue(os.path.exists(V_Cd_gam_folder))
@@ -579,9 +583,9 @@ class BDMTestCase(unittest.TestCase):
             "LWAVE": True,
             "LCHARG": True,
         }
-        kwarged_incar_settings = BDM.default_incar_settings.copy()
+        kwarged_incar_settings = input.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
-        BDM.create_vasp_input(
+        input.create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
@@ -603,7 +607,7 @@ class BDMTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        bdm_defect_dict = BDM.apply_shakenbreak(
+        bdm_defect_dict = input.apply_shakenbreak(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -688,7 +692,7 @@ class BDMTestCase(unittest.TestCase):
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-        bdm_defect_dict = BDM.apply_shakenbreak(
+        bdm_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -720,7 +724,7 @@ class BDMTestCase(unittest.TestCase):
         reduced_Int_Cd_2_dict["charges"] = [1]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            bdm_defect_dict = BDM.apply_shakenbreak(
+            bdm_defect_dict = input.apply_shakenbreak(
                 {"interstitials": [reduced_Int_Cd_2_dict]},
                 oxidation_states=oxidation_states,
                 distortion_increment=0.25,
@@ -784,7 +788,7 @@ class BDMTestCase(unittest.TestCase):
         # check files are not written if write_files=False:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
-        bdm_defect_dict = BDM.apply_shakenbreak(
+        bdm_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,

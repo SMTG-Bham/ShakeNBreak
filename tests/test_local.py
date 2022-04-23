@@ -16,7 +16,7 @@ import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
 from doped import vasp_input
-from shakenbreak import BDM, distortions
+from shakenbreak import input, distortions
 
 
 def if_present_rm(path):
@@ -166,7 +166,7 @@ class BDMLocalTestCase(unittest.TestCase):
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = BDM.update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = input.update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -175,10 +175,10 @@ class BDMLocalTestCase(unittest.TestCase):
             "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        BDM.create_vasp_input(
+        input.create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=BDM.default_incar_settings,
+            incar_settings=input.default_incar_settings,
         )
         V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
         self.assertTrue(os.path.exists(V_Cd_gam_folder))
@@ -188,7 +188,7 @@ class BDMLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertTrue(BDM.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertTrue(input.default_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
@@ -205,9 +205,9 @@ class BDMLocalTestCase(unittest.TestCase):
             "LWAVE": True,
             "LCHARG": True,
         }
-        kwarged_incar_settings = BDM.default_incar_settings.copy()
+        kwarged_incar_settings = input.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
-        BDM.create_vasp_input(
+        input.create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
@@ -223,7 +223,7 @@ class BDMLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_gam_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertFalse(BDM.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_gam_folder + "/KPOINTS")
@@ -238,7 +238,7 @@ class BDMLocalTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        bdm_defect_dict = BDM.apply_shakenbreak(
+        bdm_defect_dict = input.apply_shakenbreak(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -304,11 +304,11 @@ class BDMLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set IBRION and EDIFF)
-        self.assertFalse(BDM.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertEqual(V_Cd_INCAR.pop("ENCUT"), 212)
         self.assertEqual(V_Cd_INCAR.pop("IBRION"), 0)
         self.assertEqual(V_Cd_INCAR.pop("EDIFF"), 1e-4)
-        modified_default_incar_settings = BDM.default_incar_settings.copy()
+        modified_default_incar_settings = input.default_incar_settings.copy()
         modified_default_incar_settings.pop("IBRION")
         modified_default_incar_settings.pop("EDIFF")
         self.assertTrue(

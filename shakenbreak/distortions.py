@@ -19,7 +19,7 @@ def warning_on_one_line(message, category, filename, lineno, file=None, line=Non
 warnings.formatwarning = warning_on_one_line
 
 
-def bdm(
+def distort(
     structure: Structure,
     num_nearest_neighbours: int,
     distortion_factor: float,
