@@ -564,10 +564,14 @@ def compare_structures(
             compare with a specific external structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
-            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`).
-            (Default: 0.5 Angstrom)
+            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`),
+            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If RMS
+            output contains too many 'NaN' values, this likely needs to be increased.
+            (Default: 0.5)
         units (:obj:`str`):
-            Energy units for outputs (either 'eV' or 'meV'). (Default: "eV")
+            Energy units label for outputs (either 'eV' or 'meV'). Should be the same as the
+            units in `defect_energies_dict`, as this does not modify the supplied values.
+            (Default: "eV")
 
     Returns:
         DataFrame containing structural comparison results (
@@ -591,6 +595,11 @@ def compare_structures(
             )
     elif isinstance(ref_structure, Structure):
         ref_name = f"specified ref_structure ({ref_structure.composition})"
+    else:
+        raise TypeError(
+            f"ref_structure must be either a key from defect_structures_dict or a pymatgen "
+            f"Structure object. Got {type(ref_structure)} instead."
+        )
     print(f"Comparing structures to {ref_name}...")
 
     rms_list = []
@@ -604,25 +613,27 @@ def compare_structures(
                 rel_energy = defect_energies_dict["distortions"][distortion]
             except KeyError:  # if relaxation didn't converge for this bond distortion, store it
                 # as NotANumber
-                rel_energy = float("nan")
+                rel_energy = float("NaN")
         struct = defect_structures_dict[distortion]
-        if (
-            struct
-            and struct != "Not converged"
-        ):
+        if struct and struct != "Not converged":
             new_sm = StructureMatcher(
                 ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
             )  # higher stol for calculating rms
             try:
-                rms_displacement = round(new_sm.get_rms_dist(ref_structure, struct)[0], 3)
-                rms_dist_sites = round(
-                    new_sm.get_rms_dist(ref_structure, struct)[1], 3
-                )  # select rms displacement normalized by (Vol / nsites) ** (1/3)
+                rms_displacement = (
+                    round(new_sm.get_rms_dist(ref_structure, struct)[0], 3) + 0
+                )
+                rms_dist_sites = (
+                    round(new_sm.get_rms_dist(ref_structure, struct)[1], 3) + 0
+                )  # select rms displacement normalized by (Vol / nsites) ** (1/3) (+0 for
+                # positive zeros)
             except TypeError:  # lattices didn't match
                 rms_displacement = None
                 rms_dist_sites = None
+            # TODO: Add check here if too many 'NaN' values in rms_dict, if so, try with higher
+            #  `stol` value.
             rms_list.append(
-                [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2)]
+                [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2) + 0]
             )
     if isipython():
         display(
