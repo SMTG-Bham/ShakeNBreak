@@ -2,6 +2,7 @@
 Module containing functions for applying distortions to defect structures
 """
 import sys
+import os
 import warnings
 from typing import Optional
 
