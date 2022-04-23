@@ -421,9 +421,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         defect_structures_dict = analyse_defects.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
-        max_dist_dict = analyse_defects.calculate_struct_comparison(
-            defect_structures_dict
-        )
+        with patch("builtins.print") as mock_print:
+            max_dist_dict = analyse_defects.calculate_struct_comparison(
+                defect_structures_dict
+            )
+            mock_print.assert_called_with("Comparing structures to Unperturbed...")
         self.assertEqual(
             len(max_dist_dict), len(defect_structures_dict)
         )  # one for each
@@ -443,6 +445,75 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(rms_dict[-0.4], 0.0666267898227637)
         self.assertEqual(rms_dict[-0.2], 0.0023931134449495075)
         self.assertEqual(rms_dict["Unperturbed"], 1.4198258237093096e-16)
+
+        # test with specified ref_structure as dict key:
+        with patch("builtins.print") as mock_print:
+            rms_dict = analyse_defects.calculate_struct_comparison(
+                defect_structures_dict, "rms", ref_structure=-0.4
+            )
+            mock_print.assert_called_with(
+                "Comparing structures to -40.0% bond distorted structure..."
+            )
+        # spot check:
+        self.assertEqual(round(rms_dict[-0.2], 3), 0.067)
+        self.assertTrue(np.isclose(rms_dict[-0.4], 0))
+        self.assertEqual(round(rms_dict["Unperturbed"], 3), 0.067)
+
+        # test with specified ref_structure as Structure object:
+        with patch("builtins.print") as mock_print:
+            rms_dict = analyse_defects.calculate_struct_comparison(
+                defect_structures_dict,
+                "rms",
+                ref_structure=self.V_Cd_minus0pt5_struc_rattled,
+            )
+            mock_print.assert_called_with(
+                "Comparing structures to specified ref_structure (Cd31 Te32)..."
+            )
+        # spot check:
+        self.assertEqual(round(rms_dict[-0.2], 3), 0.142)
+        self.assertEqual(round(rms_dict[-0.4], 3), 0.139)
+        self.assertEqual(round(rms_dict["Unperturbed"], 3), 0.142)
+
+        # test kwargs:
+        rms_dict = analyse_defects.calculate_struct_comparison(
+            defect_structures_dict, "max_dist", stol=0.01
+        )
+        # spot check:
+        self.assertEqual(round(rms_dict[-0.2], 3), 0.008)
+        self.assertIsNone(rms_dict[-0.4])
+        self.assertTrue(np.isclose(rms_dict["Unperturbed"], 0))
+
+        # test error catching:
+        with self.assertRaises(KeyError) as e:
+            wrong_key_error = KeyError(
+                "Reference structure key 'Test pop' not found in defect_structures_dict."
+            )
+            analyse_defects.calculate_struct_comparison(
+                defect_structures_dict, ref_structure="Test pop"
+            )
+            self.assertIn(wrong_key_error, e.exception)
+
+        with self.assertRaises(ValueError) as e:
+            unconverged_error = ValueError(
+                "Specified reference structure (with key 'Not converged') is not converged and "
+                "cannot be used for structural comparison."
+            )
+            unconverged_structures_dict = defect_structures_dict.copy()
+            unconverged_structures_dict["Unperturbed"] = "Not converged"
+            analyse_defects.calculate_struct_comparison(
+                unconverged_structures_dict,
+            )
+            self.assertIn(unconverged_error, e.exception)
+
+        with self.assertRaises(TypeError) as e:
+            wrong_type_error = TypeError(
+                "ref_structure must be either a key from defect_structures_dict or a pymatgen "
+                "Structure object. Got <class 'int'> instead."
+            )
+            analyse_defects.calculate_struct_comparison(
+                defect_structures_dict, ref_structure=1
+            )
+            self.assertIn(wrong_type_error, e.exception)
 
     def test_compare_structures(self):
         """Test compare_structures() function."""

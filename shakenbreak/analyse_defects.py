@@ -495,6 +495,8 @@ def get_energies(
 def calculate_struct_comparison(
     defect_structures_dict: dict,
     metric: str = "max_dist",
+    ref_structure: Union[str, float, Structure] = "Unperturbed",
+    stol: float = 0.5,
 ) -> Optional[dict]:
     """
     Calculate either the root-mean-squared displacement (RMS disp.)(with metric = "rms") or the
@@ -509,31 +511,64 @@ def calculate_struct_comparison(
             Structure comparison metric to use. Either root-mean-squared displacement ('rms') or
             the maximum distance between matched atoms ('max_dist', default).
             (Default: "max_dist")
+        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
+            Structure to use as a reference for comparison (to compute RMS and max distance).
+            Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
+            compare with a specific external structure).
+            (Default: "Unperturbed")
+        stol (:obj:`float`):
+            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`),
+            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If RMS
+            output contains too many 'NaN' values, this likely needs to be increased.
+            (Default: 0.5)
 
     Returns:
         rms_dict (:obj:`dict`, optional):
             Dictionary matching bond distortions to structure comparison metric (rms or
             max_dist).
     """
+    if isinstance(ref_structure, str) or isinstance(ref_structure, float):
+        if isinstance(ref_structure, str):
+            ref_name = ref_structure
+        else:
+            ref_name = f"{ref_structure:.1%} bond distorted structure"
+        try:
+            ref_structure = defect_structures_dict[ref_structure]
+        except KeyError:
+            raise KeyError(
+                f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
+            )
+        if ref_structure == "Not converged":
+            raise ValueError(
+                f"Specified reference structure (with key '{ref_structure}') is not converged "
+                "and cannot be used for structural comparison."
+            )
+    elif isinstance(ref_structure, Structure):
+        ref_name = f"specified ref_structure ({ref_structure.composition})"
+    else:
+        raise TypeError(
+            f"ref_structure must be either a key from defect_structures_dict or a pymatgen "
+            f"Structure object. Got {type(ref_structure)} instead."
+        )
+    print(f"Comparing structures to {ref_name}...")
     rms_dict = {}
     metric_dict = {"rms": 0, "max_dist": 1}
     sm = StructureMatcher(
-        ltol=0.3, stol=0.5, angle_tol=5, primitive_cell=False, scale=True
+        ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
     )
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] != "Not converged":
             try:
                 rms_dict[distortion] = sm.get_rms_dist(
-                    defect_structures_dict["Unperturbed"],
-                    defect_structures_dict[distortion],
+                    ref_structure, defect_structures_dict[distortion]
                 )[metric_dict[metric]]
             except TypeError:
                 rms_dict[
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison metric to None
                 warnings.warn(
-                    f"pymatgen StructureMatcher could not match lattices for between "
-                    f"unperturbed and {distortion} structures."
+                    f"pymatgen StructureMatcher could not match lattices between {ref_name} "
+                    f"and {distortion} structures."
                 )
         else:
             rms_dict[distortion] = "Not converged"  # Structure not converged
@@ -558,7 +593,7 @@ def compare_structures(
             Dictionary mapping bond distortion to (relaxed) structure
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
-        ref_structure:
+        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute RMS and max distance).
             Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
             compare with a specific external structure).
@@ -630,6 +665,10 @@ def compare_structures(
             except TypeError:  # lattices didn't match
                 rms_displacement = None
                 rms_dist_sites = None
+                warnings.warn(
+                    f"pymatgen StructureMatcher could not match lattices between {ref_name} "
+                    f"and {distortion} structures."
+                )
             # TODO: Add check here if too many 'NaN' values in rms_dict, if so, try with higher
             #  `stol` value.
             rms_list.append(
