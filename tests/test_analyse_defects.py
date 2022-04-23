@@ -367,11 +367,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 self.assertEqual(val, "Not converged")
 
         # test error catching:
-        wrong_path_exception = Exception(
-            f"No `distortion_metadata.json` file found in wrong_path. Please specify "
-            f"`distortion_increment` or `bond_distortions`."
-        )
         with self.assertRaises(Exception) as e:
+            wrong_path_exception = Exception(
+                "No `distortion_metadata.json` file found in wrong_path. Please specify "
+                "`distortion_increment` or `bond_distortions`."
+            )
             analyse_defects.get_structures(
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
             )
@@ -528,7 +528,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.iloc[16].to_list(), [-0.2, 0.002, 0.008, 0.00]
         )
         self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[1]))  # no RMS
-        self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[2]))  # no max dist
+        self.assertTrue(
+            np.isnan(struct_comparison_df.iloc[8].to_list()[2])
+        )  # no max dist
         self.assertEqual(
             struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
         )
@@ -536,6 +538,38 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.columns.to_list(),
             ["Bond Dist.", "RMS", "Max. dist (Å)", "Rel. E (meV)"],
         )
+
+        # test error catching:
+        with self.assertRaises(KeyError) as e:
+            wrong_key_error = KeyError(
+                "Reference structure key 'Test pop' not found in defect_structures_dict."
+            )
+            analyse_defects.compare_structures(
+                defect_structures_dict, defect_energies_dict, ref_structure="Test pop"
+            )
+            self.assertIn(wrong_key_error, e.exception)
+
+        with self.assertRaises(ValueError) as e:
+            unconverged_error = ValueError(
+                "Specified reference structure (with key 'Not converged') is not converged and "
+                "cannot be used for structural comparison."
+            )
+            unconverged_structures_dict = defect_structures_dict.copy()
+            unconverged_structures_dict["Unperturbed"] = "Not converged"
+            analyse_defects.compare_structures(
+                unconverged_structures_dict, defect_energies_dict
+            )
+            self.assertIn(unconverged_error, e.exception)
+
+        with self.assertRaises(TypeError) as e:
+            wrong_type_error = TypeError(
+                "ref_structure must be either a key from defect_structures_dict or a pymatgen "
+                "Structure object. Got <class 'int'> instead."
+            )
+            analyse_defects.compare_structures(
+                defect_structures_dict, defect_energies_dict, ref_structure=1
+            )
+            self.assertIn(wrong_type_error, e.exception)
 
 
 if __name__ == "__main__":

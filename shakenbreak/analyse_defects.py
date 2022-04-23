@@ -590,7 +590,7 @@ def compare_structures(
             )
         if ref_structure == "Not converged":
             raise ValueError(
-                f"Specified reference structure (with key '{ref_structure}') is not converged"
+                f"Specified reference structure (with key '{ref_structure}') is not converged "
                 "and cannot be used for structural comparison."
             )
     elif isinstance(ref_structure, Structure):
