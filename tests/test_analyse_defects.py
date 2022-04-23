@@ -461,15 +461,80 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertIsInstance(struct_comparison_df, pd.DataFrame)
         self.assertEqual(len(struct_comparison_df), len(defect_structures_dict))
         self.assertEqual(
+            struct_comparison_df.columns.to_list(),
+            ["Bond Dist.", "RMS", "Max. dist (Å)", "Rel. E (eV)"],
+        )
+        self.assertEqual(
             struct_comparison_df["Bond Dist."].to_list(),
             list(defect_structures_dict.keys()),
         )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.002, 0.008, -0.0]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.002, 0.008, 0.0]
         )
         self.assertEqual(
             struct_comparison_df.iloc[8].to_list(), [-0.4, 0.067, 0.246, -0.75]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
+        )
+
+        # test with specified ref_structure as dict key:
+        with patch("builtins.print") as mock_print:
+            struct_comparison_df = analyse_defects.compare_structures(
+                defect_structures_dict, defect_energies_dict, ref_structure=-0.4
+            )
+            mock_print.assert_called_with(
+                "Comparing structures to -40.0% bond distorted " "structure..."
+            )
+        # spot check:
+        self.assertEqual(
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.067, 0.243, 0.00]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.00, 0.00, -0.75]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.067, 0.246, 0.00]
+        )
+
+        # test with specified ref_structure as Structure object:
+        with patch("builtins.print") as mock_print:
+            struct_comparison_df = analyse_defects.compare_structures(
+                defect_structures_dict,
+                defect_energies_dict,
+                ref_structure=self.V_Cd_minus0pt5_struc_rattled,
+            )
+            mock_print.assert_called_with(
+                "Comparing structures to specified ref_structure (Cd31 Te32)..."
+            )
+        # spot check:
+        self.assertEqual(
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.142, 0.392, 0.00]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.139, 0.304, -0.75]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.142, 0.399, 0.00]
+        )
+
+        # test kwargs:
+        struct_comparison_df = analyse_defects.compare_structures(
+            defect_structures_dict, defect_energies_dict, stol=0.01, units="meV"
+        )
+        # spot check:
+        self.assertEqual(
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.002, 0.008, 0.00]
+        )
+        self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[1]))  # no RMS
+        self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[2]))  # no max dist
+        self.assertEqual(
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
+        )
+        self.assertEqual(
+            struct_comparison_df.columns.to_list(),
+            ["Bond Dist.", "RMS", "Max. dist (Å)", "Rel. E (meV)"],
         )
 
 
