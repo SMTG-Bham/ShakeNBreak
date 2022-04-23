@@ -65,17 +65,19 @@ class DistortionTestCase(unittest.TestCase):
         warnings.resetwarnings()  # Reset warnings to default state.
 
     @patch("builtins.print")
-    def test_bdm_V_Cd(self, mock_print):
+    def test_distort_V_Cd(self, mock_print):
         """Test bond distortion function for V_Cd"""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
+        output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         self.assertEqual(output["distorted_structure"], self.V_Cd_minus0pt5_struc)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
         self.assertCountEqual(output["distorted_atoms"], [(33, "Te"), (42, "Te")])
-        distortions.bdm(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True)
+        distortions.distort(
+            self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True
+        )
         mock_print.assert_called_with(
             f"""\tDefect Site Index / Frac Coords: {vac_coords}
         Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]
@@ -83,14 +85,16 @@ class DistortionTestCase(unittest.TestCase):
         )
 
         # Test if num_nearest_neighbours = 0 that nothing happens:
-        output = distortions.bdm(self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords)
+        output = distortions.distort(self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords)
         self.assertEqual(output["distorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 0)
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
         self.assertCountEqual(output["distorted_atoms"], [])
-        distortions.bdm(self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords, verbose=True)
+        distortions.distort(
+            self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords, verbose=True
+        )
         mock_print.assert_called_with(
             f"""\tDefect Site Index / Frac Coords: {vac_coords}
         Original Neighbour Distances: []
@@ -98,10 +102,10 @@ class DistortionTestCase(unittest.TestCase):
         )
 
     @patch("builtins.print")
-    def test_bdm_Int_Cd_2(self, mock_print):
+    def test_distort_Int_Cd_2(self, mock_print):
         """Test bond distortion function for Int_Cd_2"""
         site_index = 65  # Cd interstitial site index (VASP indexing)
-        output = distortions.bdm(
+        output = distortions.distort(
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=False
         )
         self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_struc)
@@ -110,7 +114,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["defect_site_index"], 65)
         self.assertEqual(output.get("defect_frac_coords"), None)
         self.assertCountEqual(output["distorted_atoms"], [(10, "Cd"), (22, "Cd")])
-        distortions.bdm(
+        distortions.distort(
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True
         )
         mock_print.assert_called_with(
@@ -121,7 +125,7 @@ class DistortionTestCase(unittest.TestCase):
 
         # test correct behaviour with `num_nearest_neighbours` is greater than number of
         # `distorted_element` atoms withing 4.5 Å of the defect site
-        output = distortions.bdm(
+        output = distortions.distort(
             self.Int_Cd_2_struc,
             num_nearest_neighbours=10,
             distortion_factor=0.4,
@@ -150,7 +154,7 @@ class DistortionTestCase(unittest.TestCase):
                 (62, "Te"),
             ],
         )
-        distortions.bdm(
+        distortions.distort(
             self.Int_Cd_2_struc,
             num_nearest_neighbours=10,
             distortion_factor=0.4,
@@ -168,14 +172,14 @@ class DistortionTestCase(unittest.TestCase):
             + "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
         )
 
-    def test_bdm_warnings(self):
+    def test_distort_warnings(self):
         """Test warning messages for bond distortion function"""
         site_index = 65  # Cd interstitial site index (VASP indexing)
         for missing_element in ["C", "O", "H", "N", "S", "P", "X"]:
             for num_neighbours in range(8):
                 for distortion_factor in np.arange(-0.6, 0.61, 0.1):
                     with warnings.catch_warnings(record=True) as w:
-                        distortions.bdm(
+                        distortions.distort(
                             self.Int_Cd_2_struc,  # cause warning for no `missing_element`
                             # neighbours
                             num_nearest_neighbours=num_neighbours,
@@ -203,7 +207,7 @@ class DistortionTestCase(unittest.TestCase):
         for num_neighbours in range(12):
             for distortion_factor in np.arange(-0.6, 0.61, 0.1):
                 with warnings.catch_warnings(record=True) as w:
-                    distortions.bdm(
+                    distortions.distort(
                         self.Int_Cd_2_struc,  # we have 3 Cd at 2.71 Å, 4 Cd at 4.25 Å from the
                         # defect site
                         num_nearest_neighbours=num_neighbours,

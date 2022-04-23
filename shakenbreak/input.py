@@ -14,7 +14,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from monty.serialization import loadfn
 
-from shakenbreak.distortions import bdm, rattle
+from shakenbreak.distortions import distort, rattle
 
 # Load default INCAR settings for the shakenbreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -145,7 +145,7 @@ def apply_rattle_bond_distortions(
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure (in `defect_dict`),
-    by calling `distortion.bdm` with either:
+    by calling `distortion.distort` with either:
             - fractional coordinates (for vacancies) or
             - defect site index (other defect types).
 
@@ -185,7 +185,7 @@ def apply_rattle_bond_distortions(
     if (
         defect_dict["defect_type"] == "vacancy"
     ):  # for vacancies, we need to use fractional coordinates (no atom site in structure!)
-        bond_distorted_defect = bdm(
+        bond_distorted_defect = distort(
             structure=defect_dict["supercell"]["structure"],
             num_nearest_neighbours=num_nearest_neighbours,
             distortion_factor=distortion_factor,
@@ -197,7 +197,7 @@ def apply_rattle_bond_distortions(
         defect_site_index = len(
             defect_dict["supercell"]["structure"]
         )  # defect atom comes last in structure, using doped or pymatgen
-        bond_distorted_defect = bdm(
+        bond_distorted_defect = distort(
             structure=defect_dict["supercell"]["structure"],
             num_nearest_neighbours=num_nearest_neighbours,
             distortion_factor=distortion_factor,
