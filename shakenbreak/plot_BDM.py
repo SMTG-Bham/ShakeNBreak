@@ -116,7 +116,7 @@ def plot_all_defects(
             # then further analyse this defect
             if (
                 plot_tag
-                and ("rattled" not in energies_dict["bond_distortions"].keys())
+                and ("rattled" not in energies_dict["distortions"].keys())
                 and float(energy_diff)
                 < -0.1  # TODO: Have energy lowering tolerance as an
                 # optional parameter
@@ -231,7 +231,7 @@ def plot_defect(
                 # relaxation not converged)
                 if (
                     (
-                        key not in energies_dict["bond_distortions"].keys()
+                        key not in energies_dict["distortions"].keys()
                         and key != "Unperturbed"
                     )
                     or rms_dict[key] == "Not converged"
@@ -239,9 +239,9 @@ def plot_defect(
                 ):
                     rms_dict.pop(key)
                     if (
-                        key in energies_dict["bond_distortions"].keys()
+                        key in energies_dict["distortions"].keys()
                     ):  # remove it from energy dict as well
-                        energies_dict["bond_distortions"].pop(key)
+                        energies_dict["distortions"].pop(key)
         else:
             print(
                 "Structure comparison algorithm struggled matching lattices. Colorbar will not "
@@ -250,13 +250,13 @@ def plot_defect(
             add_colorbar = False
 
     for key in list(
-        energies_dict["bond_distortions"].keys()
+        energies_dict["distortions"].keys()
     ):  # remove high energy points
         if (
-            energies_dict["bond_distortions"][key] - energies_dict["Unperturbed"]
+            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
             > max_energy_above_unperturbed
         ):
-            energies_dict["bond_distortions"].pop(key)
+            energies_dict["distortions"].pop(key)
             if add_colorbar:
                 rms_dict.pop(key)
 
@@ -303,10 +303,10 @@ def plot_defect(
         y_axis = y_axis.replace("eV", "meV")
         if max_energy_above_unperturbed < 1:  # assume eV
             max_energy_above_unperturbed *= 1000  # convert to meV
-        for key in energies_dict["bond_distortions"].keys():  # convert to meV
-            energies_dict["bond_distortions"][key] *= 1000
-            energies_dict["bond_distortions"][key] = (
-                energies_dict["bond_distortions"][key] * 1000
+        for key in energies_dict["distortions"].keys():  # convert to meV
+            energies_dict["distortions"][key] *= 1000
+            energies_dict["distortions"][key] = (
+                energies_dict["distortions"][key] * 1000
             )
         energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
 
@@ -402,12 +402,12 @@ def plot_bdm_colorbar(
     if not y_axis:
         y_axis = r"Energy (eV)"
 
-    for key in list(energies_dict["bond_distortions"].keys()):  # remove high energy points
+    for key in list(energies_dict["distortions"].keys()):  # remove high energy points
         if (
-            energies_dict["bond_distortions"][key] - energies_dict["Unperturbed"]
+            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
             > max_energy_above_unperturbed
         ):
-            energies_dict["bond_distortions"].pop(key)
+            energies_dict["distortions"].pop(key)
             rms_dict.pop(key)
 
     array_rms = np.array(np.array(list(rms_dict.values())))
@@ -422,8 +422,8 @@ def plot_bdm_colorbar(
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
 
     # all energies relative to unperturbed one
-    for key, i in energies_dict["bond_distortions"].items():
-        energies_dict["bond_distortions"][key] = i - energies_dict["Unperturbed"]
+    for key, i in energies_dict["distortions"].items():
+        energies_dict["distortions"][key] = i - energies_dict["Unperturbed"]
     energies_dict["Unperturbed"] = 0.0
 
     ax.set_xlabel(
@@ -433,8 +433,8 @@ def plot_bdm_colorbar(
     ax.set_ylabel(y_axis, labelpad=10)
 
     im = ax.scatter(
-        energies_dict["bond_distortions"].keys(),
-        energies_dict["bond_distortions"].values(),
+        energies_dict["distortions"].keys(),
+        energies_dict["distortions"].values(),
         c=array_rms[:-1],
         ls="-",
         s=50,
@@ -445,8 +445,8 @@ def plot_bdm_colorbar(
         alpha=1,
     )
     ax.plot(
-        energies_dict["bond_distortions"].keys(),
-        energies_dict["bond_distortions"].values(),
+        energies_dict["distortions"].keys(),
+        energies_dict["distortions"].values(),
         ls="-",
         markersize=1,
         marker="o",
@@ -469,7 +469,7 @@ def plot_bdm_colorbar(
     )
 
     # One decimal point if deltaE = (max E - min E) > 0.4 eV, 2 if deltaE > 0.2 eV, otherwise 3
-    energy_range = list(energies_dict["bond_distortions"].values())
+    energy_range = list(energies_dict["distortions"].values())
     energy_range.append(energies_dict["Unperturbed"])
     if (max(energy_range) - min(energy_range)) > 0.4:
         ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.1f}"))
@@ -602,8 +602,8 @@ def plot_datasets(
     # all energies relative to unperturbed one
     for dataset_number, dataset in enumerate(datasets):
 
-        for key, i in dataset["bond_distortions"].items():
-            dataset["bond_distortions"][key] = (
+        for key, i in dataset["distortions"].items():
+            dataset["distortions"][key] = (
                 i - datasets[0]["Unperturbed"]
             )  # Energies relative to unperturbed E of dataset 1
 
@@ -611,9 +611,9 @@ def plot_datasets(
             dataset["Unperturbed"] = dataset["Unperturbed"] - datasets[0]["Unperturbed"]
             unperturbed_energies[dataset_number] = dataset["Unperturbed"]
 
-        for key in list(dataset["bond_distortions"].keys()):  # remove high E points
-            if dataset["bond_distortions"][key] > max_energy_above_unperturbed:
-                dataset["bond_distortions"].pop(key)
+        for key in list(dataset["distortions"].keys()):  # remove high E points
+            if dataset["distortions"][key] > max_energy_above_unperturbed:
+                dataset["distortions"].pop(key)
 
         if num_nearest_neighbours and neighbour_atom:
             x_label = f"BDM Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near" \
@@ -644,8 +644,8 @@ def plot_datasets(
                     default_style_settings[key] = optional_style_settings
 
         ax.plot(
-            dataset["bond_distortions"].keys(),
-            dataset["bond_distortions"].values(),
+            dataset["distortions"].keys(),
+            dataset["distortions"].values(),
             markersize=default_style_settings["markersize"],
             marker=default_style_settings["marker"],
             linestyle=default_style_settings["linestyle"],
@@ -682,7 +682,7 @@ def plot_datasets(
     )
 
     # One decimal point if energy difference between max E and min E > 0.4 eV, otherwise two
-    range_energies = list(datasets[0]["bond_distortions"].values())
+    range_energies = list(datasets[0]["distortions"].values())
     range_energies.append(datasets[0]["Unperturbed"])
     if (max(range_energies) - min(range_energies)) > 0.4:
         ax.yaxis.set_major_formatter(mpl.ticker.StrMethodFormatter("{x:,.1f}"))
