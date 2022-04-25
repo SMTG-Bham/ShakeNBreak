@@ -618,6 +618,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertIn(wrong_type_error, e.exception)
 
+        with self.assertRaises(ValueError) as e:
+            wrong_metric_error = ValueError(
+                f"Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'."
+            )  # https://youtu.be/DmH1prySUpA
+            analyse_defects.calculate_struct_comparison(defect_structures_dict, metric="metwhat")
+            self.assertIn(wrong_metric_error, e.exception)
+
     def test_compare_structures(self):
         """Test compare_structures() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
