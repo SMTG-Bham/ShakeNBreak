@@ -380,7 +380,7 @@ def get_structures(
                 bond_distortions = distortion_parameters["bond_distortions"]
                 bond_distortions = [i * 100 for i in bond_distortions]
         except:
-            raise Exception(
+            raise FileNotFoundError(
                 f"No `distortion_metadata.json` file found in {output_path}. Please specify "
                 f"`distortion_increment` or `bond_distortions`."
             )
