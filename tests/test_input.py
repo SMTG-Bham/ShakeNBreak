@@ -18,7 +18,7 @@ def if_present_rm(path):
         shutil.rmtree(path)
 
 
-class BDMTestCase(unittest.TestCase):
+class InputTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
@@ -607,7 +607,7 @@ class BDMTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        bdm_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict = input.apply_shakenbreak(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -692,7 +692,7 @@ class BDMTestCase(unittest.TestCase):
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-        bdm_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -715,7 +715,7 @@ class BDMTestCase(unittest.TestCase):
         )
         rounded_bond_distortions = np.around(bond_distortions, 3)
         np.testing.assert_equal(
-            bdm_defect_dict["distortion_parameters"]["bond_distortions"],
+            distortion_defect_dict["distortion_parameters"]["bond_distortions"],
             rounded_bond_distortions,
         )
 
@@ -724,7 +724,7 @@ class BDMTestCase(unittest.TestCase):
         reduced_Int_Cd_2_dict["charges"] = [1]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            bdm_defect_dict = input.apply_shakenbreak(
+            distortion_defect_dict = input.apply_shakenbreak(
                 {"interstitials": [reduced_Int_Cd_2_dict]},
                 oxidation_states=oxidation_states,
                 distortion_increment=0.25,
@@ -759,7 +759,7 @@ class BDMTestCase(unittest.TestCase):
                     }
                 },
             }
-            np.testing.assert_equal(bdm_defect_dict, kwarged_Int_Cd_2_dict)
+            np.testing.assert_equal(distortion_defect_dict, kwarged_Int_Cd_2_dict)
             # check expected info printing:
             mock_Int_Cd_2_print.assert_any_call(
                 "Applying ShakeNBreak...",
@@ -788,7 +788,7 @@ class BDMTestCase(unittest.TestCase):
         # check files are not written if write_files=False:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
-        bdm_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
