@@ -426,15 +426,15 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 self.assertEqual(val, "Not converged")
 
         # test error catching:
-        with self.assertRaises(Exception) as e:
-            wrong_path_exception = Exception(
+        with self.assertRaises(FileNotFoundError) as e:
+            wrong_path_error = FileNotFoundError(
                 "No `distortion_metadata.json` file found in wrong_path. Please specify "
                 "`distortion_increment` or `bond_distortions`."
             )
             analyse_defects.get_structures(
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
             )
-            self.assertIn(wrong_path_exception, e.exception)
+            self.assertIn(wrong_path_error, e.exception)
 
     def test_get_energies(self):
         """Test get_energies() function."""
