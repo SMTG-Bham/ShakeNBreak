@@ -5,6 +5,7 @@ Module containing functions to analyse rattled and bond-distorted defect structu
 
 import json
 import os
+import sys
 from copy import deepcopy
 from typing import Optional, Union
 import warnings
@@ -38,6 +39,16 @@ def isipython():
 
 if isipython():
     from IPython.display import display
+
+
+class HiddenPrints:  # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
 
 
 ###################################################################################################
@@ -497,8 +508,10 @@ def get_energies(
             )
         defect_energies_dict["Unperturbed"] = 0.0
     else:
-        warnings.warn("Unperturbed defect energy not found in energies file. Energies will be "
-                      "given relative to the lowest energy defect structure found.")
+        warnings.warn(
+            "Unperturbed defect energy not found in energies file. Energies will be "
+            "given relative to the lowest energy defect structure found."
+        )
         lowest_E_distortion = defect_energies_dict["distortions"][gs_distortion]
         for distortion, energy in defect_energies_dict["distortions"].items():
             defect_energies_dict["distortions"][distortion] = (
@@ -512,7 +525,6 @@ def get_energies(
     return defect_energies_dict
 
 
-# TODO: Refactor to use total (summed) RMS, not average RMS (to remove supercell size dependence)
 def calculate_struct_comparison(
     defect_structures_dict: dict,
     metric: str = "max_dist",
@@ -520,32 +532,34 @@ def calculate_struct_comparison(
     stol: float = 0.5,
 ) -> Optional[dict]:
     """
-    Calculate either the root-mean-squared displacement (RMS disp.)(with metric = "rms") or the
-    maximum distance between matched atoms (with metric = "max_dist", default) between each
-    distorted structure in `defect_struct_dict`, and the Unperturbed structure.
+    Calculate either the summed atomic displacement normalised to the average free length per
+    atom := ( V / Nsites ) ** (1/3), with metric = "disp", or the maximum distance between
+    matched atoms, with metric = "max_dist", (default) between each distorted structure in
+    `defect_struct_dict`, and either 'Unperturbed' or a specified structure (`ref_structure`).
 
     Args:
         defect_structures_dict (:obj:`dict`):
             Dictionary of bond distortions and corresponding (final) structures (as pymatgen
             Structure objects).
         metric (:obj:`str`):
-            Structure comparison metric to use. Either root-mean-squared displacement ('rms') or
-            the maximum distance between matched atoms ('max_dist', default).
+            Structure comparison metric to use. Either summed atomic displacement normalised to
+            the average free length per atom ('disp') or the maximum distance between matched
+            atoms ('max_dist', default).
             (Default: "max_dist")
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
-            Structure to use as a reference for comparison (to compute RMS and max distance).
+            Structure to use as a reference for comparison (to compute atomic displacements).
             Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
             compare with a specific external structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`),
-            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If RMS
+            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If
             output contains too many 'NaN' values, this likely needs to be increased.
             (Default: 0.5)
 
     Returns:
-        rms_dict (:obj:`dict`, optional):
-            Dictionary matching bond distortions to structure comparison metric (rms or
+        disp_dict (:obj:`dict`, optional):
+            Dictionary matching bond distortions to structure comparison metric (disp or
             max_dist).
     """
     if isinstance(ref_structure, str) or isinstance(ref_structure, float):
@@ -561,8 +575,9 @@ def calculate_struct_comparison(
             )
         if ref_structure == "Not converged":
             raise ValueError(
-                f"Specified reference structure (with key '{ref_structure}') is not converged "
-                "and cannot be used for structural comparison."
+                f"Specified reference structure ({ref_name}) is not converged and cannot be used "
+                f"for structural comparison. Check structures or specify a different reference "
+                f"structure (ref_structure)."
             )
     elif isinstance(ref_structure, Structure):
         ref_name = f"specified ref_structure ({ref_structure.composition})"
@@ -572,19 +587,27 @@ def calculate_struct_comparison(
             f"Structure object. Got {type(ref_structure)} instead."
         )
     print(f"Comparing structures to {ref_name}...")
-    rms_dict = {}
-    metric_dict = {"rms": 0, "max_dist": 1}
+
+    disp_dict = {}
     sm = StructureMatcher(
         ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
     )
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] != "Not converged":
             try:
-                rms_dict[distortion] = sm.get_rms_dist(
+                rms_disp, max_dist = sm.get_rms_dist(
                     ref_structure, defect_structures_dict[distortion]
-                )[metric_dict[metric]]
+                )
+                if metric == "disp":
+                    disp_dict[distortion] = rms_disp * np.sqrt(len(ref_structure))
+                elif metric == "max_dist":
+                    disp_dict[distortion] = max_dist
+                else:
+                    raise ValueError(
+                        f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'."
+                    )
             except TypeError:
-                rms_dict[
+                disp_dict[
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison metric to None
                 warnings.warn(
@@ -592,9 +615,12 @@ def calculate_struct_comparison(
                     f"and {distortion} structures."
                 )
         else:
-            rms_dict[distortion] = "Not converged"  # Structure not converged
+            disp_dict[distortion] = "Not converged"  # Structure not converged
 
-    return rms_dict
+    return disp_dict
+
+
+# TODO: Add check if too many 'NaN' values in disp_dict, if so, try with higher stol
 
 
 def compare_structures(
@@ -605,9 +631,10 @@ def compare_structures(
     units: str = "eV",
 ) -> pd.DataFrame:
     """
-    Compare final bond-distorted structures with either 'Unperturbed' or a specified structure (
-    `ref_structure`), and calculate the root-mean-squared-displacement (RMS disp.) and maximum
-    distance between matched atomic sites.
+    Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
+    (`ref_structure`), and calculate the summed atomic displacement normalised to the average
+    free length per atom := ( V / Nsites ) ** (1/3), and maximum distance between matched atomic
+    sites.
 
     Args:
         defect_structures_dict (:obj:`dict`):
@@ -615,14 +642,15 @@ def compare_structures(
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
-            Structure to use as a reference for comparison (to compute RMS and max distance).
+            Structure to use as a reference for comparison (to compute atomic displacements).
             Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
             compare with a specific external structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`),
-            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If RMS
-            output contains too many 'NaN' values, this likely needs to be increased.
+            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If
+            structure comparison output contains too many 'NaN' values, this likely needs to be
+            increased.
             (Default: 0.5)
         units (:obj:`str`):
             Energy units label for outputs (either 'eV' or 'meV'). Should be the same as the
@@ -630,88 +658,63 @@ def compare_structures(
             (Default: "eV")
 
     Returns:
-        DataFrame containing structural comparison results (
-        RMS displacement and maximum distance between matched atomic sites), and relative energies.
+        DataFrame containing structural comparison results (summed normalised atomic displacement
+        and maximum distance between matched atomic sites), and relative energies.
     """
-    if isinstance(ref_structure, str) or isinstance(ref_structure, float):
-        if isinstance(ref_structure, str):
-            ref_name = ref_structure
-        else:
-            ref_name = f"{ref_structure:.1%} bond distorted structure"
-        try:
-            ref_structure = defect_structures_dict[ref_structure]
-        except KeyError:
-            raise KeyError(
-                f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
-            )
-        if ref_structure == "Not converged":
-            raise ValueError(
-                f"Specified reference structure ({ref_name}) is not converged "
-                "and cannot be used for structural comparison. Check structures or specify a "
-                "different reference structure (ref_structure)."
-            )
-    elif isinstance(ref_structure, Structure):
-        ref_name = f"specified ref_structure ({ref_structure.composition})"
-    else:
-        raise TypeError(
-            f"ref_structure must be either a key from defect_structures_dict or a pymatgen "
-            f"Structure object. Got {type(ref_structure)} instead."
+    df_list = []
+    disp_dict = calculate_struct_comparison(
+        defect_structures_dict, metric="disp", ref_structure=ref_structure, stol=stol
+    )
+    with HiddenPrints():  # only print "Comparing to..." once
+        max_dist_dict = calculate_struct_comparison(
+            defect_structures_dict,
+            metric="max_dist",
+            ref_structure=ref_structure,
+            stol=stol,
         )
-    print(f"Comparing structures to {ref_name}...")
 
-    rms_list = []
-    distortion_list = list(defect_energies_dict["distortions"].keys())
+    for distortion in defect_energies_dict["distortions"]:
+        try:
+            rel_energy = defect_energies_dict["distortions"][distortion]
+        except KeyError:  # if relaxation didn't converge for this bond distortion, store it
+            # as NotANumber
+            rel_energy = float("NaN")
+        df_list.append(
+            [
+                distortion,
+                round(disp_dict[distortion], 3) + 0
+                if isinstance(disp_dict[distortion], float)
+                else None,
+                round(max_dist_dict[distortion], 3) + 0
+                if isinstance(max_dist_dict[distortion], float)
+                else None,
+                round(rel_energy, 2) + 0,
+            ]
+        )
 
     if "Unperturbed" in defect_energies_dict:
-        distortion_list.append("Unperturbed")
-
-    for distortion in distortion_list:
-        if distortion == "Unperturbed":
-            rel_energy = defect_energies_dict[distortion]
-        else:
-            try:
-                rel_energy = defect_energies_dict["distortions"][distortion]
-            except KeyError:  # if relaxation didn't converge for this bond distortion, store it
-                # as NotANumber
-                rel_energy = float("NaN")
-        struct = defect_structures_dict[distortion]
-        if struct and struct != "Not converged":
-            new_sm = StructureMatcher(
-                ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
-            )  # higher stol for calculating rms
-            try:
-                rms_displacement = (
-                    round(new_sm.get_rms_dist(ref_structure, struct)[0], 3) + 0
-                )
-                rms_dist_sites = (
-                    round(new_sm.get_rms_dist(ref_structure, struct)[1], 3) + 0
-                )  # select rms displacement normalized by (Vol / nsites) ** (1/3) (+0 for
-                # positive zeros)
-            except TypeError:  # lattices didn't match
-                rms_displacement = None
-                rms_dist_sites = None
-                warnings.warn(
-                    f"pymatgen StructureMatcher could not match lattices between {ref_name} "
-                    f"and {distortion} structures."
-                )
-            # TODO: Add check here if too many 'NaN' values in rms_dict, if so, try with higher
-            #  `stol` value.
-            rms_list.append(
-                [distortion, rms_displacement, rms_dist_sites, round(rel_energy, 2) + 0]
-            )
-    if isipython():
-        display(
-            pd.DataFrame(
-                rms_list,
-                columns=[
-                    "Bond Dist.",
-                    "RMS",
-                    "Max. dist (\u212B)",
-                    f"Rel. E ({units})",
-                ],
-            )
+        df_list.append(
+            [
+                "Unperturbed",
+                round(disp_dict["Unperturbed"], 3) + 0
+                if isinstance(disp_dict["Unperturbed"], float)
+                else None,
+                round(max_dist_dict["Unperturbed"], 3) + 0
+                if isinstance(max_dist_dict["Unperturbed"], float)
+                else None,
+                round(defect_energies_dict["Unperturbed"], 2) + 0,
+            ]
         )
-    return pd.DataFrame(
-        rms_list,
-        columns=["Bond Dist.", "RMS", "Max. dist (\u212B)", f"Rel. E ({units})"],
+
+    struct_comparison_df = pd.DataFrame(
+        df_list,
+        columns=[
+            "Bond Distortion",
+            "\u03A3{Normalised Displacement}",  # Sigma
+            "Max Distance (\u212B)",  # Angstrom
+            f"\u0394 Energy ({units})",  # Delta
+        ],
     )
+    if isipython():
+        display(struct_comparison_df)
+    return struct_comparison_df
