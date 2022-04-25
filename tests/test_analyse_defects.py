@@ -27,6 +27,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.organized_V_Cd_distortion_data = analyse_defects.organize_data(
             self.V_Cd_distortion_data
         )
+        self.V_Cd_distortion_data_no_unperturbed = analyse_defects.open_file(
+            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
+        )
+        self.organized_V_Cd_distortion_data_no_unperturbed = (
+            analyse_defects.organize_data(self.V_Cd_distortion_data_no_unperturbed)
+        )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
@@ -38,6 +44,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+        )
+
+    def tearDown(self):
+        # restore the original file (after 'no unperturbed' tests):
+        shutil.copy(
+            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/BDM/vac_1_Cd_0.txt"),
         )
 
     @patch("builtins.print")
@@ -99,6 +112,23 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             {"distortions": {"rattled": -214.88259023}, "Unperturbed": -214.87608986},
         )
 
+        # test with no 'Unperturbed':
+        self.assertTrue(
+            isinstance(self.organized_V_Cd_distortion_data_no_unperturbed, dict)
+        )
+        self.assertFalse(
+            "Unperturbed" in self.organized_V_Cd_distortion_data_no_unperturbed
+        )
+        self.assertEqual(len(self.organized_V_Cd_distortion_data_no_unperturbed), 1)
+        self.assertEqual(
+            len(self.organized_V_Cd_distortion_data_no_unperturbed["distortions"]), 25
+        )
+        # test one entry:
+        self.assertEqual(
+            self.organized_V_Cd_distortion_data_no_unperturbed["distortions"][-0.35],
+            -206.47790687,
+        )
+
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
         gs_distortion = analyse_defects.get_gs_distortion(
@@ -111,6 +141,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.organized_In_Cd_1_distortion_data
         )
         self.assertEqual(gs_distortion, (-0.006500369999997702, "rattled"))
+
+        # test with 'Unperturbed' not present:
+        gs_distortion_no_unperturbed = analyse_defects.get_gs_distortion(
+            self.organized_V_Cd_distortion_data_no_unperturbed
+        )
+        self.assertEqual(gs_distortion_no_unperturbed, (None, -0.55))
 
     @patch("builtins.print")
     def test_sort_data(self, mock_print):
@@ -144,6 +180,29 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             sorted_In_Cd_1_distortion_data,
             (self.organized_In_Cd_1_distortion_data, *gs_distortion),
         )
+
+        # test with 'Unperturbed' not present:
+        gs_distortion_no_unperturbed = analyse_defects.get_gs_distortion(
+            self.organized_V_Cd_distortion_data_no_unperturbed
+        )
+        with patch("builtins.print") as mock_no_unperturbed_print:
+            organized_V_Cd_distortion_data_no_unperturbed = analyse_defects.sort_data(
+                os.path.join(
+                    self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                )
+            )
+            self.assertEqual(
+                organized_V_Cd_distortion_data_no_unperturbed,
+                (
+                    self.organized_V_Cd_distortion_data_no_unperturbed,
+                    *gs_distortion_no_unperturbed,
+                ),
+            )
+            mock_no_unperturbed_print.assert_called_once_with(
+                f"CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed: Unperturbed energy not found in "
+                f"{os.path.join(self.DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
+                f"Lowest energy structure found with -0.55 bond distortion.\n"
+            )
 
     def test_grab_contcar(self):
         """Test grab_contcar() function."""
@@ -390,8 +449,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             list(defect_energies_dict["distortions"].keys()), bond_distortions
         )
         # test some specific energies:
-        self.assertEqual(defect_energies_dict["distortions"][-0.4], -0.7548057600000107)
-        self.assertEqual(
+        np.testing.assert_almost_equal(
+            defect_energies_dict["distortions"][-0.4], -0.7548057600000107
+        )
+        np.testing.assert_almost_equal(
             defect_energies_dict["distortions"][-0.2], -0.003605090000007749
         )
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
@@ -407,13 +468,39 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             list(defect_energies_meV_dict["distortions"].keys()), bond_distortions
         )
         # test some specific energies:
-        self.assertEqual(
+        np.testing.assert_almost_equal(
             defect_energies_meV_dict["distortions"][-0.4], -754.8057600000107
         )
-        self.assertEqual(
+        np.testing.assert_almost_equal(
             defect_energies_meV_dict["distortions"][-0.2], -3.605090000007749
         )
         self.assertEqual(defect_energies_meV_dict["Unperturbed"], 0)
+
+        # test if 'Unperturbed' is not present:
+        shutil.copy(
+            os.path.join(
+                self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+            ),
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/BDM/vac_1_Cd_0.txt"),
+        )
+        # Note we copy back to original in self.tearDown()
+        defect_energies_dict = analyse_defects.get_energies(
+            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+        )
+        energies_dict_keys_dict = {"distortions": None}
+        self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
+        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        self.assertEqual(
+            list(defect_energies_dict["distortions"].keys()), bond_distortions
+        )
+        # test some specific energies:
+        np.testing.assert_almost_equal(
+            defect_energies_dict["distortions"][-0.4], 0.00037631000000715176
+        )
+        np.testing.assert_almost_equal(
+            defect_energies_dict["distortions"][-0.2], 0.75157698000001
+        )
+        self.assertFalse("Unperturbed" in defect_energies_dict)
 
     def test_calculate_struct_comparison(self):
         """Test calculate_struct_comparison() function."""
@@ -434,7 +521,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )  # one for each
         np.testing.assert_almost_equal(max_dist_dict[-0.4], 0.24573512684427087)
         np.testing.assert_almost_equal(max_dist_dict[-0.2], 0.007657854604646658)
-        np.testing.assert_almost_equal(max_dist_dict["Unperturbed"], 5.320996143118748e-16)
+        np.testing.assert_almost_equal(
+            max_dist_dict["Unperturbed"], 5.320996143118748e-16
+        )
 
         # V_Cd_0 with 'rms' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         rms_dict = analyse_defects.calculate_struct_comparison(

@@ -83,21 +83,21 @@ def organize_data(distortion_list: list) -> dict:
                 key = distortion_list[i].split("_Bond")[0].split("%")[0]
                 key = float(key.split("_")[-1]) / 100  # from % to decimal
                 defect_energies_dict["distortions"][key] = float(distortion_list[i + 1])
-    sorted_dict = {
-        "distortions": {},
-        "Unperturbed": defect_energies_dict["Unperturbed"],
+
+    # Order dict items by key (e.g. from -0.6 to 0 to +0.6)
+    sorted_energies_dict = {
+        "distortions": dict(sorted(defect_energies_dict["distortions"].items()))
     }
-    for key in sorted(
-        defect_energies_dict["distortions"].keys()
-    ):  # Order dict items by key (e.g. from -0.6 to 0 to +0.6)
-        sorted_dict["distortions"][key] = defect_energies_dict["distortions"][key]
-    return sorted_dict
+    if "Unperturbed" in defect_energies_dict:
+        sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
+    return sorted_energies_dict
 
 
 def get_gs_distortion(defect_energies_dict: dict):
     """
     Calculate energy difference between `Unperturbed` structure and lowest energy distortion.
     Returns the energy (in eV) and bond distortion of the ground-state relative to `Unperturbed`.
+    If `Unperturbed` not present, returns (None, ground-state bond distortion).
 
     Args:
         defect_energies_dict (:obj:`dict`):
@@ -106,30 +106,38 @@ def get_gs_distortion(defect_energies_dict: dict):
     Returns:
         (Energy difference, ground state bond distortion)
     """
-    if len(defect_energies_dict["distortions"]) == 1:
-        energy_diff = (
-            defect_energies_dict["distortions"]["rattled"]
-            - defect_energies_dict["Unperturbed"]
-        )
-        if energy_diff < 0:
-            gs_distortion = "rattled"  # just rattle (no bond distortion)
+    lowest_E_distortion = min(
+        defect_energies_dict["distortions"].values()
+    )  # lowest energy obtained with bond distortions
+    if "Unperturbed" in defect_energies_dict:
+        if len(defect_energies_dict["distortions"]) == 1:
+            energy_diff = (
+                defect_energies_dict["distortions"]["rattled"]
+                - defect_energies_dict["Unperturbed"]
+            )
+            if energy_diff < 0:
+                gs_distortion = "rattled"  # just rattle (no bond distortion)
+            else:
+                gs_distortion = "Unperturbed"
         else:
-            gs_distortion = "Unperturbed"
+            energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
+            if (
+                lowest_E_distortion < defect_energies_dict["Unperturbed"]
+            ):  # if energy lower than Unperturbed
+                gs_distortion = list(defect_energies_dict["distortions"].keys())[
+                    list(defect_energies_dict["distortions"].values()).index(
+                        lowest_E_distortion
+                    )
+                ]  # bond distortion that led to ground-state
+            else:
+                gs_distortion = "Unperturbed"
     else:
-        lowest_E_distortion = min(
-            defect_energies_dict["distortions"].values()
-        )  # lowest energy obtained with bond distortions
-        energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
-        if (
-            lowest_E_distortion < defect_energies_dict["Unperturbed"]
-        ):  # if energy lower than Unperturbed
-            gs_distortion = list(defect_energies_dict["distortions"].keys())[
-                list(defect_energies_dict["distortions"].values()).index(
-                    lowest_E_distortion
-                )
-            ]  # bond distortion that led to ground-state
-        else:
-            gs_distortion = "Unperturbed"
+        energy_diff = None
+        gs_distortion = list(defect_energies_dict["distortions"].keys())[
+            list(defect_energies_dict["distortions"].values()).index(
+                lowest_E_distortion
+            )
+        ]
 
     return energy_diff, gs_distortion
 
@@ -138,7 +146,8 @@ def sort_data(energies_file: str):
     """
     Organize bond distortion results in a dictionary, calculate energy of ground-state defect
     structure relative to `Unperturbed` structure (in eV) and its corresponding bond distortion,
-    and return all three as a tuple.
+    and return all three as a tuple. If `Unperturbed` not present, returns (defect_energies_dict,
+    None, ground-state distortion).
 
     Args:
         energies_file (:obj:`str`):
@@ -149,17 +158,23 @@ def sort_data(energies_file: str):
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as produced by `organize_data()`
         energy_diff (:obj:`float`):
-            Energy difference between minimum energy structure and `Unperturbed` (in eV)
+            Energy difference between minimum energy structure and `Unperturbed` (in eV).
+            None if `Unperturbed` not present.
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
     defect_energies_dict = organize_data(open_file(energies_file))
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
-    if energy_diff < -0.1:
-        defect_name = energies_file.split("/")[-1].split(".txt")[0]
+    defect_name = energies_file.split("/")[-1].split(".txt")[0]
+    if energy_diff and energy_diff < -0.1:
         print(
             f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
             f"distortion, and unperturbed: {energy_diff:+.2f} eV.\n"
+        )
+    elif energy_diff is None:
+        print(
+            f"{defect_name}: Unperturbed energy not found in {energies_file}. Lowest energy "
+            f"structure found with {gs_distortion} bond distortion.\n"
         )
     return defect_energies_dict, energy_diff, gs_distortion
 
@@ -474,14 +489,21 @@ def get_energies(
     energy_file_path = (
         f"{output_path}/{defect_species}/{distortion_type}/{defect_species}.txt"
     )
-    defect_energies_dict = sort_data(energy_file_path)[
-        0
-    ]  # TODO: Add try except warning here
-    for distortion, energy in defect_energies_dict["distortions"].items():
-        defect_energies_dict["distortions"][distortion] = (
-            energy - defect_energies_dict["Unperturbed"]
-        )
-    defect_energies_dict["Unperturbed"] = 0.0
+    defect_energies_dict, _e_diff, gs_distortion = sort_data(energy_file_path)
+    if "Unperturbed" in defect_energies_dict:
+        for distortion, energy in defect_energies_dict["distortions"].items():
+            defect_energies_dict["distortions"][distortion] = (
+                energy - defect_energies_dict["Unperturbed"]
+            )
+        defect_energies_dict["Unperturbed"] = 0.0
+    else:
+        warnings.warn("Unperturbed defect energy not found in energies file. Energies will be "
+                      "given relative to the lowest energy defect structure found.")
+        lowest_E_distortion = defect_energies_dict["distortions"][gs_distortion]
+        for distortion, energy in defect_energies_dict["distortions"].items():
+            defect_energies_dict["distortions"][distortion] = (
+                energy - lowest_E_distortion
+            )
     if units == "meV":
         defect_energies_dict["distortions"] = {
             k: v * 1000 for k, v in defect_energies_dict["distortions"].items()
@@ -490,7 +512,6 @@ def get_energies(
     return defect_energies_dict
 
 
-# TODO: Add ref_structure option to calculate_struct_comparison
 # TODO: Refactor to use total (summed) RMS, not average RMS (to remove supercell size dependence)
 def calculate_struct_comparison(
     defect_structures_dict: dict,
