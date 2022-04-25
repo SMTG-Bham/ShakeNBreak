@@ -50,6 +50,7 @@ plt.rcParams["axes.prop_cycle"] = plt.cycler(
 )
 
 
+# TODO: Refactor 'rms' to 'disp'. Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
     base_path: str,
