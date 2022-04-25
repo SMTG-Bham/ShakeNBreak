@@ -661,7 +661,10 @@ def compare_structures(
 
     rms_list = []
     distortion_list = list(defect_energies_dict["distortions"].keys())
-    distortion_list.append("Unperturbed")
+
+    if "Unperturbed" in defect_energies_dict:
+        distortion_list.append("Unperturbed")
+
     for distortion in distortion_list:
         if distortion == "Unperturbed":
             rel_energy = defect_energies_dict[distortion]

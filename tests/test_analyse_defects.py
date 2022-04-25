@@ -709,6 +709,24 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             ["Bond Dist.", "RMS", "Max. dist (Å)", "Rel. E (meV)"],
         )
 
+        # test comparing structures with specified ref_structure and no unperturbed:
+        defect_structures_dict_no_unperturbed = defect_structures_dict.copy()
+        defect_structures_dict_no_unperturbed.pop("Unperturbed")
+        defect_energies_dict_no_unperturbed = defect_energies_dict.copy()
+        defect_energies_dict_no_unperturbed.pop("Unperturbed")
+        struct_comparison_df = analyse_defects.compare_structures(
+            defect_structures_dict_no_unperturbed, defect_energies_dict_no_unperturbed,
+            ref_structure=-0.2
+        )
+        # spot check:
+        self.assertEqual(
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.00, 0.00, 0.00]
+        )
+        self.assertEqual(
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.067, 0.243, -0.75]
+        )
+        self.assertTrue("Unperturbed" not in struct_comparison_df["Bond Dist."].to_list())
+
         # test error catching:
         with self.assertRaises(KeyError) as e:
             wrong_key_error = KeyError(
