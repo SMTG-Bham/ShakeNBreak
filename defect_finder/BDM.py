@@ -72,9 +72,13 @@ def calc_number_electrons(
         substituting_specie = str(defect_dict['site_specie'])
         site_specie = 'Vac' # Consider an interstitial as the interstitial atom substituting a vacant position
     
-    elif defect_dict['defect_type'] in ['antisite', 'substitution']:
+    elif defect_dict['defect_type'] == 'antisite':
         site_specie = str(defect_dict['site_specie'])
         substituting_specie = defect_dict['substituting_specie']
+    
+    elif defect_dict['defect_type'] == 'substitution':
+        site_specie = str(defect_dict['site_specie'])
+        substituting_specie = defect_dict['substitution_specie']
         
     num_electrons = - ( oxidation_states[substituting_specie] - oxidation_states[site_specie] ) 
     # print( f"Number of missing/extra electrons of defect {defect['name']}: ", num_electrons )   
