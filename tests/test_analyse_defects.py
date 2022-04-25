@@ -484,23 +484,32 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "vac_1_Cd_0/BDM/vac_1_Cd_0.txt"),
         )
         # Note we copy back to original in self.tearDown()
-        defect_energies_dict = analyse_defects.get_energies(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
-        )
-        energies_dict_keys_dict = {"distortions": None}
-        self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
-        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
-        self.assertEqual(
-            list(defect_energies_dict["distortions"].keys()), bond_distortions
-        )
-        # test some specific energies:
-        np.testing.assert_almost_equal(
-            defect_energies_dict["distortions"][-0.4], 0.00037631000000715176
-        )
-        np.testing.assert_almost_equal(
-            defect_energies_dict["distortions"][-0.2], 0.75157698000001
-        )
-        self.assertFalse("Unperturbed" in defect_energies_dict)
+        with warnings.catch_warnings(record=True) as w:
+            warning_message = (
+                "Unperturbed defect energy not found in energies file. Energies will be given "
+                "relative to the lowest energy defect structure found."
+            )
+            defect_energies_dict = analyse_defects.get_energies(
+                defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+
+            energies_dict_keys_dict = {"distortions": None}
+            self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
+            bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+            self.assertEqual(
+                list(defect_energies_dict["distortions"].keys()), bond_distortions
+            )
+            # test some specific energies:
+            np.testing.assert_almost_equal(
+                defect_energies_dict["distortions"][-0.4], 0.00037631000000715176
+            )
+            np.testing.assert_almost_equal(
+                defect_energies_dict["distortions"][-0.2], 0.75157698000001
+            )
+            self.assertFalse("Unperturbed" in defect_energies_dict)
 
     def test_calculate_struct_comparison(self):
         """Test calculate_struct_comparison() function."""
