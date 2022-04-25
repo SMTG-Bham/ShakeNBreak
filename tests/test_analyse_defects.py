@@ -593,8 +593,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError) as e:
             unconverged_error = ValueError(
-                "Specified reference structure (with key 'Not converged') is not converged and "
-                "cannot be used for structural comparison."
+                "Specified reference structure (Unperturbed) is not converged and "
+                "cannot be used for structural comparison. Check structures or specify a "
+                "different reference structure (ref_structure)."
             )
             unconverged_structures_dict = defect_structures_dict.copy()
             unconverged_structures_dict["Unperturbed"] = "Not converged"
