@@ -432,9 +432,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(
             max_dist_dict.keys(), defect_structures_dict.keys()
         )  # one for each
-        self.assertEqual(max_dist_dict[-0.4], 0.24573512684427087)
-        self.assertEqual(max_dist_dict[-0.2], 0.007657854604646658)
-        self.assertEqual(max_dist_dict["Unperturbed"], 5.320996143118748e-16)
+        np.testing.assert_almost_equal(max_dist_dict[-0.4], 0.24573512684427087)
+        np.testing.assert_almost_equal(max_dist_dict[-0.2], 0.007657854604646658)
+        np.testing.assert_almost_equal(max_dist_dict["Unperturbed"], 5.320996143118748e-16)
 
         # V_Cd_0 with 'rms' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         rms_dict = analyse_defects.calculate_struct_comparison(
@@ -442,9 +442,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(len(rms_dict), len(defect_structures_dict))  # one for each
         self.assertEqual(rms_dict.keys(), defect_structures_dict.keys())  # one for each
-        self.assertEqual(rms_dict[-0.4], 0.0666267898227637)
-        self.assertEqual(rms_dict[-0.2], 0.0023931134449495075)
-        self.assertEqual(rms_dict["Unperturbed"], 1.4198258237093096e-16)
+        np.testing.assert_almost_equal(rms_dict[-0.4], 0.0666267898227637)
+        np.testing.assert_almost_equal(rms_dict[-0.2], 0.0023931134449495075)
+        np.testing.assert_almost_equal(rms_dict["Unperturbed"], 1.4198258237093096e-16)
 
         # test with specified ref_structure as dict key:
         with patch("builtins.print") as mock_print:
