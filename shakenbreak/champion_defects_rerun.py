@@ -22,9 +22,10 @@ def read_defects_directories(defect_path=None) -> dict:
         path = defect_path
     else:
         path = "./defects"
-    list_subdirectories = [
-        i for i in os.listdir(path=path) if ("as" in i) or ("vac" in i) or ("Int" in i)
-    ]
+    list_subdirectories = [  # Get only subdirectories in the current directory
+        i for i in next(os.walk(path))[1] if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or (
+            "sub_" in i)
+    ]  # matching doped/PyCDT/pymatgen defect names
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
     ]  # split by last "_" (separate defect name from charge state)
@@ -32,9 +33,9 @@ def read_defects_directories(defect_path=None) -> dict:
     for i in list_name_charge:
         if i[0] in defect_charges_dict:
             if i[1] not in defect_charges_dict[i[0]]:  # if charge not in value
-                defect_charges_dict[i[0]].append(i[1])
+                defect_charges_dict[i[0]].append(int(i[1]))
         else:
-            defect_charges_dict[i[0]] = [i[1]]
+            defect_charges_dict[i[0]] = [int(i[1])]
     return defect_charges_dict
 
 
