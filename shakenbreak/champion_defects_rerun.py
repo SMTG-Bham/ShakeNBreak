@@ -41,7 +41,7 @@ def read_defects_directories(defect_path=None) -> dict:
 
 
 def compare_champion_to_distortions(
-    defect_name, base_path, energy_difference=0.1
+    defect_species, base_path, energy_difference=0.05
 ) -> tuple:
     """
     Check if an energy-lowering distortion was found when relaxing from the (relaxed) ground-state
@@ -49,8 +49,8 @@ def compare_champion_to_distortions(
     this calculation and the previous lowest energy relaxation.
 
     Args:
-        defect_name (:obj: `str`):
-            Name of the defect.
+        defect_species (:obj:`str`):
+            Defect name including charge (e.g. 'vac_1_Cd_0').
         base_path (:obj: `str`):
             Path to the defect folders (within which the `defect_name` folder is located).
         energy_difference (:obj: `float`):
@@ -66,36 +66,40 @@ def compare_champion_to_distortions(
         `champion` test relaxation and the previous lowest energy relaxation.
     """
     distorted_energies_dict, distorted_energy_drop, distorted_gs_dist = sort_data(
-        f"{base_path}{defect_name}/BDM/{defect_name}.txt"
+        f"{base_path}/{defect_species}/BDM/{defect_species}.txt"
     )
     champ_energies_dict, champ_energy_drop, champ_gs_dist = sort_data(
-        f"{base_path}{defect_name}/champion/{defect_name}.txt"
+        f"{base_path}/{defect_species}/champion/{defect_species}.txt"
     )
 
     # Check what distortion lead to the lowest E structure: Unperturbed, bond-distorted or just
     # rattled?
     if isinstance(distorted_gs_dist, float) or distorted_gs_dist == "rattled":
-        min_energy_distorted = distorted_energies_dict["bond_distortions"][
+        min_energy_distorted = distorted_energies_dict["distortions"][
             distorted_gs_dist
         ]
     else:
         min_energy_distorted = distorted_energies_dict["Unperturbed"]
 
     if isinstance(champ_gs_dist, float) or champ_gs_dist == "rattled":
-        min_energy_champ = champ_energies_dict["bond_distortions"][champ_gs_dist]
+        min_energy_champ = champ_energies_dict["distortions"][champ_gs_dist]
     else:
         min_energy_champ = champ_energies_dict["Unperturbed"]
 
     energy_diff = (
         min_energy_champ - min_energy_distorted
-    )  ## or should it be min_energy_champ - distorted_energies_dict["Unperturbed"] ?
+    )
     #  if lower E structure found by importing the gs of another charge state
     if energy_diff < -energy_difference:
-        energy_diff = (
-            min_energy_champ - distorted_energies_dict["Unperturbed"]
+        energy_diff_vs_unperturbed = (
+                min_energy_champ - distorted_energies_dict["Unperturbed"]
         )  # for later comparison, set the energy difference relative to Unperturbed structure (not
         # to the minimum energy found with bond distortions)
-        return True, energy_diff
+        print(f"Lower energy structure found for the 'champion' relaxation with {defect_species}, "
+              f"with an energy {energy_diff:.2f} eV lower than the previous lowest energy from "
+              f"distortions, with an energy {energy_diff_vs_unperturbed:.2f} eV lower than "
+              f"relaxation from the Unperturbed structure.")
+        return True, energy_diff_vs_unperturbed
     return False, energy_diff
 
 
@@ -109,7 +113,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
              Dictionary matching defect name(s) to list(s) of their charge states. (e.g {
              "Int_Sb_1":[0,+1,+2]} etc)
         base_path (:obj: `str`):
-            Path to the defect folders (within which the `defect_name` folders (e.g. `vac_1_Cd_0`)
+            Path to the defect folders (within which the `defect_species` folders (e.g. `vac_1_Cd_0`)
             are located).
         energy_difference (:obj: `float`):
             Minimum energy difference (in eV) between the lowest-energy relaxation and the
@@ -118,7 +122,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
             defect if they did not also find this structure).
 
     Returns:
-        Dictionary of the form {defect_name: info_subdict} for the defects for which
+        Dictionary of the form {defect_species: info_subdict} for the defects for which
         energy-lowering distortions were found (that were missed by Unperturbed relaxation),
         where `info_subdict` gives the Unperturbed and ground-state distorted structures,
         and the energy difference between them.
