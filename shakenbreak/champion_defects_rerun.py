@@ -41,7 +41,7 @@ def read_defects_directories(defect_path=None) -> dict:
 
 
 def compare_champion_to_distortions(
-    defect_species, base_path, energy_difference=0.05
+    defect_species, base_path, min_e_diff=0.05
 ) -> tuple:
     """
     Check if an energy-lowering distortion was found when relaxing from the (relaxed) ground-state
@@ -53,7 +53,7 @@ def compare_champion_to_distortions(
             Defect name including charge (e.g. 'vac_1_Cd_0').
         base_path (:obj: `str`):
             Path to the defect folders (within which the `defect_name` folder is located).
-        energy_difference (:obj: `float`):
+        min_e_diff (:obj: `float`):
             Minimum energy difference (in eV) between the `champion` test relaxation and the
             previous lowest energy relaxation, to consider it as having found a new energy-lowering
             distortion.
@@ -90,7 +90,7 @@ def compare_champion_to_distortions(
         min_energy_champ - min_energy_distorted
     )
     #  if lower E structure found by importing the gs of another charge state
-    if energy_diff < -energy_difference:
+    if energy_diff < -min_e_diff:
         energy_diff_vs_unperturbed = (
                 min_energy_champ - distorted_energies_dict["Unperturbed"]
         )  # for later comparison, set the energy difference relative to Unperturbed structure (not
@@ -103,7 +103,7 @@ def compare_champion_to_distortions(
     return False, energy_diff
 
 
-def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) -> dict:
+def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05) -> dict:
     """
     Get defect names and charge states for which bond distortion found a ground-state structure
     that is missed by Unperturbed relaxation.
@@ -124,7 +124,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
     Returns:
         Dictionary of the form {defect_species: info_subdict} for the defects for which
         energy-lowering distortions were found (that were missed by Unperturbed relaxation),
-        where `info_subdict` gives the Unperturbed and ground-state distorted structures,
+        where `info_subdict` gives the relaxed Unperturbed and ground-state distorted structures,
         and the energy difference between them.
     """
     all_defects_structs = {}
@@ -140,11 +140,11 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
             # initial bond distortion tests didn't find an energy-lowering distortion)
 
             if os.path.isfile(
-                f"{base_path}{defect_name}/champion/{defect_name}.txt"
+                f"{base_path}/{defect_name}/champion/{defect_name}.txt"
             ):  # if champion folder exists
                 distortion_type = "champion"
                 energies_file = (
-                    f"{base_path}{defect_name}/{distortion_type}/{defect_name}.txt"
+                    f"{base_path}/{defect_name}/{distortion_type}/{defect_name}.txt"
                 )
                 energies_dict, E_diff, gs_distortion = sort_data(
                     energies_file
@@ -159,16 +159,16 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
                     # check if initial bond distortions did
                     distortion_type = "BDM"
                     energies_file = (
-                        f"{base_path}{defect_name}/{distortion_type}/{defect_name}.txt"
+                        f"{base_path}/{defect_name}/{distortion_type}/{defect_name}.txt"
                     )
                     energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
                     if float(energy_diff) < -energy_difference:
                         new_struct_found = True
 
-            elif os.path.isfile(f"{base_path}{defect_name}/BDM/{defect_name}.txt"):
+            elif os.path.isfile(f"{base_path}/{defect_name}/BDM/{defect_name}.txt"):
                 distortion_type = "BDM"
                 energies_file = (
-                    f"{base_path}{defect_name}/{distortion_type}/{defect_name}.txt"
+                    f"{base_path}/{defect_name}/{distortion_type}/{defect_name}.txt"
                 )
                 energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
                 if float(energy_diff) < -energy_difference:
@@ -178,19 +178,17 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
             if new_struct_found:
                 # transform to format used in file names
                 if isinstance(gs_distortion, float):
-                    if gs_distortion == 0.0 and distortion_type != "champion":
-                        gs_distortion = -0.0
-                    gs_distortion = f"{100*gs_distortion:.1f}%_BDM_Distortion"
+                    gs_distortion = f"{100*gs_distortion:.1f}%_Bond_Distortion"
                 if gs_distortion == "rattled":
                     gs_distortion = "only_rattled"
                 # Grab CONTCAR and transform to Structure object
                 try:
                     unperturbed_contcar = (
-                        f"{base_path}{defect_name}/{distortion_type}/"
+                        f"{base_path}/{defect_name}/{distortion_type}/"
                         f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
                     )
                     distorted_contcar = (
-                        f"{base_path}{defect_name}/{distortion_type}/"
+                        f"{base_path}/{defect_name}/{distortion_type}/"
                         f"{defect_name}_{gs_distortion}/vasp_gam/CONTCAR"
                     )
                     if (
@@ -198,7 +196,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
                     ):  # then get the Unperturbed (not the imported structure found for other
                         # charge state)
                         unperturbed_contcar = (
-                            f"{base_path}{defect_name}/BDM/"
+                            f"{base_path}/{defect_name}/BDM/"
                             f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
                         )
 

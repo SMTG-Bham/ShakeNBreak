@@ -42,6 +42,8 @@ class ChampTestCase(unittest.TestCase):
         for i in self.defect_folders_list:
             if_present_rm(os.path.join(self.DATA_DIR, i))
         if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
+        if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
+        if_present_rm(os.path.join(self.DATA_DIR, "Int_Cd_2_1"))
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
@@ -72,6 +74,8 @@ class ChampTestCase(unittest.TestCase):
     def test_compare_champion_to_distortions(self):
         """Test comparing champion defect energies to distorted defect energies"""
         os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
+
+        # False test:
         champion_txt = f"""vac_1_Cd_2_-7.5%_Bond_Distortion
         -205.700
         vac_1_Cd_2_-10.0%_Bond_Distortion
@@ -89,6 +93,7 @@ class ChampTestCase(unittest.TestCase):
         self.assertFalse(output[0])
         np.testing.assert_almost_equal(output[1], 0.635296650000015)
 
+        # True test:
         champion_txt = f"""vac_1_Cd_2_only_rattled
         -206.700
         vac_1_Cd_2_Unperturbed_Defect
@@ -109,6 +114,133 @@ class ChampTestCase(unittest.TestCase):
             )
         self.assertTrue(output[0])
         np.testing.assert_almost_equal(output[1], -0.9768854200000021)
+
+        # test when lower energy, but within threshold:
+        output = champion_defects_rerun.compare_champion_to_distortions(
+            defect_species="vac_1_Cd_0", base_path=self.DATA_DIR, min_e_diff=0.25
+        )
+        self.assertFalse(output[0])
+        np.testing.assert_almost_equal(output[1], -0.2217033499999843)
+
+    def test_get_champion_defects(self):
+        """Test getting champion defect energies"""
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM"))
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2_only_rattled"))
+        os.mkdir(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2_Unperturbed_Defect")
+        )
+        os.mkdir(os.path.join(self.DATA_DIR, "Int_Cd_2_1"))
+        os.mkdir(os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM"))
+        os.mkdir(
+            os.path.join(
+                self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1_-10.0%_Bond_Distortion"
+            )
+        )
+        os.mkdir(
+            os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1_Unperturbed_Defect")
+        )
+
+        # False test (champion higher energy for vac_1_Cd_0):
+        champion_txt = f"""vac_1_Cd_0_only_rattled
+                -205.700
+                vac_1_Cd_0_Unperturbed_Defect
+                -205.843"""
+        with open(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+        ) as fp:
+            fp.write(champion_txt)
+
+        V_Cd_2_txt = f"""vac_1_Cd_2_only_rattled
+                        -205.900
+                        vac_1_Cd_2_Unperturbed_Defect
+                        -205.843"""
+        with open(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2.txt"), "w"
+        ) as fp:
+            fp.write(V_Cd_2_txt)
+
+        Int_Cd_2_1_txt = f"""Int_Cd_2_1_-10.0%_Bond_Distortion
+                                -205.400
+                                Int_Cd_2_1_Unperturbed_Defect
+                                -205.843"""
+        with open(
+            os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1.txt"), "w"
+        ) as fp:
+            fp.write(Int_Cd_2_1_txt)
+
+        defect_charges_dict = champion_defects_rerun.read_defects_directories(
+            self.DATA_DIR
+        )
+        output = champion_defects_rerun.get_champion_defects(
+            defect_charges_dict=defect_charges_dict, base_path=self.DATA_DIR
+        )
+        V_Cd_relaxed_unperturbed_structure = Structure.from_file(
+            os.path.join(
+                self.DATA_DIR,
+                "vac_1_Cd_0/BDM/vac_1_Cd_0_Unperturbed_Defect/vasp_gam/CONTCAR",
+            )
+        )
+        V_Cd_relaxed_distorted_structure = Structure.from_file(
+            os.path.join(
+                self.DATA_DIR,
+                "vac_1_Cd_0/BDM/vac_1_Cd_0_-55.0%_Bond_Distortion/vasp_gam/CONTCAR",
+            )
+        )
+        self.assertEqual(
+            len(output), 2
+        )  # 3 defect species, only 2 with a non-spontaneous
+        # energy lowering distortion
+        self.assertEqual(
+            output["vac_1_Cd_0"]["Unperturbed"], V_Cd_relaxed_unperturbed_structure
+        )
+        self.assertEqual(
+            output["vac_1_Cd_0"]["Distorted"], V_Cd_relaxed_distorted_structure
+        )
+        np.testing.assert_almost_equal(
+            output["vac_1_Cd_0"]["E_drop"], -0.7551820700000178
+        )
+
+        self.assertEqual(output["vac_1_Cd_2"]["Unperturbed"], "Not converged")  # No CONTCARs
+        self.assertEqual(output["vac_1_Cd_2"]["Distorted"], "Not converged")  # No CONTCARs
+        np.testing.assert_almost_equal(
+            output["vac_1_Cd_2"]["E_drop"], -0.05700000000001637
+        )
+
+        # True test (champion lower energy for vac_1_Cd_0):
+        champion_txt = f"""vac_1_Cd_0_only_rattled
+                        -206.700
+                        vac_1_Cd_0_Unperturbed_Defect
+                        -205.823"""  # also changing 'Unperturbed' energy here to confirm we take
+        # 'Unperturbed' reference from 'BDM' rather than 'champion' folders
+        with open(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+        ) as fp:
+            fp.write(champion_txt)
+
+        output = champion_defects_rerun.get_champion_defects(
+            defect_charges_dict=defect_charges_dict, base_path=self.DATA_DIR
+        )
+        self.assertEqual(
+            len(output), 2
+        )  # 3 defect species, only 2 with a non-spontaneous
+        # energy lowering distortion
+        self.assertEqual(
+            output["vac_1_Cd_0"]["Unperturbed"], V_Cd_relaxed_unperturbed_structure
+        )
+        self.assertEqual(
+            output["vac_1_Cd_0"]["Distorted"], "Not converged"  # No CONTCAR
+        )
+        np.testing.assert_almost_equal(
+            output["vac_1_Cd_0"]["E_drop"], -0.9768854200000021
+        )
+
+        self.assertEqual(output["vac_1_Cd_2"]["Unperturbed"], "Not converged")
+        self.assertEqual(output["vac_1_Cd_2"]["Distorted"], "Not converged")
+        np.testing.assert_almost_equal(
+            output["vac_1_Cd_2"]["E_drop"], -0.05700000000001637
+        )
 
 
 if __name__ == "__main__":
