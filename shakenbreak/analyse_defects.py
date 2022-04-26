@@ -121,7 +121,7 @@ def get_gs_distortion(defect_energies_dict: dict):
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
     if "Unperturbed" in defect_energies_dict:
-        if len(defect_energies_dict["distortions"]) == 1:
+        if list(defect_energies_dict["distortions"].keys()) == ["rattled"]:  # If only rattled
             energy_diff = (
                 defect_energies_dict["distortions"]["rattled"]
                 - defect_energies_dict["Unperturbed"]
