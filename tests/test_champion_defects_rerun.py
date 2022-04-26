@@ -41,6 +41,7 @@ class ChampTestCase(unittest.TestCase):
         # remove folders generated during tests
         for i in self.defect_folders_list:
             if_present_rm(os.path.join(self.DATA_DIR, i))
+        if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
@@ -56,17 +57,58 @@ class ChampTestCase(unittest.TestCase):
             self.DATA_DIR
         )
         expected_dict = {
-                "Int_Cd_2": [2, -1, 1, 0],
-                "as_1_Cd_on_Te": [1, 2],
-                "sub_1_In_on_Cd": [1],
-                "vac_1_Cd": [0]
-            }
+            "Int_Cd_2": [2, -1, 1, 0],
+            "as_1_Cd_on_Te": [1, 2],
+            "sub_1_In_on_Cd": [1],
+            "vac_1_Cd": [0],
+        }
         self.assertEqual(
             defect_charges_dict.keys(),
             expected_dict.keys(),
         )
         for i in expected_dict:  # Need to do this way to allow different list orders
             self.assertCountEqual(defect_charges_dict[i], expected_dict[i])
+
+    def test_compare_champion_to_distortions(self):
+        """Test comparing champion defect energies to distorted defect energies"""
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
+        champion_txt = f"""vac_1_Cd_2_-7.5%_Bond_Distortion
+        -205.700
+        vac_1_Cd_2_-10.0%_Bond_Distortion
+        -205.750
+        vac_1_Cd_2_Unperturbed_Defect
+        -205.843"""
+        with open(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+        ) as fp:
+            fp.write(champion_txt)
+
+        output = champion_defects_rerun.compare_champion_to_distortions(
+            defect_species="vac_1_Cd_0", base_path=self.DATA_DIR
+        )
+        self.assertFalse(output[0])
+        np.testing.assert_almost_equal(output[1], 0.635296650000015)
+
+        champion_txt = f"""vac_1_Cd_2_only_rattled
+        -206.700
+        vac_1_Cd_2_Unperturbed_Defect
+        -205.843"""
+        with open(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+        ) as fp:
+            fp.write(champion_txt)
+
+        with patch("builtins.print") as mock_print:
+            output = champion_defects_rerun.compare_champion_to_distortions(
+                defect_species="vac_1_Cd_0", base_path=self.DATA_DIR
+            )
+            mock_print.assert_called_with(
+                "Lower energy structure found for the 'champion' relaxation with vac_1_Cd_0, "
+                "with an energy -0.22 eV lower than the previous lowest energy from distortions, "
+                "with an energy -0.98 eV lower than relaxation from the Unperturbed structure."
+            )
+        self.assertTrue(output[0])
+        np.testing.assert_almost_equal(output[1], -0.9768854200000021)
 
 
 if __name__ == "__main__":
