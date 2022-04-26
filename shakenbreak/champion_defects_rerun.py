@@ -23,8 +23,9 @@ def read_defects_directories(defect_path=None) -> dict:
     else:
         path = "./defects"
     list_subdirectories = [  # Get only subdirectories in the current directory
-        i for i in next(os.walk(path))[1] if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or (
-            "sub_" in i)
+        i
+        for i in next(os.walk(path))[1]
+        if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
     ]  # matching doped/PyCDT/pymatgen defect names
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
@@ -39,7 +40,9 @@ def read_defects_directories(defect_path=None) -> dict:
     return defect_charges_dict
 
 
-def compare_champion_to_distortions(defect_name, base_path, energy_difference=0.1) -> tuple:
+def compare_champion_to_distortions(
+    defect_name, base_path, energy_difference=0.1
+) -> tuple:
     """
     Check if an energy-lowering distortion was found when relaxing from the (relaxed) ground-state
     structure of another charge state of that defect, by comparing the energy difference between
@@ -178,16 +181,22 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.1) 
                     gs_distortion = "only_rattled"
                 # Grab CONTCAR and transform to Structure object
                 try:
-                    unperturbed_contcar = f"{base_path}{defect_name}/{distortion_type}/" \
-                                          f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
-                    distorted_contcar = f"{base_path}{defect_name}/{distortion_type}/" \
-                                        f"{defect_name}_{gs_distortion}/vasp_gam/CONTCAR"
+                    unperturbed_contcar = (
+                        f"{base_path}{defect_name}/{distortion_type}/"
+                        f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
+                    )
+                    distorted_contcar = (
+                        f"{base_path}{defect_name}/{distortion_type}/"
+                        f"{defect_name}_{gs_distortion}/vasp_gam/CONTCAR"
+                    )
                     if (
                         distortion_type == "champion"
                     ):  # then get the Unperturbed (not the imported structure found for other
                         # charge state)
-                        unperturbed_contcar = f"{base_path}{defect_name}/BDM/" \
-                                              f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
+                        unperturbed_contcar = (
+                            f"{base_path}{defect_name}/BDM/"
+                            f"{defect_name}_Unperturbed_Defect/vasp_gam/CONTCAR"
+                        )
 
                     # transform CONTCAR to Structure object and store in dictionary
                     struct_unperturbed = grab_contcar(
