@@ -1,6 +1,5 @@
 """
 Module containing functions to analyse rattled and bond-distorted defect structure relaxations
-@author: Irea Mosquera
 """
 
 import json
@@ -524,6 +523,42 @@ def get_energies(
 
     return defect_energies_dict
 
+def calculate_atomic_disp(
+    struct1: Structure,
+    struct2: Structure,
+    stol: float = 0.5,
+) -> tuple:
+    """
+    Calculate root mean square displacement and displacements, normalized by the free length per atom
+     ((Vol/Nsites)^(1/3)) between two structures.
+
+    Args:
+        struct1 (:obj:`Structure`): 
+            Structure to compare to struct1.
+        struct2 (:obj:`Structure`):
+            Structure to compare to struct1.
+        stol (:obj:`float`):
+            Site tolerance used for structural comparison (via `pymatgen`'s `StructureMatcher`),
+            as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If
+            output contains too many 'NaN' values, this likely needs to be increased.
+            (Default: 0.5)
+
+    Returns:
+        tuple(:obj:`tuple`):
+            Tuple of normalized root mean squared displacements and normalized displacements between the two structures.
+    """
+
+    # Lines below are copied from get_rms_dist to return all normalized distances, rathen than (rms, max(dist))
+    sm = StructureMatcher(
+        ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
+    )
+    struct1, struct2 = sm._process_species([struct1, struct2])
+    struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
+    match = sm._match(struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False)
+
+    if match is None:
+        return None
+    return match[0], match[1]
 
 def calculate_struct_comparison(
     defect_structures_dict: dict,
@@ -532,8 +567,7 @@ def calculate_struct_comparison(
     stol: float = 0.5,
 ) -> Optional[dict]:
     """
-    Calculate either the summed atomic displacement normalised to the average free length per
-    atom := ( V / Nsites ) ** (1/3), with metric = "disp", or the maximum distance between
+    Calculate either the summed atomic displacement, with metric = "disp", or the maximum distance between
     matched atoms, with metric = "max_dist", (default) between each distorted structure in
     `defect_struct_dict`, and either 'Unperturbed' or a specified structure (`ref_structure`).
 
@@ -589,19 +623,17 @@ def calculate_struct_comparison(
     print(f"Comparing structures to {ref_name}...")
 
     disp_dict = {}
-    sm = StructureMatcher(
-        ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
-    )
+    normalization = ( len(ref_structure) / ref_structure.volume )**(1/3)
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] != "Not converged":
             try:
-                rms_disp, max_dist = sm.get_rms_dist(
-                    ref_structure, defect_structures_dict[distortion]
+                norm_rms_disp, norm_dist = calculate_atomic_disp(
+                    struct1 = ref_structure, struct2 = defect_structures_dict[distortion], stol = stol,
                 )
                 if metric == "disp":
-                    disp_dict[distortion] = rms_disp * np.sqrt(len(ref_structure))
+                    disp_dict[distortion] = norm_dist / normalization # Remove normalization factor from normalized distances
                 elif metric == "max_dist":
-                    disp_dict[distortion] = max_dist
+                    disp_dict[distortion] = max(norm_dist) / normalization # Remove normalization factor
                 else:
                     raise ValueError(
                         f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'."
@@ -632,9 +664,8 @@ def compare_structures(
 ) -> pd.DataFrame:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
-    (`ref_structure`), and calculate the summed atomic displacement normalised to the average
-    free length per atom := ( V / Nsites ) ** (1/3), and maximum distance between matched atomic
-    sites.
+    (`ref_structure`), and calculate the summed atomic displacement (in A), and maximum distance between matched atomic
+    sites (in A).
 
     Args:
         defect_structures_dict (:obj:`dict`):
@@ -710,7 +741,7 @@ def compare_structures(
         df_list,
         columns=[
             "Bond Distortion",
-            "\u03A3{Normalised Displacement}",  # Sigma
+            "\u03A3{displacements} (A)",  # Sigma
             "Max Distance (\u212B)",  # Angstrom
             f"\u0394 Energy ({units})",  # Delta
         ],

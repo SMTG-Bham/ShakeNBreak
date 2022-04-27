@@ -12,7 +12,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib.figure import Figure
 
-from shakenbreak.analyse_defects import (
+from shakenbreak.analysis import (
     sort_data,
     get_structures,
     calculate_struct_comparison,
