@@ -10,7 +10,7 @@ import copy
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
 
-from shakenbreak.analyse_defects import sort_data, grab_contcar, get_structures
+from shakenbreak.analysis import sort_data, grab_contcar, get_structures
 
 
 def get_deep_distortions(

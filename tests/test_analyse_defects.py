@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from pymatgen.core.structure import Structure, Element
-from shakenbreak import analyse_defects
+from shakenbreak import analysis
 
 
 def if_present_rm(path):
@@ -21,25 +21,25 @@ def if_present_rm(path):
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        self.V_Cd_distortion_data = analyse_defects.open_file(
+        self.V_Cd_distortion_data = analysis.open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
-        self.organized_V_Cd_distortion_data = analyse_defects.organize_data(
+        self.organized_V_Cd_distortion_data = analysis.organize_data(
             self.V_Cd_distortion_data
         )
-        self.V_Cd_distortion_data_no_unperturbed = analyse_defects.open_file(
+        self.V_Cd_distortion_data_no_unperturbed = analysis.open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
         )
         self.organized_V_Cd_distortion_data_no_unperturbed = (
-            analyse_defects.organize_data(self.V_Cd_distortion_data_no_unperturbed)
+            analysis.organize_data(self.V_Cd_distortion_data_no_unperturbed)
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
-        self.In_Cd_1_distortion_data = analyse_defects.open_file(
+        self.In_Cd_1_distortion_data = analysis.open_file(
             os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
-        self.organized_In_Cd_1_distortion_data = analyse_defects.organize_data(
+        self.organized_In_Cd_1_distortion_data = analysis.organize_data(
             self.In_Cd_1_distortion_data
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
@@ -56,7 +56,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     @patch("builtins.print")
     def test_open_file(self, mock_print):
         """Test open_file() function."""
-        returned_data = analyse_defects.open_file("fake_file")
+        returned_data = analysis.open_file("fake_file")
         self.assertEqual(returned_data, [])
         mock_print.assert_called_once_with("Path fake_file does not exist")
 
@@ -131,19 +131,19 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
-        gs_distortion = analyse_defects.get_gs_distortion(
+        gs_distortion = analysis.get_gs_distortion(
             self.organized_V_Cd_distortion_data
         )
         self.assertEqual(gs_distortion, (-0.7551820700000178, -0.55))
 
         # test In_Cd_1:
-        gs_distortion = analyse_defects.get_gs_distortion(
+        gs_distortion = analysis.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data
         )
         self.assertEqual(gs_distortion, (-0.006500369999997702, "rattled"))
 
         # test with 'Unperturbed' not present:
-        gs_distortion_no_unperturbed = analyse_defects.get_gs_distortion(
+        gs_distortion_no_unperturbed = analysis.get_gs_distortion(
             self.organized_V_Cd_distortion_data_no_unperturbed
         )
         self.assertEqual(gs_distortion_no_unperturbed, (None, -0.55))
@@ -152,10 +152,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_sort_data(self, mock_print):
         """Test sort_data() function."""
         # test V_Cd_distortion_data:
-        gs_distortion = analyse_defects.get_gs_distortion(
+        gs_distortion = analysis.get_gs_distortion(
             self.organized_V_Cd_distortion_data
         )
-        sorted_V_Cd_distortion_data = analyse_defects.sort_data(
+        sorted_V_Cd_distortion_data = analysis.sort_data(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
         self.assertEqual(
@@ -168,11 +168,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # test In_Cd_1:
-        gs_distortion = analyse_defects.get_gs_distortion(
+        gs_distortion = analysis.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data
         )
         with patch("builtins.print") as mock_In_Cd_print:
-            sorted_In_Cd_1_distortion_data = analyse_defects.sort_data(
+            sorted_In_Cd_1_distortion_data = analysis.sort_data(
                 os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
             )
             mock_In_Cd_print.assert_not_called()
@@ -182,11 +182,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # test with 'Unperturbed' not present:
-        gs_distortion_no_unperturbed = analyse_defects.get_gs_distortion(
+        gs_distortion_no_unperturbed = analysis.get_gs_distortion(
             self.organized_V_Cd_distortion_data_no_unperturbed
         )
         with patch("builtins.print") as mock_no_unperturbed_print:
-            organized_V_Cd_distortion_data_no_unperturbed = analyse_defects.sort_data(
+            organized_V_Cd_distortion_data_no_unperturbed = analysis.sort_data(
                 os.path.join(
                     self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
                 )
@@ -207,7 +207,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_grab_contcar(self):
         """Test grab_contcar() function."""
         with warnings.catch_warnings(record=True) as w:
-            output = analyse_defects.grab_contcar("fake_file")
+            output = analysis.grab_contcar("fake_file")
             warning_message = (
                 "fake_file file doesn't exist, storing as 'Not converged'. Check "
                 "path & relaxation"
@@ -218,7 +218,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
-            output = analyse_defects.grab_contcar(
+            output = analysis.grab_contcar(
                 os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
             )
             warning_message = (
@@ -232,7 +232,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
-            output = analyse_defects.grab_contcar(
+            output = analysis.grab_contcar(
                 os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
             V_Cd_struc = Structure.from_file(
@@ -245,7 +245,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test analyse_defect_site() function."""
         # test V_Cd:
         with patch("builtins.print") as mock_print:
-            output = analyse_defects.analyse_defect_site(
+            output = analysis.analyse_defect_site(
                 self.V_Cd_minus0pt5_struc_rattled, name="Test pop", vac_site=[0, 0, 0]
             )
             mock_print.assert_any_call("==> ", "Test pop structural analysis ", " <==")
@@ -294,7 +294,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test Int_Cd_2:
         with patch("builtins.print") as mock_print:
-            output = analyse_defects.analyse_defect_site(
+            output = analysis.analyse_defect_site(
                 self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
                 name="Int_Cd_2",
                 site_num=65,
@@ -345,7 +345,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test error catching:
         with self.assertRaises(ValueError):
-            analyse_defects.analyse_defect_site(
+            analysis.analyse_defect_site(
                 self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
                 name="Int_Cd_2",
                 # no site_num or vac_coords specified
@@ -354,7 +354,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_get_structures(self):
         """Test get_structures() function."""
         # V_Cd_0 with defaults (reading from `distortion_metadata.json`):
-        defect_structures_dict = analyse_defects.get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
@@ -371,7 +371,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
 
         # V_Cd_0 with a defined subset (using `bond_distortions`):
-        defect_structures_dict = analyse_defects.get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0",
             output_path=self.DATA_DIR,
             bond_distortions=[-0.5, -0.25, 0],
@@ -389,7 +389,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # V_Cd_0 with a defined subset (using `distortion_increment`):
         with warnings.catch_warnings(record=True) as w:
-            defect_structures_dict = analyse_defects.get_structures(
+            defect_structures_dict = analysis.get_structures(
                 defect_species="vac_1_Cd_0",
                 output_path=self.DATA_DIR,
                 distortion_increment=0.2,
@@ -402,7 +402,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test warnings for wrong defect species:
         with warnings.catch_warnings(record=True) as w:
-            wrong_defect_structures_dict = analyse_defects.get_structures(
+            wrong_defect_structures_dict = analysis.get_structures(
                 defect_species="vac_1_Cd_1",  # wrong defect species
                 output_path=self.DATA_DIR,
                 distortion_increment=0.025,
@@ -431,7 +431,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "No `distortion_metadata.json` file found in wrong_path. Please specify "
                 "`distortion_increment` or `bond_distortions`."
             )
-            analyse_defects.get_structures(
+            analysis.get_structures(
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
             )
             self.assertIn(wrong_path_error, e.exception)
@@ -439,7 +439,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_get_energies(self):
         """Test get_energies() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
-        defect_energies_dict = analyse_defects.get_energies(
+        defect_energies_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         energies_dict_keys_dict = {"distortions": None, "Unperturbed": None}
@@ -458,7 +458,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
 
         # V_Cd_0 with meV (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
-        defect_energies_meV_dict = analyse_defects.get_energies(
+        defect_energies_meV_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
         )
         self.assertEqual(
@@ -489,7 +489,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "Unperturbed defect energy not found in energies file. Energies will be given "
                 "relative to the lowest energy defect structure found."
             )
-            defect_energies_dict = analyse_defects.get_energies(
+            defect_energies_dict = analysis.get_energies(
                 defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
             )
             self.assertEqual(len(w), 1)
@@ -516,11 +516,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_calculate_struct_comparison(self):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
-        defect_structures_dict = analyse_defects.get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         with patch("builtins.print") as mock_print:
-            max_dist_dict = analyse_defects.calculate_struct_comparison(
+            max_dist_dict = analysis.calculate_struct_comparison(
                 defect_structures_dict
             )
             mock_print.assert_called_with("Comparing structures to Unperturbed...")
@@ -537,7 +537,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # V_Cd_0 with 'disp' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
-        disp_dict = analyse_defects.calculate_struct_comparison(
+        disp_dict = analysis.calculate_struct_comparison(
             defect_structures_dict, "disp"
         )
         self.assertEqual(len(disp_dict), len(defect_structures_dict))  # one for each
@@ -550,7 +550,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test with specified ref_structure as dict key:
         with patch("builtins.print") as mock_print:
-            disp_dict = analyse_defects.calculate_struct_comparison(
+            disp_dict = analysis.calculate_struct_comparison(
                 defect_structures_dict, "disp", ref_structure=-0.4
             )
             mock_print.assert_called_with(
@@ -563,7 +563,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test with specified ref_structure as Structure object:
         with patch("builtins.print") as mock_print:
-            disp_dict = analyse_defects.calculate_struct_comparison(
+            disp_dict = analysis.calculate_struct_comparison(
                 defect_structures_dict,
                 "disp",
                 ref_structure=self.V_Cd_minus0pt5_struc_rattled,
@@ -577,7 +577,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(round(disp_dict["Unperturbed"], 3), 1.127)
 
         # test kwargs:
-        max_dist_dict = analyse_defects.calculate_struct_comparison(
+        max_dist_dict = analysis.calculate_struct_comparison(
             defect_structures_dict, "max_dist", stol=0.01
         )
         # spot check:
@@ -590,7 +590,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             wrong_key_error = KeyError(
                 "Reference structure key 'Test pop' not found in defect_structures_dict."
             )
-            analyse_defects.calculate_struct_comparison(
+            analysis.calculate_struct_comparison(
                 defect_structures_dict, ref_structure="Test pop"
             )
             self.assertIn(wrong_key_error, e.exception)
@@ -603,7 +603,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             unconverged_structures_dict = defect_structures_dict.copy()
             unconverged_structures_dict["Unperturbed"] = "Not converged"
-            analyse_defects.calculate_struct_comparison(
+            analysis.calculate_struct_comparison(
                 unconverged_structures_dict,
             )
             self.assertIn(unconverged_error, e.exception)
@@ -613,7 +613,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "ref_structure must be either a key from defect_structures_dict or a pymatgen "
                 "Structure object. Got <class 'int'> instead."
             )
-            analyse_defects.calculate_struct_comparison(
+            analysis.calculate_struct_comparison(
                 defect_structures_dict, ref_structure=1
             )
             self.assertIn(wrong_type_error, e.exception)
@@ -622,20 +622,20 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             wrong_metric_error = ValueError(
                 f"Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'."
             )  # https://youtu.be/DmH1prySUpA
-            analyse_defects.calculate_struct_comparison(defect_structures_dict, metric="metwhat")
+            analysis.calculate_struct_comparison(defect_structures_dict, metric="metwhat")
             self.assertIn(wrong_metric_error, e.exception)
 
     def test_compare_structures(self):
         """Test compare_structures() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
-        defect_structures_dict = analyse_defects.get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
-        defect_energies_dict = analyse_defects.get_energies(
+        defect_energies_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         with patch("builtins.print") as mock_print:
-            struct_comparison_df = analyse_defects.compare_structures(
+            struct_comparison_df = analysis.compare_structures(
                 defect_structures_dict, defect_energies_dict
             )
             mock_print.assert_called_with("Comparing structures to Unperturbed...")
@@ -667,7 +667,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test with specified ref_structure as dict key:
         with patch("builtins.print") as mock_print:
-            struct_comparison_df = analyse_defects.compare_structures(
+            struct_comparison_df = analysis.compare_structures(
                 defect_structures_dict, defect_energies_dict, ref_structure=-0.4
             )
             mock_print.assert_called_with(
@@ -686,7 +686,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test with specified ref_structure as Structure object:
         with patch("builtins.print") as mock_print:
-            struct_comparison_df = analyse_defects.compare_structures(
+            struct_comparison_df = analysis.compare_structures(
                 defect_structures_dict,
                 defect_energies_dict,
                 ref_structure=self.V_Cd_minus0pt5_struc_rattled,
@@ -706,7 +706,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # test kwargs:
-        struct_comparison_df = analyse_defects.compare_structures(
+        struct_comparison_df = analysis.compare_structures(
             defect_structures_dict, defect_energies_dict, stol=0.01, units="meV"
         )
         # spot check:
@@ -735,7 +735,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         defect_structures_dict_no_unperturbed.pop("Unperturbed")
         defect_energies_dict_no_unperturbed = defect_energies_dict.copy()
         defect_energies_dict_no_unperturbed.pop("Unperturbed")
-        struct_comparison_df = analyse_defects.compare_structures(
+        struct_comparison_df = analysis.compare_structures(
             defect_structures_dict_no_unperturbed,
             defect_energies_dict_no_unperturbed,
             ref_structure=-0.2,
@@ -756,7 +756,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             wrong_key_error = KeyError(
                 "Reference structure key 'Test pop' not found in defect_structures_dict."
             )
-            analyse_defects.compare_structures(
+            analysis.compare_structures(
                 defect_structures_dict, defect_energies_dict, ref_structure="Test pop"
             )
             self.assertIn(wrong_key_error, e.exception)
@@ -768,7 +768,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             unconverged_structures_dict = defect_structures_dict.copy()
             unconverged_structures_dict["Unperturbed"] = "Not converged"
-            analyse_defects.compare_structures(
+            analysis.compare_structures(
                 unconverged_structures_dict, defect_energies_dict
             )
             self.assertIn(unconverged_error, e.exception)
@@ -778,7 +778,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "ref_structure must be either a key from defect_structures_dict or a pymatgen "
                 "Structure object. Got <class 'int'> instead."
             )
-            analyse_defects.compare_structures(
+            analysis.compare_structures(
                 defect_structures_dict, defect_energies_dict, ref_structure=1
             )
             self.assertIn(wrong_type_error, e.exception)

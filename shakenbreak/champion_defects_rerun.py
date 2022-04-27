@@ -4,7 +4,7 @@ defect to the other charge states.
 """
 
 import os
-from shakenbreak.analyse_defects import sort_data, grab_contcar
+from shakenbreak.analysis import sort_data, grab_contcar
 
 
 def read_defects_directories(defect_path=None) -> dict:
