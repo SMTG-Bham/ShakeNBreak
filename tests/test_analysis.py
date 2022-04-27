@@ -530,10 +530,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(
             max_dist_dict.keys(), defect_structures_dict.keys()
         )  # one for each
-        np.testing.assert_almost_equal(max_dist_dict[-0.4], 0.24573512684427087)
-        np.testing.assert_almost_equal(max_dist_dict[-0.2], 0.007657854604646658)
+        np.testing.assert_almost_equal(max_dist_dict[-0.4], 0.8082011457587672)
+        np.testing.assert_almost_equal(max_dist_dict[-0.2], 0.02518600797944396)
         np.testing.assert_almost_equal(
-            max_dist_dict["Unperturbed"], 5.320996143118748e-16
+            max_dist_dict["Unperturbed"], 1.7500286730158273e-15
         )
 
         # V_Cd_0 with 'disp' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
@@ -544,9 +544,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(
             disp_dict.keys(), defect_structures_dict.keys()
         )  # one for each
-        np.testing.assert_almost_equal(disp_dict[-0.4], 0.528833749576806)
-        np.testing.assert_almost_equal(disp_dict[-0.2], 0.018994749103504377)
-        np.testing.assert_almost_equal(disp_dict["Unperturbed"], 0)
+        np.testing.assert_almost_equal(disp_dict[-0.4], 8.312181351550626)
+        np.testing.assert_almost_equal(disp_dict[-0.2], 0.42556023981420044)
+        np.testing.assert_almost_equal(disp_dict["Unperturbed"], 1.482396206200163e-14)
 
         # test with specified ref_structure as dict key:
         with patch("builtins.print") as mock_print:
@@ -557,9 +557,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "Comparing structures to -40.0% bond distorted structure..."
             )
         # spot check:
-        self.assertEqual(round(disp_dict[-0.2], 3), 0.528)
+        self.assertEqual(round(disp_dict[-0.2], 3), 8.267)
         self.assertTrue(np.isclose(disp_dict[-0.4], 0))
-        self.assertEqual(round(disp_dict["Unperturbed"], 3), 0.529)
+        self.assertEqual(round(disp_dict["Unperturbed"], 3), 8.312)
 
         # test with specified ref_structure as Structure object:
         with patch("builtins.print") as mock_print:
@@ -572,16 +572,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "Comparing structures to specified ref_structure (Cd31 Te32)..."
             )
         # spot check:
-        self.assertEqual(round(disp_dict[-0.2], 3), 1.126)
-        self.assertEqual(round(disp_dict[-0.4], 3), 1.105)
-        self.assertEqual(round(disp_dict["Unperturbed"], 3), 1.127)
+        self.assertEqual(round(disp_dict[-0.2], 3), 26.03)
+        self.assertEqual(round(disp_dict[-0.4], 3), 26.34)
+        self.assertEqual(round(disp_dict["Unperturbed"], 3), 26.049)
 
         # test kwargs:
         max_dist_dict = analysis.calculate_struct_comparison(
             defect_structures_dict, "max_dist", stol=0.01
         )
         # spot check:
-        self.assertEqual(round(max_dist_dict[-0.2], 3), 0.008)
+        self.assertEqual(round(max_dist_dict[-0.2], 3), 0.025)
         self.assertIsNone(max_dist_dict[-0.4])
         self.assertTrue(np.isclose(max_dist_dict["Unperturbed"], 0))
 
@@ -645,7 +645,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.columns.to_list(),
             [
                 "Bond Distortion",
-                "\u03A3{Normalised Displacement}",  # Sigma
+                "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
                 "Max Distance (\u212B)",  # Angstrom
                 f"\u0394 Energy (eV)",  # Delta
             ],
@@ -656,10 +656,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.019, 0.008, 0.0]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.426, 0.025, 0.0]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.529, 0.246, -0.75]
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 8.312, 0.808, -0.75]
         )
         self.assertEqual(
             struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
@@ -675,13 +675,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.528, 0.243, 0.00]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 8.267, 0.801, 0.0]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.00, 0.00, -0.75]
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.0, 0.0, -0.75]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.529, 0.246, 0.00]
+            struct_comparison_df.iloc[-1].to_list(), ['Unperturbed', 8.312, 0.808, 0.0]
         )
 
         # test with specified ref_structure as Structure object:
@@ -696,13 +696,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 1.126, 0.392, 0.00]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 26.03, 1.29, 0.0]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[8].to_list(), [-0.4, 1.105, 0.304, -0.75]
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 26.34, 0.999, -0.75]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 1.127, 0.399, 0.00]
+            struct_comparison_df.iloc[-1].to_list(), ['Unperturbed', 26.049, 1.314, 0.0]
         )
 
         # test kwargs:
@@ -711,7 +711,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.019, 0.008, 0.00]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.426, 0.025, 0.0]
         )
         self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[1]))  # no RMS
         self.assertTrue(
@@ -724,7 +724,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.columns.to_list(),
             [
                 "Bond Distortion",
-                "\u03A3{Normalised Displacement}",  # Sigma
+                "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
                 "Max Distance (\u212B)",  # Angstrom
                 f"\u0394 Energy (meV)",  # Delta
             ],
@@ -742,10 +742,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.00, 0.00, 0.00]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.0, 0.0, 0.0]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[8].to_list(), [-0.4, 0.528, 0.243, -0.75]
+            struct_comparison_df.iloc[8].to_list(), [-0.4, 8.267, 0.801, -0.75]
         )
         self.assertTrue(
             "Unperturbed" not in struct_comparison_df["Bond Distortion"].to_list()
