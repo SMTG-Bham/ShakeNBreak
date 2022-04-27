@@ -631,7 +631,7 @@ def calculate_struct_comparison(
                     struct1 = ref_structure, struct2 = defect_structures_dict[distortion], stol = stol,
                 )
                 if metric == "disp":
-                    disp_dict[distortion] = norm_dist / normalization # Remove normalization factor from normalized distances
+                    disp_dict[distortion] = np.sum(norm_dist) / normalization # Remove normalization factor from normalized distances
                 elif metric == "max_dist":
                     disp_dict[distortion] = max(norm_dist) / normalization # Remove normalization factor
                 else:
@@ -741,7 +741,7 @@ def compare_structures(
         df_list,
         columns=[
             "Bond Distortion",
-            "\u03A3{displacements} (A)",  # Sigma
+            "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
             "Max Distance (\u212B)",  # Angstrom
             f"\u0394 Energy ({units})",  # Delta
         ],
