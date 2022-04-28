@@ -12,11 +12,15 @@ for defect_name in *[0-9]/; # matches each subdirectory with a name ending in a 
         fi
 
     for i in ?(*Bond_Distortion*|*Unperturbed|*only_rattled)/; # for each BDM distortion
-        do if grep -q "required accuracy" ${i}/OUTCAR; # check calculation fully relaxed and finished
-            then echo ${i%?} >> ${defect_name%?}.txt; # add BDM distortion to txt file, "%?" cuts slash at end of string
-            grep -a sigma ${i}/OUTCAR | tail -1 | awk '{print $NF}' >> ${defect_name%?}.txt; #and its energy
+	do if [[ $i == *champion* ]] 
+            then filename=champion_${defect_name%?}.txt
+            else filename=${defect_name%?}.txt
+	    fi ;
+            if grep -q "required accuracy" ${i}/OUTCAR; # check calculation fully relaxed and finished
+            then echo ${i%?} >> ${filename}; # add BDM distortion to txt file, "%?" cuts slash at end of string
+            grep -a sigma ${i}/OUTCAR | tail -1 | awk '{print $NF}' >> ${filename}; #and its energy
             else echo "${i%?} not fully relaxed" 
-           fi;
+            fi;
         done;
     cd ..;
     done

@@ -41,9 +41,10 @@ class ChampTestCase(unittest.TestCase):
         # remove folders generated during tests
         for i in self.defect_folders_list:
             if_present_rm(os.path.join(self.DATA_DIR, i))
-        if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
         if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
         if_present_rm(os.path.join(self.DATA_DIR, "Int_Cd_2_1"))
+        if os.path.exists('vac_1_Cd_0/champion_vac_1_Cd_0.txt'):
+            os.remove('vac_1_Cd_0/champion_vac_1_Cd_0.txt')
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
@@ -73,17 +74,17 @@ class ChampTestCase(unittest.TestCase):
 
     def test_compare_champion_to_distortions(self):
         """Test comparing champion defect energies to distorted defect energies"""
-        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
+        # os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0"))
 
         # False test:
-        champion_txt = f"""vac_1_Cd_2_-7.5%_Bond_Distortion
+        champion_txt = f"""Bond_Distortion_-7.5%
         -205.700
-        vac_1_Cd_2_-10.0%_Bond_Distortion
+        Bond_Distortion_-10.0%
         -205.750
-        vac_1_Cd_2_Unperturbed_Defect
+        Unperturbed
         -205.843"""
         with open(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion_vac_1_Cd_0.txt"), "w"
         ) as fp:
             fp.write(champion_txt)
 
@@ -94,12 +95,12 @@ class ChampTestCase(unittest.TestCase):
         np.testing.assert_almost_equal(output[1], 0.635296650000015)
 
         # True test:
-        champion_txt = f"""vac_1_Cd_2_only_rattled
+        champion_txt = f"""only_rattled
         -206.700
-        vac_1_Cd_2_Unperturbed_Defect
+        Unperturbed
         -205.843"""
         with open(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion_vac_1_Cd_0.txt"), "w"
         ) as fp:
             fp.write(champion_txt)
 
@@ -124,49 +125,46 @@ class ChampTestCase(unittest.TestCase):
 
     def test_get_champion_defects(self):
         """Test getting champion defect energies"""
-        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion"))
         os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
-        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM"))
-        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2_only_rattled"))
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/only_rattled"))
         os.mkdir(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2_Unperturbed_Defect")
+            os.path.join(self.DATA_DIR, "vac_1_Cd_2/Unperturbed")
         )
         os.mkdir(os.path.join(self.DATA_DIR, "Int_Cd_2_1"))
-        os.mkdir(os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM"))
         os.mkdir(
             os.path.join(
-                self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1_-10.0%_Bond_Distortion"
+                self.DATA_DIR, "Int_Cd_2_1/Bond_Distortion_-10.0%"
             )
         )
         os.mkdir(
-            os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1_Unperturbed_Defect")
+            os.path.join(self.DATA_DIR, "Int_Cd_2_1/Unperturbed")
         )
 
         # False test (champion higher energy for vac_1_Cd_0):
-        champion_txt = f"""vac_1_Cd_0_only_rattled
+        champion_txt = f"""only_rattled
                 -205.700
-                vac_1_Cd_0_Unperturbed_Defect
+                Unperturbed
                 -205.843"""
         with open(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion_vac_1_Cd_0.txt"), "w"
         ) as fp:
             fp.write(champion_txt)
 
-        V_Cd_2_txt = f"""vac_1_Cd_2_only_rattled
+        V_Cd_2_txt = f"""only_rattled
                         -205.900
-                        vac_1_Cd_2_Unperturbed_Defect
+                        Unperturbed
                         -205.843"""
         with open(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_2/BDM/vac_1_Cd_2.txt"), "w"
+            os.path.join(self.DATA_DIR, "vac_1_Cd_2/vac_1_Cd_2.txt"), "w"
         ) as fp:
             fp.write(V_Cd_2_txt)
 
-        Int_Cd_2_1_txt = f"""Int_Cd_2_1_-10.0%_Bond_Distortion
+        Int_Cd_2_1_txt = f"""Bond_Distortion_-10.0%
                                 -205.400
-                                Int_Cd_2_1_Unperturbed_Defect
+                                Unperturbed
                                 -205.843"""
         with open(
-            os.path.join(self.DATA_DIR, "Int_Cd_2_1/BDM/Int_Cd_2_1.txt"), "w"
+            os.path.join(self.DATA_DIR, "Int_Cd_2_1/Int_Cd_2_1.txt"), "w"
         ) as fp:
             fp.write(Int_Cd_2_1_txt)
 
@@ -179,13 +177,13 @@ class ChampTestCase(unittest.TestCase):
         V_Cd_relaxed_unperturbed_structure = Structure.from_file(
             os.path.join(
                 self.DATA_DIR,
-                "vac_1_Cd_0/BDM/vac_1_Cd_0_Unperturbed_Defect/vasp_gam/CONTCAR",
+                "vac_1_Cd_0/Unperturbed/CONTCAR",
             )
         )
         V_Cd_relaxed_distorted_structure = Structure.from_file(
             os.path.join(
                 self.DATA_DIR,
-                "vac_1_Cd_0/BDM/vac_1_Cd_0_-55.0%_Bond_Distortion/vasp_gam/CONTCAR",
+                "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR",
             )
         )
         self.assertEqual(
@@ -209,13 +207,13 @@ class ChampTestCase(unittest.TestCase):
         )
 
         # True test (champion lower energy for vac_1_Cd_0):
-        champion_txt = f"""vac_1_Cd_0_only_rattled
+        champion_txt = f"""only_rattled
                         -206.700
-                        vac_1_Cd_0_Unperturbed_Defect
+                        Unperturbed
                         -205.823"""  # also changing 'Unperturbed' energy here to confirm we take
         # 'Unperturbed' reference from 'BDM' rather than 'champion' folders
         with open(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion/vac_1_Cd_0.txt"), "w"
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/champion_vac_1_Cd_0.txt"), "w"
         ) as fp:
             fp.write(champion_txt)
 
