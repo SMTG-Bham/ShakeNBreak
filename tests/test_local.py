@@ -180,7 +180,7 @@ class BDMLocalTestCase(unittest.TestCase):
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
         )
-        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        V_Cd_gam_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_gam_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
@@ -214,7 +214,7 @@ class BDMLocalTestCase(unittest.TestCase):
             distortion_type="kwarged",
         )
         V_Cd_kwarg_gam_folder = (
-            "vac_1_Cd_0/kwarged/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+            "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
         )
         self.assertTrue(os.path.exists(V_Cd_kwarg_gam_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_gam_folder + "/POSCAR")
@@ -293,12 +293,12 @@ class BDMLocalTestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        V_Cd_gam_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_gam_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%_Bond__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
+            "-50.0%__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
@@ -323,13 +323,13 @@ class BDMLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(V_Cd_gam_folder + "/POTCAR"))
 
         Int_Cd_2_gam_folder = (
-            "Int_Cd_2_0/BDM/Int_Cd_2_0_-60.0%_Bond_Distortion/vasp_gam"
+            "Int_Cd_2_0/Bond_Distortion_-60.0%"
         )
         self.assertTrue(os.path.exists(Int_Cd_2_gam_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_gam_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%_Bond__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
+            "-60.0%__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
