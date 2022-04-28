@@ -15,6 +15,7 @@ from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from monty.serialization import loadfn
 
 from shakenbreak.distortions import distort, rattle
+from shakenbreak.io import vasp_gam_files
 
 # Load default INCAR settings for the shakenbreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -313,7 +314,7 @@ def apply_distortions(
             Dictionary with distorted defect structure and the distortion parameters.
     """
     distorted_defect_dict = {
-        "Unperturbed_Defect": defect_dict,
+        "Unperturbed": defect_dict,
         "Distortions": {},
         "distortion_parameters": {},
     }
@@ -430,9 +431,6 @@ def create_vasp_input(
             (Default: 'BDM')
     """
     create_folder(defect_name)  # create folder for defect
-    create_folder(
-        defect_name + "/" + distortion_type
-    )  # name subfolder according to `distortion_type`, where distorted structures will be written
     for (
         key,
         single_defect_dict,
@@ -442,9 +440,13 @@ def create_vasp_input(
         potcar_settings_copy = copy.deepcopy(
             potcar_settings
         )  # vasp_gam_files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
-        vasp_input.vasp_gam_files(
+        if distortion_type != 'BDM':
+            distortion_key = f'{distortion_type}_{key}'
+        else:
+            distortion_key = key
+        vasp_gam_files(
             single_defect_dict=single_defect_dict,
-            input_dir=f"{defect_name}/{distortion_type}/{defect_name}_{key}",
+            input_dir=f"{defect_name}/{distortion_key}",
             incar_settings=incar_settings,
             potcar_settings=potcar_settings_copy,
         )
@@ -599,7 +601,7 @@ def apply_shakenbreak(
 
             for charge in defect["charges"]:  # loop for each charge state of defect
                 charged_defect = {
-                    "Unperturbed_Defect": copy.deepcopy(
+                    "Unperturbed": copy.deepcopy(
                         vasp_defect_inputs[f"{defect_name}_{charge}"]
                     )
                 }

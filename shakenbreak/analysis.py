@@ -390,17 +390,16 @@ def get_structures(
             bond_distortions = np.arange(
                 -60, 60.1, distortion_increment * 100
             )  # if user didn't specify bond_distortions, assume default range
-
+    if distortion_type != 'BDM':
+        dist_label = "{distortion_type}_only_rattled"
+    else:
+        dist_label = "only_rattled"
     rattle_dir_path = (
         output_path
         + "/"
         + defect_species
         + "/"
-        + distortion_type
-        + "/"
-        + defect_species
-        + "_"
-        + "only_rattled"
+        + dist_label
     )
     if os.path.isdir(
         rattle_dir_path
@@ -420,17 +419,17 @@ def get_structures(
                 i / 100, 3
             )  # Dictionary key in the same format as the {distortions: final energies} dictionary
             i = f"{i+0:.1f}"  # 1 decimal place
+            if distortion_type != 'BDM':
+                dist_label = f"{distortion_type}_{str(i)}_%_Bond_Distortion"
+            else:
+                dist_label = f"{str(i)}_%_Bond_Distortion"
             path = (
                 output_path
                 + "/"
                 + defect_species
                 + "/"
-                + distortion_type
-                + "/"
-                + defect_species
-                + "_"
-                + str(i)
-                + "%_Bond_Distortion/vasp_gam/CONTCAR"
+                + dist_label
+                + "/vasp_gam/CONTCAR"
             )
             try:
                 defect_structures_dict[key] = grab_contcar(path)
@@ -445,16 +444,16 @@ def get_structures(
                 )
                 defect_structures_dict[key] = "Not converged"
     try:
+        if distortion_type != 'BDM':
+            dist_label = f"{distortion_type}_Unperturbed"
+        else:
+            dist_label = "Unperturbed"
         unperturbed_path = (
             output_path
             + "/"
             + defect_species
             + "/"
-            + distortion_type
-            + "/"
-            + defect_species
-            + "_"
-            + "Unperturbed_Defect"
+            + dist_label
             + "/vasp_gam/CONTCAR"
         )
         defect_structures_dict["Unperturbed"] = grab_contcar(unperturbed_path)

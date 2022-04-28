@@ -384,7 +384,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.25,
             verbose=True,
         )
-        self.assertDictEqual(self.V_Cd_dict, V_Cd_distorted_dict["Unperturbed_Defect"])
+        self.assertDictEqual(self.V_Cd_dict, V_Cd_distorted_dict["Unperturbed"])
 
         distorted_V_Cd_struc = V_Cd_distorted_dict["Distortions"][
             "-50.0%_Bond_Distortion"
@@ -433,7 +433,7 @@ class InputTestCase(unittest.TestCase):
                 bond_distortions=distortion_range,
                 verbose=True,
             )
-            prev_struc = V_Cd_distorted_dict["Unperturbed_Defect"]["supercell"][
+            prev_struc = V_Cd_distorted_dict["Unperturbed"]["supercell"][
                 "structure"
             ]
             for distortion in distortion_range:
@@ -463,7 +463,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         self.assertDictEqual(
-            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed_Defect"]
+            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
             "-60.0%_Bond_Distortion"
@@ -491,7 +491,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         self.assertDictEqual(
-            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed_Defect"]
+            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
             "-60.0%_Bond_Distortion"
@@ -534,7 +534,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         self.assertDictEqual(
-            self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed_Defect"]
+            self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed"]
         )
         distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["Distortions"][
             "-50.0%_Bond_Distortion"
@@ -566,9 +566,9 @@ class InputTestCase(unittest.TestCase):
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
         )
-        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
-        self.assertTrue(os.path.exists(V_Cd_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/-50.0%_Bond_Distortion"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -591,11 +591,11 @@ class InputTestCase(unittest.TestCase):
             incar_settings=kwarged_incar_settings,
             distortion_type="kwarged",
         )
-        V_Cd_kwarg_gam_folder = (
-            "vac_1_Cd_0/kwarged/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
+        V_Cd_kwarg_folder = (
+            "vac_1_Cd_0/kwarged_-50.0%_Bond_Distortion"
         )
-        self.assertTrue(os.path.exists(V_Cd_kwarg_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_gam_folder + "/POSCAR")
+        self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -662,9 +662,9 @@ class InputTestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_gam_folder = "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam"
-        self.assertTrue(os.path.exists(V_Cd_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/-50.0%_Bond_Distortion"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
             "-50.0%_Bond__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
@@ -673,11 +673,11 @@ class InputTestCase(unittest.TestCase):
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
-        Int_Cd_2_gam_folder = (
-            "Int_Cd_2_0/BDM/Int_Cd_2_0_-60.0%_Bond_Distortion/vasp_gam"
+        Int_Cd_2_Bond_Distortion_folder = (
+            "Int_Cd_2_0/-60.0%_Bond_Distortion"
         )
-        self.assertTrue(os.path.exists(Int_Cd_2_gam_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_gam_folder + "/POSCAR")
+        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0%_Bond__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
@@ -708,7 +708,7 @@ class InputTestCase(unittest.TestCase):
             seed=20,
         )
         V_Cd_kwarged_POSCAR = Poscar.from_file(
-            "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/POSCAR"
+            "vac_1_Cd_0/-50.0%_Bond_Distortion/POSCAR"
         )
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
@@ -783,7 +783,7 @@ class InputTestCase(unittest.TestCase):
                 + "(1.36, 29, 'Cd'), (1.36, 38, 'Te')]"
             )
             # check correct folder was created:
-            self.assertTrue(os.path.exists("Int_Cd_2_1/kwarged"))
+            self.assertTrue(os.path.exists("Int_Cd_2_1/kwarged_Unperturbed"))
 
         # check files are not written if write_files=False:
         for i in self.cdte_defect_folders:
