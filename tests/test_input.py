@@ -387,7 +387,7 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(self.V_Cd_dict, V_Cd_distorted_dict["Unperturbed"])
 
         distorted_V_Cd_struc = V_Cd_distorted_dict["Distortions"][
-            "-50.0%_Bond_Distortion"
+            "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_rattled, distorted_V_Cd_struc)
@@ -400,7 +400,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         distorted_V_Cd_struc = V_Cd_0pt1_distorted_dict["Distortions"][
-            "-50.0%_Bond_Distortion"
+            "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
@@ -437,7 +437,7 @@ class InputTestCase(unittest.TestCase):
                 "structure"
             ]
             for distortion in distortion_range:
-                key = f"{round(distortion,3)+0:.1%}_Bond_Distortion"
+                key = f"Bond_Distortion_{round(distortion,3)+0:.1%}"
                 self.assertIn(key, V_Cd_distorted_dict["Distortions"])
                 self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
                 prev_struc = V_Cd_distorted_dict["Distortions"][
@@ -447,10 +447,10 @@ class InputTestCase(unittest.TestCase):
                 mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
 
         # plus some hard-coded checks
-        self.assertIn("-60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
-        self.assertIn("60.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("Bond_Distortion_60.0%", V_Cd_distorted_dict["Distortions"])
         # test zero distortion is written as positive zero (not "-0.0%")
-        self.assertIn("0.0%_Bond_Distortion", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["Distortions"])
 
     def test_apply_distortions_Int_Cd_2(self):
 
@@ -466,7 +466,7 @@ class InputTestCase(unittest.TestCase):
             self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
-            "-60.0%_Bond_Distortion"
+            "Bond_Distortion_-60.0%"
         ]
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
         self.assertEqual(
@@ -494,7 +494,7 @@ class InputTestCase(unittest.TestCase):
             self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
-            "-60.0%_Bond_Distortion"
+            "Bond_Distortion_-60.0%"
         ]
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
         self.assertEqual(
@@ -537,7 +537,7 @@ class InputTestCase(unittest.TestCase):
             self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed"]
         )
         distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["Distortions"][
-            "-50.0%_Bond_Distortion"
+            "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_kwarged, distorted_V_Cd_struc)
@@ -558,7 +558,7 @@ class InputTestCase(unittest.TestCase):
             "V_Cd Rattled",
         )
         V_Cd_charged_defect_dict = {
-            "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
+            "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         input.create_vasp_input(
@@ -566,7 +566,7 @@ class InputTestCase(unittest.TestCase):
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
         )
-        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/-50.0%_Bond_Distortion"
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
@@ -592,7 +592,7 @@ class InputTestCase(unittest.TestCase):
             distortion_type="kwarged",
         )
         V_Cd_kwarg_folder = (
-            "vac_1_Cd_0/kwarged_-50.0%_Bond_Distortion"
+            "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
         )
         self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
@@ -662,25 +662,25 @@ class InputTestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/-50.0%_Bond_Distortion"
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%_Bond__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
+            "-50.0%__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
         Int_Cd_2_Bond_Distortion_folder = (
-            "Int_Cd_2_0/-60.0%_Bond_Distortion"
+            "Int_Cd_2_0/Bond_Distortion_-60.0%"
         )
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%_Bond__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
+            "-60.0%__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
@@ -708,7 +708,7 @@ class InputTestCase(unittest.TestCase):
             seed=20,
         )
         V_Cd_kwarged_POSCAR = Poscar.from_file(
-            "vac_1_Cd_0/-50.0%_Bond_Distortion/POSCAR"
+            "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged

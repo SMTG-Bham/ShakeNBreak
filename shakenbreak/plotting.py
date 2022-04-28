@@ -231,7 +231,7 @@ def plot_defect(
         defect_structs = get_structures(defect_species, base_path)
         disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
-        )  # calculate root mean squared displacement and maximum displacement between paired sites
+        )  # calculate sum of atomic displacements and maximum displacement between paired sites
         if (
             disp_dict
         ):  # if struct_comparison algorithms worked (sometimes struggles matching
