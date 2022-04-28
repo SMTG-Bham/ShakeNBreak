@@ -406,7 +406,7 @@ def get_structures(
     ):  # check if rattle folder exists (if so, it means only rattling was applied with no bond
         # distortions), hence parse rattled & Unperturbed structures, not distortions)
         try:
-            path = rattle_dir_path + "/vasp_gam/CONTCAR"
+            path = rattle_dir_path + "/CONTCAR"
             defect_structures_dict["rattle"] = grab_contcar(path)
         except:
             warnings.warn(
@@ -420,16 +420,16 @@ def get_structures(
             )  # Dictionary key in the same format as the {distortions: final energies} dictionary
             i = f"{i+0:.1f}"  # 1 decimal place
             if distortion_type != 'BDM':
-                dist_label = f"{distortion_type}_{str(i)}_%_Bond_Distortion"
+                dist_label = f"{distortion_type}_Bond_Distortion_{str(i)}%"
             else:
-                dist_label = f"{str(i)}_%_Bond_Distortion"
+                dist_label = f"Bond_Distortion_{str(i)}%"
             path = (
                 output_path
                 + "/"
                 + defect_species
                 + "/"
                 + dist_label
-                + "/vasp_gam/CONTCAR"
+                + "/CONTCAR"
             )
             try:
                 defect_structures_dict[key] = grab_contcar(path)
@@ -454,7 +454,7 @@ def get_structures(
             + defect_species
             + "/"
             + dist_label
-            + "/vasp_gam/CONTCAR"
+            + "/CONTCAR"
         )
         defect_structures_dict["Unperturbed"] = grab_contcar(unperturbed_path)
     except FileNotFoundError:
@@ -495,9 +495,14 @@ def get_energies(
     Returns:
         Dictionary matching bond distortions to final energies in eV.
     """
-    energy_file_path = (
-        f"{output_path}/{defect_species}/{distortion_type}/{defect_species}.txt"
-    )
+    if distortion_type != 'BDM':
+        energy_file_path = (
+        f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt" # TODO: results of champion distortions in different file?
+        )
+    else:
+        energy_file_path = (
+            f"{output_path}/{defect_species}/{defect_species}.txt"
+        )
     defect_energies_dict, _e_diff, gs_distortion = sort_data(energy_file_path)
     if "Unperturbed" in defect_energies_dict:
         for distortion, energy in defect_energies_dict["distortions"].items():

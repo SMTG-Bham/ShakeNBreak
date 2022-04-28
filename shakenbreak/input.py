@@ -338,7 +338,7 @@ def apply_distortions(
                 **kwargs,
             )
             distorted_defect_dict["Distortions"][
-                f"{distortion:.1%}_Bond_Distortion"
+                f"Bond_Distortion_{distortion:.1%}" # string must come first, so that file name doesnt start with '-'
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
@@ -652,8 +652,8 @@ def apply_shakenbreak(
                     "Distortions"
                 ].items():
                     poscar_comment = (
-                        key_distortion.split("Distortion")[0]
-                        + "_"
+                        key_distortion.split("_")[-1] # Get distortion factor (-60.%) or 'rattled' 
+                        + "__"
                         + vasp_defect_inputs[f"{defect_name}_{charge}"][
                             "POSCAR Comment"
                         ]

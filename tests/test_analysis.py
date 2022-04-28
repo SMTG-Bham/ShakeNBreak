@@ -50,7 +50,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # restore the original file (after 'no unperturbed' tests):
         shutil.copy(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/BDM/vac_1_Cd_0.txt"),
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
         )
 
     @patch("builtins.print")
@@ -365,7 +365,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         relaxed_0pt5_V_Cd_structure = Structure.from_file(
             os.path.join(
                 self.DATA_DIR,
-                "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/CONTCAR",
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
             )
         )
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
@@ -382,7 +382,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         relaxed_0pt5_V_Cd_structure = Structure.from_file(
             os.path.join(
                 self.DATA_DIR,
-                "vac_1_Cd_0/BDM/vac_1_Cd_0_-50.0%_Bond_Distortion/vasp_gam/CONTCAR",
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
             )
         )
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
@@ -411,14 +411,14 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
             final_warning_message = (
-                "vac_1_Cd_1/BDM/vac_1_Cd_1_Unperturbed_Defect/vasp_gam"
+                "vac_1_Cd_1/Unperturbed"
                 "/CONTCAR file doesn't exist, storing as 'Not converged'. "
                 "Check path & relaxation"
             )
             self.assertIn(final_warning_message, str(w[-1].message))
             penultimate_warning_message = (  # assumes range of +/- 60%
-                "vac_1_Cd_1/BDM/vac_1_Cd_1_60.0%_Bond_Distortion/"
-                "vasp_gam/CONTCAR file doesn't exist, storing as 'Not "
+                "vac_1_Cd_1/Bond_Distortion_60.0%/"
+                "CONTCAR file doesn't exist, storing as 'Not "
                 "converged'. Check path & relaxation"
             )
             self.assertIn(penultimate_warning_message, str(w[-2].message))
@@ -438,7 +438,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_energies(self):
         """Test get_energies() function."""
-        # V_Cd_0 with defaults (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
+        # V_Cd_0 with defaults (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
@@ -457,7 +457,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
 
-        # V_Cd_0 with meV (reading from `vac_1_Cd_0/BDM/vac_1_Cd_0.txt`):
+        # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_meV_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
         )
@@ -481,7 +481,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             os.path.join(
                 self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
             ),
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/BDM/vac_1_Cd_0.txt"),
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
         )
         # Note we copy back to original in self.tearDown()
         with warnings.catch_warnings(record=True) as w:
