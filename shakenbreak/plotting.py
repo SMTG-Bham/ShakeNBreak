@@ -50,7 +50,7 @@ plt.rcParams["axes.prop_cycle"] = plt.cycler(
 )
 
 
-# TODO: Refactor 'rms' to 'disp'. Will do when going through and creating tests for this submodule.
+# TODO: Refactor 'rms' to 'disp' (Done:). Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
     base_path: str,
@@ -60,6 +60,8 @@ def plot_all_defects(
     plot_tag: bool = True,
     max_energy_above_unperturbed: float = 0.5,
     units: str = "eV",
+    energy_diff_tol: float = 0.1,
+    save_format: str='svg',
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those which undergo
@@ -77,7 +79,7 @@ def plot_all_defects(
             (Default: False)
         metric (:obj:`str`):
             If add_colorbar is set to True, metric defines the criteria for structural comparison.
-            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
         distortion_type (:obj:`str`) :
@@ -95,7 +97,12 @@ def plot_all_defects(
             (Default: 0.5 eV)
         units (:obj:`str`):
             Units for energy, either "eV" or "meV".
-
+        energy_diff_tol (:obj:`float`):
+            Minimum energy difference between unperturbed and identified ground state required to analyse the defect. 
+            (Default: 0.1 eV)
+        save_format (:obj:`str`):
+            Format to save the plot as.
+            (Default: 'svg')
     Returns:
         Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
 
@@ -119,8 +126,7 @@ def plot_all_defects(
                 plot_tag
                 and ("rattled" not in energies_dict["distortions"].keys())
                 and float(energy_diff)
-                < -0.1  # TODO: Have energy lowering tolerance as an
-                # optional parameter
+                < energy_diff_tol  
             ):
                 num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][
                     str(charge)
@@ -151,6 +157,7 @@ def plot_all_defects(
                     metric=metric,
                     units=units,
                     max_energy_above_unperturbed=max_energy_above_unperturbed,
+                    save_format=save_format,
                 )
                 figures[defect_species] = f
     return figures
@@ -170,6 +177,7 @@ def plot_defect(
     save_tag: bool = True,
     y_axis: str = "Energy (eV)",
     units: str = "eV",
+    save_format: str='svg'
 ) -> Figure:
     """
     Convenience function to plot energy vs distortion for a defect, to identify any energy-lowering
@@ -194,7 +202,7 @@ def plot_defect(
             the unperturbed one.
         metric (:obj:`str`):
             If add_colorbar is True, determines the criteria used for the structural comparison.
-            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
@@ -212,22 +220,23 @@ def plot_defect(
             Y axis label (Default: 'Energy (eV)')
         units (:obj:`str`):
             Units for energy, either "eV" or "meV" (Default: "eV")
-
+        save_format (:obj:`str`):
+            Format to save the plot as.
+            (Default: 'svg')
     Returns:
         Energy vs distortion plot, as a Matplotlib Figure object
     """
-    # TODO: Add save_format option
     if add_colorbar:  # then get structures to compare their similarity
         assert os.path.isdir(base_path)
         defect_structs = get_structures(defect_species, base_path)
-        rms_dict = calculate_struct_comparison(
+        disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
         )  # calculate root mean squared displacement and maximum displacement between paired sites
         if (
-            rms_dict
+            disp_dict
         ):  # if struct_comparison algorithms worked (sometimes struggles matching
             # lattices)
-            for key in list(rms_dict.keys()):
+            for key in list(disp_dict.keys()):
                 # remove any data point if its energy is not in the energy dict (this may be due to
                 # relaxation not converged)
                 if (
@@ -235,10 +244,10 @@ def plot_defect(
                         key not in energies_dict["distortions"].keys()
                         and key != "Unperturbed"
                     )
-                    or rms_dict[key] == "Not converged"
-                    or rms_dict[key] is None
+                    or disp_dict[key] == "Not converged"
+                    or disp_dict[key] is None
                 ):
-                    rms_dict.pop(key)
+                    disp_dict.pop(key)
                     if (
                         key in energies_dict["distortions"].keys()
                     ):  # remove it from energy dict as well
@@ -259,7 +268,7 @@ def plot_defect(
         ):
             energies_dict["distortions"].pop(key)
             if add_colorbar:
-                rms_dict.pop(key)
+                disp_dict.pop(key)
 
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
@@ -312,9 +321,9 @@ def plot_defect(
         energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
 
     if add_colorbar:
-        f = plot_bdm_colorbar(
+        f = plot_colorbar(
             energies_dict=energies_dict,
-            rms_dict=rms_dict,
+            disp_dict=disp_dict,
             defect_name=defect_name,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
@@ -324,6 +333,7 @@ def plot_defect(
             save_tag=save_tag,
             y_axis=y_axis,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
+            save_format=save_format,
         )
     else:
         f = plot_datasets(
@@ -336,13 +346,14 @@ def plot_defect(
             save_tag=save_tag,
             y_axis=y_axis,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
+            save_format=save_format,
         )
     return f
 
 
-def plot_bdm_colorbar(
+def plot_colorbar(
     energies_dict: dict,
-    rms_dict: dict,
+    disp_dict: dict,
     defect_name: str,
     num_nearest_neighbours: int,
     neighbour_atom: str,
@@ -352,6 +363,7 @@ def plot_bdm_colorbar(
     max_energy_above_unperturbed: float = 0.5,
     save_tag: bool = False,
     y_axis: Optional[str] = None,
+    save_format: str='svg'
 ) -> Figure:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural similarity between
@@ -360,8 +372,8 @@ def plot_bdm_colorbar(
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
-        rms_dict (:obj:`dict`):
-            Dictionary matching bond distortions to structure comparison metric (metric = 'rms' or
+        disp_dict (:obj:`dict`):
+            Dictionary matching bond distortions to structure comparison metric (metric = 'disp' or
             'max_dist').
         defect_name (:obj:`str`):
             Specific defect name that will appear in plot labels and file names (e.g '$V_{Cd}^0$')
@@ -377,7 +389,7 @@ def plot_bdm_colorbar(
             (Default: 'RBDM')
         metric (:obj:`str`):
             Defines the criteria for structural comparison, used for the colorbar.
-            Can choose between root-mean-squared displacement for all sites ('rms') or the
+            Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
@@ -389,6 +401,9 @@ def plot_bdm_colorbar(
             (Default: True)
         y_axis (:obj:`str`):
             Y axis label (Default: 'Energy (eV)')
+        save_format (:obj:`str`):
+            Format to save the plot as.
+            (Default: 'svg')
 
     Returns:
         Energy vs distortion plot with colorbar for structural similarity, as a Matplotlib Figure
@@ -409,16 +424,16 @@ def plot_bdm_colorbar(
             > max_energy_above_unperturbed
         ):
             energies_dict["distortions"].pop(key)
-            rms_dict.pop(key)
+            disp_dict.pop(key)
 
-    array_rms = np.array(np.array(list(rms_dict.values())))
+    array_disp = np.array(np.array(list(disp_dict.values())))
 
     colormap = sns.cubehelix_palette(
         start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
     )  # sns.cubehelix_palette(start=.5, rot=-.5, as_cmap=True)     #rot=-.952075
     # colormap extremes
-    vmin = round(min(array_rms), 1)
-    vmax = round(max(array_rms), 1)
+    vmin = round(min(array_disp), 1)
+    vmax = round(max(array_disp), 1)
     vmedium = round((vmin + vmax) / 2, 1)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
 
@@ -428,7 +443,7 @@ def plot_bdm_colorbar(
     energies_dict["Unperturbed"] = 0.0
 
     ax.set_xlabel(
-        f"BDM Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near {defect_name})",
+        f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near {defect_name})",
         labelpad=10,
     )
     ax.set_ylabel(y_axis, labelpad=10)
@@ -436,7 +451,7 @@ def plot_bdm_colorbar(
     im = ax.scatter(
         energies_dict["distortions"].keys(),
         energies_dict["distortions"].values(),
-        c=array_rms[:-1],
+        c=array_disp[:-1],
         ls="-",
         s=50,
         marker="o",
@@ -456,7 +471,7 @@ def plot_bdm_colorbar(
     )
     unperturbed_color = colormap(
         0
-    )  # get color of unperturbed structure (corresponding to 0 as RMS is calculated with respect
+    )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
     # to this structure)
     ax.scatter(
         0,
@@ -494,8 +509,8 @@ def plot_bdm_colorbar(
     )
     cbar.ax.tick_params(size=0)
     cbar.outline.set_visible(False)
-    if metric == "rms":
-        cmap_label = "RMS"
+    if metric == "disp":
+        cmap_label = "$\Sigma$ Disp"
     elif metric == "max_dist":
         cmap_label = r"$d_{max}$ $(\AA)$"
     cbar.ax.set_title(
@@ -515,8 +530,8 @@ def plot_bdm_colorbar(
             os.mkdir(wd + "/distortion_plots/")
         print(f"Plot saved to {wd}/distortion_plots/")
         plt.savefig(
-            wd + "/distortion_plots/" + defect_name + ".svg",
-            format="svg",
+            wd + "/distortion_plots/" + defect_name + f".{save_format}",
+            format=save_format,
             transparent=True,
             bbox_inches="tight",
         )
@@ -539,6 +554,7 @@ def plot_datasets(
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
     save_tag: bool = False,
+    save_format: str='svg',
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -580,9 +596,11 @@ def plot_datasets(
             Linewidth to use for plots (single value, or list of values for each dataset)
             (Default: None)
         save_tag (:obj:`bool`):
-            Whether to save the plots as SVG files.
+            Whether to save the plots.
             (Default: True)
-
+        save_format (:obj:`str`):
+            Format to save the plot as.
+            (Default: 'svg')
     Returns:
         Energy vs distortion plot for multiple datasets, as a Matplotlib Figure object
     """
@@ -617,10 +635,10 @@ def plot_datasets(
                 dataset["distortions"].pop(key)
 
         if num_nearest_neighbours and neighbour_atom:
-            x_label = f"BDM Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near" \
+            x_label = f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near" \
                       f" {defect_name})"
         else:
-            x_label = "BDM Distortion Factor"
+            x_label = "Bond Distortion Factor"
         ax.set_xlabel(x_label, labelpad=10)
         ax.set_ylabel(y_axis, labelpad=10)
 
@@ -702,8 +720,8 @@ def plot_datasets(
             os.mkdir(wd + "/distortion_plots/")
         print(f"Plot saved to {wd}/distortion_plots/")
         plt.savefig(
-            wd + "/distortion_plots/" + defect_name + ".svg",
-            format="svg",
+            wd + "/distortion_plots/" + defect_name + f".{save_format}",
+            format=save_format,
             transparent=True,
             bbox_inches="tight",
         )
