@@ -43,8 +43,8 @@ class ChampTestCase(unittest.TestCase):
             if_present_rm(os.path.join(self.DATA_DIR, i))
         if_present_rm(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
         if_present_rm(os.path.join(self.DATA_DIR, "Int_Cd_2_1"))
-        if os.path.exists('vac_1_Cd_0/champion_vac_1_Cd_0.txt'):
-            os.remove('vac_1_Cd_0/champion_vac_1_Cd_0.txt')
+        if os.path.exists(os.path.join(self.DATA_DIR,'vac_1_Cd_0/champion_vac_1_Cd_0.txt')):
+            os.remove(os.path.join(self.DATA_DIR,'vac_1_Cd_0/champion_vac_1_Cd_0.txt'))
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
