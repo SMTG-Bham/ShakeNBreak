@@ -172,7 +172,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "V_Cd Rattled",
         )
         V_Cd_charged_defect_dict = {
-            "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
+            "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         input.create_vasp_input(
@@ -213,9 +213,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             incar_settings=kwarged_incar_settings,
             distortion_type="kwarged",
         )
-        V_Cd_kwarg_minus50_folder = (
-            "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
-        )
+        V_Cd_kwarg_minus50_folder = "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_kwarg_minus50_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_minus50_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
@@ -322,9 +320,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # check if POTCARs have been written:
         self.assertTrue(os.path.isfile(V_Cd_minus50_folder + "/POTCAR"))
 
-        Int_Cd_2_minus60_folder = (
-            "Int_Cd_2_0/Bond_Distortion_-60.0%"
-        )
+        Int_Cd_2_minus60_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_minus60_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(

@@ -174,6 +174,9 @@ def sort_data(energies_file: str):
             Distortion corresponding to the minimum energy structure
     """
     defect_energies_dict = organize_data(open_file(energies_file))
+    if defect_energies_dict == {'distortions': {}}:  # no parsed data
+        warnings.warn(f"No data parsed from {energies_file}, returning None")
+        return None, None, None
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".txt")[0]
     if energy_diff and energy_diff < -0.1:
