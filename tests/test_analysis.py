@@ -204,6 +204,17 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 f"Lowest energy structure found with -0.55 bond distortion.\n"
             )
 
+        # test error catching:
+        with warnings.catch_warnings(record=True) as w:
+            output = analysis.sort_data("fake_file")
+            warning_message = (
+                "No data parsed from fake_file, returning None"
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, (None, None, None))
+
     def test_grab_contcar(self):
         """Test grab_contcar() function."""
         with warnings.catch_warnings(record=True) as w:
