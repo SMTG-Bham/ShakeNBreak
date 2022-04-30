@@ -63,21 +63,18 @@ def get_deep_distortions(
                 # this distorted defect
                 # TODO: Make this cutoff energy an optional parameter
                 print("Deep distortion found for ", defect_name)
-                if gs_distortion != "rattle":
+                if gs_distortion != "rattled":
                     bond_distortion = (
-                        f"{round(gs_distortion * 100, 1)}"  # change distortion
+                        f"{round(gs_distortion * 100, 1)+0}"  # change distortion
                     )
                     # format to the one used in file name (e.g. from 0.1 to 10.0)
-                    if bond_distortion == "0.0":
-                        bond_distortion = "-0.0"
                 else:
                     bond_distortion = (
                         "only_rattled"  # file naming format used for rattle
                     )
                 try:
                     file_path = (
-                        f"{base_path}{defect_name}/{distortion_type}/{defect_name}"
-                        f"_{bond_distortion}%_BDM_Distortion/vasp_gam/CONTCAR"
+                        f"{base_path}/{defect_name}/Bond_Distortion_{bond_distortion}%/CONTCAR"
                     )
                     gs_struct = grab_contcar(
                         file_path
