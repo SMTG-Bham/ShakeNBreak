@@ -56,7 +56,7 @@ def compare_champion_to_distortions(
         min_e_diff (:obj: `float`):
             Minimum energy difference (in eV) between the `champion` test relaxation and the
             previous lowest energy relaxation, to consider it as having found a new energy-lowering
-            distortion.
+            distortion. Default is 0.05 eV.
 
     Returns:
         (True/False, energy_diff) where True if a lower-energy result was found (at least
