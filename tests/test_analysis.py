@@ -63,9 +63,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(len(self.V_Cd_distortion_data), 52)
         self.assertListEqual(
             [
-                "vac_1_Cd_0_0.0%_Bond_Distortion",
+                "Bond_Distortion_0.0%",
                 "-205.72650569",
-                "vac_1_Cd_0_-10.0%_Bond_Distortion",
+                "Bond_Distortion_-10.0%",
             ],
             self.V_Cd_distortion_data[:3],
         )
@@ -75,9 +75,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertListEqual(
             self.In_Cd_1_distortion_data,
             [
-                "sub_1_In_on_Cd_1_only_rattled",
+                "only_rattled",
                 "-214.88259023",
-                "sub_1_In_on_Cd_1_Unperturbed_Defect",
+                "Unperturbed",
                 "-214.87608986",
             ],
         )
@@ -203,6 +203,17 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 f"{os.path.join(self.DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
                 f"Lowest energy structure found with -0.55 bond distortion.\n"
             )
+
+        # test error catching:
+        with warnings.catch_warnings(record=True) as w:
+            output = analysis.sort_data("fake_file")
+            warning_message = (
+                "No data parsed from fake_file, returning None"
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, (None, None, None))
 
     def test_grab_contcar(self):
         """Test grab_contcar() function."""

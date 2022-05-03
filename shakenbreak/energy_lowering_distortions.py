@@ -15,8 +15,8 @@ from shakenbreak.analysis import sort_data, grab_contcar, get_structures
 
 def get_deep_distortions(
     defect_charges_dict: dict,
-    base_path: str,
-    distortion_type: str = "BDM",
+    base_path: str = "./",
+    min_e_diff: float = 0.05,
     stol=0.2,
 ) -> dict:
     """Convenience function to identify defect species undergoing energy-lowering distortions.
@@ -28,12 +28,11 @@ def get_deep_distortions(
              "Int_Sb_1":[0,+1,+2]} etc)
          base_path (:obj:`str`):
              Path to directory with your distorted defect calculations (need CONTCAR files for
-             structure matching) and distortion_metadata.txt
-         distortion_type (:obj:`str`):
-             Whether to search in the 'BDM' (standard method) or 'champion' folders (if
-             previously chosen) when testing the energy-lowering distortion found for other
-             defect charge states.
-             (Default: 'BDM')
+             structure matching) and distortion_metadata.txt. (Default: "./")
+         min_e_diff (:obj: `float`):
+             Minimum energy difference (in eV) between the `champion` test relaxation and the
+             previous lowest energy relaxation, to consider it as having found a new energy-lowering
+             distortion. Default is 0.05 eV.
          stol (:obj:`float`):
              Site-matching tolerance for structure matching. Site tolerance. Defined as the
              fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
@@ -49,35 +48,29 @@ def get_deep_distortions(
         {}
     )  # dict of defects undergoing deep energy-lowering distortions
     for defect in defect_charges_dict:
-        print("\n", defect)
+        print(f"\n{defect}")
         for charge in defect_charges_dict[defect]:
             defect_name = f"{defect}_{charge}"
             energies_file = (
-                f"{base_path}{defect_name}/{distortion_type}/{defect_name}.txt"
+                f"{base_path}/{defect_name}/{defect_name}.txt"
             )
             energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
 
-            if (
-                float(energy_diff) < -0.1
-            ):  # if a significant energy drop occurred, then store
-                # this distorted defect
-                # TODO: Make this cutoff energy an optional parameter
-                print("Deep distortion found for ", defect_name)
-                if gs_distortion != "rattle":
+            if energy_diff and float(energy_diff) < -min_e_diff:  # if a significant energy drop
+                # occurred, then store this distorted defect
+                print(f"Deep distortion found for {defect_name}")
+                if gs_distortion != "rattled":
                     bond_distortion = (
-                        f"{round(gs_distortion * 100, 1)}"  # change distortion
+                        f"{round(gs_distortion * 100, 1)+0}"  # change distortion
                     )
                     # format to the one used in file name (e.g. from 0.1 to 10.0)
-                    if bond_distortion == "0.0":
-                        bond_distortion = "-0.0"
                 else:
                     bond_distortion = (
                         "only_rattled"  # file naming format used for rattle
                     )
                 try:
                     file_path = (
-                        f"{base_path}{defect_name}/{distortion_type}/{defect_name}"
-                        f"_{bond_distortion}%_BDM_Distortion/vasp_gam/CONTCAR"
+                        f"{base_path}/{defect_name}/Bond_Distortion_{bond_distortion}%/CONTCAR"
                     )
                     gs_struct = grab_contcar(
                         file_path
@@ -106,8 +99,10 @@ def get_deep_distortions(
                         # the stored structure with the current structure
                         print(
                             f"Energy lowering distortion found for {defect} with charge "
-                            f"{charge}, with a greater energy drop than the previously identified "
-                            f"{low_energy_defects[defect]['energy_diff']} charge state. Updating "
+                            f"{charge}, with a greater energy drop ({energy_diff:.3f} eV) than the "
+                            f"previously identified distorting charge state(s) ("
+                            f"{low_energy_defects[defect]['charges']}, with largest energy drop "
+                            f"of {low_energy_defects[defect]['energy_diff']:.3f} eV). Updating "
                             f"low_energy_defects dictionary with this."
                         )
                         low_energy_defects[defect].update(
@@ -130,6 +125,12 @@ def get_deep_distortions(
                         "energy_diff": energy_diff,
                         "bond_distortion": gs_distortion,
                     }
+
+            else:
+                print(
+                    f"No energy lowering distortion with energy difference greater than "
+                    f"min_e_diff = {min_e_diff:.2f} eV found for {defect} with charge {charge}."
+                )
 
         # Check that the lower-energy distorted structure wasn't already found with bond
         # distortions for the other charge states
@@ -162,7 +163,7 @@ def compare_gs_struct_to_distorted_structs(  # TODO: Can we just use 'compare_st
     # 'defects_analysis' module here?
     gs_struct: Structure,
     defect_species: str,
-    base_path: str,
+    base_path: str = "./",
     stol: float = 0.2,
 ) -> bool:
     """

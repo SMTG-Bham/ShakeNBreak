@@ -24,7 +24,7 @@ def if_present_rm(path):
         shutil.rmtree(path)
 
 
-class BDMLocalTestCase(unittest.TestCase):
+class DistortionLocalTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
@@ -172,7 +172,7 @@ class BDMLocalTestCase(unittest.TestCase):
             "V_Cd Rattled",
         )
         V_Cd_charged_defect_dict = {
-            "-50.0%_Bond_Distortion": V_Cd_updated_charged_defect_dict
+            "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         input.create_vasp_input(
@@ -180,21 +180,21 @@ class BDMLocalTestCase(unittest.TestCase):
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
         )
-        V_Cd_gam_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        V_Cd_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_minus50_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
-        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
+        V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
         self.assertTrue(input.default_incar_settings.items() <= V_Cd_INCAR.items())
 
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
 
         # check if POTCARs have been written:
-        self.assertTrue(os.path.isfile(V_Cd_gam_folder + "/POTCAR"))
+        self.assertTrue(os.path.isfile(V_Cd_minus50_folder + "/POTCAR"))
 
         # test with kwargs: (except POTCAR settings because we can't have this on the GitHub test
         # server)
@@ -213,24 +213,22 @@ class BDMLocalTestCase(unittest.TestCase):
             incar_settings=kwarged_incar_settings,
             distortion_type="kwarged",
         )
-        V_Cd_kwarg_gam_folder = (
-            "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
-        )
-        self.assertTrue(os.path.exists(V_Cd_kwarg_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_gam_folder + "/POSCAR")
+        V_Cd_kwarg_minus50_folder = "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_kwarg_minus50_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_minus50_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
-        V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_gam_folder + "/INCAR")
+        V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
         self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.items())
 
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_gam_folder + "/KPOINTS")
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
 
         # check if POTCARs have been written:
-        self.assertTrue(os.path.isfile(V_Cd_kwarg_gam_folder + "/POTCAR"))
+        self.assertTrue(os.path.isfile(V_Cd_kwarg_minus50_folder + "/POTCAR"))
 
     @patch("builtins.print")
     def test_apply_shakenbreak(self, mock_print):
@@ -238,7 +236,7 @@ class BDMLocalTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        bdm_defect_dict = input.apply_shakenbreak(
+        distorted_defect_dict = input.apply_shakenbreak(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -293,16 +291,16 @@ class BDMLocalTestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_gam_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_gam_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_gam_folder + "/POSCAR")
+        V_Cd_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_minus50_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
             "-50.0%__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
-        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
+        V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set IBRION and EDIFF)
         self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertEqual(V_Cd_INCAR.pop("ENCUT"), 212)
@@ -316,17 +314,15 @@ class BDMLocalTestCase(unittest.TestCase):
             <= V_Cd_INCAR.items()  # matches after removing
             # kwarg settings
         )
-        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_gam_folder + "/KPOINTS")
+        V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
 
         # check if POTCARs have been written:
-        self.assertTrue(os.path.isfile(V_Cd_gam_folder + "/POTCAR"))
+        self.assertTrue(os.path.isfile(V_Cd_minus50_folder + "/POTCAR"))
 
-        Int_Cd_2_gam_folder = (
-            "Int_Cd_2_0/Bond_Distortion_-60.0%"
-        )
-        self.assertTrue(os.path.exists(Int_Cd_2_gam_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_gam_folder + "/POSCAR")
+        Int_Cd_2_minus60_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_minus60_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0%__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
@@ -335,16 +331,16 @@ class BDMLocalTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
 
-        V_Cd_INCAR = Incar.from_file(V_Cd_gam_folder + "/INCAR")
-        Int_Cd_2_INCAR = Incar.from_file(Int_Cd_2_gam_folder + "/INCAR")
+        V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
+        Int_Cd_2_INCAR = Incar.from_file(Int_Cd_2_minus60_folder + "/INCAR")
         # neutral even-electron INCARs the same except for NELECT:
         for incar in [V_Cd_INCAR, Int_Cd_2_INCAR]:
             incar.pop("NELECT")  # https://tenor.com/bgVv9.gif
         self.assertEqual(V_Cd_INCAR, Int_Cd_2_INCAR)
-        Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_gam_folder + "/KPOINTS")
+        Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_minus60_folder + "/KPOINTS")
         self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
         # check if POTCARs have been written:
-        self.assertTrue(os.path.isfile(Int_Cd_2_gam_folder + "/POTCAR"))
+        self.assertTrue(os.path.isfile(Int_Cd_2_minus60_folder + "/POTCAR"))
 
 
 if __name__ == "__main__":
