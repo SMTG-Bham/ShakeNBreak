@@ -1,4 +1,4 @@
-sub_1_In_on_Cd_1_only_rattled
+only_rattled
 -214.88259023
-sub_1_In_on_Cd_1_Unperturbed_Defect
+Unperturbed
 -214.87608986
