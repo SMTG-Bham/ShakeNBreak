@@ -13,7 +13,7 @@ import seaborn as sns
 from matplotlib.figure import Figure
 
 from shakenbreak.analysis import (
-    sort_data,
+    _sort_data,
     get_structures,
     calculate_struct_comparison,
 )
@@ -118,7 +118,7 @@ def plot_all_defects(
             energies_file = (
                 f"{base_path}{defect_species}/{distortion_type}/{defect_species}.txt"
             )
-            energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
+            energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
 
             # If a significant energy lowering was found with bond distortions (not just rattling),
             # then further analyse this defect
@@ -189,7 +189,7 @@ def plot_defect(
         charge (:obj:`int`):
             Defect charge state
         energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()`.
         base_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to calculate structure
             comparisons)
@@ -371,7 +371,7 @@ def plot_colorbar(
 
     Args:
         energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()`.
         disp_dict (:obj:`dict`):
             Dictionary matching bond distortions to structure comparison metric (metric = 'disp' or
             'max_dist').
@@ -562,7 +562,7 @@ def plot_datasets(
     Args:
         datasets (:obj:`list`):
             List of {distortion: energy} dictionaries to plot (each dictionary matching
-            distortion to final energy (eV), as produced by `organize_data()`)
+            distortion to final energy (eV), as produced by `_organize_data()`)
         dataset_labels (:obj:`list`):
             Labels for each dataset plot legend.
         defect_name (:obj:`str`):

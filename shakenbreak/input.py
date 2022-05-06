@@ -688,6 +688,8 @@ def apply_shakenbreak(
     with open(
         "distortion_metadata.json", "w"
     ) as metadata_file:  # TODO: Need to change this to
-        # not overwrite / save previously existing versions, and add test
+        # not overwrite / save previously existing versions, and add test. E.g. if originally
+        # generated distortions with 5% increments, then redid a subset of defects with 10%
+        # increments, should be able to handle this (and update parsing tests to match this)
         metadata_file.write(json.dumps(distortion_metadata))
     return distortion_metadata  # TODO: Return both distorted defect structures and metadata

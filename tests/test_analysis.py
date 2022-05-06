@@ -21,25 +21,25 @@ def if_present_rm(path):
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        self.V_Cd_distortion_data = analysis.open_file(
+        self.V_Cd_distortion_data = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
-        self.organized_V_Cd_distortion_data = analysis.organize_data(
+        self.organized_V_Cd_distortion_data = analysis._organize_data(
             self.V_Cd_distortion_data
         )
-        self.V_Cd_distortion_data_no_unperturbed = analysis.open_file(
+        self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
         )
         self.organized_V_Cd_distortion_data_no_unperturbed = (
-            analysis.organize_data(self.V_Cd_distortion_data_no_unperturbed)
+            analysis._organize_data(self.V_Cd_distortion_data_no_unperturbed)
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
         )
-        self.In_Cd_1_distortion_data = analysis.open_file(
+        self.In_Cd_1_distortion_data = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
-        self.organized_In_Cd_1_distortion_data = analysis.organize_data(
+        self.organized_In_Cd_1_distortion_data = analysis._organize_data(
             self.In_Cd_1_distortion_data
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
@@ -55,8 +55,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_open_file(self, mock_print):
-        """Test open_file() function."""
-        returned_data = analysis.open_file("fake_file")
+        """Test _open_file() function."""
+        returned_data = analysis._open_file("fake_file")
         self.assertEqual(returned_data, [])
         mock_print.assert_called_once_with("Path fake_file does not exist")
 
@@ -83,7 +83,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
     def test_organize_data(self):
-        """Test organize_data() function."""
+        """Test _organize_data() function."""
         empty_dict = {"distortions": [], "Unperturbed": []}
         self.assertTrue(isinstance(self.organized_V_Cd_distortion_data, dict))
         self.assertTrue(empty_dict.keys() == self.organized_V_Cd_distortion_data.keys())
@@ -150,12 +150,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_sort_data(self, mock_print):
-        """Test sort_data() function."""
+        """Test _sort_data() function."""
         # test V_Cd_distortion_data:
         gs_distortion = analysis.get_gs_distortion(
             self.organized_V_Cd_distortion_data
         )
-        sorted_V_Cd_distortion_data = analysis.sort_data(
+        sorted_V_Cd_distortion_data = analysis._sort_data(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
         self.assertEqual(
@@ -172,7 +172,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.organized_In_Cd_1_distortion_data
         )
         with patch("builtins.print") as mock_In_Cd_print:
-            sorted_In_Cd_1_distortion_data = analysis.sort_data(
+            sorted_In_Cd_1_distortion_data = analysis._sort_data(
                 os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
             )
             mock_In_Cd_print.assert_not_called()
@@ -186,7 +186,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.organized_V_Cd_distortion_data_no_unperturbed
         )
         with patch("builtins.print") as mock_no_unperturbed_print:
-            organized_V_Cd_distortion_data_no_unperturbed = analysis.sort_data(
+            organized_V_Cd_distortion_data_no_unperturbed = analysis._sort_data(
                 os.path.join(
                     self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
                 )
@@ -206,7 +206,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # test error catching:
         with warnings.catch_warnings(record=True) as w:
-            output = analysis.sort_data("fake_file")
+            output = analysis._sort_data("fake_file")
             warning_message = (
                 "No data parsed from fake_file, returning None"
             )
