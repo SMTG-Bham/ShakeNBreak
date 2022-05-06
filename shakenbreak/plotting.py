@@ -24,23 +24,6 @@ pretty_colors = {
     "light salmon": "#FFA17A",
     "brownish": "#E46C51",
 }
-colors_dict = {
-    "turquoise": "#80DEB9",
-    "light salmon": "#F9966B",
-    "blue_grey": "#b3d9ff",
-    "grey": "#8585ad",
-    "dark_green": "#4C787E",
-}
-color_palette = sns.cubehelix_palette(
-    start=0.45,
-    rot=-1.1,
-    light=0.750,
-    dark=0.35,
-    reverse=True,
-    as_cmap=False,
-    n_colors=4,
-)
-
 
 ## Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -455,7 +438,6 @@ def plot_colorbar(
         ls="-",
         s=50,
         marker="o",
-        # c=pretty_colors["turquoise"],
         cmap=colormap,
         norm=norm,
         alpha=1,
@@ -609,8 +591,9 @@ def plot_datasets(
     ax.xaxis.set_major_locator(plt.MultipleLocator(0.3))
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
     ax.linewidth = 0.10
-    if not colors:
-        colors = list(colors_dict.values())
+    if colors == None: # If user didnt specify colors, we create a colormap
+        colors = list(mpl.cm.get_cmap('viridis', len(datasets)+1).colors) # +1 to avoid yellow color (which is at the end of the colormap)
+
     if title:
         ax.set_title(title, size=20, pad=15)
 
