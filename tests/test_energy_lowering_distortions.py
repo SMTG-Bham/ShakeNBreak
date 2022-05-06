@@ -21,22 +21,22 @@ def if_present_rm(path):
 class EnergyLoweringDistortionsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        self.V_Cd_distortion_data = analysis.open_file(
+        self.V_Cd_distortion_data = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
-        self.organized_V_Cd_distortion_data = analysis.organize_data(
+        self.organized_V_Cd_distortion_data = analysis._organize_data(
             self.V_Cd_distortion_data
         )
-        self.V_Cd_distortion_data_no_unperturbed = analysis.open_file(
+        self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
         )
-        self.organized_V_Cd_distortion_data_no_unperturbed = analysis.organize_data(
+        self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
             self.V_Cd_distortion_data_no_unperturbed
         )
-        self.In_Cd_1_distortion_data = analysis.open_file(
+        self.In_Cd_1_distortion_data = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
-        self.organized_In_Cd_1_distortion_data = analysis.organize_data(
+        self.organized_In_Cd_1_distortion_data = analysis._organize_data(
             self.In_Cd_1_distortion_data
         )
 
