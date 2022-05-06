@@ -4,7 +4,7 @@ defect to the other charge states.
 """
 
 import os
-from shakenbreak.analysis import sort_data, grab_contcar
+from shakenbreak.analysis import _sort_data, grab_contcar
 
 
 def read_defects_directories(defect_path=None) -> dict:
@@ -65,10 +65,10 @@ def compare_champion_to_distortions(
         the Unperturbed result. If False, `energy_diff` is the energy difference between the
         `champion` test relaxation and the previous lowest energy relaxation.
     """
-    distorted_energies_dict, distorted_energy_drop, distorted_gs_dist = sort_data(
+    distorted_energies_dict, distorted_energy_drop, distorted_gs_dist = _sort_data(
         f"{base_path}/{defect_species}/{defect_species}.txt"
     )
-    champ_energies_dict, champ_energy_drop, champ_gs_dist = sort_data(
+    champ_energies_dict, champ_energy_drop, champ_gs_dist = _sort_data(
         f"{base_path}/{defect_species}/champion_{defect_species}.txt"
     )
 
@@ -146,7 +146,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
                 energies_file = (
                     f"{base_path}/{defect_name}/{distortion_type}_{defect_name}.txt"
                 )
-                energies_dict, E_diff, gs_distortion = sort_data(
+                energies_dict, E_diff, gs_distortion = _sort_data(
                     energies_file
                 )  # between imported structure and imported structure + bond distortions
                 new_struct_found, energy_diff = compare_champion_to_distortions(
@@ -161,7 +161,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
                     energies_file = (
                         f"{base_path}/{defect_name}/{defect_name}.txt"
                     )
-                    energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
+                    energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
                     if float(energy_diff) < -energy_difference:
                         new_struct_found = True
 
@@ -170,7 +170,7 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
                 energies_file = (
                     f"{base_path}/{defect_name}/{defect_name}.txt"
                 )
-                energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
+                energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
                 if float(energy_diff) < -energy_difference:
                     new_struct_found = True
 

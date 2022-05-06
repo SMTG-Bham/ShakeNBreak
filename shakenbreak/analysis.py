@@ -54,7 +54,7 @@ class HiddenPrints:  # https://stackoverflow.com/questions/8391411/how-to-block-
 # Helper functions
 
 
-def open_file(path: str) -> list:
+def _open_file(path: str) -> list:
     """Open file and return list of file lines as strings"""
     if os.path.isfile(path):
         with open(path) as ff:
@@ -66,7 +66,7 @@ def open_file(path: str) -> list:
         return []
 
 
-def organize_data(distortion_list: list) -> dict:
+def _organize_data(distortion_list: list) -> dict:
     """
     Create a dictionary mapping distortion factors to final energies.
 
@@ -111,7 +111,7 @@ def get_gs_distortion(defect_energies_dict: dict):
 
     Args:
         defect_energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy, as produced by `organize_data()`.
+            Dictionary matching distortion to final energy, as produced by `_organize_data()`.
 
     Returns:
         (Energy difference, ground state bond distortion)
@@ -120,7 +120,9 @@ def get_gs_distortion(defect_energies_dict: dict):
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
     if "Unperturbed" in defect_energies_dict:
-        if list(defect_energies_dict["distortions"].keys()) == ["rattled"]:  # If only rattled
+        if list(defect_energies_dict["distortions"].keys()) == [
+            "rattled"
+        ]:  # If only rattled
             energy_diff = (
                 defect_energies_dict["distortions"]["rattled"]
                 - defect_energies_dict["Unperturbed"]
@@ -152,7 +154,7 @@ def get_gs_distortion(defect_energies_dict: dict):
     return energy_diff, gs_distortion
 
 
-def sort_data(energies_file: str):
+def _sort_data(energies_file: str):
     """
     Organize bond distortion results in a dictionary, calculate energy of ground-state defect
     structure relative to `Unperturbed` structure (in eV) and its corresponding bond distortion,
@@ -166,15 +168,15 @@ def sort_data(energies_file: str):
 
     Returns:
         defect_energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy, as produced by `organize_data()`
+            Dictionary matching distortion to final energy, as produced by `_organize_data()`
         energy_diff (:obj:`float`):
             Energy difference between minimum energy structure and `Unperturbed` (in eV).
             None if `Unperturbed` not present.
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
-    defect_energies_dict = organize_data(open_file(energies_file))
-    if defect_energies_dict == {'distortions': {}}:  # no parsed data
+    defect_energies_dict = _organize_data(_open_file(energies_file))
+    if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
@@ -393,47 +395,34 @@ def get_structures(
             bond_distortions = np.arange(
                 -60, 60.1, distortion_increment * 100
             )  # if user didn't specify bond_distortions, assume default range
-    if distortion_type != 'BDM':
+    if distortion_type != "BDM":
         dist_label = "{distortion_type}_only_rattled"
     else:
         dist_label = "only_rattled"
-    rattle_dir_path = (
-        output_path
-        + "/"
-        + defect_species
-        + "/"
-        + dist_label
-    )
+    rattle_dir_path = output_path + "/" + defect_species + "/" + dist_label
     if os.path.isdir(
         rattle_dir_path
     ):  # check if rattle folder exists (if so, it means only rattling was applied with no bond
         # distortions), hence parse rattled & Unperturbed structures, not distortions)
         try:
             path = rattle_dir_path + "/CONTCAR"
-            defect_structures_dict["rattle"] = grab_contcar(path)
+            defect_structures_dict["rattled"] = grab_contcar(path)
         except:
             warnings.warn(
                 f"Unable to parse CONTCAR at {path}, storing as 'Not converged'"
             )
-            defect_structures_dict["rattle"] = "Not converged"
+            defect_structures_dict["rattled"] = "Not converged"
     else:
         for i in bond_distortions:
             key = round(
                 i / 100, 3
             )  # Dictionary key in the same format as the {distortions: final energies} dictionary
             i = f"{i+0:.1f}"  # 1 decimal place
-            if distortion_type != 'BDM':
+            if distortion_type != "BDM":
                 dist_label = f"{distortion_type}_Bond_Distortion_{str(i)}%"
             else:
                 dist_label = f"Bond_Distortion_{str(i)}%"
-            path = (
-                output_path
-                + "/"
-                + defect_species
-                + "/"
-                + dist_label
-                + "/CONTCAR"
-            )
+            path = output_path + "/" + defect_species + "/" + dist_label + "/CONTCAR"
             try:
                 defect_structures_dict[key] = grab_contcar(path)
             except FileNotFoundError or IndexError or ValueError:
@@ -447,17 +436,12 @@ def get_structures(
                 )
                 defect_structures_dict[key] = "Not converged"
     try:
-        if distortion_type != 'BDM':
+        if distortion_type != "BDM":
             dist_label = f"{distortion_type}_Unperturbed"
         else:
             dist_label = "Unperturbed"
         unperturbed_path = (
-            output_path
-            + "/"
-            + defect_species
-            + "/"
-            + dist_label
-            + "/CONTCAR"
+            output_path + "/" + defect_species + "/" + dist_label + "/CONTCAR"
         )
         defect_structures_dict["Unperturbed"] = grab_contcar(unperturbed_path)
     except FileNotFoundError:
@@ -498,15 +482,11 @@ def get_energies(
     Returns:
         Dictionary matching bond distortions to final energies in eV.
     """
-    if distortion_type != 'BDM':
-        energy_file_path = (
-        f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt" # TODO: results of champion distortions in different file?
-        )
+    if distortion_type != "BDM":
+        energy_file_path = f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt"  # TODO: results of champion distortions in different file?
     else:
-        energy_file_path = (
-            f"{output_path}/{defect_species}/{defect_species}.txt"
-        )
-    defect_energies_dict, _e_diff, gs_distortion = sort_data(energy_file_path)
+        energy_file_path = f"{output_path}/{defect_species}/{defect_species}.txt"
+    defect_energies_dict, _e_diff, gs_distortion = _sort_data(energy_file_path)
     if "Unperturbed" in defect_energies_dict:
         for distortion, energy in defect_energies_dict["distortions"].items():
             defect_energies_dict["distortions"][distortion] = (
@@ -530,18 +510,19 @@ def get_energies(
 
     return defect_energies_dict
 
-def calculate_atomic_disp(
+
+def _calculate_atomic_disp(
     struct1: Structure,
     struct2: Structure,
     stol: float = 0.5,
 ) -> tuple:
     """
-    Calculate root mean square displacement and displacements, normalized by the free length per atom
-     ((Vol/Nsites)^(1/3)) between two structures.
+    Calculate root mean square displacement and atomic displacements, normalized by the free
+    length per atom ((Vol/Nsites)^(1/3)) between two structures.
 
     Args:
-        struct1 (:obj:`Structure`): 
-            Structure to compare to struct1.
+        struct1 (:obj:`Structure`):
+            Structure to compare to struct2.
         struct2 (:obj:`Structure`):
             Structure to compare to struct1.
         stol (:obj:`float`):
@@ -552,31 +533,36 @@ def calculate_atomic_disp(
 
     Returns:
         tuple(:obj:`tuple`):
-            Tuple of normalized root mean squared displacements and normalized displacements between the two structures.
+            Tuple of normalized root mean squared displacements and normalized displacements
+            between the two structures.
     """
-
-    # Lines below are copied from get_rms_dist to return all normalized distances, rathen than (rms, max(dist))
     sm = StructureMatcher(
         ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
     )
     struct1, struct2 = sm._process_species([struct1, struct2])
     struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
-    match = sm._match(struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False)
+    match = sm._match(
+        struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False
+    )
 
     if match is None:
         return None
     return match[0], match[1]
+
 
 def calculate_struct_comparison(
     defect_structures_dict: dict,
     metric: str = "max_dist",
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
+    min_dist: float = 0.1,
 ) -> Optional[dict]:
     """
-    Calculate either the summed atomic displacement, with metric = "disp", or the maximum distance between
-    matched atoms, with metric = "max_dist", (default) between each distorted structure in
+    Calculate either the summed atomic displacement, with metric = "disp", or the maximum distance
+    between matched atoms, with metric = "max_dist", (default) between each distorted structure in
     `defect_struct_dict`, and either 'Unperturbed' or a specified structure (`ref_structure`).
+    For metric = "disp", atomic displacements below `min_dist` (in Å, default 0.1 Å) are considered
+    noise and omitted from the sum, to reduce supercell size dependence.
 
     Args:
         defect_structures_dict (:obj:`dict`):
@@ -597,6 +583,9 @@ def calculate_struct_comparison(
             as a fraction of the average free length per atom := ( V / Nsites ) ** (1/3). If
             output contains too many 'NaN' values, this likely needs to be increased.
             (Default: 0.5)
+        min_dist (:obj:`float`):
+            Minimum atomic displacement threshold to include in atomic displacements sum (in Å,
+            default 0.1 Å).
 
     Returns:
         disp_dict (:obj:`dict`, optional):
@@ -630,17 +619,25 @@ def calculate_struct_comparison(
     print(f"Comparing structures to {ref_name}...")
 
     disp_dict = {}
-    normalization = ( len(ref_structure) / ref_structure.volume )**(1/3)
+    normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] != "Not converged":
             try:
-                norm_rms_disp, norm_dist = calculate_atomic_disp(
-                    struct1 = ref_structure, struct2 = defect_structures_dict[distortion], stol = stol,
+                norm_rms_disp, norm_dist = _calculate_atomic_disp(
+                    struct1=ref_structure,
+                    struct2=defect_structures_dict[distortion],
+                    stol=stol,
                 )
                 if metric == "disp":
-                    disp_dict[distortion] = np.sum(norm_dist) / normalization # Remove normalization factor from normalized distances
+                    disp_dict[distortion] = (
+                        np.sum(norm_dist[norm_dist > min_dist * normalization])
+                        / normalization
+                    )  # Only include displacements above min_dist threshold, and remove
+                    # normalization
                 elif metric == "max_dist":
-                    disp_dict[distortion] = max(norm_dist) / normalization # Remove normalization factor
+                    disp_dict[distortion] = (
+                        max(norm_dist) / normalization
+                    )  # Remove normalization
                 else:
                     raise ValueError(
                         f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'."
@@ -660,25 +657,24 @@ def calculate_struct_comparison(
 
 
 # TODO: Add check if too many 'NaN' values in disp_dict, if so, try with higher stol
-
-
 def compare_structures(
     defect_structures_dict: dict,
     defect_energies_dict: dict,
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
     units: str = "eV",
+    min_dist: float = 0.1,
 ) -> pd.DataFrame:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
-    (`ref_structure`), and calculate the summed atomic displacement (in A), and maximum distance between matched atomic
-    sites (in A).
+    (`ref_structure`), and calculate the summed atomic displacement (in Å), and maximum distance
+    between matched atomic sites (in Å).
 
     Args:
         defect_structures_dict (:obj:`dict`):
             Dictionary mapping bond distortion to (relaxed) structure
         defect_energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `organize_data()`.
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()`.
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute atomic displacements).
             Either as a key from `defect_structures_dict` or a pymatgen Structure object (to
@@ -694,6 +690,9 @@ def compare_structures(
             Energy units label for outputs (either 'eV' or 'meV'). Should be the same as the
             units in `defect_energies_dict`, as this does not modify the supplied values.
             (Default: "eV")
+        min_dist (:obj:`float`):
+            Minimum atomic displacement threshold to include in atomic displacements sum (in Å,
+            default 0.1 Å).
 
     Returns:
         DataFrame containing structural comparison results (summed normalised atomic displacement
@@ -701,7 +700,11 @@ def compare_structures(
     """
     df_list = []
     disp_dict = calculate_struct_comparison(
-        defect_structures_dict, metric="disp", ref_structure=ref_structure, stol=stol
+        defect_structures_dict,
+        metric="disp",
+        ref_structure=ref_structure,
+        stol=stol,
+        min_dist=min_dist,
     )
     with HiddenPrints():  # only print "Comparing to..." once
         max_dist_dict = calculate_struct_comparison(
