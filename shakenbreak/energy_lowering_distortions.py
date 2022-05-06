@@ -10,9 +10,13 @@ import copy
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
 
-from shakenbreak.analysis import sort_data, grab_contcar, get_structures
+from shakenbreak.analysis import _sort_data, grab_contcar, get_structures, get_energies, \
+    compare_structures
 
 
+# TODO: Update get_deep_distortions() to optionally also store non-spontaneous metastable
+#  energy-lowering distortions, as these can become ground-state distortions for other charge
+#  states
 def get_deep_distortions(
     defect_charges_dict: dict,
     base_path: str = "./",
