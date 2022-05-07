@@ -154,7 +154,7 @@ def get_gs_distortion(defect_energies_dict: dict):
     return energy_diff, gs_distortion
 
 
-def _sort_data(energies_file: str):
+def _sort_data(energies_file: str, verbose: bool = True):
     """
     Organize bond distortion results in a dictionary, calculate energy of ground-state defect
     structure relative to `Unperturbed` structure (in eV) and its corresponding bond distortion,
@@ -165,6 +165,9 @@ def _sort_data(energies_file: str):
         energies_file (:obj:`str`):
             Path to txt file with bond distortions and final energies (in eV), obtained using
             `BDM_parsing_script.sh`.
+        verbose (:obj:`bool`):
+            Whether to print information about energy lowering distortions, if found.
+            (Default: True)
 
     Returns:
         defect_energies_dict (:obj:`dict`):
@@ -181,16 +184,17 @@ def _sort_data(energies_file: str):
         return None, None, None
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".txt")[0]
-    if energy_diff and energy_diff < -0.1:
-        print(
-            f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
-            f"distortion, and unperturbed: {energy_diff:+.2f} eV.\n"
-        )
-    elif energy_diff is None:
-        print(
-            f"{defect_name}: Unperturbed energy not found in {energies_file}. Lowest energy "
-            f"structure found with {gs_distortion} bond distortion.\n"
-        )
+    if verbose:
+        if energy_diff and energy_diff < -0.1:
+            print(
+                f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
+                f"distortion, and unperturbed: {energy_diff:+.2f} eV."
+            )
+        elif energy_diff is None:
+            print(
+                f"{defect_name}: Unperturbed energy not found in {energies_file}. Lowest energy "
+                f"structure found with {gs_distortion} bond distortion."
+            )
     return defect_energies_dict, energy_diff, gs_distortion
 
 
@@ -339,7 +343,7 @@ def analyse_structure(
 
 
 # TODO: Refactor `get_structures` to read the distortions present from the subfolders,
-#  rather than requiring it to be specified in the function argument.
+#  rather than requiring it to be specified in the function argument / reading distortion_metadata.json
 def get_structures(
     defect_species: str,
     output_path: str = "./",
@@ -457,6 +461,7 @@ def get_energies(
     output_path: str,
     distortion_type: str = "BDM",
     units: str = "eV",
+    verbose: bool = True
 ) -> dict:
     """
     Parse final energies for each bond distortion and store them in a dictionary matching the
@@ -478,15 +483,21 @@ def get_energies(
             (Default: 'BDM')
         units (:obj:`str`):
             Energy units for outputs (either 'eV' or 'meV'). (Default: "eV")
+        verbose (:obj:`bool`):
+            Whether to print information about energy lowering distortions, if found.
+            (Default: True)
 
     Returns:
         Dictionary matching bond distortions to final energies in eV.
     """
     if distortion_type != "BDM":
-        energy_file_path = f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt"  # TODO: results of champion distortions in different file?
+        energy_file_path = (
+            f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt"
+        )
+        # TODO: results of champion distortions in different file?
     else:
         energy_file_path = f"{output_path}/{defect_species}/{defect_species}.txt"
-    defect_energies_dict, _e_diff, gs_distortion = _sort_data(energy_file_path)
+    defect_energies_dict, _e_diff, gs_distortion = _sort_data(energy_file_path, verbose=verbose)
     if "Unperturbed" in defect_energies_dict:
         for distortion, energy in defect_energies_dict["distortions"].items():
             defect_energies_dict["distortions"][distortion] = (
@@ -664,6 +675,7 @@ def compare_structures(
     stol: float = 0.5,
     units: str = "eV",
     min_dist: float = 0.1,
+    display_df: bool = True,
 ) -> pd.DataFrame:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
@@ -693,11 +705,25 @@ def compare_structures(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic displacements sum (in Å,
             default 0.1 Å).
+        display_df (:obj:`bool`):
+            Whether or not to display the structure comparison DataFrame interactively in
+            Jupyter/Ipython (Default: True).
 
     Returns:
         DataFrame containing structural comparison results (summed normalised atomic displacement
         and maximum distance between matched atomic sites), and relative energies.
     """
+    if all(
+        [
+            structure == "Not converged"
+            for key, structure in defect_structures_dict.items()
+        ]
+    ):
+        warnings.warn(
+            "All structures in defect_structures_dict are not converged. Returning None."
+        )
+        return None
+        # TODO: Use generator and add unit test for this
     df_list = []
     disp_dict = calculate_struct_comparison(
         defect_structures_dict,
@@ -756,6 +782,6 @@ def compare_structures(
             f"\u0394 Energy ({units})",  # Delta
         ],
     )
-    if isipython():
+    if isipython() and display_df:
         display(struct_comparison_df)
     return struct_comparison_df
