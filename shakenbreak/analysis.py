@@ -676,7 +676,7 @@ def compare_structures(
     units: str = "eV",
     min_dist: float = 0.1,
     display_df: bool = True,
-) -> pd.DataFrame:
+) -> Union[None, pd.DataFrame]:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
     (`ref_structure`), and calculate the summed atomic displacement (in Å), and maximum distance
