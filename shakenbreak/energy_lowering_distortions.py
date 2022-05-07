@@ -30,7 +30,7 @@ def get_deep_distortions(
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
-    verbose: bool = True
+    verbose: bool = True,
 ) -> dict:
     """Convenience function to identify defect species undergoing energy-lowering distortions.
      Useful for then testing this distorted structure for the other charge states of that defect.
@@ -70,7 +70,9 @@ def get_deep_distortions(
         {}
     )  # dict of defects undergoing deep energy-lowering distortions
 
-    defect_pruning_dict = copy.deepcopy(defect_charges_dict)  # defects and charge states to do
+    defect_pruning_dict = copy.deepcopy(
+        defect_charges_dict
+    )  # defects and charge states to do
     # later comparison and pruning against other charge states
     for defect in defect_charges_dict:
         print(f"\n{defect}")
@@ -79,7 +81,9 @@ def get_deep_distortions(
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
             energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
-            energies_dict, energy_diff, gs_distortion = _sort_data(energies_file, verbose=verbose)
+            energies_dict, energy_diff, gs_distortion = _sort_data(
+                energies_file, verbose=verbose
+            )
 
             if energies_dict is None:
                 print(
@@ -102,8 +106,10 @@ def get_deep_distortions(
                     bond_distortion = (
                         "only_rattled"  # file naming format used for rattle
                     )
-                file_path = f"{output_path}/{defect_species}/Bond_Distortion" \
-                            f"_{bond_distortion}%/CONTCAR"
+                file_path = (
+                    f"{output_path}/{defect_species}/Bond_Distortion"
+                    f"_{bond_distortion}%/CONTCAR"
+                )
                 with warnings.catch_warnings(record=True) as w:
                     gs_struct = grab_contcar(
                         file_path
@@ -126,7 +132,10 @@ def get_deep_distortions(
                     defect in low_energy_defects
                 ):  # Check if the lower-energy distorted structure was already found with bond
                     # distortions for a different charge state of this defect
-                    for i in range(len(low_energy_defects[defect])):  # use _initial_ list count
+                    comparison_dicts_dict = {}  # index: comparison_dict
+                    for i in range(
+                        len(low_energy_defects[defect])
+                    ):  # use _initial_ list count
                         # rather than iterating directly over list, as this will result in unwanted
                         # repetition because we append to this list if new structure found
                         struct_comparison_dict = calculate_struct_comparison(
@@ -139,34 +148,53 @@ def get_deep_distortions(
                             stol=stol,
                             min_dist=min_dist,
                         )
-                        if struct_comparison_dict["Ground State"] == 0:  # match
-                            print(
-                                f"Low-energy distorted structure for {defect_species} already found"
-                                f" with charge states {low_energy_defects[defect]['charges']}, "
-                                f"storing together."
-                            )
-                            low_energy_defects[defect][i]["charges"].append(charge)
-                            low_energy_defects[defect][i]["structures"].append(gs_struct)
-                            low_energy_defects[defect][i]["energy_diffs"].append(energy_diff)
-                            low_energy_defects[defect][i]["bond_distortions"].append(gs_distortion)
-                        else:
-                            # if the structure was not previously found, then add it to the list of
-                            # distortions for this defect
-                            print(
-                                f"New (according to structure matching) low-energy distorted "
-                                f"structure for {defect_species} found with charge state {charge}, "
-                                f"adding to low_energy_defects['{defect}'] list."
-                            )
-                            low_energy_defects[defect].append(
-                                {
-                                    "charges": [charge],
-                                    "structures": [gs_struct],
-                                    "energy_diffs": [energy_diff],
-                                    "bond_distortions": [gs_distortion],
-                                    "excluded_charges": set(),
-                                }
-                            )
-                            continue
+                        comparison_dicts_dict[i] = struct_comparison_dict
+
+                    matching_distortion_dict = {
+                        index: struct_comparison_dict
+                        for index, struct_comparison_dict in comparison_dicts_dict.items()
+                        if struct_comparison_dict["Ground State"] == 0
+                    }
+
+                    if (
+                        len(matching_distortion_dict) > 0
+                    ):  # if it matches _any_ other distortion
+                        index = list(matching_distortion_dict.keys())[
+                            0
+                        ]  # should only be one
+                        print(
+                            f"Low-energy distorted structure for {defect_species} already found"
+                            f" with charge states {low_energy_defects[defect][index]['charges']}, "
+                            f"storing together."
+                        )
+                        low_energy_defects[defect][index]["charges"].append(charge)
+                        low_energy_defects[defect][index]["structures"].append(
+                            gs_struct
+                        )
+                        low_energy_defects[defect][index]["energy_diffs"].append(
+                            energy_diff
+                        )
+                        low_energy_defects[defect][index]["bond_distortions"].append(
+                            gs_distortion
+                        )
+
+                    else:  # only add to list if it doesn't match _any_ of the other distortions
+                        # if the structure was not previously found, then add it to the list of
+                        # distortions for this defect
+                        print(
+                            f"New (according to structure matching) low-energy distorted "
+                            f"structure for {defect_species} found with charge state {charge}, "
+                            f"adding to low_energy_defects['{defect}'] list."
+                        )
+                        low_energy_defects[defect].append(
+                            {
+                                "charges": [charge],
+                                "structures": [gs_struct],
+                                "energy_diffs": [energy_diff],
+                                "bond_distortions": [gs_distortion],
+                                "excluded_charges": set(),
+                            }
+                        )
 
                 elif defect not in low_energy_defects:  # if defect not in dict, add it
                     print(
@@ -306,14 +334,14 @@ def compare_struct_to_distortions(
             0
         ]  # first matching structure
         if struc_key == "Unperturbed":
-            return (
+            return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
                 defect_structures_dict[struc_key],
                 defect_energies_dict[struc_key],
                 struc_key,
             )
         else:
-            return (
+            return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
                 defect_structures_dict[struc_key],
                 defect_energies_dict["distortions"][struc_key],
@@ -321,8 +349,12 @@ def compare_struct_to_distortions(
             )
 
     else:
-        return False, None, None, None
-    # return True/False, matching structure, energy_diff, distortion factor
+        return (
+            False,
+            None,
+            None,
+            None,
+        )  # T/F, matching structure, energy_diff, distortion factor
 
 
 def import_deep_distortion_by_type(

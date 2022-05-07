@@ -266,4 +266,46 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
             )
 
+        # test case where the _same_ non-spontaneous energy lowering distortion was found for two
+        # different charge states
+        V_Cd_1_txt_w_distortion = f"""Bond_Distortion_-7.5%
+        -206.700
+        Unperturbed
+        -205.800"""
+        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_1/vac_1_Cd_1.txt"), "w") as fp:
+            fp.write(V_Cd_1_txt_w_distortion)
+        with patch("builtins.print") as mock_print:
+            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+                defect_charges_dict, self.DATA_DIR
+            )  # same call as before
+            mock_print.assert_any_call("Low-energy distorted structure for vac_1_Cd_2 already "
+                                       "found with charge states [1], storing together.")
+            self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
+            self.assertEqual(
+                low_energy_defects_dict["vac_1_Cd"][1]["charges"], [1, 2, 0]
+            )
+            np.testing.assert_almost_equal(
+                low_energy_defects_dict["vac_1_Cd"][1]["energy_diffs"],
+                [-0.9, -0.2, 0.0],
+            )
+            self.assertEqual(
+                low_energy_defects_dict["vac_1_Cd"][1]["bond_distortions"],
+                [-0.075, -0.35, "Unperturbed"],
+            )
+            unperturbed_structure = Structure.from_file(
+                f"{self.DATA_DIR}/vac_1_Cd_0/Unperturbed/CONTCAR"
+            )
+            distorted_structure = Structure.from_file(
+                f"{self.DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-20.0%/CONTCAR"
+            )
+            self.assertEqual(
+                low_energy_defects_dict["vac_1_Cd"][1]["structures"],
+                [distorted_structure, distorted_structure, unperturbed_structure],
+            )
+            self.assertEqual(
+                low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
+            )
+        # all print messages and potential structure matching outcomes in `get_deep_distortions`
+        # have now been tested in the above code
+
         # test stol kwarg, print messages
