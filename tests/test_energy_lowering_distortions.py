@@ -1,13 +1,10 @@
 import unittest
 import os
-import pickle
-import copy
 from unittest.mock import patch
 import shutil
 import warnings
 
 import numpy as np
-import pandas as pd
 
 from pymatgen.core.structure import Structure, Element
 from shakenbreak import analysis, champion_defects_rerun, energy_lowering_distortions

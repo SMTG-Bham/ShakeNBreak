@@ -1,7 +1,5 @@
 import unittest
 import os
-import pickle
-import copy
 from unittest.mock import patch
 import shutil
 import warnings
@@ -164,7 +162,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         mock_print.assert_called_once_with(
             "CdTe_vac_1_Cd_0_stdev_0.25: Energy difference between minimum, "
-            + "found with -0.55 bond distortion, and unperturbed: -0.76 eV.\n"
+            + "found with -0.55 bond distortion, and unperturbed: -0.76 eV."
         )
 
         # test In_Cd_1:
@@ -201,7 +199,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             mock_no_unperturbed_print.assert_called_once_with(
                 f"CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed: Unperturbed energy not found in "
                 f"{os.path.join(self.DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
-                f"Lowest energy structure found with -0.55 bond distortion.\n"
+                f"Lowest energy structure found with -0.55 bond distortion."
             )
 
         # test error catching:
