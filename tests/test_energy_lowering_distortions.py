@@ -308,4 +308,35 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # all print messages and potential structure matching outcomes in `get_deep_distortions`
         # have now been tested in the above code
 
-        # test stol kwarg, print messages
+        # test min_dist kwarg:
+        low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            defect_charges_dict, self.DATA_DIR, min_dist=0.01
+        )  # same call as before, but with min_dist
+        self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["charges"], [1, 2, 0]
+        ) #  still matches 0, but not with unperturbed
+        np.testing.assert_almost_equal(
+            low_energy_defects_dict["vac_1_Cd"][1]["energy_diffs"],
+            [-0.9, -0.2, -0.0033911100000239003],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["bond_distortions"],
+            [-0.075, -0.35, 0.0],
+        )
+        zero_rattled_structure = Structure.from_file(
+            f"{self.DATA_DIR}/vac_1_Cd_0/Bond_Distortion_0.0%/CONTCAR"
+        )
+        distorted_structure = Structure.from_file(
+            f"{self.DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-20.0%/CONTCAR"
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["structures"],
+            [distorted_structure, distorted_structure, zero_rattled_structure],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
+        )
+
+
+        # test stol kwarg
