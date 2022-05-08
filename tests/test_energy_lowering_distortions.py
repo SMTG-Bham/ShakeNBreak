@@ -1,6 +1,6 @@
 import unittest
 import os
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import shutil
 import warnings
 
@@ -15,9 +15,47 @@ def if_present_rm(path):
         shutil.rmtree(path)
 
 
+def assert_not_called_with(self, *args, **kwargs):
+    try:
+        self.assert_called_with(*args, **kwargs)
+    except AssertionError:
+        return
+    raise AssertionError(
+        f"Expected {self._format_mock_call_signature(args, kwargs)} to not have "
+        f"been called."
+    )
+
+
+Mock.assert_not_called_with = assert_not_called_with
+
+
 class EnergyLoweringDistortionsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+        self.V_Cd_minus_0pt55_structure = Structure.from_file(
+            self.DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+        )
+
+        # create fake distortion folders for testing functionality:
+        for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_1", "vac_1_Cd_2"]:
+            os.mkdir(self.DATA_DIR + f"/{defect_dir}")
+        # Int_Cd_2_1 without data, to test warnings
+        V_Cd_1_txt = f"""Bond_Distortion_-7.5%
+                -205.700
+                Unperturbed
+                -205.800"""
+        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_1/vac_1_Cd_1.txt"), "w") as fp:
+            fp.write(V_Cd_1_txt)
+        V_Cd_2_txt = f"""Bond_Distortion_-35.0%
+                -206.000
+                Unperturbed
+                -205.800"""
+        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_2/vac_1_Cd_2.txt"), "w") as fp:
+            fp.write(V_Cd_2_txt)
+
+        self.defect_charges_dict = champion_defects_rerun.read_defects_directories(
+            self.DATA_DIR
+        )
 
     def tearDown(self):
         # removed generated folders
@@ -26,32 +64,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
     def test_get_deep_distortions(self):
         """Test get_deep_distortions() function"""
-        # create fake distortion folders for testing functionality:
-        for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_1", "vac_1_Cd_2"]:
-            os.mkdir(self.DATA_DIR + f"/{defect_dir}")
-        # Int_Cd_2_1 without data, to test warnings
-        V_Cd_1_txt = f"""Bond_Distortion_-7.5%
-        -205.700
-        Unperturbed
-        -205.800"""
-        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_1/vac_1_Cd_1.txt"), "w") as fp:
-            fp.write(V_Cd_1_txt)
-        V_Cd_2_txt = f"""Bond_Distortion_-35.0%
-        -206.000
-        Unperturbed
-        -205.800"""
-        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_2/vac_1_Cd_2.txt"), "w") as fp:
-            fp.write(V_Cd_2_txt)
-
-        defect_charges_dict = champion_defects_rerun.read_defects_directories(
-            self.DATA_DIR
-        )
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
         ) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR
+                self.defect_charges_dict, self.DATA_DIR
             )
             mock_print.assert_any_call("\nvac_1_Cd")
             mock_print.assert_any_call(
@@ -85,18 +103,17 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "included in the low_energy_defects charge state lists (and so energy lowering "
                 "distortions found for other charge states will not be applied for this species)."
             )
-            # self.assertNotIn("No energy lowering distortion with energy difference greater than
-            # min_e_diff = "
-            #   "0.05 eV found for Int_Cd_2 with charge 1.", mock_print.call_args_list ))
-            # TODO: need to iterate over / flatten list of lists of list – how?
-            # check this is skipped if no data
+            mock_print.assert_not_called_with(
+                "No energy lowering distortion with energy difference greater than min_e_diff = "
+                "0.05 eV found for Int_Cd_2 with charge 1."
+            )
             mock_print.assert_any_call(
                 "\nComparing and pruning defect structures across charge states..."
             )
             mock_print.assert_any_call(
                 "Problem parsing structures for vac_1_Cd_1. This species will be skipped and will "
                 "not be included in low_energy_defects (check relaxation folders with CONTCARs "
-                "are present)."
+                "are present)."  # check this is skipped if no data
             )
             self.assertEqual(
                 len(w), 28
@@ -120,12 +137,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"], [-0.55]
             )
-            distorted_structure = Structure.from_file(
-                self.DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
-            )
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["structures"],
-                [distorted_structure],
+                [self.V_Cd_minus_0pt55_structure],
             )
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], set()
@@ -134,15 +148,16 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # test verbose=False output:
         with patch("builtins.print") as mock_print:
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR, verbose=False
+                self.defect_charges_dict, self.DATA_DIR, verbose=False
             )  # same call as before, just with verbose=False
-            # self.assertNotIn("vac_1_Cd_0: Energy difference between minimum, found with -0.55
-            # bond distortion, and unperturbed: -0.76 eV." mock_print.call_args_list ))
-            # self.assertNotIn("vac_1_Cd_2: Energy difference between minimum, found with -0.35
-            # bond distortion, and unperturbed: -0.20 eV."
-            # mock_print.call_args_list ))
-            # TODO: need to iterate over / flatten list of lists of list – how?
-            # check this is skipped if no data
+            mock_print.assert_not_called_with(
+                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
+                "and unperturbed: -0.76 eV."
+            )
+            mock_print.assert_not_called_with(
+                "vac_1_Cd_2: Energy difference between minimum, found with -0.35 bond distortion, "
+                "and unperturbed: -0.20 eV."
+            )
 
         # test min_e_diff kwarg:
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
@@ -150,7 +165,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR, min_e_diff=0.8
+                self.defect_charges_dict, self.DATA_DIR, min_e_diff=0.8
             )
             mock_print.assert_any_call("\nvac_1_Cd")
             mock_print.assert_any_call(
@@ -199,14 +214,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
         with patch("builtins.print") as mock_print:
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR
+                self.defect_charges_dict, self.DATA_DIR
             )  # same call as before
-            # mock_print.assert_any_call(
-            #     f"Problem parsing final, low-energy structure for -35.0% bond distortion of "
-            #     f"vac_1_Cd_2 at {self.DATA_DIR}/vac_1_Cd_2/Bond_Distortion_-35.0%/CONTCAR. "
-            #     f"This species will be skipped and will not be included in low_energy_defects ("
-            #     f"check relaxation calculation and folder)."
-            # ) TODO: Assert not called!
+            mock_print.assert_not_called_with(
+                f"Problem parsing final, low-energy structure for -35.0% bond distortion of "
+                f"vac_1_Cd_2 at {self.DATA_DIR}/vac_1_Cd_2/Bond_Distortion_-35.0%/CONTCAR. "
+                f"This species will be skipped and will not be included in low_energy_defects ("
+                f"check relaxation calculation and folder)."
+            )
             mock_print.assert_any_call(
                 "Ground-state structure found for vac_1_Cd with charges ["
                 "2] has been also previously been found for charge state 0 "
@@ -231,12 +246,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"], [-0.55]
             )
-            distorted_structure = Structure.from_file(
-                self.DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
-            )
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["structures"],
-                [distorted_structure],
+                [self.V_Cd_minus_0pt55_structure],
             )
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], {1, 2}
@@ -276,7 +288,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             fp.write(V_Cd_1_txt_w_distortion)
         with patch("builtins.print") as mock_print:
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR
+                self.defect_charges_dict, self.DATA_DIR
             )  # same call as before
             mock_print.assert_any_call(
                 "Low-energy distorted structure for vac_1_Cd_2 already "
@@ -312,7 +324,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
         # test min_dist kwarg:
         low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-            defect_charges_dict, self.DATA_DIR, min_dist=0.01
+            self.defect_charges_dict, self.DATA_DIR, min_dist=0.01
         )  # same call as before, but with min_dist
         self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
         self.assertEqual(
@@ -344,7 +356,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
-                defect_charges_dict, self.DATA_DIR, stol=0.01
+                self.defect_charges_dict, self.DATA_DIR, stol=0.01
             )  # same call as before, but with stol
             self.assertEqual(
                 len(w), 69
@@ -356,4 +368,64 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"pymatgen StructureMatcher could not match lattices between specified "
                 f"ref_structure (Cd31 Te32) and -0.475 structures."
             )
-            self.assertTrue(any([str(warning.message) == warning_message for warning in w]))
+            self.assertTrue(
+                any([str(warning.message) == warning_message for warning in w])
+            )
+
+    # functionality of compare_struct_to_distortions() essentially tested through above tests for
+    # `get_deep_distortions`
+
+    def test_write_distorted_inputs(self):
+        """Test write_distorted_inputs()."""
+        for fake_distortion_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
+            os.mkdir(f"{self.DATA_DIR}/vac_1_Cd_1/{fake_distortion_dir}")
+            shutil.copyfile(
+                f"{self.DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-20.0%/CONTCAR",
+                f"{self.DATA_DIR}/vac_1_Cd_1/{fake_distortion_dir}/CONTCAR",
+            )
+        for fake_distortion_dir in ["Bond_Distortion_-35.0%", "Unperturbed"]:
+            os.mkdir(f"{self.DATA_DIR}/vac_1_Cd_2/{fake_distortion_dir}")
+            shutil.copyfile(
+                f"{self.DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-20.0%/CONTCAR",
+                f"{self.DATA_DIR}/vac_1_Cd_2/{fake_distortion_dir}/CONTCAR",
+            )
+        # test case where the _same_ non-spontaneous energy lowering distortion was found for two
+        # different charge states
+        V_Cd_1_txt_w_distortion = f"""Bond_Distortion_-7.5%
+            -206.700
+            Unperturbed
+            -205.800"""
+        with open(os.path.join(self.DATA_DIR, "vac_1_Cd_1/vac_1_Cd_1.txt"), "w") as fp:
+            fp.write(V_Cd_1_txt_w_distortion)
+
+        low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            self.defect_charges_dict, self.DATA_DIR
+        )
+        with patch("builtins.print") as mock_print:
+            energy_lowering_distortions.write_distorted_inputs(
+                low_energy_defects_dict, self.DATA_DIR
+            )
+            mock_print.assert_any_call(
+                f"Writing low-energy distorted structure to"
+                f" {self.DATA_DIR}/vac_1_Cd_1/Bond_Distortion_-55.0%_from_0"
+            )
+            mock_print.assert_any_call(
+                f"No subfolders with VASP input files found in {self.DATA_DIR}/vac_1_Cd_1, "
+                f"so just writing distorted POSCAR file to "
+                f"{self.DATA_DIR}/vac_1_Cd_1/Bond_Distortion_-55.0%_from_0 directory."
+            )
+            mock_print.assert_any_call(
+                f"Writing low-energy distorted structure to"
+                f" {self.DATA_DIR}/vac_1_Cd_2/Bond_Distortion_-55.0%_from_0"
+            )
+            mock_print.assert_any_call(
+                f"No subfolders with VASP input files found in {self.DATA_DIR}/vac_1_Cd_2, "
+                f"so just writing distorted POSCAR file to "
+                f"{self.DATA_DIR}/vac_1_Cd_2/Bond_Distortion_-55.0%_from_0 directory."
+            )
+            self.assertEqual(
+                self.V_Cd_minus_0pt55_structure,
+                Structure.from_file(
+                    f"{self.DATA_DIR}/vac_1_Cd_1/Bond_Distortion_-55.0%_from_0/POSCAR"
+                ),
+            ) # TODO: Flesh out tests
