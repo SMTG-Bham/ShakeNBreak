@@ -301,7 +301,7 @@ def analyse_defect_site(
 def analyse_structure(
     defect_species: str,
     structure: Structure,
-    output_path: str,
+    output_path: str = '.',
 ):
     """
     Analyse the local distortion of the input defect structure. Requires access to the
@@ -315,6 +315,7 @@ def analyse_structure(
             Defect structure to analyse
         output_path (:obj:`str`):
             Path to directory containing `distortion_metadata.json`
+            (Default: '.', current directory)
 
     Returns:
         Tuple of coordination analysis and bond length DataFrames, respectively.
@@ -342,7 +343,7 @@ def analyse_structure(
 #  rather than requiring it to be specified in the function argument.
 def get_structures(
     defect_species: str,
-    output_path: str = "./",
+    output_path: str = ".",
     distortion_increment: Optional[float] = None,
     bond_distortions: Optional[list] = None,
     distortion_type="BDM",
@@ -357,14 +358,16 @@ def get_structures(
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing `defect_species` subdirectories. (Default is
-            current directory)
+            Path to top-level directory containing `defect_species` subdirectories. 
+            (Default: current directory)
         distortion_increment (:obj:`float`):
             Bond distortion increment used. Assumes range of +/-60% (otherwise use
-            `bond_distortions`). (Default:None)
+            `bond_distortions`). 
+            (Default: None)
         bond_distortions (:obj:`list`):
             List of distortions applied to nearest neighbours, instead of the default set
-            (e.g. [-0.5, 0.5]). (Default: None)
+            (e.g. [-0.5, 0.5]). 
+            (Default: None)
         distortion_type (:obj:`str`):
             Type of distortion method used.
             Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
@@ -454,7 +457,7 @@ def get_structures(
 
 def get_energies(
     defect_species: str,
-    output_path: str,
+    output_path: str = '.',
     distortion_type: str = "BDM",
     units: str = "eV",
 ) -> dict:
@@ -467,6 +470,7 @@ def get_energies(
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
             Path to top-level directory containing `defect_species` subdirectories.
+            (Default: current directory)
         distortion_increment (:obj:`float`):
             Bond distortion increment. Recommended values: 0.1-0.3 (Default: 0.1)
         distortion_type (:obj:`str`) :

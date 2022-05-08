@@ -1,25 +1,31 @@
-figure.figsize : 8, 6 #3.5, 3.5
+# Figure
+figure.figsize : 6, 5  #8, 6
 figure.dpi: 600
 
 axes.prop_cycle: cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf']) # Matplotlib default
 
-
+# Font
 font.family : sans-serif
 font.sans-serif : Seaford, Whitney Light, Whitney Book, Helvetica, Catamaran, Liberation Sans, Andale Sans, Arial
+font.size            : 15 
 
-font.size : 16 
+text.usetex          : False
 
-text.usetex : False
+# Axes
+axes.titlesize       : 20 #10
+axes.titlepad        : 15
+axes.linewidth       : 0.5 #1
+axes.unicode_minus   : False
+axes.labelpad        : 10
 
-axes.titlesize : 10 #9
-axes.linewidth       : 1
-axes..unicode_minus  : False
-
+# Grid
 grid.linewidth       : 0.4
 grid.color           : black
 
+# Lines
 lines.linewidth      : 1.0
 
+# Ticks
 xtick.major.size     : 12 #6
 xtick.minor.size     : 5
 xtick.major.width    : 0.2
@@ -28,7 +34,7 @@ xtick.major.pad      : 6
 xtick.direction      : in
 xtick.top            : False
 xtick.bottom         : True
-xtick.labelsize      : 10 #8
+xtick.labelsize      : 11 
 
 ytick.major.size     : 12 #6
 ytick.minor.size     : 5
@@ -38,12 +44,13 @@ ytick.major.pad      : 6
 ytick.direction      : in
 ytick.right          : False
 ytick.left           : True
-ytick.labelsize      : 10 #8
+ytick.labelsize      : 11 
 
-pdf.fonttype : 42
-mathtext.fontset : stixsans
-mathtext.default : regular
+pdf.fonttype         : 42
+mathtext.fontset     : stixsans
+mathtext.default     : regular
 
+# Legend
 legend.handlelength  : 1.2
-legend.fontsize     : 13
-legend.frameon     : False
+legend.fontsize      : 13
+legend.frameon       : False

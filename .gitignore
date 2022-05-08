@@ -136,3 +136,4 @@ dmypy.json
 
 # Affinity Designer
 Affinity/
+.vscode/settings.json
