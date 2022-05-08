@@ -873,6 +873,7 @@ def get_site_magnetizations(
         structure = grab_contcar(f"{output_path}/{defect}/{formatted_distortion}/CONTCAR")
         assert os.path.exists(f"{output_path}/{defect}/{formatted_distortion}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect}/{formatted_distortion}/OUTCAR"
         outcar = Outcar(f"{output_path}/{defect}/{formatted_distortion}/OUTCAR")
+        print(f"Total magnetization:", round(outcar.total_mag, 3) )
         df = _site_magnetizations(outcar = outcar, structure = structure, threshold = threshold)
         if not df.empty:
             magnetizations[distortion] = df
