@@ -75,7 +75,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertListEqual(
             self.In_Cd_1_distortion_data,
             [
-                "only_rattled",
+                "rattled",
                 "-214.88259023",
                 "Unperturbed",
                 "-214.87608986",

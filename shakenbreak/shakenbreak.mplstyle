@@ -34,7 +34,7 @@ xtick.major.pad      : 6
 xtick.direction      : in
 xtick.top            : False
 xtick.bottom         : True
-xtick.labelsize      : 11 
+xtick.labelsize      : 11.5 
 
 ytick.major.size     : 12 #6
 ytick.minor.size     : 5
@@ -44,7 +44,7 @@ ytick.major.pad      : 6
 ytick.direction      : in
 ytick.right          : False
 ytick.left           : True
-ytick.labelsize      : 11 
+ytick.labelsize      : 11.5 
 
 pdf.fonttype         : 42
 mathtext.fontset     : stixsans

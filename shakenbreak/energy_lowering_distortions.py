@@ -70,7 +70,7 @@ def get_deep_distortions(
                     # format to the one used in file name (e.g. from 0.1 to 10.0)
                 else:
                     bond_distortion = (
-                        "only_rattled"  # file naming format used for rattle
+                        "rattled"  # file naming format used for rattle
                     )
                 try:
                     file_path = (

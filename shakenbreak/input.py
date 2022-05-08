@@ -379,7 +379,7 @@ def apply_distortions(
         perturbed_structure = rattle(
             defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
         )
-        distorted_defect_dict["Distortions"]["only_rattled"] = perturbed_structure
+        distorted_defect_dict["Distortions"]["rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,

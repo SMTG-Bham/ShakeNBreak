@@ -14,9 +14,10 @@ import numpy as np
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.outputs import Outcar
 
 crystalNN = CrystalNN(
-    distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5
+    distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0
 )
 
 # format warnings output:
@@ -232,12 +233,12 @@ def analyse_defect_site(
     name: str = "Unnamed Defect",
     site_num: Optional[int] = None,
     vac_site: Optional[list] = None,
-):
+) -> tuple:
     """
     Analyse coordination environment and bond distances to nearest neighbours of defect site.
 
     Args:
-        structure (:obj:`~pymatgen.core.structure.Structure`):
+        structure (:obj:`Structure`):
             `pymatgen` Structure object to analyse
         name (:obj:`str`):
             Defect name for printing. (Default: "Unnamed Defect")
@@ -302,7 +303,7 @@ def analyse_structure(
     defect_species: str,
     structure: Structure,
     output_path: str = '.',
-):
+) -> tuple:
     """
     Analyse the local distortion of the input defect structure. Requires access to the
     distortion_metadata.json file generated with ShakeNBreak to read info about defect site.
@@ -323,6 +324,7 @@ def analyse_structure(
     defect_name_without_charge = defect_species.rsplit("_", 1)[0]
 
     # Read site from distortion_metadata.json
+    assert os.path.isfile(f"{output_path}/distortion_metadata.json"), f"File {output_path}/distortion_metadata.json does not exist!"
     with open(f"{output_path}/distortion_metadata.json", "r") as json_file:
         distortion_metadata = json.load(json_file)
 
@@ -399,9 +401,9 @@ def get_structures(
                 -60, 60.1, distortion_increment * 100
             )  # if user didn't specify bond_distortions, assume default range
     if distortion_type != "BDM":
-        dist_label = "{distortion_type}_only_rattled"
+        dist_label = "{distortion_type}_rattled"
     else:
-        dist_label = "only_rattled"
+        dist_label = "rattled"
     rattle_dir_path = output_path + "/" + defect_species + "/" + dist_label
     if os.path.isdir(
         rattle_dir_path
@@ -668,6 +670,7 @@ def compare_structures(
     stol: float = 0.5,
     units: str = "eV",
     min_dist: float = 0.1,
+    verbose: bool = True,
 ) -> pd.DataFrame:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or a specified structure
@@ -697,7 +700,9 @@ def compare_structures(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic displacements sum (in Å,
             default 0.1 Å).
-
+        verbose (:obj:`bool`):
+            Whether to print dataframe.
+            (Default: True)
     Returns:
         DataFrame containing structural comparison results (summed normalised atomic displacement
         and maximum distance between matched atomic sites), and relative energies.
@@ -760,6 +765,117 @@ def compare_structures(
             f"\u0394 Energy ({units})",  # Delta
         ],
     )
-    if isipython():
+    if isipython() and verbose:
         display(struct_comparison_df)
     return struct_comparison_df
+
+# TODO: Need to add tests for the following functions:
+def get_homoionic_bonds(
+    structure: Structure,
+    element: str, 
+    radius: Optional[float]=3.3,
+) -> dict:
+    """
+    Returns a list of homoionic bonds for the given element.
+
+    Args:
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            `pymatgen` Structure object to analyse
+        element (:obj:`str`): element symbol for which to find the homoionic bonds
+        radius (:obj:`float`, optional): 
+            Distance cutoff to look for homoionic bonds. 
+            Defaults to 3.3 A.
+
+    Returns:
+        dict: dictionary with homoionic bonds, matching site to the homoionic neighbours and distances (A) \
+            (e.g. {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
+    """
+    structure = structure.copy()
+    sites = [ (site_index, site) for site_index, site in enumerate(structure) if site.species_string == element] # we search for homoionic bonds in the whole structure. 
+    homoionic_bonds = {}
+    for (site_index, site) in sites:
+        neighbours = structure.get_neighbors(site, r = radius)
+        if element in [site.species_string for site in neighbours]:
+            site_neighbours = [(neighbour.species_string, neighbour.index, round(neighbour.distance(site), 2) ) for neighbour in neighbours]
+            if not f"{site.species_string}({site_index})" in [list(element.keys())[0] for element in homoionic_bonds.values() ]: # avoid duplicates
+                homoionic_neighbours = {f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A" for neighbour in site_neighbours if neighbour[0] == element }
+                homoionic_bonds[f"{site.species_string}({site_index})"] = homoionic_neighbours
+                print(f"{site.species_string}({site_index}): {homoionic_neighbours}", "\n")
+    if not homoionic_bonds:
+        print(f"No homoionic bonds found with a search radius of {radius} A")
+    return homoionic_bonds
+
+def _site_magnetizations(
+    outcar: Outcar,
+    structure: Structure,
+    threshold: float = 0.1,
+) -> pd.DataFrame :
+    """
+    Prints sites with magnetization above threshold.
+
+    Args:
+        outcar (pymatgen.io.vasp.outputs.Outcar): outcar object
+        structure (pymatgen.core.structure.Structure): structure object
+        threshold (float, optional): Magnetization threhold to print site. Defaults to 0.1 e-.
+
+    Returns:
+        pd.DataFrame: Dataframe with sites with magnetization above threshold.
+    """
+    # Site magnetizations
+    mag = outcar.magnetization
+    significant_magnetizations = {}
+    for index, element in enumerate(mag):
+        mag_array = np.array(list(element.values()))
+        total_mag = np.sum( 
+            mag_array[np.abs(mag_array) > 0.01]  
+            ) 
+        if np.abs(total_mag) > threshold :
+            significant_magnetizations[f"{structure[index].species_string}({index})"] = {
+                'Site': f"{structure[index].species_string}({index})",
+                'Coords': [round(coord,3 ) for coord in structure[index].frac_coords], 
+                'Total mag': round(total_mag, 3),
+            }
+            significant_magnetizations[f"{structure[index].species_string}({index})"].update(
+                {k: round(v,4) for k,v in element.items()}
+            )
+    df = pd.DataFrame.from_dict(significant_magnetizations, orient = 'index')
+    return df
+
+def get_site_magnetization(
+    defect: str,
+    distortions: str,
+    output_path: str = '.',
+    threshold: float = 0.1,
+) -> dict:
+    """
+    For given distortions, find sites with significant magnetization and return as dictionary.
+    Args:
+        defect (str): 
+            Name of defect including charge state (e.g. 'vac_1_Cd_0')
+        distortions (list): 
+            List of distortions to analyse (e.g. ['Unperturbed', 0.1, -0.2])
+        output_path (:obj:`str`):
+            Path to top-level directory containing `defect_species` subdirectories.
+            (Default: current directory)
+        threshold (:obj:`float`, optional): 
+            Magnetization threshold to consider site. 
+            (Default: 0.1)
+
+    Returns:
+        dict: Dictionary matching distortion to DataFrame containing magnetization info. 
+    """
+    magnetizations = {}
+    for distortion in distortions:
+        if type(distortion) != 'str': # if not string, need to format as folder names
+            formatted_distortion = f"Bond_Distortion_{distortion:.1%}" # using new variable here to keep original distortions as defect keys in dictionary (e.g 0.1 better than Bond_Distortion_10.0%)
+        else:
+            formatted_distortion = distortion
+        structure = grab_contcar(f"{output_path}/{defect}/{formatted_distortion}/CONTCAR")
+        assert os.path.exists(f"{output_path}/{defect}/{formatted_distortion}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect}/{formatted_distortion}/OUTCAR"
+        outcar = Outcar(f"{output_path}/{defect}/{formatted_distortion}/OUTCAR")
+        df = _site_magnetizations(outcar = outcar, structure = structure, threshold = threshold)
+        if not df.empty:
+            magnetizations[distortion] = df
+        else:
+            print(f"No significant magnetizations found for distortion: {distortion}")
+    return magnetizations
