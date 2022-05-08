@@ -471,6 +471,24 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
 
+        # test verbose = False
+        with patch("builtins.print") as mock_not_verbose_print:
+            defect_energies_dict = analysis.get_energies(
+                defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, verbose=False
+            )
+            # no print called:
+            mock_not_verbose_print.assert_not_called()
+            # check same outputs:
+            self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
+            bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+            self.assertEqual(
+                list(defect_energies_dict["distortions"].keys()), bond_distortions
+            )
+            # test a specific energy:
+            np.testing.assert_almost_equal(
+                defect_energies_dict["distortions"][-0.4], -0.7548057600000107
+            )
+
         # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_meV_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
