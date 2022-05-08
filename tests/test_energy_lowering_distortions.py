@@ -15,6 +15,8 @@ def if_present_rm(path):
         shutil.rmtree(path)
 
 
+# https://stackoverflow.com/questions/54838354/
+# python-how-can-i-assert-a-mock-object-was-not-called-with-specific-arguments
 def assert_not_called_with(self, *args, **kwargs):
     try:
         self.assert_called_with(*args, **kwargs)
@@ -53,9 +55,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         with open(os.path.join(self.DATA_DIR, "vac_1_Cd_2/vac_1_Cd_2.txt"), "w") as fp:
             fp.write(V_Cd_2_txt)
 
-        self.defect_charges_dict = champion_defects_rerun.read_defects_directories(
-            self.DATA_DIR
-        )
+        self.defect_charges_dict = {'vac_1_Cd': [0, 1, 2], 'Int_Cd_2': [1]}  # explicitly set
 
     def tearDown(self):
         # removed generated folders
