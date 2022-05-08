@@ -278,8 +278,10 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
                 defect_charges_dict, self.DATA_DIR
             )  # same call as before
-            mock_print.assert_any_call("Low-energy distorted structure for vac_1_Cd_2 already "
-                                       "found with charge states [1], storing together.")
+            mock_print.assert_any_call(
+                "Low-energy distorted structure for vac_1_Cd_2 already "
+                "found with charge states [1], storing together."
+            )
             self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][1]["charges"], [1, 2, 0]
@@ -315,7 +317,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
         self.assertEqual(
             low_energy_defects_dict["vac_1_Cd"][1]["charges"], [1, 2, 0]
-        ) #  still matches 0, but not with unperturbed
+        )  #  still matches 0, but not with unperturbed
         np.testing.assert_almost_equal(
             low_energy_defects_dict["vac_1_Cd"][1]["energy_diffs"],
             [-0.9, -0.2, -0.0033911100000239003],
@@ -338,5 +340,20 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
         )
 
-
-        # test stol kwarg
+        # test stol kwarg:
+        with warnings.catch_warnings(record=True) as w:
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+                defect_charges_dict, self.DATA_DIR, stol=0.01
+            )  # same call as before, but with stol
+            self.assertEqual(
+                len(w), 69
+            )  # many warnings due to difficulty in structure matching
+            # with small stol (confirming stol has been passed to compare_structures)
+            for warning in w:
+                self.assertEqual(warning.category, UserWarning)
+            warning_message = (
+                f"pymatgen StructureMatcher could not match lattices between specified "
+                f"ref_structure (Cd31 Te32) and -0.475 structures."
+            )
+            self.assertTrue(any([str(warning.message) == warning_message for warning in w]))
