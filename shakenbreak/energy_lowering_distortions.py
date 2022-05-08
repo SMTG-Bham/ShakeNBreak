@@ -58,7 +58,7 @@ def get_deep_distortions(
             energies_file = (
                 f"{base_path}/{defect_name}/{defect_name}.txt"
             )
-            energies_dict, energy_diff, gs_distortion = sort_data(energies_file)
+            energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
 
             if energy_diff and float(energy_diff) < -min_e_diff:  # if a significant energy drop
                 # occurred, then store this distorted defect

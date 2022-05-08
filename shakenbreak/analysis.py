@@ -841,7 +841,7 @@ def _site_magnetizations(
     df = pd.DataFrame.from_dict(significant_magnetizations, orient = 'index')
     return df
 
-def get_site_magnetization(
+def get_site_magnetizations(
     defect: str,
     distortions: str,
     output_path: str = '.',
@@ -866,7 +866,7 @@ def get_site_magnetization(
     """
     magnetizations = {}
     for distortion in distortions:
-        if type(distortion) != 'str': # if not string, need to format as folder names
+        if type(distortion) != str: # if not string, need to format as folder names
             formatted_distortion = f"Bond_Distortion_{distortion:.1%}" # using new variable here to keep original distortions as defect keys in dictionary (e.g 0.1 better than Bond_Distortion_10.0%)
         else:
             formatted_distortion = distortion
