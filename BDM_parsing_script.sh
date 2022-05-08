@@ -11,7 +11,7 @@ for defect_name in *[0-9]/; # matches each subdirectory with a name ending in a 
         mv ${defect_name%?}.txt ${defect_name%?}_$(date +%H_%M_%Son%d_%m_%y).txt
         fi
 
-    for i in ?(*Bond_Distortion*|*Unperturbed|*only_rattled)/; # for each BDM distortion
+    for i in ?(*Bond_Distortion*|*Unperturbed|*rattled)/; # for each BDM distortion
 	do if [[ $i == *champion* ]] 
             then filename=champion_${defect_name%?}.txt
             else filename=${defect_name%?}.txt
