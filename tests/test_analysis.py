@@ -161,6 +161,17 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             + "found with -0.55 bond distortion, and unperturbed: -0.76 eV."
         )
 
+        # test verbose = False
+        with patch("builtins.print") as mock_not_verbose_print:
+            sorted_V_Cd_distortion_data = analysis._sort_data(
+                os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"), verbose = False
+            )
+            self.assertEqual(
+                sorted_V_Cd_distortion_data,
+                (self.organized_V_Cd_distortion_data, *gs_distortion),
+            )  # check same output returned, just no printing:
+            mock_not_verbose_print.assert_not_called()
+
         # test In_Cd_1:
         gs_distortion = analysis.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data

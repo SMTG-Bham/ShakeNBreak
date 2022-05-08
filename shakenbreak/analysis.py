@@ -187,8 +187,8 @@ def _sort_data(energies_file: str, verbose: bool = True):
     if verbose:
         if energy_diff and energy_diff < -0.1:
             print(
-                f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
-                f"distortion, and unperturbed: {energy_diff:+.2f} eV."
+                f"{defect_name}: Energy difference between minimum, found with {gs_distortion} "
+                f"bond distortion, and unperturbed: {energy_diff:+.2f} eV."
             )
         elif energy_diff is None:
             print(
