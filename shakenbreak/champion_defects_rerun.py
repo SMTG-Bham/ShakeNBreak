@@ -179,8 +179,6 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
                 # transform to format used in file names
                 if isinstance(gs_distortion, float):
                     gs_distortion = f"Bond_Distortion_{100*gs_distortion:.1f}%"
-                if gs_distortion == "rattled":
-                    gs_distortion = "only_rattled"
                 # Grab CONTCAR and transform to Structure object
                 try:
                     if distortion_type != 'BDM':
