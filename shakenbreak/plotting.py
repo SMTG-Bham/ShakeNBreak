@@ -507,7 +507,7 @@ def plot_colorbar(
     # Title and format axis labels and locators
     if title:
         ax.set_title(title) 
-    _format_axis(
+    ax = _format_axis(
         ax=ax, 
         y_label=y_label, 
         defect_name=defect_name,
