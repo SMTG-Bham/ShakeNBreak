@@ -1,7 +1,5 @@
 import unittest
 import os
-import pickle
-import copy
 from unittest.mock import patch
 import shutil
 import warnings
@@ -30,8 +28,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
         )
-        self.organized_V_Cd_distortion_data_no_unperturbed = (
-            analysis._organize_data(self.V_Cd_distortion_data_no_unperturbed)
+        self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
+            self.V_Cd_distortion_data_no_unperturbed
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
@@ -131,9 +129,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
-        gs_distortion = analysis.get_gs_distortion(
-            self.organized_V_Cd_distortion_data
-        )
+        gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
         self.assertEqual(gs_distortion, (-0.7551820700000178, -0.55))
 
         # test In_Cd_1:
@@ -152,9 +148,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def test_sort_data(self, mock_print):
         """Test _sort_data() function."""
         # test V_Cd_distortion_data:
-        gs_distortion = analysis.get_gs_distortion(
-            self.organized_V_Cd_distortion_data
-        )
+        gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
         sorted_V_Cd_distortion_data = analysis._sort_data(
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
@@ -164,8 +158,19 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         mock_print.assert_called_once_with(
             "CdTe_vac_1_Cd_0_stdev_0.25: Energy difference between minimum, "
-            + "found with -0.55 bond distortion, and unperturbed: -0.76 eV.\n"
+            + "found with -0.55 bond distortion, and unperturbed: -0.76 eV."
         )
+
+        # test verbose = False
+        with patch("builtins.print") as mock_not_verbose_print:
+            sorted_V_Cd_distortion_data = analysis._sort_data(
+                os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"), verbose = False
+            )
+            self.assertEqual(
+                sorted_V_Cd_distortion_data,
+                (self.organized_V_Cd_distortion_data, *gs_distortion),
+            )  # check same output returned, just no printing:
+            mock_not_verbose_print.assert_not_called()
 
         # test In_Cd_1:
         gs_distortion = analysis.get_gs_distortion(
@@ -201,15 +206,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             mock_no_unperturbed_print.assert_called_once_with(
                 f"CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed: Unperturbed energy not found in "
                 f"{os.path.join(self.DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
-                f"Lowest energy structure found with -0.55 bond distortion.\n"
+                f"Lowest energy structure found with -0.55 bond distortion."
             )
 
         # test error catching:
         with warnings.catch_warnings(record=True) as w:
             output = analysis._sort_data("fake_file")
-            warning_message = (
-                "No data parsed from fake_file, returning None"
-            )
+            warning_message = "No data parsed from fake_file, returning None"
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
@@ -468,6 +471,24 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_energies_dict["Unperturbed"], 0)
 
+        # test verbose = False
+        with patch("builtins.print") as mock_not_verbose_print:
+            defect_energies_dict = analysis.get_energies(
+                defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, verbose=False
+            )
+            # no print called:
+            mock_not_verbose_print.assert_not_called()
+            # check same outputs:
+            self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
+            bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+            self.assertEqual(
+                list(defect_energies_dict["distortions"].keys()), bond_distortions
+            )
+            # test a specific energy:
+            np.testing.assert_almost_equal(
+                defect_energies_dict["distortions"][-0.4], -0.7548057600000107
+            )
+
         # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_meV_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
@@ -531,9 +552,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         with patch("builtins.print") as mock_print:
-            max_dist_dict = analysis.calculate_struct_comparison(
-                defect_structures_dict
-            )
+            max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict)
             mock_print.assert_called_with("Comparing structures to Unperturbed...")
         self.assertEqual(
             len(max_dist_dict), len(defect_structures_dict)
@@ -548,15 +567,15 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # V_Cd_0 with 'disp' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
-        disp_dict = analysis.calculate_struct_comparison(
-            defect_structures_dict, "disp"
-        )
+        disp_dict = analysis.calculate_struct_comparison(defect_structures_dict, "disp")
         self.assertEqual(len(disp_dict), len(defect_structures_dict))  # one for each
         self.assertEqual(
             disp_dict.keys(), defect_structures_dict.keys()
         )  # one for each
         np.testing.assert_almost_equal(disp_dict[-0.4], 5.760478611114056)
-        np.testing.assert_almost_equal(disp_dict[-0.2], 0.0)  # no displacements above threshold
+        np.testing.assert_almost_equal(
+            disp_dict[-0.2], 0.0
+        )  # no displacements above threshold
         np.testing.assert_almost_equal(disp_dict["Unperturbed"], 0.0)
 
         # test with specified ref_structure as dict key:
@@ -641,7 +660,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             wrong_metric_error = ValueError(
                 f"Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'."
             )  # https://youtu.be/DmH1prySUpA
-            analysis.calculate_struct_comparison(defect_structures_dict, metric="metwhat")
+            analysis.calculate_struct_comparison(
+                defect_structures_dict, metric="metwhat"
+            )
             self.assertIn(wrong_metric_error, e.exception)
 
     def test_compare_structures(self):
@@ -700,7 +721,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.iloc[8].to_list(), [-0.4, 0.0, 0.0, -0.75]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ['Unperturbed', 5.76, 0.808, 0.0]
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 5.76, 0.808, 0.0]
         )
 
         # test with specified ref_structure as Structure object:
@@ -721,12 +742,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df.iloc[8].to_list(), [-0.4, 26.247, 0.999, -0.75]
         )
         self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ['Unperturbed', 25.874, 1.314, 0.0]
+            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 25.874, 1.314, 0.0]
         )
 
         # test kwargs:
         struct_comparison_df = analysis.compare_structures(
-            defect_structures_dict, defect_energies_dict, stol=0.01, units="meV", min_dist=0.01,
+            defect_structures_dict,
+            defect_energies_dict,
+            stol=0.01,
+            units="meV",
+            min_dist=0.01,
         )
         # spot check:
         self.assertEqual(
@@ -760,9 +785,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             ref_structure=-0.2,
         )
         # spot check:
-        self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.0, 0.0, 0.0]
-        )
+        self.assertEqual(struct_comparison_df.iloc[16].to_list(), [-0.2, 0.0, 0.0, 0.0])
         self.assertEqual(
             struct_comparison_df.iloc[8].to_list(), [-0.4, 5.75, 0.801, -0.75]
         )
@@ -801,6 +824,22 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_structures_dict, defect_energies_dict, ref_structure=1
             )
             self.assertIn(wrong_type_error, e.exception)
+
+        # test 'all structures are not converged' warning:
+        unconverged_structures_dict = defect_structures_dict.copy()
+        for distortion_key in unconverged_structures_dict:
+            unconverged_structures_dict[distortion_key] = "Not converged"
+        with warnings.catch_warnings(record=True) as w:
+            output = analysis.compare_structures(
+                unconverged_structures_dict, defect_energies_dict
+            )
+
+            warning_message = "All structures in defect_structures_dict are not converged. " \
+                              "Returning None."
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, None)
 
 
 if __name__ == "__main__":
