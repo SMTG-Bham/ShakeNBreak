@@ -25,7 +25,7 @@ plt.rcParams["axes.prop_cycle"] = plt.cycler(
     "color", plt.cm.viridis(np.linspace(0, 1, 10))
 )
 
-# Helper function for formatting plots
+# Helper functions for formatting plots
 def _format_tick_labels(
     ax: mpl.axes.Axes,
     energy_range: list,
@@ -99,6 +99,123 @@ def _format_axis(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
     return ax
 
+def _format_defect_name(
+    charge: int,
+    defect_species: str,
+    include_site_num_in_name: bool,
+    ) -> str:
+    """
+    Format defect name. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
+
+    Args:
+        charge (int): defect charge
+        defect_species (str): name of defect without charge state (i.e. vac_1_Cd)
+        include_site_num_in_name (bool): whether to include site number in name (i.e. $V_{Cd}^{0}$ or $V_{Cd,1}^{0}$)
+
+    Returns:
+        str: formatted defect name
+    """
+    # Format defect name for title/axis labels
+    if charge > 0:
+        charge = "+" + str(charge)  # show positive charges with a + sign
+    defect_type = defect_species.split("_")[0]  # vac, as or int
+    if (
+        defect_type == "Int"
+    ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
+        site_element = defect_species.split("_")[1]
+        site = defect_species.split("_")[2]
+        if include_site_num_in_name:
+            defect_name = (
+                f"{site_element}$_{{i_{site}}}^{{{charge}}}$"  # by default include
+            ) # defect site in defect name for interstitials
+        else:
+            defect_name = f"{site_element}$_i^{{{charge}}}$"
+    else:
+        site = defect_species.split("_")[
+            1
+        ]  # number indicating defect site (from doped)
+        site_element = defect_species.split("_")[2]  # element at defect site
+
+    if include_site_num_in_name:  # whether to include the site number in defect name
+        if defect_type == "vac":
+            defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
+            # double brackets to treat it literally (tex), then extra {} for python str formatting
+        elif defect_type in ["as", "sub"]:
+            subs_element = defect_species.split("_")[4]
+            defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
+        elif defect_type != "Int":
+            raise ValueError("Defect type not recognized. Please check spelling.")
+    else:
+        if defect_type == "vac":
+            defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
+        elif defect_type in ["as", "sub"]:
+            subs_element = defect_species.split("_")[4]
+            defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
+        elif defect_type != "Int":
+            raise ValueError("Defect type not recognized. Please check spelling.")
+    return defect_name
+
+def _change_energy_units_to_meV(
+    energies_dict: dict, 
+    max_energy_above_unperturbed: float,
+    y_label: str,
+    )-> tuple:
+    """
+    Converts energy values from eV to meV and format y label accordingly.
+
+    Args:
+        energies_dict (dict): dictionary with energy values for all distortions
+        max_energy_above_unperturbed (float): maximum energy value above unperturbed defect
+        y_label (str): label for y axis
+
+    Returns:
+        tuple: (max_energy_above_unperturbed, energies_dict, y_label) with energy values in meV
+    """
+    y_label = y_label.replace("eV", "meV")
+    if max_energy_above_unperturbed < 1:  # assume eV
+        max_energy_above_unperturbed *= 1000  # convert to meV
+    for key in energies_dict["distortions"].keys():  # convert to meV
+        energies_dict["distortions"][key] *= 1000
+        energies_dict["distortions"][key] = (
+            energies_dict["distortions"][key] * 1000
+        )
+    energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
+    return energies_dict, max_energy_above_unperturbed, y_label
+
+def _purge_data_dicts(
+    disp_dict: dict,
+    energies_dict: dict,
+) -> tuple:
+    """
+    Purges dictionaries of displacements and energies so that they are consistent (i.e. contain data for same distortions).
+    To achieve this, it removes: 
+    - Any data point from disp_dict if its energy is not in the energy dict \
+        (this may be due to relaxation not converged).
+    - Any data point from energies_dict if its displacement is not in the disp_dict\
+        (this might be due to the lattice matching algorithm failing).
+    Args:
+        disp_dict (dict): dictionary with displacements (for each structure relative to Unperturbed)
+        energies_dict (dict): dictionary with final energies (for each structure relative to Unperturbed)
+
+    Returns:
+        (dict, dict): Consistent dictionaries of displacements and energies, containing data for same distortions.
+    """
+    for key in list(disp_dict.keys()):
+        if (
+            (
+                key not in energies_dict["distortions"].keys()
+                and key != "Unperturbed"
+            )
+            or disp_dict[key] == "Not converged"
+            or disp_dict[key] is None
+        ):
+            disp_dict.pop(key)
+            if (
+                key in energies_dict["distortions"].keys()
+            ):  # remove it from energy dict as well
+                energies_dict["distortions"].pop(key)
+    return disp_dict, energies_dict
+
 def _save_plot(
     defect_name: str,
     save_format: str,
@@ -120,7 +237,7 @@ def _save_plot(
         transparent=True,
         bbox_inches="tight",
     )
-
+    
 # TODO: Refactor 'rms' to 'disp' (Done:). Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
@@ -324,22 +441,11 @@ def plot_defect(
             disp_dict
         ):  # if struct_comparison algorithms worked (sometimes struggles matching
             # lattices)
-            for key in list(disp_dict.keys()):
-                # remove any data point if its energy is not in the energy dict (this may be due to
-                # relaxation not converged)
-                if (
-                    (
-                        key not in energies_dict["distortions"].keys()
-                        and key != "Unperturbed"
-                    )
-                    or disp_dict[key] == "Not converged"
-                    or disp_dict[key] is None
-                ):
-                    disp_dict.pop(key)
-                    if (
-                        key in energies_dict["distortions"].keys()
-                    ):  # remove it from energy dict as well
-                        energies_dict["distortions"].pop(key)
+            disp_dict, energies_dict = _purge_data_dicts(
+                disp_dict=disp_dict, 
+                energies_dict=energies_dict,
+                ) # make disp and energies dict consistent
+                # by removing any data point if its energy is not in the energy dict and viceversa 
         else:
             print(
                 "Structure comparison algorithm struggled matching lattices. Colorbar will not "
@@ -358,56 +464,18 @@ def plot_defect(
             if add_colorbar:
                 disp_dict.pop(key)
 
-    # Format defect name for title
-    if charge > 0:
-        charge = "+" + str(charge)  # show positive charges with a + sign
-    defect_type = defect_species.split("_")[0]  # vac, as or int
-    if (
-        defect_type == "Int"
-    ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
-        site_element = defect_species.split("_")[1]
-        site = defect_species.split("_")[2]
-        if include_site_num_in_name:
-            defect_name = (
-                f"{site_element}$_{{i_{site}}}^{{{charge}}}$"  # by default include
-            )
-            # defect site in defect name for interstitials
-        else:
-            defect_name = f"{site_element}$_i^{{{charge}}}$"
-    else:
-        site = defect_species.split("_")[
-            1
-        ]  # number indicating defect site (from doped)
-        site_element = defect_species.split("_")[2]  # element at defect site
-
-    if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type == "vac":
-            defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
-            # double brackets to treat it literally (tex), then extra {} for python str formatting
-        elif defect_type in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type != "Int":
-            raise ValueError("Defect type not recognized. Please check spelling.")
-    else:
-        if defect_type == "vac":
-            defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type != "Int":
-            raise ValueError("Defect type not recognized. Please check spelling.")
+    defect_name = _format_defect_name(
+        charge=charge,
+        defect_species=defect_species,
+        include_site_num_in_name=include_site_num_in_name,
+    ) # Format defect name for title and axis labels
 
     if units == "meV":
-        y_label = y_label.replace("eV", "meV")
-        if max_energy_above_unperturbed < 1:  # assume eV
-            max_energy_above_unperturbed *= 1000  # convert to meV
-        for key in energies_dict["distortions"].keys():  # convert to meV
-            energies_dict["distortions"][key] *= 1000
-            energies_dict["distortions"][key] = (
-                energies_dict["distortions"][key] * 1000
-            )
-        energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
+        energies_dict, max_energy_above_unperturbed, y_label = _change_energy_units_to_meV(
+            energies_dict=energies_dict, 
+            max_energy_above_unperturbed=max_energy_above_unperturbed,
+            y_label=y_label,
+            ) # convert energy units from eV to meV, and update y label
 
     if add_colorbar:
         f = plot_colorbar(
