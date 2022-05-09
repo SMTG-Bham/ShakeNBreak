@@ -1,14 +1,12 @@
 import unittest
 import os
 import pickle
-import copy
 from unittest.mock import patch
 import shutil
 
 import numpy as np
 
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar
 from shakenbreak import champion_defects_rerun, input
 
 
