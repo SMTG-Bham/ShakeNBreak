@@ -295,8 +295,8 @@ def compare_struct_to_distortions(
         `defect_species`, False if no match, None if no converged structures found for
         defect_species.
     """
-    defect_structures_dict = get_structures(defect_species, output_path)
-    defect_energies_dict = get_energies(defect_species, output_path, verbose=False)
+    defect_structures_dict = get_structures(defect_species=defect_species, output_path=output_path)
+    defect_energies_dict = get_energies(defect_species=defect_species, output_path=output_path, verbose=False)
 
     struct_comparison_df = compare_structures(
         defect_structures_dict,
