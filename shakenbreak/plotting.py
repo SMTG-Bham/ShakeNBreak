@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 
 from shakenbreak.analysis import (
     _sort_data,
+    _read_distortion_metadata,
     get_structures,
     calculate_struct_comparison,
 )
@@ -237,7 +238,7 @@ def _save_plot(
         transparent=True,
         bbox_inches="tight",
     )
-    
+
 # TODO: Refactor 'rms' to 'disp' (Done:). Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
@@ -300,8 +301,7 @@ def plot_all_defects(
         Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
 
     """
-    with open(f"{output_path}/distortion_metadata.json") as json_file:
-        distortion_metadata = json.load(json_file)
+    distortion_metadata = _read_distortion_metadata(output_path=f"{output_path}/distortion_metadata.json")
 
     figures = {}
     for defect in defects_dict:
@@ -433,7 +433,7 @@ def plot_defect(
     """
     if add_colorbar:  # then get structures to compare their similarity
         assert os.path.isdir(output_path)
-        defect_structs = get_structures(defect_species, output_path)
+        defect_structs = get_structures(defect_species=defect_species, output_path=output_path)
         disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
         )  # calculate sum of atomic displacements and maximum displacement between paired sites

@@ -367,14 +367,14 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_structures(self):
         """Test get_structures() function."""
-        # V_Cd_0 with defaults (reading from `distortion_metadata.json`):
+        # V_Cd_0 with defaults (reading from subdirectories):
         defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
         bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
         self.assertEqual(
-            list(defect_structures_dict.keys()), bond_distortions + ["Unperturbed"]
+            set(defect_structures_dict.keys()), set(bond_distortions + ["Unperturbed"])
         )
         relaxed_0pt5_V_Cd_structure = Structure.from_file(
             os.path.join(
@@ -401,49 +401,20 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
 
-        # V_Cd_0 with a defined subset (using `distortion_increment`):
-        with warnings.catch_warnings(record=True) as w:
-            defect_structures_dict = analysis.get_structures(
-                defect_species="vac_1_Cd_0",
-                output_path=self.DATA_DIR,
-                distortion_increment=0.2,
-            )  # only read 20% increments
-            self.assertEqual(
-                len(defect_structures_dict), 8
-            )  # 7 distortions plus unperturbed
-            self.assertEqual(len(w), 3)  # 3 warnings for positive distortions
-            self.assertEqual(defect_structures_dict[0.4], "Not converged")
-
-        # test warnings for wrong defect species:
-        with warnings.catch_warnings(record=True) as w:
-            wrong_defect_structures_dict = analysis.get_structures(
-                defect_species="vac_1_Cd_1",  # wrong defect species
-                output_path=self.DATA_DIR,
-                distortion_increment=0.025,
+        # test exception for wrong defect species        
+        with self.assertRaises(FileNotFoundError) as e:
+            wrong_path_error = FileNotFoundError(
+                f"Path {self.DATA_DIR}/vac_1_Cd_1 does not exist!"
             )
-            self.assertEqual(len(w), 50)
-            for warning in w:
-                self.assertEqual(warning.category, UserWarning)
-            final_warning_message = (
-                "vac_1_Cd_1/Unperturbed"
-                "/CONTCAR file doesn't exist, storing as 'Not converged'. "
-                "Check path & relaxation"
+            analysis.get_structures(
+                defect_species="vac_1_Cd_1", output_path=self.DATA_DIR, # wrong defect species
             )
-            self.assertIn(final_warning_message, str(w[-1].message))
-            penultimate_warning_message = (  # assumes range of +/- 60%
-                "vac_1_Cd_1/Bond_Distortion_60.0%/"
-                "CONTCAR file doesn't exist, storing as 'Not "
-                "converged'. Check path & relaxation"
-            )
-            self.assertIn(penultimate_warning_message, str(w[-2].message))
-            for val in wrong_defect_structures_dict.values():
-                self.assertEqual(val, "Not converged")
+            self.assertIn(wrong_path_error, e.exception)
 
         # test error catching:
         with self.assertRaises(FileNotFoundError) as e:
             wrong_path_error = FileNotFoundError(
-                "No `distortion_metadata.json` file found in wrong_path. Please specify "
-                "`distortion_increment` or `bond_distortions`."
+                f"Path wrong_path/vac_1_Cd_0 does not exist!"
             )
             analysis.get_structures(
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
@@ -691,8 +662,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            struct_comparison_df["Bond Distortion"].to_list(),
-            list(defect_structures_dict.keys()),
+            set(struct_comparison_df["Bond Distortion"].to_list()),
+            set(defect_structures_dict.keys()),
         )
         # spot check:
         self.assertEqual(

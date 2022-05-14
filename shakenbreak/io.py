@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(os.path.join(MODULE_DIR, "default_POTCARs.yaml"))
 
-# Duplicated code from doped (and PyCDT)
+# Duplicated code from doped 
 def scaled_ediff(natoms): # 1e-5 for 50 atoms, up to max 1e-4
     ediff = float(f"{((natoms/50)*1e-5):.1g}")
     return ediff if ediff <= 1e-4 else 1e-4
