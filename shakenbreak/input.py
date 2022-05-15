@@ -16,6 +16,7 @@ from monty.serialization import loadfn
 
 from shakenbreak.distortions import distort, rattle
 from shakenbreak.io import vasp_gam_files
+from shakenbreak.analysis import _get_distortion_filename
 
 # Load default INCAR settings for the shakenbreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -315,7 +316,7 @@ def apply_distortions(
     """
     distorted_defect_dict = {
         "Unperturbed": defect_dict,
-        "Distortions": {},
+        "distortions": {},
         "distortion_parameters": {},
     }
 
@@ -337,8 +338,8 @@ def apply_distortions(
                 verbose=verbose,
                 **kwargs,
             )
-            distorted_defect_dict["Distortions"][
-                f"Bond_Distortion_{distortion:.1%}" # string must come first, so that file name doesnt start with '-'
+            distorted_defect_dict["distortions"][
+                _get_distortion_filename(distortion)
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
@@ -379,7 +380,7 @@ def apply_distortions(
         perturbed_structure = rattle(
             defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
         )
-        distorted_defect_dict["Distortions"]["rattled"] = perturbed_structure
+        distorted_defect_dict["distortions"]["rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
@@ -649,7 +650,7 @@ def apply_shakenbreak(
                 )  # store distortion parameters used for latter analysis
 
                 for key_distortion, struct in distorted_structures[
-                    "Distortions"
+                    "distortions"
                 ].items():
                     poscar_comment = (
                         key_distortion.split("_")[-1] # Get distortion factor (-60.%) or 'rattled' 
