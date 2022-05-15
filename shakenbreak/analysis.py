@@ -78,11 +78,11 @@ def _read_distortion_metadata(
         )
     return distortion_metadata
 
-def _get_distortion_label(
+def _get_distortion_filename(
     distortion
     ) -> str:
     """
-    Format distortion names for file naming.
+    Format distortion names for file naming. (e.g. from 0.5 to 'Bond_Distortion_50.0%')
 
     Args:
         distortion (float or str): 
@@ -93,7 +93,7 @@ def _get_distortion_label(
             distortion label used for file names.
     """
     if isinstance(distortion, float):
-        distortion_label = f"Bond_Distortion_{distortion:.1%}" # as percentage with 1 decimal place (e.g. 50.0%)
+        distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%" # as percentage with 1 decimal place (e.g. 50.0%) 
     elif isinstance(distortion, str):
         distortion_label = distortion # e.g. "Unperturbed"/"rattled" or runs from other charge state of the defect
     else:
@@ -442,9 +442,9 @@ def get_structures(
     defect_structures_dict = {
         }
     if not bond_distortions: # if the user didnt specify any set of distortions, loop over subdirectories
-        if not os.path.isdir(f'{output_path}/{defect_species}'):
+        if not os.path.isdir(f'{output_path}/{defect_species}'): # check if defect folder exists
             raise FileNotFoundError(f"Path f'{output_path}/{defect_species}' does not exist!")
-        distortion_subdirectories = next(os.walk(f'{output_path}/{defect_species}'))[1]
+        distortion_subdirectories = next(os.walk(f'{output_path}/{defect_species}'))[1] # distortion subdirectories
         for distortion_subdirectory in distortion_subdirectories:
             distortion = _format_distorion_names(distortion_label=distortion_subdirectory) # From subdirectory name, get the distortion label used for analysis
             # e.g. from 'Bond_Distortion_-10.0% -> -0.1
@@ -459,7 +459,7 @@ def get_structures(
     else:
         if "Unperturbed" not in bond_distortions: bond_distortions.append("Unperturbed")  # always include unperturbed structure
         for distortion in bond_distortions:
-            distortion_label = _get_distortion_label(distortion) # get filename
+            distortion_label = _get_distortion_filename(distortion) # get filename
             if distortion_label != "Label_not_recognized": # If the distortion label is recognised
                 try:
                     defect_structures_dict[distortion] = grab_contcar(f"{output_path}/{defect_species}/{distortion_label}/CONTCAR")
@@ -906,7 +906,7 @@ def get_site_magnetizations(
     """
     magnetizations = {}
     for distortion in distortions:
-        dist_label = _get_distortion_label(distortion) # get filename (e.g. Bond_Distortion_50.0%)
+        dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
         structure = grab_contcar(f"{output_path}/{defect}/{dist_label}/CONTCAR")
         assert os.path.exists(f"{output_path}/{defect}/{dist_label}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect}/{dist_label}/OUTCAR"
         outcar = Outcar(f"{output_path}/{defect}/{dist_label}/OUTCAR")

@@ -14,6 +14,7 @@ from pymatgen.core.structure import Structure
 
 from shakenbreak.analysis import (
     _sort_data,
+    _get_distortion_filename,
     grab_contcar,
     get_structures,
     get_energies,
@@ -98,18 +99,10 @@ def get_deep_distortions(
             elif (
                 energy_diff and float(energy_diff) < -min_e_diff
             ):  # if a significant energy drop occurred, then store this distorted defect
-                if gs_distortion != "rattled":
-                    bond_distortion = (
-                        f"{round(gs_distortion * 100, 1)+0}"  # change distortion
-                    )
-                    # format to the one used in file name (e.g. from 0.1 to 10.0)
-                else:
-                    bond_distortion = (
-                        "rattled"  # file naming format used for rattle
-                    )
+                bond_distortion = _get_distortion_filename(gs_distortion) # format distortion label to the one used in file name
+                # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 file_path = (
-                    f"{output_path}/{defect_species}/Bond_Distortion"
-                    f"_{bond_distortion}%/CONTCAR"
+                    f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
                 )
                 with warnings.catch_warnings(record=True) as w:
                     gs_struct = grab_contcar(
@@ -295,7 +288,14 @@ def compare_struct_to_distortions(
         `defect_species`, False if no match, None if no converged structures found for
         defect_species.
     """
-    defect_structures_dict = get_structures(defect_species=defect_species, output_path=output_path)
+    try:
+        defect_structures_dict = get_structures(defect_species=defect_species, output_path=output_path)
+    except FileNotFoundError: # catch exception raised by `get_structures`` if `defect_species` folder does not exist
+        print(
+            f"No structures found for {defect_species}. Returning None. Check that the "
+            f"relaxation folders for {defect_species} are present in {output_path}."
+        )
+        return None, None, None, None 
     defect_energies_dict = get_energies(defect_species=defect_species, output_path=output_path, verbose=False)
 
     struct_comparison_df = compare_structures(
