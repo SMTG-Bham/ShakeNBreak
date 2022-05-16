@@ -3,6 +3,7 @@ Module containing functions to plot distorted defect relaxation outputs and iden
 energy-lowering distortions.
 """
 import os
+import warnings
 import json
 from typing import Optional
 
@@ -301,13 +302,21 @@ def plot_all_defects(
         Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
 
     """
-    distortion_metadata = _read_distortion_metadata(output_path=f"{output_path}/distortion_metadata.json")
+    if not os.path.isdir(output_path): # check if output_path exists
+        raise FileNotFoundError(f"Path {output_path} does not exist!")
+
+    distortion_metadata = _read_distortion_metadata(output_path=output_path)
 
     figures = {}
     for defect in defects_dict:
         for charge in defects_dict[defect]:
             defect_species = f"{defect}_{charge}"
-            # print(f"Analysing {defect_species}")
+            if not os.path.isdir(
+                f"{output_path}/{defect_species}"
+                ): 
+                warnings.warn(f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}.") # if defect directory doesnt exists, skip defect
+                continue
+            # TODO: Refactor `get_energies` / `_sort_data` to write champion runs to same energy file. Then plot as two different datasets.
             if distortion_type != "BDM":
                 energies_file = (
                     f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt"
@@ -316,7 +325,9 @@ def plot_all_defects(
                 energies_file = (
                     f"{output_path}/{defect_species}/{defect_species}.txt"
                 )
-            assert os.path.exists(energies_file), f'Path {energies_file} does not exist.'
+            if not os.path.exists(energies_file):
+                warnings.warn(f'Path {energies_file} does not exist. Skipping {defect_species}.') # skip defect
+                continue
             energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
 
             # If a significant energy lowering was found with bond distortions (not just rattling),
@@ -431,8 +442,11 @@ def plot_defect(
     Returns:
         Energy vs distortion plot, as a Matplotlib Figure object
     """
+    if not os.path.isdir(output_path): # if output_path does not exist, raise error
+        raise FileNotFoundError(f"Path {output_path} does not exist! Skipping {defect_species}.")
+    if not os.path.isdir(f"{output_path}/{defect_species}"): # check if defect directory exists
+        raise FileNotFoundError(f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}.")
     if add_colorbar:  # then get structures to compare their similarity
-        assert os.path.isdir(output_path)
         defect_structs = get_structures(defect_species=defect_species, output_path=output_path)
         disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
