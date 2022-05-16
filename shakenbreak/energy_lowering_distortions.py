@@ -68,6 +68,9 @@ def get_deep_distortions(
              dictionaries (with corresponding charge states, energy lowering, distortion factors,
              structures and charge states for which these structures weren't found)]}.
     """
+    if not os.path.isdir(output_path): # check if output_path exists
+        raise FileNotFoundError(f"Path {output_path} does not exist!")
+        
     low_energy_defects = (
         {}
     )  # dict of defects undergoing deep energy-lowering distortions
@@ -113,7 +116,7 @@ def get_deep_distortions(
                         # problem parsing structure, user will have received appropriate
                         # warning from grab_contcar()
                         print(
-                            f"Problem parsing final, low-energy structure for {bond_distortion}% "
+                            f"Problem parsing final, low-energy structure for {gs_distortion} "
                             f"bond distortion of {defect_species} at {file_path}. This species "
                             f"will be skipped and will not be included in low_energy_defects ("
                             f"check relaxation calculation and folder)."
@@ -291,10 +294,10 @@ def compare_struct_to_distortions(
     try:
         defect_structures_dict = get_structures(defect_species=defect_species, output_path=output_path)
     except FileNotFoundError: # catch exception raised by `get_structures`` if `defect_species` folder does not exist
-        print(
-            f"No structures found for {defect_species}. Returning None. Check that the "
-            f"relaxation folders for {defect_species} are present in {output_path}."
-        )
+        # print(
+        #     f"No structures found for {defect_species}. Returning None. Check that the "
+        #     f"relaxation folders for {defect_species} are present in {output_path}."
+        # )
         return None, None, None, None 
     defect_energies_dict = get_energies(defect_species=defect_species, output_path=output_path, verbose=False)
 

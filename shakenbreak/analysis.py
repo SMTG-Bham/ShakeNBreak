@@ -444,7 +444,11 @@ def get_structures(
     if not bond_distortions: # if the user didnt specify any set of distortions, loop over subdirectories
         if not os.path.isdir(f'{output_path}/{defect_species}'): # check if defect folder exists
             raise FileNotFoundError(f"Path f'{output_path}/{defect_species}' does not exist!")
-        distortion_subdirectories = next(os.walk(f'{output_path}/{defect_species}'))[1] # distortion subdirectories
+        distortion_subdirectories = [
+            i 
+            for i in next(os.walk(f'{output_path}/{defect_species}'))[1] 
+            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("rattled" in i)
+            ] # distortion subdirectories
         for distortion_subdirectory in distortion_subdirectories:
             distortion = _format_distorion_names(distortion_label=distortion_subdirectory) # From subdirectory name, get the distortion label used for analysis
             # e.g. from 'Bond_Distortion_-10.0% -> -0.1

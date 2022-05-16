@@ -62,7 +62,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_1", "vac_1_Cd_2"]:
             if_present_rm(os.path.join(self.DATA_DIR, defect_dir))
 
-    def test_get_deep_distortions(self):
+    def test_get_deep_distortions(self): 
         """Test get_deep_distortions() function"""
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
@@ -89,11 +89,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "and unperturbed: -0.20 eV."
             )
             mock_print.assert_any_call(
-                f"Problem parsing final, low-energy structure for -35.0% bond distortion of "
+                f"Problem parsing final, low-energy structure for -0.35 bond distortion of "
                 f"vac_1_Cd_2 at {self.DATA_DIR}/vac_1_Cd_2/Bond_Distortion_-35.0%/CONTCAR. "
                 f"This species will be skipped and will not be included in low_energy_defects ("
                 f"check relaxation calculation and folder)."
-            )
+            ) 
             mock_print.assert_any_call("\nInt_Cd_2")
             mock_print.assert_any_call(
                 f"Path {self.DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.txt does not exist"
@@ -116,8 +116,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "are present)."  # check this is skipped if no data
             )
             self.assertEqual(
-                len(w), 28
-            )  # No Int_Cd_2_1 data (1), no V_Cd_1 structures (26), all V_Cd_1 'unconverged'
+                len(w), 2 # 28
+            )  # No Int_Cd_2_1 data (1), all V_Cd_1 'not converged' (1), # This doesnt raise a warning: no V_Cd_1 structures (26), 
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
             warning_message = (
@@ -359,8 +359,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 self.defect_charges_dict, self.DATA_DIR, stol=0.01
             )  # same call as before, but with stol
             self.assertEqual(
-                len(w), 69
-            )  # many warnings due to difficulty in structure matching
+                len(w), 21 # 21 rather than 69
+            )  # many warnings due to difficulty in structure matching (20), no data parsed from Int_Cd_2_1 (1)
             # with small stol (confirming stol has been passed to compare_structures)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
@@ -429,3 +429,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     f"{self.DATA_DIR}/vac_1_Cd_1/Bond_Distortion_-55.0%_from_0/POSCAR"
                 ),
             ) # TODO: Flesh out tests
+            
+        # Remove created files after `test_write_distorted_inputs` execution (otherwise error in `test_get_energy_lowering_distortions`)
+        # for fake_distortion_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
+        #     if_present_rm(f"{self.DATA_DIR}/vac_1_Cd_1/{fake_distortion_dir}")
+        # for fake_distortion_dir in ["Bond_Distortion_-35.0%", "Unperturbed"]:
+        #     if_present_rm(f"{self.DATA_DIR}/vac_1_Cd_2/{fake_distortion_dir}")
+
+if __name__ == "__main__":
+    unittest.main()

@@ -386,7 +386,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertDictEqual(self.V_Cd_dict, V_Cd_distorted_dict["Unperturbed"])
 
-        distorted_V_Cd_struc = V_Cd_distorted_dict["Distortions"][
+        distorted_V_Cd_struc = V_Cd_distorted_dict["distortions"][
             "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
@@ -399,7 +399,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.1,
             verbose=True,
         )
-        distorted_V_Cd_struc = V_Cd_0pt1_distorted_dict["Distortions"][
+        distorted_V_Cd_struc = V_Cd_0pt1_distorted_dict["distortions"][
             "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
@@ -438,19 +438,19 @@ class InputTestCase(unittest.TestCase):
             ]
             for distortion in distortion_range:
                 key = f"Bond_Distortion_{round(distortion,3)+0:.1%}"
-                self.assertIn(key, V_Cd_distorted_dict["Distortions"])
-                self.assertNotEqual(prev_struc, V_Cd_distorted_dict["Distortions"][key])
-                prev_struc = V_Cd_distorted_dict["Distortions"][
+                self.assertIn(key, V_Cd_distorted_dict["distortions"])
+                self.assertNotEqual(prev_struc, V_Cd_distorted_dict["distortions"][key])
+                prev_struc = V_Cd_distorted_dict["distortions"][
                     key
                 ]  # different structure for each
                 # distortion
                 mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
 
         # plus some hard-coded checks
-        self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["Distortions"])
-        self.assertIn("Bond_Distortion_60.0%", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["distortions"])
+        self.assertIn("Bond_Distortion_60.0%", V_Cd_distorted_dict["distortions"])
         # test zero distortion is written as positive zero (not "-0.0%")
-        self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["Distortions"])
+        self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
 
     def test_apply_distortions_Int_Cd_2(self):
 
@@ -465,7 +465,7 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
-        distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
+        distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["distortions"][
             "Bond_Distortion_-60.0%"
         ]
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
@@ -493,7 +493,7 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
         )
-        distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["Distortions"][
+        distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["distortions"][
             "Bond_Distortion_-60.0%"
         ]
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
@@ -536,7 +536,7 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(
             self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed"]
         )
-        distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["Distortions"][
+        distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["distortions"][
             "Bond_Distortion_-50.0%"
         ]
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
