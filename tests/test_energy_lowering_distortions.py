@@ -116,8 +116,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "are present)."  # check this is skipped if no data
             )
             self.assertEqual(
-                len(w), 2 # 28
-            )  # No Int_Cd_2_1 data (1), all V_Cd_1 'not converged' (1), # This doesnt raise a warning: no V_Cd_1 structures (26), 
+                len(w), 1 # 28
+            )  # No Int_Cd_2_1 data (1)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
             warning_message = (

@@ -422,9 +422,9 @@ def get_structures(
 ) -> dict:
     """
     Import all structures found with rattling & bond distortions, and store them in a dictionary
-    matching the bond distortion to the final structure. By default, will read the
-    `distortion_metadata.json` file (generated with ShakeNBreak) if present in the current
-    directory (and `distortion_increment` and `bond_distortions` not specified.
+    matching the bond distortion to the final structure. By default, will read the structures
+    from the distortion subdirectories present in each defect folder. If only certain distortions 
+    should be parsed, use `bond_distortions` to specify them.
 
     Args:
         defect_species (:obj:`str`):
@@ -449,6 +449,8 @@ def get_structures(
             for i in next(os.walk(f'{output_path}/{defect_species}'))[1] 
             if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("rattled" in i)
             ] # distortion subdirectories
+        if not distortion_subdirectories:
+            raise FileNotFoundError(f"No distortion subdirectories found in {output_path}/{defect_species}")
         for distortion_subdirectory in distortion_subdirectories:
             distortion = _format_distorion_names(distortion_label=distortion_subdirectory) # From subdirectory name, get the distortion label used for analysis
             # e.g. from 'Bond_Distortion_-10.0% -> -0.1
@@ -518,6 +520,8 @@ def get_energies(
         # TODO: results of champion distortions in different file?
     else:
         energy_file_path = f"{output_path}/{defect_species}/{defect_species}.txt"
+    if not os.path.isfile(energy_file_path):
+        raise FileNotFoundError(f"File {energy_file_path} not found!")
     defect_energies_dict, _e_diff, gs_distortion = _sort_data(energy_file_path, verbose=verbose)
     if "Unperturbed" in defect_energies_dict:
         for distortion, energy in defect_energies_dict["distortions"].items():
