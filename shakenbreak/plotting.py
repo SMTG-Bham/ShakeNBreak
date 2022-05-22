@@ -23,9 +23,7 @@ from shakenbreak.analysis import (
 ## Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
-plt.rcParams["axes.prop_cycle"] = plt.cycler(
-    "color", plt.cm.viridis(np.linspace(0, 1, 10))
-)
+
 
 # Helper functions for formatting plots
 def _format_tick_labels(
@@ -117,6 +115,8 @@ def _format_defect_name(
     Returns:
         str: formatted defect name
     """
+    if not isinstance(defect_species, str): # Check inputs 
+        raise(TypeError(f"defect_species {defect_species} must be a string"))
     # Format defect name for title/axis labels
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
@@ -243,16 +243,16 @@ def _save_plot(
 # TODO: Refactor 'rms' to 'disp' (Done:). Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
-    output_path: str = ".",
-    add_colorbar: bool = False,
-    metric: str = "max_dist",
-    distortion_type: str = "BDM",
-    plot_tag: bool = True,
-    max_energy_above_unperturbed: float = 0.5,
-    units: str = "eV",
-    energy_diff_tol: float = -0.1,
+    output_path: Optional[str] = ".",
+    add_colorbar: Optional[bool] = False,
+    metric: Optional[str] = "max_dist",
+    distortion_type: Optional[str] = "BDM",
+    plot_tag: Optional[bool] = True,
+    max_energy_above_unperturbed: Optional[float] = 0.5,
+    units: Optional[str] = "eV",
+    energy_diff_tol: Optional[float] = -0.1,
     line_color: Optional[str] = None,
-    save_format: str='svg',
+    save_format: Optional[str]='svg',
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those which undergo
@@ -381,15 +381,15 @@ def plot_defect(
     output_path: Optional[str] = '.',
     neighbour_atom: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
-    add_colorbar: bool = False,
-    metric: str = "max_dist",
-    max_energy_above_unperturbed: float = 0.5,
-    include_site_num_in_name: bool = False,
-    save_tag: bool = True,
-    y_label: str = "Energy (eV)",
+    add_colorbar: Optional[bool] = False,
+    metric: Optional[str] = "max_dist",
+    max_energy_above_unperturbed: Optional[float] = 0.5,
+    include_site_num_in_name: Optional[bool] = False,
+    y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
-    units: str = "eV",        
-    save_format: str='svg'
+    units: Optional[str] = "eV",  
+    save_tag: Optional[bool] = True,      
+    save_format: Optional[str]='svg'
 ) -> Figure:
     """
     Convenience function to plot energy vs distortion for a defect, to identify any energy-lowering
@@ -442,28 +442,46 @@ def plot_defect(
     Returns:
         Energy vs distortion plot, as a Matplotlib Figure object
     """
+    # Check directories and input
     if not os.path.isdir(output_path): # if output_path does not exist, raise error
         raise FileNotFoundError(f"Path {output_path} does not exist! Skipping {defect_species}.")
     if not os.path.isdir(f"{output_path}/{defect_species}"): # check if defect directory exists
         raise FileNotFoundError(f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}.")
+    if not all(
+        isinstance(energy, float) for energy in list(energies_dict["distortions"].values())
+        ): # check energies_dict values are floats
+        try:
+            energies_dict["distortions"] = {k: float(v) for k, v in energies_dict["distortions"].items() }
+        except ValueError:
+            raise ValueError(f"Values of energies_dict are not floats! Skipping {defect_species}.")
+    
     if add_colorbar:  # then get structures to compare their similarity
-        defect_structs = get_structures(defect_species=defect_species, output_path=output_path)
-        disp_dict = calculate_struct_comparison(
-            defect_structs, metric=metric
-        )  # calculate sum of atomic displacements and maximum displacement between paired sites
-        if (
-            disp_dict
-        ):  # if struct_comparison algorithms worked (sometimes struggles matching
-            # lattices)
-            disp_dict, energies_dict = _purge_data_dicts(
-                disp_dict=disp_dict, 
-                energies_dict=energies_dict,
-                ) # make disp and energies dict consistent
-                # by removing any data point if its energy is not in the energy dict and viceversa 
-        else:
-            print(
-                "Structure comparison algorithm struggled matching lattices. Colorbar will not "
-                "be added to plot."
+        try:
+            defect_structs = get_structures(
+                defect_species=defect_species, 
+                output_path=output_path
+                )
+            disp_dict = calculate_struct_comparison(
+                defect_structs, metric=metric
+            )  # calculate sum of atomic displacements and maximum displacement between paired sites
+            if (
+                disp_dict
+            ):  # if struct_comparison algorithms worked (sometimes struggles matching
+                # lattices)
+                disp_dict, energies_dict = _purge_data_dicts(
+                    disp_dict=disp_dict, 
+                    energies_dict=energies_dict,
+                    ) # make disp and energies dict consistent
+                    # by removing any data point if its energy is not in the energy dict and viceversa 
+            else:
+                print(
+                    "Structure comparison algorithm struggled matching lattices. Colorbar will not "
+                    "be added to plot."
+                )
+                add_colorbar = False
+        except FileNotFoundError: # raised by analysis.get_structures() if defect_directory or distortion subdirectories do not exist
+            warnings.warn(
+                f"Could not find structures for {defect_species}. Colorbar will not be added to plot."
             )
             add_colorbar = False
 
@@ -531,12 +549,12 @@ def plot_colorbar(
     neighbour_atom: str,
     title: Optional[str] = None,
     dataset_label: str = "NN:",
-    metric: str = "max_dist",
-    max_energy_above_unperturbed: float = 0.5,
-    save_tag: bool = False,
+    metric: Optional[str] = "max_dist",
+    max_energy_above_unperturbed: Optional[float] = 0.5,
+    save_tag: Optional[bool] = False,
     y_label: Optional[str] = 'Energy (eV)',
     line_color: Optional[str] = None,
-    save_format: str='svg'
+    save_format: Optional[str]='svg'
 ) -> Figure:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural similarity between
@@ -711,15 +729,15 @@ def plot_datasets(
     neighbour_atom: str,
     title: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
-    max_energy_above_unperturbed: float = 0.6,
+    max_energy_above_unperturbed: Optional[float] = 0.6,
     y_label: str = r"Energy (eV)",
     markers: Optional[list] = None,
     linestyles: Optional[list] = None,
     colors: Optional[list] = None,
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
-    save_tag: bool = False,
-    save_format: str='svg',
+    save_tag: Optional[bool] = False,
+    save_format: Optional[str]='svg',
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -771,7 +789,9 @@ def plot_datasets(
     """
     f, ax = plt.subplots(1, 1,) 
     # Colors
-    if colors == None and len(datasets) > 1 : # If user didnt specify colors and more than one color needed, we create a colormap
+    if colors == None and 11 > len(datasets) > 1 : # If user didnt specify colors and more than one color needed, use deep color palette
+        colors = sns.color_palette("deep", 10)
+    elif colors == None and len(datasets)  > 11: # otherwise use colormap
         colors = list(mpl.cm.get_cmap('viridis', len(datasets)+1).colors) # +1 to avoid yellow color (which is at the end of the colormap)
     else:
         colors = ["#59a590",] # Turquoise
@@ -821,9 +841,12 @@ def plot_datasets(
         }.items():
             if optional_style_settings:  # if set by user
                 if isinstance(optional_style_settings, list):
-                    default_style_settings[key] = optional_style_settings[
-                        dataset_number
-                    ]
+                    try:
+                        default_style_settings[key] = optional_style_settings[
+                            dataset_number
+                        ]
+                    except KeyError:
+                        default_style_settings[key] = optional_style_settings[0] # in case not enough for each dataset
                 else:
                     default_style_settings[key] = optional_style_settings
 
@@ -872,7 +895,7 @@ def plot_datasets(
     energy_range.append(datasets[0]["Unperturbed"])
     ax = _format_tick_labels(ax=ax, energy_range=energy_range)
 
-    plt.legend() # show legend
+    ax.legend() # show legend
 
     # Save plot?
     if save_tag:
@@ -880,5 +903,5 @@ def plot_datasets(
             defect_name=defect_name,
             save_format=save_format, 
             )
-    plt.show()
+    f.show()
     return f

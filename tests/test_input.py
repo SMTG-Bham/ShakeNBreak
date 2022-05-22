@@ -6,6 +6,7 @@ from unittest.mock import patch
 import shutil
 
 import numpy as np
+import json
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
@@ -151,8 +152,9 @@ class InputTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders if present
-        if os.path.exists("distortion_metadata.json"):
-            os.remove("distortion_metadata.json")
+        for fname in os.listdir("./"):
+            if fname.startswith("distortion_metadata"):
+                os.remove(f"./{fname}")
 
     def test_update_struct_defect_dict(self):
         """Test update_struct_defect_dict function"""
@@ -166,7 +168,7 @@ class InputTestCase(unittest.TestCase):
             ("Int_Cd_2_1", self.Int_Cd_2_minus0pt6_struc_rattled, "Int_Cd_2 Rattled"),
         ]:
             charged_defect_dict = vasp_defect_inputs[key]
-            output = input.update_struct_defect_dict(
+            output = input._update_struct_defect_dict(
                 charged_defect_dict, struc, comment
             )
             self.assertEqual(output["Defect Structure"], struc)
@@ -552,7 +554,7 @@ class InputTestCase(unittest.TestCase):
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = input.update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = input._update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -561,7 +563,7 @@ class InputTestCase(unittest.TestCase):
             "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        input.create_vasp_input(
+        input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
@@ -585,7 +587,7 @@ class InputTestCase(unittest.TestCase):
         }
         kwarged_incar_settings = input.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
-        input.create_vasp_input(
+        input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
@@ -753,13 +755,87 @@ class InputTestCase(unittest.TestCase):
                                     (29, "Cd"),
                                     (38, "Te"),
                                 ],
-                            }
+                                "distortion_parameters": {
+                                    "bond_distortions": [
+                                        -0.5,
+                                        -0.25,
+                                        0.0,
+                                        0.25,
+                                        0.5,
+                                    ],
+                                    "rattle_stdev": 0.25
+                                },
+                            },
                         },
                         "defect_site_index": 65,
-                    }
+                    },
+                    "vac_1_Cd": {
+                        "unique_site": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "charges": {
+                            0: {
+                                "num_nearest_neighbours": 2,
+                                "distorted_atoms": [
+                                    [
+                                        33,
+                                        "Te"
+                                    ],
+                                    [
+                                        42,
+                                        "Te"
+                                    ]
+                                ],
+                                "distortion_parameters": {
+                                    "bond_distortions": [
+                                        -0.6,
+                                        -0.55,
+                                        -0.5,
+                                        -0.45,
+                                        -0.4,
+                                        -0.35,
+                                        -0.3,
+                                        -0.25,
+                                        -0.2,
+                                        -0.15,
+                                        -0.1,
+                                        -0.05,
+                                        0.0,
+                                        0.05,
+                                        0.1,
+                                        0.15,
+                                        0.2,
+                                        0.25,
+                                        0.3,
+                                        0.35,
+                                        0.4,
+                                        0.45,
+                                        0.5,
+                                        0.55,
+                                        0.6
+                                    ],
+                                    "rattle_stdev": 0.15,
+                                },
+                            },
+                        },
+                    },
                 },
             }
-            np.testing.assert_equal(distortion_defect_dict, kwarged_Int_Cd_2_dict)
+            np.testing.assert_equal(
+                distortion_defect_dict["defects"]["Int_Cd_2"]["charges"][1], # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1]
+                )
+            self.assertTrue(os.path.exists("distortion_metadata.json"))
+            # check defects from old metadata file are in new metadata file
+            with open(f"distortion_metadata.json", "r") as metadata_file:
+                metadata = json.load(metadata_file)
+            np.testing.assert_equal(
+                metadata["defects"]["vac_1_Cd"]["charges"]["0"], # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0]
+                )
+            
             # check expected info printing:
             mock_Int_Cd_2_print.assert_any_call(
                 "Applying ShakeNBreak...",

@@ -166,7 +166,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = input.update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = input._update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -175,7 +175,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        input.create_vasp_input(
+        input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=input.default_incar_settings,
@@ -207,7 +207,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         }
         kwarged_incar_settings = input.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
-        input.create_vasp_input(
+        input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
