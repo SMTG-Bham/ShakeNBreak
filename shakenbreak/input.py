@@ -586,7 +586,7 @@ def apply_shakenbreak(
             Additional keyword arguments to pass to `hiphive`'s `mc_rattle` function.
 
     Returns:
-        Dictionary with defect distortion parameters.
+        tuple of dictionary with defect distortion parameters and dictionary with distorted structures
     """
     # TODO: Refactor to use extra/missing electrons (not charge) here, to reduce potential confusion
     vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
@@ -752,5 +752,5 @@ def apply_shakenbreak(
         filename="distortion_metadata.json",
     )
 
-    return distortion_metadata  # TODO: Return both distorted defect structures and metadata
+    return distortion_metadata, dict_defects  # TODO: Return both distorted defect structures and metadata
         
