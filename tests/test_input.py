@@ -609,7 +609,7 @@ class InputTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        distortion_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -694,7 +694,7 @@ class InputTestCase(unittest.TestCase):
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-        distortion_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -726,7 +726,7 @@ class InputTestCase(unittest.TestCase):
         reduced_Int_Cd_2_dict["charges"] = [1]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            distortion_defect_dict = input.apply_shakenbreak(
+            distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
                 {"interstitials": [reduced_Int_Cd_2_dict]},
                 oxidation_states=oxidation_states,
                 distortion_increment=0.25,
@@ -864,7 +864,7 @@ class InputTestCase(unittest.TestCase):
         # check files are not written if write_files=False:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
-        distortion_defect_dict = input.apply_shakenbreak(
+        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
