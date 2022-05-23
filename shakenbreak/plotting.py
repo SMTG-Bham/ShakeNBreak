@@ -6,10 +6,10 @@ import os
 import warnings
 import json
 from typing import Optional
+import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from matplotlib.figure import Figure
 
@@ -20,7 +20,7 @@ from shakenbreak.analysis import (
     calculate_struct_comparison,
 )
 
-## Matplotlib Style formatting
+# Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
@@ -175,9 +175,8 @@ def _change_energy_units_to_meV(
     """
     y_label = y_label.replace("eV", "meV")
     if max_energy_above_unperturbed < 1:  # assume eV
-        max_energy_above_unperturbed *= 1000  # convert to meV
+        max_energy_above_unperturbed = max_energy_above_unperturbed * 1000  # convert to meV
     for key in energies_dict["distortions"].keys():  # convert to meV
-        energies_dict["distortions"][key] *= 1000
         energies_dict["distortions"][key] = (
             energies_dict["distortions"][key] * 1000
         )
@@ -517,7 +516,7 @@ def plot_defect(
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
             title=defect_name,
-            dataset_label=f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}",
+            dataset_label=f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}" if num_nearest_neighbours != None else f"ShakeNBreak: {neighbour_atom}",
             metric=metric,
             save_tag=save_tag,
             y_label=y_label,
@@ -532,7 +531,7 @@ def plot_defect(
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
             title=defect_name,
-            dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"],
+            dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"] if num_nearest_neighbours != None else [f"ShakeNBreak: {neighbour_atom}"],
             save_tag=save_tag,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
