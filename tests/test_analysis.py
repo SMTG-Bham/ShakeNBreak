@@ -73,7 +73,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertListEqual(
             self.In_Cd_1_distortion_data,
             [
-                "rattled",
+                "Rattled",
                 "-214.88259023",
                 "Unperturbed",
                 "-214.87608986",
@@ -107,7 +107,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test In_Cd_1:
         self.assertDictEqual(
             self.organized_In_Cd_1_distortion_data,
-            {"distortions": {"rattled": -214.88259023}, "Unperturbed": -214.87608986},
+            {"distortions": {"Rattled": -214.88259023}, "Unperturbed": -214.87608986},
         )
 
         # test with no 'Unperturbed':
@@ -136,7 +136,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         gs_distortion = analysis.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data
         )
-        self.assertEqual(gs_distortion, (-0.006500369999997702, "rattled"))
+        self.assertEqual(gs_distortion, (-0.006500369999997702, "Rattled"))
 
         # test with 'Unperturbed' not present:
         gs_distortion_no_unperturbed = analysis.get_gs_distortion(
@@ -811,6 +811,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, None)
+
+
+    # TODO: Add magnetisation tests
 
 
 if __name__ == "__main__":

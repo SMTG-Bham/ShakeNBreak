@@ -245,7 +245,6 @@ def plot_all_defects(
     output_path: Optional[str] = ".",
     add_colorbar: Optional[bool] = False,
     metric: Optional[str] = "max_dist",
-    distortion_type: Optional[str] = "BDM",
     plot_tag: Optional[bool] = True,
     max_energy_above_unperturbed: Optional[float] = 0.5,
     units: Optional[str] = "eV",
@@ -273,13 +272,6 @@ def plot_all_defects(
             Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
-        distortion_type (:obj:`str`) :
-            Type of distortion method used.
-            Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
-            is used when relaxing a defect from the relaxed structure(s) found for other charge
-            states of that defect – in which case only the unperturbed and rattled configurations of
-            the relaxed other-charge defect structure(s) are calculated.
-            (Default: 'BDM')
         plot_tag (:obj:`bool`):
             Whether to plot the results or not.
             (Default: True)
@@ -315,15 +307,9 @@ def plot_all_defects(
                 ): 
                 warnings.warn(f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}.") # if defect directory doesnt exists, skip defect
                 continue
-            # TODO: Refactor `get_energies` / `_sort_data` to write champion runs to same energy file. Then plot as two different datasets.
-            if distortion_type != "BDM":
-                energies_file = (
-                    f"{output_path}/{defect_species}/{distortion_type}_{defect_species}.txt"
-                )
-            else:
-                energies_file = (
-                    f"{output_path}/{defect_species}/{defect_species}.txt"
-                )
+            energies_file = (
+                f"{output_path}/{defect_species}/{defect_species}.txt"
+            )
             if not os.path.exists(energies_file):
                 warnings.warn(f'Path {energies_file} does not exist. Skipping {defect_species}.') # skip defect
                 continue
@@ -333,7 +319,7 @@ def plot_all_defects(
             # then further analyse this defect
             if (
                 plot_tag
-                and ("rattled" not in energies_dict["distortions"].keys())
+                and ("Rattled" not in energies_dict["distortions"].keys())
                 and abs(float(energy_diff)) > abs(energy_diff_tol)  
             ):
                 # Get number and element symbol of the distorted site(s)
