@@ -591,10 +591,9 @@ class InputTestCase(unittest.TestCase):
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
-            distortion_type="kwarged",
         )
         V_Cd_kwarg_folder = (
-            "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
+            "vac_1_Cd_0/Bond_Distortion_-50.0%"
         )
         self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
@@ -731,7 +730,6 @@ class InputTestCase(unittest.TestCase):
                 oxidation_states=oxidation_states,
                 distortion_increment=0.25,
                 verbose=True,
-                distortion_type="kwarged",
                 distorted_elements={"Int_Cd_2": ["Cd"]},
                 dict_number_electrons_user={"Int_Cd_2": 3},
             )
@@ -859,7 +857,7 @@ class InputTestCase(unittest.TestCase):
                 + "(1.36, 29, 'Cd'), (1.36, 38, 'Te')]"
             )
             # check correct folder was created:
-            self.assertTrue(os.path.exists("Int_Cd_2_1/kwarged_Unperturbed"))
+            self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
 
         # check files are not written if write_files=False:
         for i in self.cdte_defect_folders:

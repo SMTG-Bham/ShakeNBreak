@@ -7,7 +7,7 @@ import warnings
 import numpy as np
 
 from pymatgen.core.structure import Structure, Element
-from shakenbreak import analysis, champion_defects_rerun, energy_lowering_distortions
+from shakenbreak import analysis, energy_lowering_distortions
 
 
 def if_present_rm(path):

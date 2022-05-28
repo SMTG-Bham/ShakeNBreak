@@ -37,7 +37,7 @@ def get_deep_distortions(
     """Convenience function to identify defect species undergoing energy-lowering distortions.
      Useful for then testing this distorted structure for the other charge states of that defect.
      Considers all identified energy-lowering distortions for each defect in each charge state,
-     and screens out duplicate distorted structures for different charge states.
+     and screens out duplicate distorted structures found for multiple charge states.
 
      Args:
          defect_charges_dict (:obj:`dict`):
@@ -47,9 +47,9 @@ def get_deep_distortions(
              Path to directory with your distorted defect calculations (need CONTCAR files for
              structure matching) and distortion_metadata.json. (Default is current directory = "./")
          min_e_diff (:obj: `float`):
-             Minimum energy difference (in eV) between the `champion` test relaxation and the
-             previous lowest energy relaxation, to consider it as having found a new energy-lowering
-             distortion. Default is 0.05 eV.
+             Minimum energy difference (in eV) between the ground-state defect structure,
+             relative to the `Unperturbed` structure, to consider it as having found a new
+             energy-lowering distortion. Default is 0.05 eV.
          stol (:obj:`float`):
              Site-matching tolerance for structure matching. Site tolerance. Defined as the
              fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
@@ -102,7 +102,8 @@ def get_deep_distortions(
             elif (
                 energy_diff and float(energy_diff) < -min_e_diff
             ):  # if a significant energy drop occurred, then store this distorted defect
-                bond_distortion = _get_distortion_filename(gs_distortion) # format distortion label to the one used in file name
+                bond_distortion = _get_distortion_filename(gs_distortion)
+                # format distortion label to the one used in file name
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 file_path = (
                     f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
@@ -315,24 +316,23 @@ def compare_struct_to_distortions(
     matching_sub_df = struct_comparison_df[
         struct_comparison_df["Σ{Displacements} (Å)"] == 0
     ]
-    unperturbed_df = matching_sub_df[
-        matching_sub_df["Bond Distortion"]
-        == "Unperturbed"  # if present, otherwise empty
-    ]
-    rattled_df = matching_sub_df[
-        matching_sub_df["Bond Distortion"] == "rattled"  # if present, otherwise empty
-    ]
-    sorted_distorted_df = matching_sub_df[
-        ~matching_sub_df["Bond Distortion"].isin(
-            ["Unperturbed", "rattled"]
-        )  # tilde means 'not'
-    ].sort_values(by="Bond Distortion", key=abs)
 
-    # first unperturbed, then rattled, then distortions sorted by initial distortion magnitude
-    # from low to high (if present)
-    sorted_matching_df = pd.concat([unperturbed_df, rattled_df, sorted_distorted_df])
+    if not matching_sub_df.empty:  # if there are any matches
+        unperturbed_df = matching_sub_df[
+            matching_sub_df["Bond Distortion"]
+            == "Unperturbed"  # if present, otherwise empty
+        ]
+        rattled_df = matching_sub_df[
+            matching_sub_df["Bond Distortion"] == "Rattled"  # if present, otherwise empty
+        ]
+        sorted_distorted_df = matching_sub_df[
+            matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, float))
+        ].sort_values(by="Bond Distortion", key=abs)
 
-    if not sorted_matching_df.empty:  # if there are any matches
+        # first unperturbed, then rattled, then distortions sorted by initial distortion magnitude
+        # from low to high (if present)
+        sorted_matching_df = pd.concat([unperturbed_df, rattled_df, sorted_distorted_df])
+
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0
         ]  # first matching structure
@@ -395,7 +395,7 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                     0
                 ]  # first bond distortion for which this distortion was found
 
-                if distorted_distortion == "rattled":
+                if distorted_distortion == "Rattled":
                     distorted_dir = (
                         f"{output_path}/{defect_species}/Bond_Distortion_"
                         f"{distorted_distortion}_from_{distorted_charge}"

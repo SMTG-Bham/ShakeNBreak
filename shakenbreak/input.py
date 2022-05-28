@@ -135,7 +135,6 @@ def _create_vasp_input(
     distorted_defect_dict: dict,
     incar_settings: dict,
     potcar_settings: Optional[dict] = None,
-    distortion_type: str = "BDM",
 ) -> None:
     """
     Creates folders for storing VASP ShakeNBreak files.
@@ -150,13 +149,6 @@ def _create_vasp_input(
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}).
-        distortion_type (:obj:`str`):
-            Type of distortion method.
-            Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
-            is used when relaxing a defect from the relaxed structure(s) found for other charge
-            states of that defect – in which case only the unperturbed and rattled configurations of
-            the relaxed other-charge defect structure(s) are calculated.
-            (Default: 'BDM')
     """
     _create_folder(defect_name)  # create folder for defect
     for (
@@ -168,13 +160,9 @@ def _create_vasp_input(
         potcar_settings_copy = copy.deepcopy(
             potcar_settings
         )  # vasp_gam_files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
-        if distortion_type != 'BDM':
-            distortion_key = f'{distortion_type}_{distortion}'
-        else:
-            distortion_key = distortion
         vasp_gam_files(
             single_defect_dict=single_defect_dict,
-            input_dir=f"{defect_name}/{distortion_key}",
+            input_dir=f"{defect_name}/{distortion}",
             incar_settings=incar_settings,
             potcar_settings=potcar_settings_copy,
         )
@@ -501,7 +489,7 @@ def apply_distortions(
         perturbed_structure = rattle(
             defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
         )
-        distorted_defect_dict["distortions"]["rattled"] = perturbed_structure
+        distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
@@ -522,7 +510,6 @@ def apply_shakenbreak(
     bond_distortions: Optional[list] = None,
     stdev: float = 0.25,
     distorted_elements: Optional[dict] = None,
-    distortion_type: str = "BDM",
     potcar_settings: Optional[dict] = None,
     write_files: bool = True,
     verbose: bool = False,
@@ -566,13 +553,6 @@ def apply_shakenbreak(
             in the form of a dictionary with format {'defect_name': ['element1', 'element2',
             ...]} (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to the defect are
             chosen. (Default: None)
-        distortion_type (:obj:`str`) :
-            Type of distortion method.
-            Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
-            is used when relaxing a defect from the relaxed structure(s) found for other charge
-            states of that defect – in which case only the unperturbed and rattled configurations of
-            the relaxed other-charge defect structure(s) are calculated.
-            (Default: 'BDM')
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
@@ -715,7 +695,7 @@ def apply_shakenbreak(
                     "distortions"
                 ].items():
                     poscar_comment = (
-                        key_distortion.split("_")[-1] # Get distortion factor (-60.%) or 'rattled' 
+                        key_distortion.split("_")[-1] # Get distortion factor (-60.%) or 'Rattled'
                         + "__"
                         + vasp_defect_inputs[f"{defect_name}_{charge}"][
                             "POSCAR Comment"
@@ -738,7 +718,6 @@ def apply_shakenbreak(
                         distorted_defect_dict=charged_defect,
                         incar_settings=incar_dict,
                         potcar_settings=potcar_settings,
-                        distortion_type=distortion_type,
                     )
             print()
             if verbose:
