@@ -435,9 +435,7 @@ class InputTestCase(unittest.TestCase):
                 bond_distortions=distortion_range,
                 verbose=True,
             )
-            prev_struc = V_Cd_distorted_dict["Unperturbed"]["supercell"][
-                "structure"
-            ]
+            prev_struc = V_Cd_distorted_dict["Unperturbed"]["supercell"]["structure"]
             for distortion in distortion_range:
                 key = f"Bond_Distortion_{round(distortion,3)+0:.1%}"
                 self.assertIn(key, V_Cd_distorted_dict["distortions"])
@@ -464,9 +462,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.25,
             verbose=True,
         )
-        self.assertDictEqual(
-            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
-        )
+        self.assertDictEqual(self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"])
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["distortions"][
             "Bond_Distortion_-60.0%"
         ]
@@ -492,9 +488,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0,  # no rattling here
             verbose=True,
         )
-        self.assertDictEqual(
-            self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"]
-        )
+        self.assertDictEqual(self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"])
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["distortions"][
             "Bond_Distortion_-60.0%"
         ]
@@ -535,9 +529,7 @@ class InputTestCase(unittest.TestCase):
             seed=20,
             verbose=True,
         )
-        self.assertDictEqual(
-            self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed"]
-        )
+        self.assertDictEqual(self.V_Cd_dict, V_Cd_kwarg_distorted_dict["Unperturbed"])
         distorted_V_Cd_struc = V_Cd_kwarg_distorted_dict["distortions"][
             "Bond_Distortion_-50.0%"
         ]
@@ -592,9 +584,7 @@ class InputTestCase(unittest.TestCase):
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
         )
-        V_Cd_kwarg_folder = (
-            "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        )
+        V_Cd_kwarg_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
@@ -674,9 +664,7 @@ class InputTestCase(unittest.TestCase):
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
-        Int_Cd_2_Bond_Distortion_folder = (
-            "Int_Cd_2_0/Bond_Distortion_-60.0%"
-        )
+        Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
@@ -761,31 +749,18 @@ class InputTestCase(unittest.TestCase):
                                         0.25,
                                         0.5,
                                     ],
-                                    "rattle_stdev": 0.25
+                                    "rattle_stdev": 0.25,
                                 },
                             },
                         },
                         "defect_site_index": 65,
                     },
                     "vac_1_Cd": {
-                        "unique_site": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
+                        "unique_site": [0.0, 0.0, 0.0],
                         "charges": {
                             0: {
                                 "num_nearest_neighbours": 2,
-                                "distorted_atoms": [
-                                    [
-                                        33,
-                                        "Te"
-                                    ],
-                                    [
-                                        42,
-                                        "Te"
-                                    ]
-                                ],
+                                "distorted_atoms": [[33, "Te"], [42, "Te"]],
                                 "distortion_parameters": {
                                     "bond_distortions": [
                                         -0.6,
@@ -812,7 +787,7 @@ class InputTestCase(unittest.TestCase):
                                         0.45,
                                         0.5,
                                         0.55,
-                                        0.6
+                                        0.6,
                                     ],
                                     "rattle_stdev": 0.15,
                                 },
@@ -822,18 +797,22 @@ class InputTestCase(unittest.TestCase):
                 },
             }
             np.testing.assert_equal(
-                distortion_defect_dict["defects"]["Int_Cd_2"]["charges"][1], # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1]
-                )
+                distortion_defect_dict["defects"]["Int_Cd_2"]["charges"][
+                    1
+                ],  # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1],
+            )
             self.assertTrue(os.path.exists("distortion_metadata.json"))
             # check defects from old metadata file are in new metadata file
             with open(f"distortion_metadata.json", "r") as metadata_file:
                 metadata = json.load(metadata_file)
             np.testing.assert_equal(
-                metadata["defects"]["vac_1_Cd"]["charges"]["0"], # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0]
-                )
-            
+                metadata["defects"]["vac_1_Cd"]["charges"][
+                    "0"
+                ],  # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0],
+            )
+
             # check expected info printing:
             mock_Int_Cd_2_print.assert_any_call(
                 "Applying ShakeNBreak...",

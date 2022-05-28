@@ -3,7 +3,7 @@ Submodule to generate input files for the ShakenBreak code.
 """
 
 import os
-from copy import deepcopy # See https://stackoverflow.com/a/22341377/14020960 why
+from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 import warnings
 from typing import TYPE_CHECKING
 import numpy as np
@@ -11,7 +11,11 @@ import numpy as np
 from monty.io import zopen
 from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar, Kpoints, Poscar
-from pymatgen.io.vasp.inputs import incar_params, BadIncarWarning, Kpoints_supported_modes
+from pymatgen.io.vasp.inputs import (
+    incar_params,
+    BadIncarWarning,
+    Kpoints_supported_modes,
+)
 from pymatgen.io.vasp.sets import DictSet, BadInputSetWarning
 
 from doped.pycdt.utils.vasp import DefectRelaxSet, _check_psp_dir
@@ -24,16 +28,17 @@ if TYPE_CHECKING:
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(os.path.join(MODULE_DIR, "default_POTCARs.yaml"))
 
-# Duplicated code from doped 
-def scaled_ediff(natoms): # 1e-5 for 50 atoms, up to max 1e-4
+# Duplicated code from doped
+def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
     ediff = float(f"{((natoms/50)*1e-5):.1g}")
     return ediff if ediff <= 1e-4 else 1e-4
-    
+
+
 def vasp_gam_files(
-    single_defect_dict: dict, 
-    input_dir: str = None, 
+    single_defect_dict: dict,
+    input_dir: str = None,
     incar_settings: dict = None,
-    potcar_settings: dict = None
+    potcar_settings: dict = None,
 ) -> None:
     """
     Generates input files for VASP Gamma-point-only rough relaxation
@@ -60,7 +65,9 @@ def vasp_gam_files(
     """
     supercell = single_defect_dict["Defect Structure"]
     poscar_comment = (
-        single_defect_dict["POSCAR Comment"] if "POSCAR Comment" in single_defect_dict else None
+        single_defect_dict["POSCAR Comment"]
+        if "POSCAR Comment" in single_defect_dict
+        else None
     )
 
     # Directory
@@ -72,23 +79,27 @@ def vasp_gam_files(
         "ignore", category=BadInputSetWarning
     )  # Ignore POTCAR warnings because Pymatgen incorrectly detecting POTCAR types
     potcar_dict = deepcopy(default_potcar_dict)
-    if potcar_settings: 
-        if 'POTCAR_FUNCTIONAL' in potcar_settings.keys(): 
-            potcar_dict['POTCAR_FUNCTIONAL'] = potcar_settings['POTCAR_FUNCTIONAL']
-        if 'POTCAR' in potcar_settings.keys():
-            potcar_dict["POTCAR"].update(potcar_settings.pop("POTCAR"))   
+    if potcar_settings:
+        if "POTCAR_FUNCTIONAL" in potcar_settings.keys():
+            potcar_dict["POTCAR_FUNCTIONAL"] = potcar_settings["POTCAR_FUNCTIONAL"]
+        if "POTCAR" in potcar_settings.keys():
+            potcar_dict["POTCAR"].update(potcar_settings.pop("POTCAR"))
 
-    defect_relax_set = DefectRelaxSet(supercell, charge=single_defect_dict["Transformation "
-                                                                           "Dict"]["charge"],
-                                      user_potcar_settings=potcar_dict["POTCAR"],
-                                      user_potcar_functional=potcar_dict["POTCAR_FUNCTIONAL"])
+    defect_relax_set = DefectRelaxSet(
+        supercell,
+        charge=single_defect_dict["Transformation " "Dict"]["charge"],
+        user_potcar_settings=potcar_dict["POTCAR"],
+        user_potcar_functional=potcar_dict["POTCAR_FUNCTIONAL"],
+    )
     potcars = _check_psp_dir()
     if potcars:
         defect_relax_set.potcar.write_file(vaspgaminputdir + "POTCAR")
-    else: # make the folders without POTCARs
-        warnings.warn("POTCAR directory not set up with pymatgen, so only POSCAR files will be "
-                      "generated (POTCARs also needed to determine appropriate NELECT setting in "
-                      "INCAR files)")
+    else:  # make the folders without POTCARs
+        warnings.warn(
+            "POTCAR directory not set up with pymatgen, so only POSCAR files will be "
+            "generated (POTCARs also needed to determine appropriate NELECT setting in "
+            "INCAR files)"
+        )
         vaspgamposcar = defect_relax_set.poscar
         if poscar_comment:
             vaspgamposcar.comment = poscar_comment
@@ -109,9 +120,9 @@ def vasp_gam_files(
         "POTIM": "variable parameters",
         "NELECT": nelect,
         "IBRION": "2 # While often slower than '1' (RMM-DIIS), this is more stable and "
-                  "reliable, and vasp_gam relaxations are typically cheap enough to justify it",
+        "reliable, and vasp_gam relaxations are typically cheap enough to justify it",
         "NUPDOWN": f"{nelect % 2:.0f} # But could be {nelect % 2 + 2:.0f} "
-                   + "if strong spin polarisation or magnetic behaviour present",
+        + "if strong spin polarisation or magnetic behaviour present",
         "ISPIN": "2 # Spin polarisation likely for defects",
         "NCORE": 12,
         "#KPAR": "# No KPAR, only one kpoint here",
@@ -143,10 +154,17 @@ def vasp_gam_files(
         "SIGMA": 0.05,
     }
     if incar_settings:
-        for k in incar_settings.keys():  # check INCAR flags and warn if they don't exist (typos)
-            if k not in incar_params.keys():  # this code is taken from pymatgen.io.vasp.inputs
+        for (
+            k
+        ) in (
+            incar_settings.keys()
+        ):  # check INCAR flags and warn if they don't exist (typos)
+            if (
+                k not in incar_params.keys()
+            ):  # this code is taken from pymatgen.io.vasp.inputs
                 warnings.warn(  # but only checking keys, not values so we can add comments etc
-                    "Cannot find %s from your incar_settings in the list of INCAR flags" % (k),
+                    "Cannot find %s from your incar_settings in the list of INCAR flags"
+                    % (k),
                     BadIncarWarning,
                 )
         vaspgamincardict.update(incar_settings)
