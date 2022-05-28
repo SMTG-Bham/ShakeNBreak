@@ -68,9 +68,9 @@ def get_deep_distortions(
              dictionaries (with corresponding charge states, energy lowering, distortion factors,
              structures and charge states for which these structures weren't found)]}.
     """
-    if not os.path.isdir(output_path): # check if output_path exists
+    if not os.path.isdir(output_path):  # check if output_path exists
         raise FileNotFoundError(f"Path {output_path} does not exist!")
-        
+
     low_energy_defects = (
         {}
     )  # dict of defects undergoing deep energy-lowering distortions
@@ -105,9 +105,7 @@ def get_deep_distortions(
                 bond_distortion = _get_distortion_filename(gs_distortion)
                 # format distortion label to the one used in file name
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
-                file_path = (
-                    f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
-                )
+                file_path = f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
                 with warnings.catch_warnings(record=True) as w:
                     gs_struct = grab_contcar(
                         file_path
@@ -293,14 +291,18 @@ def compare_struct_to_distortions(
         defect_species.
     """
     try:
-        defect_structures_dict = get_structures(defect_species=defect_species, output_path=output_path)
-    except FileNotFoundError: # catch exception raised by `get_structures`` if `defect_species` folder does not exist
+        defect_structures_dict = get_structures(
+            defect_species=defect_species, output_path=output_path
+        )
+    except FileNotFoundError:  # catch exception raised by `get_structures`` if `defect_species` folder does not exist
         # print(
         #     f"No structures found for {defect_species}. Returning None. Check that the "
         #     f"relaxation folders for {defect_species} are present in {output_path}."
         # )
-        return None, None, None, None 
-    defect_energies_dict = get_energies(defect_species=defect_species, output_path=output_path, verbose=False)
+        return None, None, None, None
+    defect_energies_dict = get_energies(
+        defect_species=defect_species, output_path=output_path, verbose=False
+    )
 
     struct_comparison_df = compare_structures(
         defect_structures_dict,
@@ -323,7 +325,8 @@ def compare_struct_to_distortions(
             == "Unperturbed"  # if present, otherwise empty
         ]
         rattled_df = matching_sub_df[
-            matching_sub_df["Bond Distortion"] == "Rattled"  # if present, otherwise empty
+            matching_sub_df["Bond Distortion"]
+            == "Rattled"  # if present, otherwise empty
         ]
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, float))
@@ -331,7 +334,9 @@ def compare_struct_to_distortions(
 
         # first unperturbed, then rattled, then distortions sorted by initial distortion magnitude
         # from low to high (if present)
-        sorted_matching_df = pd.concat([unperturbed_df, rattled_df, sorted_distorted_df])
+        sorted_matching_df = pd.concat(
+            [unperturbed_df, rattled_df, sorted_distorted_df]
+        )
 
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0
@@ -410,7 +415,9 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                 print(f"Writing low-energy distorted structure to {distorted_dir}")
 
                 if not os.path.exists(f"{output_path}/{defect_species}"):
-                    print(f"Directory {output_path}/{defect_species} not found, creating...")
+                    print(
+                        f"Directory {output_path}/{defect_species} not found, creating..."
+                    )
                     os.mkdir(f"{output_path}/{defect_species}")
                 os.mkdir(distorted_dir)
                 distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
@@ -439,6 +446,7 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                             f"{output_path}/{defect_species}, so just writing distorted POSCAR "
                             f"file to {distorted_dir} directory."
                         )
+
 
 # TODO: Write convenience function to directly run `get_deep_distortions()` and then
 #  `write_distorted_inputs()` all in one go
