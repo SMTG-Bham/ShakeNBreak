@@ -26,6 +26,8 @@ from shakenbreak.analysis import (
 # TODO: Update get_deep_distortions() to optionally also store non-spontaneous _metastable_
 #  energy-lowering distortions, as these can become ground-state distortions for other charge
 #  states
+# TODO: Add optional parameter to `get_deep_distortions()` that also then runs
+#  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call
 def get_deep_distortions(
     defect_charges_dict: dict,
     output_path: str = "./",
@@ -35,7 +37,7 @@ def get_deep_distortions(
     verbose: bool = True,
 ) -> dict:
     """Convenience function to identify defect species undergoing energy-lowering distortions.
-     Useful for then testing this distorted structure for the other charge states of that defect.
+     Useful for then testing these distorted structures for the other charge states of that defect.
      Considers all identified energy-lowering distortions for each defect in each charge state,
      and screens out duplicate distorted structures found for multiple charge states.
 
@@ -447,6 +449,3 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                             f"file to {distorted_dir} directory."
                         )
 
-
-# TODO: Write convenience function to directly run `get_deep_distortions()` and then
-#  `write_distorted_inputs()` all in one go
