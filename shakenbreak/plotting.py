@@ -63,7 +63,8 @@ def _format_tick_labels(
     ax.set_ylim(
         bottom=min(energy_range) - 0.1 * (max(energy_range) - min(energy_range)),
         top=max(energy_range) + 0.1 * (max(energy_range) - min(energy_range)),
-    )  # add some extra space to avoid cutting off some data points (e.g. using the energy range here in case units are meV)
+    )  # add some extra space to avoid cutting off some data points
+    # (e.g. using the energy range here in case units are meV)
     return ax
 
 
@@ -192,7 +193,8 @@ def _purge_data_dicts(
     energies_dict: dict,
 ) -> tuple:
     """
-    Purges dictionaries of displacements and energies so that they are consistent (i.e. contain data for same distortions).
+    Purges dictionaries of displacements and energies so that they are consistent (i.e. contain
+    data for same distortions).
     To achieve this, it removes: 
     - Any data point from disp_dict if its energy is not in the energy dict \
         (this may be due to relaxation not converged).
@@ -200,10 +202,12 @@ def _purge_data_dicts(
         (this might be due to the lattice matching algorithm failing).
     Args:
         disp_dict (dict): dictionary with displacements (for each structure relative to Unperturbed)
-        energies_dict (dict): dictionary with final energies (for each structure relative to Unperturbed)
+        energies_dict (dict): dictionary with final energies (for each structure relative to
+        Unperturbed)
 
     Returns:
-        (dict, dict): Consistent dictionaries of displacements and energies, containing data for same distortions.
+        (dict, dict): Consistent dictionaries of displacements and energies, containing data for
+        same distortions.
     """
     for key in list(disp_dict.keys()):
         if (
@@ -316,7 +320,7 @@ def plot_all_defects(
                     f"Path {energies_file} does not exist. Skipping {defect_species}."
                 )  # skip defect
                 continue
-            energies_dict, energy_diff, gs_distortion = _sort_data(energies_file)
+            energies_dict, energy_diff, gs_distortion = _sort_data(energies_file, verbose=False)
 
             # If a significant energy lowering was found with bond distortions (not just rattling),
             # then further analyse this defect
@@ -331,19 +335,26 @@ def plot_all_defects(
                 ][str(charge)][
                     "num_nearest_neighbours"
                 ]  # get number of distorted neighbours
-                neighbour_atoms = list(
-                    i[1]  # element symbol
-                    for i in distortion_metadata["defects"][defect]["charges"][
-                        str(charge)
-                    ]["distorted_atoms"]
-                )  # get element of the distorted site
-                if all(element == neighbour_atoms[0] for element in neighbour_atoms):
-                    neighbour_atom = neighbour_atoms[0]
-                else:
+                try:
+                    neighbour_atoms = list(
+                        i[1]  # element symbol
+                        for i in distortion_metadata["defects"][defect]["charges"][
+                            str(charge)
+                        ]["distorted_atoms"]
+                    )  # get element of the distorted site
+
+                    if all(
+                        element == neighbour_atoms[0] for element in neighbour_atoms
+                    ):
+                        neighbour_atom = neighbour_atoms[0]
+                    else:
+                        neighbour_atom = "NN"  # if different elements were distorted, just use nearest  # neighbours (NN) for label
+
+                except TypeError:
                     neighbour_atom = (
-                        "NN"  # if different elements were distorted, just use nearest
+                        "NN"  # if distorted_elements wasn't set, set label to "NN"
                     )
-                    # neighbours (NN) for label
+
                 f = plot_defect(
                     defect_species=defect_species,
                     charge=charge,
@@ -650,9 +661,28 @@ def plot_colorbar(
         energies_dict["distortions"][key] = i - energies_dict["Unperturbed"]
     energies_dict["Unperturbed"] = 0.0
 
+    # Plotting
+    # store indices of imported structures ("X%_from_Y") to plot differently later comparison
+    imported_indices = []
+    for i, entry in enumerate(energies_dict["distortions"].keys()):
+        if isinstance(entry, str) and "_from_" in entry:
+            imported_indices.append(i)
+
+    # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
+    keys = [
+        float(entry.split("%")[0]) / 100
+        if isinstance(entry, str) and "_from_" in entry
+        else entry
+        for entry in energies_dict["distortions"].keys()
+    ]
+    # sort keys and values
+    sorted_distortions, sorted_energies = zip(
+        *sorted(zip(keys, energies_dict["distortions"].values()))
+    )
+
     im = ax.scatter(
-        energies_dict["distortions"].keys(),
-        energies_dict["distortions"].values(),
+        sorted_distortions,
+        sorted_energies,
         c=array_disp[:-1],
         ls="-",
         s=50,
@@ -662,14 +692,29 @@ def plot_colorbar(
         alpha=1,
     )
     ax.plot(
-        energies_dict["distortions"].keys(),
-        energies_dict["distortions"].values(),
+        sorted_distortions,
+        sorted_energies,
         ls="-",
         markersize=1,
         marker="o",
         color=line_color,
         label=dataset_label,
     )
+    if imported_indices:
+        ax.scatter(
+            np.array(keys)[imported_indices],
+            np.array(list(energies_dict["distortions"].values()))[imported_indices],
+            c=array_disp[:-1],
+            edgecolors="k",
+            ls="-",
+            s=50,
+            marker="s",
+            zorder=10,  # make sure it's on top of the other points
+            cmap=colormap,
+            norm=norm,
+            alpha=1,
+            label="From other charge state",
+        )
     unperturbed_color = colormap(
         0
     )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
@@ -690,7 +735,7 @@ def plot_colorbar(
     energy_range.append(energies_dict["Unperturbed"])
     ax = _format_tick_labels(ax=ax, energy_range=energy_range)
 
-    plt.legend()
+    plt.legend(frameon=True)
 
     # Colorbar formatting
     cbar = f.colorbar(
@@ -868,9 +913,28 @@ def plot_datasets(
                 else:
                     default_style_settings[key] = optional_style_settings
 
+        # Plotting
+        # store indices of imported structures ("X%_from_Y") to plot differently later
+        # comparison
+        imported_indices = []
+        for i, entry in enumerate(dataset["distortions"].keys()):
+            if isinstance(entry, str) and "_from_" in entry:
+                imported_indices.append(i)
+
+        # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
+        keys = [
+            float(entry.split("%")[0]) / 100
+            if isinstance(entry, str) and "_from_" in entry
+            else entry
+            for entry in dataset["distortions"].keys()
+        ]
+        # sort keys and values
+        sorted_distortions, sorted_energies = zip(
+            *sorted(zip(keys, dataset["distortions"].values()))
+        )
         ax.plot(
-            dataset["distortions"].keys(),
-            dataset["distortions"].values(),
+            sorted_distortions,
+            sorted_energies,
             markersize=default_style_settings["markersize"],
             marker=default_style_settings["marker"],
             linestyle=default_style_settings["linestyle"],
@@ -878,6 +942,19 @@ def plot_datasets(
             label=dataset_labels[dataset_number],
             linewidth=default_style_settings["linewidth"],
         )
+        if imported_indices:
+            ax.scatter(
+                np.array(keys)[imported_indices],
+                np.array(list(dataset["distortions"].values()))[imported_indices],
+                c=colors[dataset_number],
+                edgecolors="k",
+                ls="-",
+                s=50,
+                zorder=10,  # make sure it's on top of the other lines
+                marker="s",
+                alpha=1,
+                label="From other charge state",
+            )
 
     datasets[0][
         "Unperturbed"
@@ -915,7 +992,7 @@ def plot_datasets(
     energy_range.append(datasets[0]["Unperturbed"])
     ax = _format_tick_labels(ax=ax, energy_range=energy_range)
 
-    ax.legend()  # show legend
+    ax.legend(frameon=True)  # show legend
 
     # Save plot?
     if save_tag:
