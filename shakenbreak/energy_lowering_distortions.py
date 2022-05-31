@@ -180,8 +180,8 @@ def get_deep_distortions(
                         # distortions for this defect
                         print(
                             f"New (according to structure matching) low-energy distorted "
-                            f"structure for {defect_species} found with charge state {charge}, "
-                            f"adding to low_energy_defects['{defect}'] list."
+                            f"structure found for {defect_species}, adding to low_energy_defects["
+                            f"'{defect}'] list."
                         )
                         low_energy_defects[defect].append(
                             {
@@ -402,10 +402,15 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                     0
                 ]  # first bond distortion for which this distortion was found
 
-                if distorted_distortion == "Rattled":
+                if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
                     distorted_dir = (
                         f"{output_path}/{defect_species}/Bond_Distortion_"
                         f"{distorted_distortion}_from_{distorted_charge}"
+                    )
+                elif isinstance(distorted_distortion, str) and "_from_" in distorted_distortion:
+                    distorted_dir = (
+                        f"{output_path}/{defect_species}/Bond_Distortion_"
+                        f"{distorted_distortion}"
                     )
                 else:
                     distorted_dir = (
@@ -413,6 +418,11 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                         f"{round(distorted_distortion * 100, 1)+0}%_from_"
                         f"{distorted_charge}"
                     )
+
+                if os.path.exists(distorted_dir):
+                    print(f"As {distorted_dir} already exists, it's assumed this structure "
+                          f"has already been tested. Skipping...")
+                    continue
 
                 print(f"Writing low-energy distorted structure to {distorted_dir}")
 
