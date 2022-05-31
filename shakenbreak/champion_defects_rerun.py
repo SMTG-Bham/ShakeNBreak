@@ -7,24 +7,22 @@ import os
 from shakenbreak.analysis import _sort_data, grab_contcar
 
 
-def read_defects_directories(defect_path=None) -> dict:
+def read_defects_directories(output_path: str = "./") -> dict:
     """
-    Reads all defect folders in the current directory and stores defect names and charge states in
-    a dictionary.
+    Reads all defect folders in the `output_path` directory and stores defect names and charge
+    states in a dictionary.
 
     Args:
-        defect_path (:obj: `str`): Path to the defect folders.
+        output_path (:obj:`str`):
+            Path to directory with your distorted defect calculations.
+            (Default is current directory = "./")
 
     Returns:
         Dictionary with defect names and charge states.
     """
-    if defect_path:
-        path = defect_path
-    else:
-        path = "./defects"
     list_subdirectories = [  # Get only subdirectories in the current directory
         i
-        for i in next(os.walk(path))[1]
+        for i in next(os.walk(output_path))[1]
         if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
     ]  # matching doped/PyCDT/pymatgen defect names
     list_name_charge = [

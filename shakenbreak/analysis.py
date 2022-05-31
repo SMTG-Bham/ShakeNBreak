@@ -94,7 +94,10 @@ def _get_distortion_filename(distortion) -> str:
         distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
         # as percentage with 1 decimal place (e.g. 50.0%)
     elif isinstance(distortion, str):
-        distortion_label = distortion  # e.g. "Unperturbed"/"Rattled" or runs from other charge state of the defect
+        if "_from_" in distortion:
+            distortion_label = f"Bond_Distortion_{distortion}"  # runs from other charge states
+        else:
+            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
     else:
         distortion_label = "Distortion_not_recognized"
     return distortion_label
