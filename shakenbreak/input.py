@@ -35,9 +35,7 @@ def warning_on_one_line(message, category, filename, lineno, file=None, line=Non
 warnings.formatwarning = warning_on_one_line
 
 # Helper functions
-def _create_folder(
-    folder_name: str
-    ) -> None:
+def _create_folder(folder_name: str) -> None:
     """
     Creates a folder at `./folder_name` if it doesn't already exist.
     """
@@ -47,6 +45,7 @@ def _create_folder(
             os.mkdir(path + "/" + folder_name)
         except OSError:
             print(f"Creation of the directory {path} failed")
+
 
 def _write_distortion_metadata(
     new_metadata: dict,
@@ -58,57 +57,77 @@ def _write_distortion_metadata(
 
     Args:
         new_metadata (:obj:`dict`): 
-            Distortion metadata containing distortion parameters used, as well as information about the \
-            defects and their charge states modelled.
+            Distortion metadata containing distortion parameters used, as well as information
+            about the defects and their charge states modelled.
         filename (:obj:`str`, optional): 
             Filename to save metadata. Defaults to "distortion_metadata.json".
     """
     if os.path.exists(filename):
-        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M") # keep copy of old metadata file
+        current_datetime = datetime.datetime.now().strftime(
+            "%Y-%m-%d-%H-%M"
+        )  # keep copy of old metadata file
         os.rename(filename, f"distortion_metadata_{current_datetime}.json")
         print(
-            f"There is a previous version of {filename}. Will rename old metadata to distortion_metadata_{current_datetime}.json"
+            f"There is a previous version of {filename}. Will rename old metadata to "
+            f"distortion_metadata_{current_datetime}.json"
         )
         try:
-            print(f"Combining old and new metadata in {filename}.")      
-            with open(f"distortion_metadata_{current_datetime}.json", "r") as old_metadata_file:
+            print(f"Combining old and new metadata in {filename}.")
+            with open(
+                f"distortion_metadata_{current_datetime}.json", "r"
+            ) as old_metadata_file:
                 old_metadata = json.load(old_metadata_file)
             # Combine old and new metadata dictionaries
             for defect in old_metadata["defects"]:
-                if defect in new_metadata["defects"]: # if defect in both metadata files
+                if (
+                    defect in new_metadata["defects"]
+                ):  # if defect in both metadata files
                     for charge in new_metadata["defects"][defect]["charges"]:
-                        if charge in old_metadata["defects"][defect]["charges"]: # if charge state in both files,
+                        if (
+                            charge in old_metadata["defects"][defect]["charges"]
+                        ):  # if charge state in both files,
                             # then we update the mesh of distortions (i.e. [-0.3, 0.3] + [-0.4, -0.2, 0.2, 0.4] )
-                            if new_metadata["defects"][defect]["charges"][charge] == old_metadata["defects"][defect]["charges"][charge]:
+                            if (
+                                new_metadata["defects"][defect]["charges"][charge]
+                                == old_metadata["defects"][defect]["charges"][charge]
+                            ):
                                 # make sure there are no inconsistencies (same number of neighbours distorted and same distortedatoms)
-                                new_metadata["defects"][defect]["charges"][charge]["distortion_parameters"] = {
-                                    "bond_distortions": 
-                                        new_metadata["defects"][defect]["charges"][charge]["distortion_parameters"]["bond_distortions"] + 
-                                        old_metadata["defects"][defect]["charges"][charge]["distortion_parameters"]["bond_distortions"]
-                                    }
-                            else: # different number of neighbours distorted in new run
+                                new_metadata["defects"][defect]["charges"][charge][
+                                    "distortion_parameters"
+                                ] = {
+                                    "bond_distortions": new_metadata["defects"][defect][
+                                        "charges"
+                                    ][charge]["distortion_parameters"][
+                                        "bond_distortions"
+                                    ]
+                                    + old_metadata["defects"][defect]["charges"][
+                                        charge
+                                    ]["distortion_parameters"]["bond_distortions"]
+                                }
+                            else:  # different number of neighbours distorted in new run
                                 warnings.warn(
                                     f"Previous and new metadata show different number of distorted neighbours for {defect} in charge {charge}. "
                                     f"File {filename} will only show the new number of distorted neighbours."
-                                    )
-                                continue 
-                        else: # if charge state only in old metadata, add it to file
-                            new_metadata["defects"][defect]["charges"][charge] = old_metadata["defects"][defect]["charges"][charge]
+                                )
+                                continue
+                        else:  # if charge state only in old metadata, add it to file
+                            new_metadata["defects"][defect]["charges"][
+                                charge
+                            ] = old_metadata["defects"][defect]["charges"][charge]
                 else:
-                    new_metadata["defects"][defect] = old_metadata["defects"][defect] # else add new entry
+                    new_metadata["defects"][defect] = old_metadata["defects"][
+                        defect
+                    ]  # else add new entry
         except KeyError:
             warnings.warn(
                 f"There was a problem when combining old and new metadata files! Will only write new metadata to {filename}."
             )
     with open(filename, "w") as new_metadata_file:
-        new_metadata_file.write(
-            json.dumps(new_metadata, indent=4)
-            ) 
+        new_metadata_file.write(json.dumps(new_metadata, indent=4))
+
 
 def _update_struct_defect_dict(
-    defect_dict: dict, 
-    structure: Structure, 
-    poscar_comment: str
+    defect_dict: dict, structure: Structure, poscar_comment: str
 ) -> dict:
     """
     Given a Structure object and POSCAR comment, update the folders dictionary (generated with
@@ -130,12 +149,12 @@ def _update_struct_defect_dict(
     defect_dict_copy["POSCAR Comment"] = poscar_comment
     return defect_dict_copy
 
+
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
     incar_settings: dict,
     potcar_settings: Optional[dict] = None,
-    distortion_type: str = "BDM",
 ) -> None:
     """
     Creates folders for storing VASP ShakeNBreak files.
@@ -150,13 +169,6 @@ def _create_vasp_input(
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}).
-        distortion_type (:obj:`str`):
-            Type of distortion method.
-            Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
-            is used when relaxing a defect from the relaxed structure(s) found for other charge
-            states of that defect – in which case only the unperturbed and rattled configurations of
-            the relaxed other-charge defect structure(s) are calculated.
-            (Default: 'BDM')
     """
     _create_folder(defect_name)  # create folder for defect
     for (
@@ -168,16 +180,13 @@ def _create_vasp_input(
         potcar_settings_copy = copy.deepcopy(
             potcar_settings
         )  # vasp_gam_files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
-        if distortion_type != 'BDM':
-            distortion_key = f'{distortion_type}_{distortion}'
-        else:
-            distortion_key = distortion
         vasp_gam_files(
             single_defect_dict=single_defect_dict,
-            input_dir=f"{defect_name}/{distortion_key}",
+            input_dir=f"{defect_name}/{distortion}",
             incar_settings=incar_settings,
             potcar_settings=potcar_settings_copy,
         )
+
 
 def calc_number_electrons(
     defect_dict: dict,
@@ -501,7 +510,7 @@ def apply_distortions(
         perturbed_structure = rattle(
             defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min, **kwargs
         )
-        distorted_defect_dict["distortions"]["rattled"] = perturbed_structure
+        distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
             "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
@@ -513,6 +522,7 @@ def apply_distortions(
             ] = defect_site_index
     return distorted_defect_dict
 
+
 def apply_shakenbreak(
     defect_dict: dict,
     oxidation_states: dict,
@@ -522,7 +532,6 @@ def apply_shakenbreak(
     bond_distortions: Optional[list] = None,
     stdev: float = 0.25,
     distorted_elements: Optional[dict] = None,
-    distortion_type: str = "BDM",
     potcar_settings: Optional[dict] = None,
     write_files: bool = True,
     verbose: bool = False,
@@ -566,13 +575,6 @@ def apply_shakenbreak(
             in the form of a dictionary with format {'defect_name': ['element1', 'element2',
             ...]} (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to the defect are
             chosen. (Default: None)
-        distortion_type (:obj:`str`) :
-            Type of distortion method.
-            Either 'BDM' (bond distortion method (standard)) or 'champion'. The option 'champion'
-            is used when relaxing a defect from the relaxed structure(s) found for other charge
-            states of that defect – in which case only the unperturbed and rattled configurations of
-            the relaxed other-charge defect structure(s) are calculated.
-            (Default: 'BDM')
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
@@ -702,11 +704,13 @@ def apply_shakenbreak(
                     {
                         int(charge): {
                             "num_nearest_neighbours": num_nearest_neighbours,
-                            "distorted_atoms": distorted_structures["distortion_parameters"]["distorted_atoms"],
+                            "distorted_atoms": distorted_structures[
+                                "distortion_parameters"
+                            ]["distorted_atoms"],
                             "distortion_parameters": {
-                                "bond_distortions": bond_distortions, # store distortions used for each charge state,
-                                "rattle_stdev": stdev, # in case posterior runs use finer mesh for only certain defects/charge states
-                            }
+                                "bond_distortions": bond_distortions,  # store distortions used for each charge state,
+                                "rattle_stdev": stdev,  # in case posterior runs use finer mesh for only certain defects/charge states
+                            },
                         }
                     }
                 )  # store distortion parameters used for latter analysis
@@ -715,7 +719,9 @@ def apply_shakenbreak(
                     "distortions"
                 ].items():
                     poscar_comment = (
-                        key_distortion.split("_")[-1] # Get distortion factor (-60.%) or 'rattled' 
+                        key_distortion.split("_")[
+                            -1
+                        ]  # Get distortion factor (-60.%) or 'Rattled'
                         + "__"
                         + vasp_defect_inputs[f"{defect_name}_{charge}"][
                             "POSCAR Comment"
@@ -729,7 +735,9 @@ def apply_shakenbreak(
                         poscar_comment,
                     )
 
-                dict_defects[defect_name][f"{defect_name}_{charge}"] = charged_defect  # add charged defect entry to dict
+                dict_defects[defect_name][
+                    f"{defect_name}_{charge}"
+                ] = charged_defect  # add charged defect entry to dict
                 incar_dict = default_incar_settings.copy()
                 incar_dict.update(incar_settings)
                 if write_files:
@@ -738,7 +746,6 @@ def apply_shakenbreak(
                         distorted_defect_dict=charged_defect,
                         incar_settings=incar_dict,
                         potcar_settings=potcar_settings,
-                        distortion_type=distortion_type,
                     )
             print()
             if verbose:
@@ -746,11 +753,13 @@ def apply_shakenbreak(
                     "________________________________________________________"
                 )  # output easier to read
 
-    # save metadata 
+    # save metadata
     _write_distortion_metadata(
         new_metadata=distortion_metadata,
         filename="distortion_metadata.json",
     )
 
-    return distortion_metadata, dict_defects  # TODO: Return both distorted defect structures and metadata
-        
+    return (
+        distortion_metadata,
+        dict_defects,
+    )  # TODO: Return both distorted defect structures and metadata

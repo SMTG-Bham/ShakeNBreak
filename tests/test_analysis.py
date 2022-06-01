@@ -73,7 +73,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertListEqual(
             self.In_Cd_1_distortion_data,
             [
-                "rattled",
+                "Rattled",
                 "-214.88259023",
                 "Unperturbed",
                 "-214.87608986",
@@ -107,7 +107,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test In_Cd_1:
         self.assertDictEqual(
             self.organized_In_Cd_1_distortion_data,
-            {"distortions": {"rattled": -214.88259023}, "Unperturbed": -214.87608986},
+            {"distortions": {"Rattled": -214.88259023}, "Unperturbed": -214.87608986},
         )
 
         # test with no 'Unperturbed':
@@ -136,7 +136,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         gs_distortion = analysis.get_gs_distortion(
             self.organized_In_Cd_1_distortion_data
         )
-        self.assertEqual(gs_distortion, (-0.006500369999997702, "rattled"))
+        self.assertEqual(gs_distortion, (-0.006500369999997702, "Rattled"))
 
         # test with 'Unperturbed' not present:
         gs_distortion_no_unperturbed = analysis.get_gs_distortion(
@@ -164,7 +164,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test verbose = False
         with patch("builtins.print") as mock_not_verbose_print:
             sorted_V_Cd_distortion_data = analysis._sort_data(
-                os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"), verbose = False
+                os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
+                verbose=False,
             )
             self.assertEqual(
                 sorted_V_Cd_distortion_data,
@@ -401,13 +402,14 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
 
-        # test exception for wrong defect species        
+        # test exception for wrong defect species
         with self.assertRaises(FileNotFoundError) as e:
             wrong_path_error = FileNotFoundError(
                 f"Path {self.DATA_DIR}/vac_1_Cd_1 does not exist!"
             )
             analysis.get_structures(
-                defect_species="vac_1_Cd_1", output_path=self.DATA_DIR, # wrong defect species
+                defect_species="vac_1_Cd_1",
+                output_path=self.DATA_DIR,  # wrong defect species
             )
             self.assertIn(wrong_path_error, e.exception)
 
@@ -450,7 +452,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             # no print called:
             mock_not_verbose_print.assert_not_called()
             # check same outputs:
-            self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
+            self.assertEqual(
+                defect_energies_dict.keys(), energies_dict_keys_dict.keys()
+            )
             bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
             self.assertEqual(
                 list(defect_energies_dict["distortions"].keys()), bond_distortions
@@ -805,12 +809,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 unconverged_structures_dict, defect_energies_dict
             )
 
-            warning_message = "All structures in defect_structures_dict are not converged. " \
-                              "Returning None."
+            warning_message = (
+                "All structures in defect_structures_dict are not converged. "
+                "Returning None."
+            )
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, None)
+
+    # TODO: Add magnetisation tests
 
 
 if __name__ == "__main__":

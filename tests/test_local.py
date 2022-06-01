@@ -211,9 +211,8 @@ class DistortionLocalTestCase(unittest.TestCase):
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
             incar_settings=kwarged_incar_settings,
-            distortion_type="kwarged",
         )
-        V_Cd_kwarg_minus50_folder = "vac_1_Cd_0/kwarged_Bond_Distortion_-50.0%"
+        V_Cd_kwarg_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_kwarg_minus50_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_minus50_folder + "/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
