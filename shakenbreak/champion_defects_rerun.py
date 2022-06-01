@@ -7,24 +7,22 @@ import os
 from shakenbreak.analysis import _sort_data, grab_contcar
 
 
-def read_defects_directories(defect_path=None) -> dict:
+def read_defects_directories(output_path: str = "./") -> dict:
     """
-    Reads all defect folders in the current directory and stores defect names and charge states in
-    a dictionary.
+    Reads all defect folders in the `output_path` directory and stores defect names and charge
+    states in a dictionary.
 
     Args:
-        defect_path (:obj: `str`): Path to the defect folders.
+        output_path (:obj:`str`):
+            Path to directory with your distorted defect calculations.
+            (Default is current directory = "./")
 
     Returns:
         Dictionary with defect names and charge states.
     """
-    if defect_path:
-        path = defect_path
-    else:
-        path = "./defects"
     list_subdirectories = [  # Get only subdirectories in the current directory
         i
-        for i in next(os.walk(path))[1]
+        for i in next(os.walk(output_path))[1]
         if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
     ]  # matching doped/PyCDT/pymatgen defect names
     list_name_charge = [
@@ -40,7 +38,7 @@ def read_defects_directories(defect_path=None) -> dict:
     return defect_charges_dict
 
 
-def compare_champion_to_distortions(
+def compare_test_struc_to_distortions(
     defect_species, base_path, min_e_diff=0.05
 ) -> tuple:
     """
@@ -54,7 +52,7 @@ def compare_champion_to_distortions(
         base_path (:obj: `str`):
             Path to the defect folders (within which the `defect_name` folder is located).
         min_e_diff (:obj: `float`):
-            Minimum energy difference (in eV) between the `champion` test relaxation and the
+            Minimum energy difference (in eV) between the `Distorted` test relaxation and the
             previous lowest energy relaxation, to consider it as having found a new energy-lowering
             distortion. Default is 0.05 eV.
 
@@ -63,39 +61,39 @@ def compare_champion_to_distortions(
         `energy_difference` eV lower than the previous lowest energy relaxation),
         where `energy_diff` is the energy difference between this lowest-energy relaxation and
         the Unperturbed result. If False, `energy_diff` is the energy difference between the
-        `champion` test relaxation and the previous lowest energy relaxation.
+        `Distorted` test relaxation and the previous lowest energy relaxation.
     """
     distorted_energies_dict, distorted_energy_drop, distorted_gs_dist = _sort_data(
         f"{base_path}/{defect_species}/{defect_species}.txt"
     )
-    champ_energies_dict, champ_energy_drop, champ_gs_dist = _sort_data(
-        f"{base_path}/{defect_species}/champion_{defect_species}.txt"
+    test_struc_energies_dict, test_struc_energy_drop, test_struc_gs_dist = _sort_data(
+        f"{base_path}/{defect_species}/Distorted_{defect_species}.txt"
     )
 
     # Check what distortion lead to the lowest E structure: Unperturbed, bond-distorted or just
-    # rattled?
-    if isinstance(distorted_gs_dist, float) or distorted_gs_dist == "rattled":
+    # Rattled?
+    if isinstance(distorted_gs_dist, float) or distorted_gs_dist == "Rattled":
         min_energy_distorted = distorted_energies_dict["distortions"][
             distorted_gs_dist
         ]
     else:
         min_energy_distorted = distorted_energies_dict["Unperturbed"]
 
-    if isinstance(champ_gs_dist, float) or champ_gs_dist == "rattled":
-        min_energy_champ = champ_energies_dict["distortions"][champ_gs_dist]
+    if isinstance(test_struc_gs_dist, float) or test_struc_gs_dist == "Rattled":
+        min_energy_test_struc = test_struc_energies_dict["distortions"][test_struc_gs_dist]
     else:
-        min_energy_champ = champ_energies_dict["Unperturbed"]
+        min_energy_test_struc = test_struc_energies_dict["Unperturbed"]
 
     energy_diff = (
-        min_energy_champ - min_energy_distorted
+        min_energy_test_struc - min_energy_distorted
     )
     #  if lower E structure found by importing the gs of another charge state
     if energy_diff < -min_e_diff:
         energy_diff_vs_unperturbed = (
-                min_energy_champ - distorted_energies_dict["Unperturbed"]
+                min_energy_test_struc - distorted_energies_dict["Unperturbed"]
         )  # for later comparison, set the energy difference relative to Unperturbed structure (not
         # to the minimum energy found with bond distortions)
-        print(f"Lower energy structure found for the 'champion' relaxation with {defect_species}, "
+        print(f"Lower energy structure found for the 'Distorted' relaxation with {defect_species}, "
               f"with an energy {energy_diff:.2f} eV lower than the previous lowest energy from "
               f"distortions, with an energy {energy_diff_vs_unperturbed:.2f} eV lower than "
               f"relaxation from the Unperturbed structure.")
@@ -103,7 +101,7 @@ def compare_champion_to_distortions(
     return False, energy_diff
 
 
-def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05) -> dict:
+def get_distorted_defects(defect_charges_dict, base_path, energy_difference=0.05) -> dict:
     """
     Get defect names and charge states for which bond distortion found a ground-state structure
     that is missed by Unperturbed relaxation.
@@ -140,16 +138,16 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
             # initial bond distortion tests didn't find an energy-lowering distortion)
 
             if os.path.isfile(
-                f"{base_path}/{defect_name}/champion_{defect_name}.txt"
-            ):  # if champion folder exists
-                distortion_type = "champion"
+                f"{base_path}/{defect_name}/Distorted_{defect_name}.txt"
+            ):  # if Distorted folder exists
+                distortion_type = "Distorted"
                 energies_file = (
                     f"{base_path}/{defect_name}/{distortion_type}_{defect_name}.txt"
                 )
                 energies_dict, E_diff, gs_distortion = _sort_data(
                     energies_file
                 )  # between imported structure and imported structure + bond distortions
-                new_struct_found, energy_diff = compare_champion_to_distortions(
+                new_struct_found, energy_diff = compare_test_struc_to_distortions(
                     defect_name, base_path, energy_difference
                 )  # check if lower energy structure was found from importing the ground-state
                 # found for another charge state
@@ -193,8 +191,8 @@ def get_champion_defects(defect_charges_dict, base_path, energy_difference=0.05)
                     )
                     if (
                         distortion_type == "champion"
-                    ):  # then get the Unperturbed from BDM (not the imported structure found for other
-                        # charge state)
+                    ):  # then get the Unperturbed from BDM (not the imported structure found for
+                        # other charge state)
                         unperturbed_contcar = (
                             f"{base_path}/{defect_name}/"
                             f"Unperturbed/CONTCAR"

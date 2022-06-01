@@ -86,14 +86,14 @@ class ChampTestCase(unittest.TestCase):
         ) as fp:
             fp.write(champion_txt)
 
-        output = champion_defects_rerun.compare_champion_to_distortions(
+        output = champion_defects_rerun.compare_test_struc_to_distortions(
             defect_species="vac_1_Cd_0", base_path=self.DATA_DIR
         )
         self.assertFalse(output[0])
         np.testing.assert_almost_equal(output[1], 0.635296650000015)
 
         # True test:
-        champion_txt = f"""rattled
+        champion_txt = f"""Rattled
         -206.700
         Unperturbed
         -205.843"""
@@ -103,7 +103,7 @@ class ChampTestCase(unittest.TestCase):
             fp.write(champion_txt)
 
         with patch("builtins.print") as mock_print:
-            output = champion_defects_rerun.compare_champion_to_distortions(
+            output = champion_defects_rerun.compare_test_struc_to_distortions(
                 defect_species="vac_1_Cd_0", base_path=self.DATA_DIR
             )
             mock_print.assert_called_with(
@@ -115,7 +115,7 @@ class ChampTestCase(unittest.TestCase):
         np.testing.assert_almost_equal(output[1], -0.9768854200000021)
 
         # test when lower energy, but within threshold:
-        output = champion_defects_rerun.compare_champion_to_distortions(
+        output = champion_defects_rerun.compare_test_struc_to_distortions(
             defect_species="vac_1_Cd_0", base_path=self.DATA_DIR, min_e_diff=0.25
         )
         self.assertFalse(output[0])
@@ -124,7 +124,7 @@ class ChampTestCase(unittest.TestCase):
     def test_get_champion_defects(self):
         """Test getting champion defect energies"""
         os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2"))
-        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/rattled"))
+        os.mkdir(os.path.join(self.DATA_DIR, "vac_1_Cd_2/Rattled"))
         os.mkdir(
             os.path.join(self.DATA_DIR, "vac_1_Cd_2/Unperturbed")
         )
@@ -139,7 +139,7 @@ class ChampTestCase(unittest.TestCase):
         )
 
         # False test (champion higher energy for vac_1_Cd_0):
-        champion_txt = f"""rattled
+        champion_txt = f"""Rattled
                 -205.700
                 Unperturbed
                 -205.843"""
@@ -148,7 +148,7 @@ class ChampTestCase(unittest.TestCase):
         ) as fp:
             fp.write(champion_txt)
 
-        V_Cd_2_txt = f"""rattled
+        V_Cd_2_txt = f"""Rattled
                         -205.900
                         Unperturbed
                         -205.843"""
@@ -169,7 +169,7 @@ class ChampTestCase(unittest.TestCase):
         defect_charges_dict = champion_defects_rerun.read_defects_directories(
             self.DATA_DIR
         )
-        output = champion_defects_rerun.get_champion_defects(
+        output = champion_defects_rerun.get_distorted_defects(
             defect_charges_dict=defect_charges_dict, base_path=self.DATA_DIR
         )
         V_Cd_relaxed_unperturbed_structure = Structure.from_file(
@@ -205,7 +205,7 @@ class ChampTestCase(unittest.TestCase):
         )
 
         # True test (champion lower energy for vac_1_Cd_0):
-        champion_txt = f"""rattled
+        champion_txt = f"""Rattled
                         -206.700
                         Unperturbed
                         -205.823"""  # also changing 'Unperturbed' energy here to confirm we take
@@ -215,7 +215,7 @@ class ChampTestCase(unittest.TestCase):
         ) as fp:
             fp.write(champion_txt)
 
-        output = champion_defects_rerun.get_champion_defects(
+        output = champion_defects_rerun.get_distorted_defects(
             defect_charges_dict=defect_charges_dict, base_path=self.DATA_DIR
         )
         self.assertEqual(
