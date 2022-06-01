@@ -207,9 +207,10 @@ def _purge_data_dicts(
     - Any data point from energies_dict if its displacement is not in the disp_dict\
         (this might be due to the lattice matching algorithm failing).
     Args:
-        disp_dict (dict): dictionary with displacements (for each structure relative to Unperturbed)
-        energies_dict (dict): dictionary with final energies (for each structure relative to
-        Unperturbed)
+        disp_dict (dict): 
+            dictionary with displacements (for each structure relative to Unperturbed)
+        energies_dict (dict): 
+            dictionary with final energies (for each structure relative to Unperturbed)
 
     Returns:
         (dict, dict): Consistent dictionaries of displacements and energies, containing data for
@@ -230,6 +231,7 @@ def _purge_data_dicts(
 
 
 def _save_plot(
+    fig: plt.Figure,
     defect_name: str,
     save_format: str,
 ) -> None:
@@ -237,14 +239,18 @@ def _save_plot(
     Save plot in directory ´distortion_plots´
 
     Args:
-        defect_name (str): _description_
-        save_format (str): _description_
+        fig (:obj:`matplotlib.figure.Figure`): 
+            matplotlib.figure.Figure object to save
+        defect_name (:obj:`std`): 
+            Defect name that will be used as file name.
+        save_format (:obj:`str`):
+            Format to save the plot as, given as string.
     """
     wd = os.getcwd()
     if not os.path.isdir(wd + "/distortion_plots/"):
         os.mkdir(wd + "/distortion_plots/")
     print(f"Plot saved to {wd}/distortion_plots/")
-    plt.savefig(
+    fig.savefig(
         wd + "/distortion_plots/" + defect_name + f".{save_format}",
         format=save_format,
         transparent=True,
@@ -773,6 +779,7 @@ def plot_colorbar(
     # Save plot?
     if save_tag:
         _save_plot(
+            fig=f,
             defect_name=defect_name,
             save_format=save_format,
         )
@@ -1003,6 +1010,7 @@ def plot_datasets(
     # Save plot?
     if save_tag:
         _save_plot(
+            fig=f,
             defect_name=defect_name,
             save_format=save_format,
         )

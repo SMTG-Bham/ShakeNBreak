@@ -42,10 +42,15 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.organized_In_Cd_1_distortion_data = analysis._organize_data(
             self.In_Cd_1_distortion_data
         )
-
+        self.V_Cd_displacement_dict = analysis.calculate_struct_comparison(
+            defect_structures_dict=analysis.get_structures(
+                defect_species='vac_1_Cd_0', 
+                output_path=self.DATA_DIR,
+            )
+        )
 
     def tearDown(self):
-        return  
+        if_present_rm(f"{os.getcwd()}/distortion_plots")
     
     def test_format_defect_name(self):
         """Test _format_defect_name() function."""
@@ -107,6 +112,39 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(max_energy_above_unperturbed, 0.2 * 1000)
         self.assertEqual(y_label, "Energy (meV)")
         
-        
+    def test_purge_data_dict(self):
+        """Test _purge_data_dict() function."""
+        # Test if dictionaries have same data points when displacement dict is incomplete
+        disp_dict=deepcopy(self.V_Cd_displacement_dict) 
+        disp_dict.pop(-0.6) # Missing data point
+        disp_dict, energies_dict = plotting._purge_data_dicts(
+            energies_dict=deepcopy(self.organized_V_Cd_distortion_data),
+            disp_dict=deepcopy(disp_dict)
+        )
+        self.assertEqual(
+            set(list(disp_dict.keys())) - set(list(energies_dict['distortions'].keys())), {'Unperturbed'}
+            ) # only difference should be Unperturbed
+        # Test behaviour when energy dict is incomplete
+        energies_dict=deepcopy(self.organized_V_Cd_distortion_data)
+        energies_dict["distortions"].pop(-0.6)
+        disp_dict, energies_dict = plotting._purge_data_dicts(
+            energies_dict=deepcopy(self.organized_V_Cd_distortion_data),
+            disp_dict=deepcopy(disp_dict)
+        )
+        self.assertEqual(
+            set(list(disp_dict.keys())) - set(list(energies_dict['distortions'].keys())), {'Unperturbed'}
+            ) # only difference should be Unperturbed
+
+    def test_save_plot(self):
+        "Test _save_plot() function"
+        fig, ax = plt.subplots(1,1)
+        if_present_rm(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg")
+        plotting._save_plot(
+            fig=fig,
+            defect_name='vac_1_Cd_0',
+            save_format='svg'
+        )
+        self.assertTrue(os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg"))
+
 # if __name__ == "__main__":
 #     unittest.main()
