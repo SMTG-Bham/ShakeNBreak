@@ -57,18 +57,19 @@ def _write_distortion_metadata(
 
     Args:
         new_metadata (:obj:`dict`): 
-            Distortion metadata containing distortion parameters used, as well as information about the \
-            defects and their charge states modelled.
+            Distortion metadata containing distortion parameters used, as well as information
+            about the defects and their charge states modelled.
         filename (:obj:`str`, optional): 
             Filename to save metadata. Defaults to "distortion_metadata.json".
     """
     if os.path.exists(filename):
         current_datetime = datetime.datetime.now().strftime(
-            "%Y-%m-%d_%H:%M"
+            "%Y-%m-%d-%H-%M"
         )  # keep copy of old metadata file
         os.rename(filename, f"distortion_metadata_{current_datetime}.json")
         print(
-            f"There is a previous version of {filename}. Will rename old metadata to distortion_metadata_{current_datetime}.json"
+            f"There is a previous version of {filename}. Will rename old metadata to "
+            f"distortion_metadata_{current_datetime}.json"
         )
         try:
             print(f"Combining old and new metadata in {filename}.")
