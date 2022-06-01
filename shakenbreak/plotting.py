@@ -6,10 +6,10 @@ import os
 import warnings
 import json
 from typing import Optional
+import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import numpy as np
 import seaborn as sns
 from matplotlib.figure import Figure
 
@@ -20,7 +20,7 @@ from shakenbreak.analysis import (
     calculate_struct_comparison,
 )
 
-## Matplotlib Style formatting
+# Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
@@ -116,7 +116,12 @@ def _format_defect_name(
         str: formatted defect name
     """
     if not isinstance(defect_species, str): # Check inputs 
-        raise(TypeError(f"defect_species {defect_species} must be a string"))
+        raise(TypeError(f"`defect_species` {defect_species} must be a string"))
+    if not isinstance(charge, int):
+        try:
+            charge = int(charge)
+        except ValueError:
+            raise(ValueError(f"`charge` {charge} must be an integer!"))
     # Format defect name for title/axis labels
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
@@ -154,7 +159,7 @@ def _format_defect_name(
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
         elif defect_type != "Int":
-            raise ValueError("Defect type not recognized. Please check spelling.")
+            raise ValueError(f"Defect type {defect_type} not recognized. Please check spelling.")
     return defect_name
 
 def _change_energy_units_to_meV(
@@ -173,11 +178,11 @@ def _change_energy_units_to_meV(
     Returns:
         tuple: (max_energy_above_unperturbed, energies_dict, y_label) with energy values in meV
     """
-    y_label = y_label.replace("eV", "meV")
+    if 'meV' not in y_label:
+        y_label = y_label.replace("eV", "meV")
     if max_energy_above_unperturbed < 1:  # assume eV
-        max_energy_above_unperturbed *= 1000  # convert to meV
+        max_energy_above_unperturbed = max_energy_above_unperturbed * 1000  # convert to meV
     for key in energies_dict["distortions"].keys():  # convert to meV
-        energies_dict["distortions"][key] *= 1000
         energies_dict["distortions"][key] = (
             energies_dict["distortions"][key] * 1000
         )
@@ -517,7 +522,7 @@ def plot_defect(
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
             title=defect_name,
-            dataset_label=f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}",
+            dataset_label=f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}" if num_nearest_neighbours != None else f"ShakeNBreak: {num_nearest_neighbours} NN",
             metric=metric,
             save_tag=save_tag,
             y_label=y_label,
@@ -532,7 +537,7 @@ def plot_defect(
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
             title=defect_name,
-            dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"],
+            dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"] if num_nearest_neighbours != None else [f"ShakeNBreak: {num_nearest_neighbours} NN"],
             save_tag=save_tag,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,

@@ -853,6 +853,8 @@ def _site_magnetizations(
     outcar: Outcar,
     structure: Structure,
     threshold: float = 0.1,
+    defect_site: Optional[int] = None,
+    orbital_projections: Optional[bool] = False,
 ) -> pd.DataFrame :
     """
     Prints sites with magnetization above threshold.
@@ -864,6 +866,11 @@ def _site_magnetizations(
             Structure object
         threshold (float, optional): 
             Magnetization threhold to print site. Defaults to 0.1 e-.
+        defect_site (int, optional):
+            Index of defect site.
+        orbital_projections (bool, optional):
+            Whether to print orbital projections. If not necessary, set to False (faster).
+            (Default: False)
     Returns:
         df (:obj:`pandas.DataFrame`): 
             pandas.Dataframe with sites with magnetization above threshold.
@@ -871,7 +878,7 @@ def _site_magnetizations(
     # Site magnetizations
     mag = outcar.magnetization
     significant_magnetizations = {}
-    for index, element in enumerate(mag):
+    for index, element in enumerate(mag): # loop over structure sites
         mag_array = np.array(list(element.values()))
         total_mag = np.sum(
             mag_array[np.abs(mag_array) > 0.01]
@@ -882,22 +889,30 @@ def _site_magnetizations(
                 'Coords': [round(coord,3 ) for coord in structure[index].frac_coords],
                 'Total mag': round(total_mag, 3),
             }
-            significant_magnetizations[f"{structure[index].species_string}({index})"].update(
-                {k: round(v,4) for k,v in element.items() if k != 'tot'} # dont include total site magnetization again
-            )
+            if isinstance(defect_site, int):
+                significant_magnetizations[f"{structure[index].species_string}({index})"].update({
+                    'Dist. (A)': round(structure.get_distance(i = defect_site, j = index), 1)
+                })
+            if orbital_projections:
+                significant_magnetizations[f"{structure[index].species_string}({index})"].update(
+                    {k: round(v,4) for k,v in element.items() if k != 'tot'} # include site magnetization of each orbital 
+                    # but dont include total site magnetization again
+                )
     df = pd.DataFrame.from_dict(significant_magnetizations, orient = 'index')
     return df
 
 def get_site_magnetizations(
-    defect: str,
+    defect_species: str,
     distortions: str,
     output_path: str = '.',
     threshold: float = 0.1,
+    defect_site: Optional[int or list] = None,
+    orbital_projections: Optional[bool] = False,
 ) -> dict:
     """
     For given distortions, find sites with significant magnetization and return as dictionary.
     Args:
-        defect (:obj:`str`):
+        defect_species (:obj:`str`):
             Name of defect including charge state (e.g. 'vac_1_Cd_0')
         distortions (:obj:`list`):
             List of distortions to analyse (e.g. ['Unperturbed', 0.1, -0.2])
@@ -907,19 +922,42 @@ def get_site_magnetizations(
         threshold (:obj:`float`, optional):
             Magnetization threshold to consider site.
             (Default: 0.1)
-
+        defect_site (:obj:`int` or :obj:`list`, optional):
+            Site index or fractional coordinates of the defect. If not specified, will try to read \
+            from distortion_metadata.json. If this file is not present, will not include the distance \
+            between the defect and the sites with significant magnetization in the dataframe.
+        orbital_projections (bool, optional):
+            Whether to print orbital projections. If not necessary, set to False (faster).
+            (Default: False)
     Returns:
         magnetizations (:obj:`dict`): 
             Dictionary matching distortion to DataFrame containing magnetization info.
     """
     magnetizations = {}
+    
+    if not defect_site: # look for defect site, in order to include the distance between sites with \
+        # significant magnetization and the defect
+        if os.path.exists(f"{output_path}/distortion_metadata.json"):
+            with open(f"{output_path}/distortion_metadata.json", 'r') as f:
+                defect_species_without_charge = '_'.join(defect_species.split('_')[0:-1]) # remove charge state
+                defect_site = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
+        
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
-        structure = grab_contcar(f"{output_path}/{defect}/{dist_label}/CONTCAR")
-        assert os.path.exists(f"{output_path}/{defect}/{dist_label}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect}/{dist_label}/OUTCAR"
-        outcar = Outcar(f"{output_path}/{defect}/{dist_label}/OUTCAR")
+        structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
+        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray): # for vacancies, append fake atom
+            structure.append(species='V', coords = defect_site, coords_are_cartesian = False)
+            defect_site = -1 # index of the added fake atom
+        assert os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR"
+        outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
         print(f"Analysing distortion {distortion}. Total magnetization:", round(outcar.total_mag, 3))
-        df = _site_magnetizations(outcar = outcar, structure = structure, threshold = threshold)
+        df = _site_magnetizations(
+            outcar = outcar, 
+            structure = structure, 
+            threshold = threshold,
+            defect_site = defect_site,
+            orbital_projections = orbital_projections,
+            )
         if not df.empty:
             magnetizations[distortion] = df
         else:
