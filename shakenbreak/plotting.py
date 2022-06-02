@@ -38,8 +38,10 @@ def _format_tick_labels(
      2 decimal points otherwise.
 
     Args:
-        ax (mpl.axes.Axes): Axes of figure to format
-        energy_range (list): List of y (energy) values
+        ax (obj:`mpl.axes.Axes`): 
+            matplotlib.axes.Axes of figure to format
+        energy_range (:obj:`list`): 
+            List of y (energy) values
 
     Returns:
         mpl.axes.Axes: Formatted axes
@@ -79,11 +81,16 @@ def _format_axis(
     Format and set axis labels of distortion plots, and set axis locators.
 
     Args:
-        ax (mpl.axes.Axes): current matplotlib Axes
-        defect_name (str): name of defect (e.g. 'vac_1_Cd_0')
-        y_label (str): label for y axis
-        num_nearest_neighbours (Optional[int]): number of distorted nearest neighbours
-        neighbour_atom (Optional[str]): element symbol of distorted nearest neighbour
+        ax (:obj:`mpl.axes.Axes`): 
+            current matplotlib.axes.Axes 
+        defect_name (:obj:`str`): 
+            name of defect (e.g. 'vac_1_Cd_0')
+        y_label (:obj:`str`): 
+            label for y axis
+        num_nearest_neighbours (:obj:`int`): 
+            number of distorted nearest neighbours
+        neighbour_atom (:obj:`str`):  
+            element symbol of distorted nearest neighbour
 
     Returns:
         mpl.axes.Axes: axes with formatted labels
@@ -91,6 +98,11 @@ def _format_axis(
     if num_nearest_neighbours and neighbour_atom and defect_name:
         x_label = (
             f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near"
+            f" {defect_name})"
+        )
+    elif num_nearest_neighbours and defect_name:
+        x_label = (
+            f"Bond Distortion Factor (for {num_nearest_neighbours} NN near"
             f" {defect_name})"
         )
     else:
@@ -239,8 +251,8 @@ def _save_plot(
     Save plot in directory ´distortion_plots´
 
     Args:
-        fig (:obj:`matplotlib.figure.Figure`): 
-            matplotlib.figure.Figure object to save
+        fig (:obj:`mpl.figure.Figure`): 
+            mpl.figure.Figure object to save
         defect_name (:obj:`std`): 
             Defect name that will be used as file name.
         save_format (:obj:`str`):
@@ -258,7 +270,6 @@ def _save_plot(
     )
 
 
-# TODO: Refactor 'rms' to 'disp' (Done:). Will do when going through and creating tests for this submodule.
 def plot_all_defects(
     defects_dict: dict,
     output_path: Optional[str] = ".",
@@ -367,7 +378,7 @@ def plot_all_defects(
                         "NN"  # if distorted_elements wasn't set, set label to "NN"
                     )
 
-                f = plot_defect(
+                fig= plot_defect(
                     defect_species=defect_species,
                     charge=charge,
                     energies_dict=energies_dict,
@@ -381,7 +392,7 @@ def plot_all_defects(
                     line_color=line_color,
                     save_format=save_format,
                 )
-                figures[defect_species] = f
+                figures[defect_species] = fig
     return figures
 
 
@@ -451,7 +462,7 @@ def plot_defect(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        Energy vs distortion plot, as a Matplotlib Figure object
+        Energy vs distortion plot, as a mpl Figure object
     """
     # Check directories and input
     if not os.path.isdir(output_path):  # if output_path does not exist, raise error
@@ -533,7 +544,7 @@ def plot_defect(
         )  # convert energy units from eV to meV, and update y label
 
     if add_colorbar:
-        f = plot_colorbar(
+       fig= plot_colorbar(
             energies_dict=energies_dict,
             disp_dict=disp_dict,
             defect_name=defect_name,
@@ -551,7 +562,7 @@ def plot_defect(
             save_format=save_format,
         )
     else:
-        f = plot_datasets(
+       fig= plot_datasets(
             datasets=[energies_dict],
             defect_name=defect_name,
             num_nearest_neighbours=num_nearest_neighbours,
@@ -627,7 +638,7 @@ def plot_colorbar(
             (Default: 'svg')
 
     Returns:
-        Energy vs distortion plot with colorbar for structural similarity, as a Matplotlib Figure
+        Energy vs distortion plot with colorbar for structural similarity, as a mpl Figure
         object
     """
     f, ax = plt.subplots(
@@ -743,10 +754,8 @@ def plot_colorbar(
 
     # Formatting of tick labels.
     # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV, 2 if deltaE > 0.1 eV, otherwise 3.
-    energy_range = list(energies_dict["distortions"].values())
-    energy_range.append(energies_dict["Unperturbed"])
-    ax = _format_tick_labels(ax=ax, energy_range=energy_range)
-
+    ax = _format_tick_labels(ax=ax, energy_range=list(energies_dict["distortions"].values()) + [energies_dict["Unperturbed"],] )
+    
     plt.legend(frameon=True)
 
     # Colorbar formatting
@@ -850,12 +859,9 @@ def plot_datasets(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        Energy vs distortion plot for multiple datasets, as a Matplotlib Figure object
+        Energy vs distortion plot for multiple datasets, as a matplotlib.figure.Figure object
     """
-    f, ax = plt.subplots(
-        1,
-        1,
-    )
+    f, ax = plt.subplots(1,1)
     # Colors
     if (
         colors == None and 11 > len(datasets) > 1
@@ -866,9 +872,8 @@ def plot_datasets(
             mpl.cm.get_cmap("viridis", len(datasets) + 1).colors
         )  # +1 to avoid yellow color (which is at the end of the colormap)
     else:
-        colors = [
-            "#59a590",
-        ]  # Turquoise
+        colors = ["#59a590",] # Turquoise
+        
     # Title and labels of axis
     if title:
         ax.set_title(title)
@@ -1001,9 +1006,7 @@ def plot_datasets(
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E > 0.4 eV, 3 if E < 0.1 eV, 2 otherwise
-    energy_range = list(datasets[0]["distortions"].values())
-    energy_range.append(datasets[0]["Unperturbed"])
-    ax = _format_tick_labels(ax=ax, energy_range=energy_range)
+    ax = _format_tick_labels(ax=ax, energy_range=list(datasets[0]["distortions"].values()) + [datasets[0]["Unperturbed"],] )
 
     ax.legend(frameon=True)  # show legend
 
