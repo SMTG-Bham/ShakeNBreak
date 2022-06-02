@@ -36,11 +36,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
             self.V_Cd_distortion_data_no_unperturbed
         )
-        self.In_Cd_1_distortion_data = analysis._open_file(
-            os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
-        )  # note this was rattled with the old, non-Monte Carlo rattling (ASE"s atoms.rattle())
-        self.organized_In_Cd_1_distortion_data = analysis._organize_data(
-            self.In_Cd_1_distortion_data
+        self.V_Cd_energies_dict = analysis.get_energies(
+            defect_species='vac_1_Cd_0', 
+            output_path=self.DATA_DIR,
         )
         self.V_Cd_displacement_dict = analysis.calculate_struct_comparison(
             defect_structures_dict=analysis.get_structures(
@@ -52,6 +50,116 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def tearDown(self):
         if_present_rm(f"{os.getcwd()}/distortion_plots")
     
+    def test_format_axis(self):
+        "Test _format_axis() function"
+        # Test standard behaviour: labels and ticks
+        fig, ax = plt.subplots(1,1)
+        ax.plot(
+            self.V_Cd_energies_dict["distortions"].keys(), 
+            self.V_Cd_energies_dict["distortions"].values()
+        )
+        formatted_ax = plotting._format_axis(
+            ax=ax,
+            defect_name="V$_{Cd}^{0}$",
+            y_label="Energy (eV)",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te"
+        )
+        self.assertEqual(formatted_ax.yaxis.get_label().get_text(), "Energy (eV)")
+        self.assertEqual(formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor (for 2 Te near V$_{Cd}^{0}$)")
+        self.assertEqual(len(formatted_ax.yaxis.get_ticklabels()), 6+2) # +2 bc MaxNLocator adds ticks
+        # beyond axis limits for autoscaling reasons
+        # self.assertTrue([float(tick.get_text()) % 0.3 == 0.0 for tick in formatted_ax.xaxis.get_ticklabels()]) # x ticks should be multiples of 0.3
+        print(formatted_ax.xaxis.get_ticklabels())
+        # check x label if no nearest neighbour info
+        ax.plot(
+            self.V_Cd_energies_dict["distortions"].keys(), 
+            self.V_Cd_energies_dict["distortions"].values()
+        )
+        formatted_ax = plotting._format_axis(
+            ax=ax,
+            defect_name="V$_{Cd}^{0}$",
+            y_label="Energy (eV)",
+            num_nearest_neighbours=2,
+            neighbour_atom=None,
+        )
+        self.assertEqual(formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor (for 2 NN near V$_{Cd}^{0}$)")
+        # check x label if no defect name
+        ax.plot(
+            self.V_Cd_energies_dict["distortions"].keys(), 
+            self.V_Cd_energies_dict["distortions"].values()
+        )
+        formatted_ax = plotting._format_axis(
+            ax=ax,
+            defect_name=None,
+            y_label="Energy (eV)",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+        )
+        self.assertEqual(formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor")
+
+    def test_format_tick_labels(self):
+        "Test format_tick_labels() function."
+        # Test standard behaviour
+        fig, ax = plt.subplots(1,1)
+        ax.plot(
+            list(self.V_Cd_energies_dict["distortions"].keys()), 
+            list(self.V_Cd_energies_dict["distortions"].values())
+        )
+        semi_formatted_ax = plotting._format_axis(
+            ax=ax,
+            defect_name="V$_{Cd}^{0}$",
+            y_label="Energy (eV)",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te"
+        )
+        semi_formatted_ax.set_ylim(-0.2, 0.4) # set incorrect y limits (-0.2 rather than ~-0.8)
+        semi_formatted_ax.set_xticks(ticks=[-0.201, -0.101, 0.000,], labels=[-0.201, -0.101, 0.000,], minor=False) # set incorrect x ticks
+        semi_formatted_ax.set_yticks(ticks=[-0.804, -0.502, 0.000,], labels=[-0.804, -0.502, 0.000,], minor=False) # set incorrect y ticks
+        formatted_ax = plotting._format_tick_labels(
+            ax=deepcopy(semi_formatted_ax),
+            energy_range=list(self.V_Cd_energies_dict["distortions"].values()) + [self.V_Cd_energies_dict["Unperturbed"],],
+        )
+        # Check limits of y axis are correct (shouldnt cut off any data point given -
+        # note that purging of high energy points has been done before.) 
+        self.assertTrue(
+            formatted_ax.get_ylim()[0] < min([self.V_Cd_energies_dict["Unperturbed"],] + list(self.V_Cd_energies_dict["distortions"].values())),
+        )   
+        self.assertTrue(
+            formatted_ax.get_ylim()[1] > max([self.V_Cd_energies_dict["Unperturbed"],] + list(self.V_Cd_energies_dict["distortions"].values())),
+        )
+        # Check x tick labels have 1 decimal place
+        self.assertTrue( 
+            len(formatted_ax.xaxis.get_major_formatter().format_data(0.11111).split('.')[1]) == 1
+        )
+        # Check y tick labels have 1 decimal place if energy range is > 0.4 eV
+        self.assertTrue( 
+            len(formatted_ax.yaxis.get_major_formatter().format_data(0.11111).split('.')[1]) == 1
+        )
+        
+        # Test y tick labels have 3 decimal places if energy range is < 0.1 eV
+        fig, ax = plt.subplots(1,1)
+        energies = [np.random.uniform(-0.099, 0) for i in range(len(self.V_Cd_energies_dict["distortions"].keys()))]
+        ax.plot(
+            list(self.V_Cd_energies_dict["distortions"].keys()), 
+            energies,
+        )
+        semi_formatted_ax = plotting._format_axis(
+            ax=ax,
+            defect_name="V$_{Cd}^{0}$",
+            y_label="Energy (eV)",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te"
+        )
+        semi_formatted_ax.set_yticks(ticks=[-0.08041, -0.05011, 0.0001,], labels=[-0.08041, -0.05011, 0.0001], minor=False) # set incorrect y ticks
+        formatted_ax = plotting._format_tick_labels(
+            ax=deepcopy(semi_formatted_ax),
+            energy_range=energies,
+        )
+        self.assertTrue( 
+            len(formatted_ax.yaxis.get_major_formatter().format_data(0.11111).split('.')[1]) == 3
+        )
+        
     def test_format_defect_name(self):
         """Test _format_defect_name() function."""
         # test standard behaviour
@@ -107,8 +215,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             max_energy_above_unperturbed=0.2,
             y_label="Energy (eV)",
         )
-        self.assertEqual(energies_dict["distortions"], {k: v*1000 for k,v in self.organized_V_Cd_distortion_data["distortions"].items()} )
-        self.assertEqual(energies_dict["Unperturbed"], 100*self.organized_V_Cd_distortion_data["Unperturbed"])
+        self.assertEqual(energies_dict["distortions"], {k: 1000*v for k,v in self.organized_V_Cd_distortion_data["distortions"].items()} )
+        self.assertEqual(energies_dict["Unperturbed"], 1000*self.organized_V_Cd_distortion_data["Unperturbed"])
         self.assertEqual(max_energy_above_unperturbed, 0.2 * 1000)
         self.assertEqual(y_label, "Energy (meV)")
         
@@ -145,6 +253,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             save_format='svg'
         )
         self.assertTrue(os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg"))
-
+    
+    # def test_plot_datasets(self):
+    #     "Test _plot_datasets() function"
+        
 # if __name__ == "__main__":
 #     unittest.main()
