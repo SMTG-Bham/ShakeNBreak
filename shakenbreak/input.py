@@ -29,8 +29,10 @@ warnings.filterwarnings(
 
 
 # format warnings output:
-def warning_on_one_line(message, category, filename, lineno):
+def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     """Output warning messages on one line."""
+    # To set this as warnings.formatwarning, we need to be able to take in `file` and `line`,
+    # but don't want to print them, so unused arguments here
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
