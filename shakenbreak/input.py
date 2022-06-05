@@ -47,18 +47,19 @@ def _create_folder(folder_name: str) -> None:
     path = os.getcwd()
     if not os.path.isdir(path + "/" + folder_name):
         try:
-            os.mkdir(path + "/" + folder_name)
+            os.makedirs(path + "/" + folder_name, exist_ok=True)
         except OSError:
             print(f"Creation of the directory {path} failed")
 
 
 def _write_distortion_metadata(
     new_metadata: dict,
-    filename: Optional[str] = "distortion_metadata.json",
+    filename: str = "distortion_metadata.json",
+    output_path: str = "./",
 ) -> None:
     """
     Write metadata to file. If the file already exists, it will be 
-    renamed to distortion_metadata_datetime.json and new updated with new metadata
+    renamed to distortion_metadata_datetime.json and updated with new metadata.
 
     Args:
         new_metadata (:obj:`dict`): 
@@ -66,12 +67,17 @@ def _write_distortion_metadata(
             about the defects and their charge states modelled.
         filename (:obj:`str`, optional): 
             Filename to save metadata. Defaults to "distortion_metadata.json".
+        output_path (:obj:`str`):
+             Path to directory in which to write distortion_metadata.json file.
+             (Default is current directory = "./")
     """
-    if os.path.exists(filename):
+    filepath = os.path.join(output_path, filename)
+    if os.path.exists(filepath):
         current_datetime = datetime.datetime.now().strftime(
             "%Y-%m-%d-%H-%M"
         )  # keep copy of old metadata file
-        os.rename(filename, f"distortion_metadata_{current_datetime}.json")
+        os.rename(filepath, os.path.join(output_path, f"distortion_metadata"
+                                                      f"_{current_datetime}.json"))
         print(
             f"There is a previous version of {filename}. Will rename old metadata to "
             f"distortion_metadata_{current_datetime}.json"
@@ -115,7 +121,7 @@ def _write_distortion_metadata(
                                 warnings.warn(
                                     f"Previous and new metadata show different number of "
                                     f"distorted neighbours for {defect} in charge {charge}. "
-                                    f"File {filename} will only show the new number of distorted "
+                                    f"File {filepath} will only show the new number of distorted "
                                     f"neighbours."
                                 )
                                 continue
@@ -130,9 +136,9 @@ def _write_distortion_metadata(
         except KeyError:
             warnings.warn(
                 f"There was a problem when combining old and new metadata files! Will only write "
-                f"new metadata to {filename}."
+                f"new metadata to {filepath}."
             )
-    with open(filename, "w") as new_metadata_file:
+    with open(filepath, "w") as new_metadata_file:
         new_metadata_file.write(json.dumps(new_metadata, indent=4))
 
 
@@ -165,6 +171,7 @@ def _create_vasp_input(
     distorted_defect_dict: dict,
     incar_settings: dict,
     potcar_settings: Optional[dict] = None,
+    output_path: str = ".",
 ) -> None:
     """
     Creates folders for storing VASP ShakeNBreak files.
@@ -179,8 +186,11 @@ def _create_vasp_input(
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the `doped` defaults.
             Using `pymatgen` syntax (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}).
+        output_path (:obj:`str`):
+             Path to directory in which to write distorted defect structures and calculation
+             inputs. (Default is current directory = "./")
     """
-    _create_folder(defect_name)  # create folder for defect
+    _create_folder(os.path.join(output_path, defect_name))  # create folder for defect
     for (
         distortion,
         single_defect_dict,
@@ -192,7 +202,7 @@ def _create_vasp_input(
         )  # vasp_gam_files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
         vasp_gam_files(
             single_defect_dict=single_defect_dict,
-            input_dir=f"{defect_name}/{distortion}",
+            input_dir=f"{output_path}/{defect_name}/{distortion}",
             incar_settings=incar_settings,
             potcar_settings=potcar_settings_copy,
         )
@@ -549,6 +559,7 @@ def apply_shakenbreak(
     distorted_elements: Optional[dict] = None,
     potcar_settings: Optional[dict] = None,
     write_files: bool = True,
+    output_path: str = ".",
     verbose: bool = False,
     **kwargs,
 ):
@@ -597,6 +608,9 @@ def apply_shakenbreak(
             the default `POTCAR` settings are. (Default: None)
         write_files (:obj:`bool`):
             Whether to write output files (Default: True)
+        output_path (:obj:`str`):
+             Path to directory in which to write distorted defect structures and calculation
+             inputs. (Default is current directory = "./")
         verbose (:obj:`bool`):
             Whether to print distortion information (bond atoms and distances). (Default: False)
         **kwargs:
@@ -765,6 +779,7 @@ def apply_shakenbreak(
                         distorted_defect_dict=charged_defect,
                         incar_settings=incar_dict,
                         potcar_settings=potcar_settings,
+                        output_path=output_path,
                     )
             print()
             if verbose:
@@ -776,6 +791,7 @@ def apply_shakenbreak(
     _write_distortion_metadata(
         new_metadata=distortion_metadata,
         filename="distortion_metadata.json",
+        output_path=output_path,
     )
 
     return (
