@@ -58,14 +58,14 @@ def _write_distortion_metadata(
     output_path: str = "./",
 ) -> None:
     """
-    Write metadata to file. If the file already exists, it will be 
+    Write metadata to file. If the file already exists, it will be
     renamed to distortion_metadata_datetime.json and updated with new metadata.
 
     Args:
-        new_metadata (:obj:`dict`): 
+        new_metadata (:obj:`dict`):
             Distortion metadata containing distortion parameters used, as well as information
             about the defects and their charge states modelled.
-        filename (:obj:`str`, optional): 
+        filename (:obj:`str`, optional):
             Filename to save metadata. Defaults to "distortion_metadata.json".
         output_path (:obj:`str`):
              Path to directory in which to write distortion_metadata.json file.
@@ -76,8 +76,12 @@ def _write_distortion_metadata(
         current_datetime = datetime.datetime.now().strftime(
             "%Y-%m-%d-%H-%M"
         )  # keep copy of old metadata file
-        os.rename(filepath, os.path.join(output_path, f"distortion_metadata"
-                                                      f"_{current_datetime}.json"))
+        os.rename(
+            filepath,
+            os.path.join(
+                output_path, f"distortion_metadata" f"_{current_datetime}.json"
+            ),
+        )
         print(
             f"There is a previous version of {filename}. Will rename old metadata to "
             f"distortion_metadata_{current_datetime}.json"
@@ -85,7 +89,9 @@ def _write_distortion_metadata(
         try:
             print(f"Combining old and new metadata in {filename}.")
             with open(
-                f"distortion_metadata_{current_datetime}.json", "r"
+                os.path.join(
+                    output_path, f"distortion_metadata_{current_datetime}.json", "r"
+                )
             ) as old_metadata_file:
                 old_metadata = json.load(old_metadata_file)
             # Combine old and new metadata dictionaries
