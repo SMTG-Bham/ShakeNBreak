@@ -1,0 +1,22 @@
+#!/bin/bash
+
+shopt -s extglob # ensure extended globbing (pattern matching) is enabled
+
+# in a single defect folder
+dirname=${PWD##*/}
+echo "Using current directory name ($dirname) as defect species name for file-writing"
+filename=${dirname}.txt
+if [[ -f ${filename} ]];
+    then
+    echo "Moving old ${filename} to ${dirname}_$(date +%H_%M_%Son%d_%m_%y).txt to avoid overwriting"
+    mv "${filename}" "${dirname}_$(date +%H_%M_%Son%d_%m_%y).txt"
+    fi
+
+for i in ?(*Bond_Distortion*|*Unperturbed|*Rattled)/; # for each distortion tested
+    do
+    if grep -q "required accuracy" "${i}"/OUTCAR; # check calculation fully relaxed and finished
+        then echo "${i%?}" >> "${filename}"; # add BDM distortion to txt file, "%?" cuts slash at end of string
+        grep -a sigma "${i}"/OUTCAR | tail -1 | awk '{print $NF}' >> "${filename}"; #and its energy
+        else echo "${i%?} not fully relaxed"
+    fi;
+    done;
