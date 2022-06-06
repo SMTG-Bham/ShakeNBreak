@@ -7,6 +7,7 @@ import pytest
 
 from pymatgen.core.structure import Structure
 from shakenbreak import (
+    input,
     energy_lowering_distortions,
     champion_defects_rerun,
     plotting,
