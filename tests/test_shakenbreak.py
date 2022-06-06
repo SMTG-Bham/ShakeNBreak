@@ -9,7 +9,6 @@ from pymatgen.core.structure import Structure
 from shakenbreak import (
     input,
     energy_lowering_distortions,
-    champion_defects_rerun,
     plotting,
 )
 
@@ -94,8 +93,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.path.join(self.DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
         )  # overwrite
 
-        defect_charges_dict = champion_defects_rerun.read_defects_directories()
-        low_energy_defects = energy_lowering_distortions.get_deep_distortions(
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+        low_energy_defects = energy_lowering_distortions.get_energy_lowering_distortions(
             defect_charges_dict
         )
 
@@ -174,7 +173,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
         with patch("builtins.print") as mock_print:
-            low_energy_defects = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects = energy_lowering_distortions.get_energy_lowering_distortions(
                 defect_charges_dict
             )
             mock_print.assert_any_call(
