@@ -39,4 +39,7 @@ jobs:
           pip install -e .[tests]
 
       - name: Test
-        run: pytest
+        run:  |
+          pytest
+          pytest tests/test_shakenbreak.py --mpl  # test output plots
+        
