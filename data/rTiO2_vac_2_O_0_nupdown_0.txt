@@ -1,0 +1,14 @@
+Bond_Distortion_-20.0%
+-1050.48029958
+Bond_Distortion_-40.0%
+-1050.49672509
+Bond_Distortion_0.0%
+-1050.70613473
+Bond_Distortion_20.0%
+-1050.57755538
+Bond_Distortion_40.0%
+-1050.74516921
+Bond_Distortion_60.0%
+-1050.48626032
+Unperturbed
+-1050.56495139
