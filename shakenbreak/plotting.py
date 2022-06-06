@@ -270,6 +270,8 @@ def _save_plot(
     )
 
 
+# TODO: Add save_path optional argument to save files to different directory (also for other
+#  functions in this module), and add tests for this
 def plot_all_defects(
     defects_dict: dict,
     output_path: Optional[str] = ".",
@@ -576,7 +578,7 @@ def plot_defect(
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             save_format=save_format,
         )
-    return f
+    return fig
 
 
 def plot_colorbar(
