@@ -94,17 +94,24 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )  # overwrite
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
-        low_energy_defects = energy_lowering_distortions.get_energy_lowering_distortions(
-            defect_charges_dict
+        low_energy_defects = (
+            energy_lowering_distortions.get_energy_lowering_distortions(
+                defect_charges_dict
+            )
         )
 
         self.assertEqual(
-            [[0], [-1]].sort(),  # sort to ensure order is the same
-            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]].sort(),
+            sorted([[0], [-1]]),  # sort to ensure order is the same
+            sorted([subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]]),
         )
         self.assertEqual(
-            [{-2, -1}, {0, -2}],
-            [subdict["excluded_charges"] for subdict in low_energy_defects["vac_1_Cd"]],
+            sorted([tuple({-2, -1}), tuple({0, -2})]),
+            sorted(
+                [
+                    tuple(subdict["excluded_charges"])
+                    for subdict in low_energy_defects["vac_1_Cd"]
+                ]
+            ),
         )
         # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
@@ -173,8 +180,10 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
         with patch("builtins.print") as mock_print:
-            low_energy_defects = energy_lowering_distortions.get_energy_lowering_distortions(
-                defect_charges_dict
+            low_energy_defects = (
+                energy_lowering_distortions.get_energy_lowering_distortions(
+                    defect_charges_dict
+                )
             )
             mock_print.assert_any_call(
                 "Low-energy distorted structure for vac_1_Cd_-1 already "
@@ -204,12 +213,24 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             )
 
         self.assertEqual(
-            [[-2, -1], [0, -1]].sort(),  # sort to make sure order is the same
-            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]].sort(),
+            sorted(
+                [tuple([-2, -1]), tuple([0, -1])]
+            ),  # sort to make sure order is the same
+            sorted(
+                [
+                    tuple(subdict["charges"])
+                    for subdict in low_energy_defects["vac_1_Cd"]
+                ]
+            ),
         )
         self.assertEqual(
-            [{0}, {-2}],
-            [subdict["excluded_charges"] for subdict in low_energy_defects["vac_1_Cd"]],
+            sorted([tuple({0}), tuple({-2})]),
+            sorted(
+                [
+                    tuple(subdict["excluded_charges"])
+                    for subdict in low_energy_defects["vac_1_Cd"]
+                ]
+            ),
         )
 
         @pytest.mark.mpl_image_compare(
