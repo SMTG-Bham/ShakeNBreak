@@ -99,8 +99,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
         self.assertEqual(
-            [[0], [-1]],
-            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]],
+            [[0], [-1]].sort(),  # sort to ensure order is the same
+            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]].sort(),
         )
         self.assertEqual(
             [{-2, -1}, {0, -2}],
@@ -204,8 +204,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             )
 
         self.assertEqual(
-            [[-2, -1], [0, -1]],
-            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]],
+            [[-2, -1], [0, -1]].sort(),  # sort to make sure order is the same
+            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]].sort(),
         )
         self.assertEqual(
             [{0}, {-2}],
