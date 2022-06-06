@@ -341,7 +341,7 @@ def _format_colorbar(
             drawedges=False,
             aspect=20,
             fraction=0.1,
-            pad=0.08,
+            pad=0.09,
             shrink=0.8,
         )
         cbar.ax.tick_params(size=0)
@@ -684,7 +684,7 @@ def plot_colorbar(
     energies_dict: dict,
     disp_dict: dict,
     defect_name: str,
-    num_nearest_neighbours: int,
+    num_nearest_neighbours: int = None,
     neighbour_atom: str = "NN",
     title: Optional[str] = None,
     dataset_label: str = "SnB",
@@ -710,9 +710,10 @@ def plot_colorbar(
             Specific defect name that will appear in plot labels and file names (e.g '$V_{Cd}^0$')
         num_nearest_neighbours (:obj:`int`):
             Number of distorted neighbour atoms (e.g. 2)
+            (Default: None)
         neighbour_atom (:obj:`str`, optional):
             Name(s) of distorted neighbour atoms (e.g. 'Cd')
-            (Default: "NN)
+            (Default: "NN")
         title (:obj:`str`, optional):
             Plot title
             (Default: None)
@@ -784,7 +785,7 @@ def plot_colorbar(
             imported_indices.append(i)
     
     # sort displacements in same order as distortions and energies, for proper color mapping         
-    sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys()] 
+    sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()] 
     # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
     keys = [
         float(entry.split("%")[0]) / 100
