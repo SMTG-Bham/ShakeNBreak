@@ -75,6 +75,10 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
             if_present_rm(os.path.join(self.DATA_DIR, defect_dir))
 
+        # remove folders generated during tests
+        for i in self.defect_folders_list:
+            if_present_rm(os.path.join(self.DATA_DIR, i))
+
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
         for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
