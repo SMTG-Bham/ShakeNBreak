@@ -55,7 +55,7 @@ def _create_folder(folder_name: str) -> None:
 def _write_distortion_metadata(
     new_metadata: dict,
     filename: str = "distortion_metadata.json",
-    output_path: str = "./",
+    output_path: str = ".",
 ) -> None:
     """
     Write metadata to file. If the file already exists, it will be
@@ -90,8 +90,9 @@ def _write_distortion_metadata(
             print(f"Combining old and new metadata in {filename}.")
             with open(
                 os.path.join(
-                    output_path, f"distortion_metadata_{current_datetime}.json", "r"
-                )
+                    output_path, f"distortion_metadata_{current_datetime}.json"
+                ),
+                "r",
             ) as old_metadata_file:
                 old_metadata = json.load(old_metadata_file)
             # Combine old and new metadata dictionaries
