@@ -117,6 +117,7 @@ def _format_distortion_names(
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
             "Unperturbed"/"Rattled"/"-60.0%_from_2")
     """
+    distortion_label = distortion_label.strip()  # remove any whitespace
     if "Unperturbed" in distortion_label or "Rattled" in distortion_label:
         distortion = distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
@@ -147,6 +148,7 @@ def _open_file(path: str) -> list:
         return []
 
 
+# TODO: Update docstrings here when we implement CLI parsing functions to generate this output file:
 def _organize_data(distortion_list: list) -> dict:
     """
     Create a dictionary mapping distortion factors to final energies.
@@ -159,8 +161,6 @@ def _organize_data(distortion_list: list) -> dict:
     Returns:
         Sorted dictionary of bond distortions and corresponding final energies.
     """
-    # TODO: Update docstrings here when we implement CLI parsing functions to generate this
-    #  output file
     defect_energies_dict = {"distortions": {}}
     for i in range(len(distortion_list) // 2):
         i *= 2

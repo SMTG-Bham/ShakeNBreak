@@ -25,5 +25,5 @@ setup(
         "hiphive",
         "monty",
     ],
-    extras_require={"tests": ["pytest"]},
+    extras_require={"tests": ["pytest", "pytest-mpl"]},
 )
