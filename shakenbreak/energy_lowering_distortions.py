@@ -459,3 +459,6 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = ".") -> 
                             f"file to {distorted_dir} directory."
                         )
 
+# TODO: Write convenience function that at this point takes the lowest energy structure for each
+# defect species, and writes it to the corresponding defect folder, with an optional name
+# (default "groundstate_POSCAR"), to then run continuation calculations

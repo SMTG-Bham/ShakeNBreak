@@ -5,12 +5,9 @@ import shutil
 import pickle
 import pytest
 
-from pymatgen.core.structure import Structure, Element
+from pymatgen.core.structure import Structure
 from shakenbreak import (
-    analysis,
     energy_lowering_distortions,
-    input,
-    distortions,
     champion_defects_rerun,
     plotting,
 )
@@ -37,13 +34,13 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
             os.mkdir(f"{defect_dir}")
-        V_Cd_1_txt = f"""Bond_Distortion_-7.5%
+        V_Cd_1_txt = """Bond_Distortion_-7.5%
                          -206.700
                          Unperturbed
                          -205.800"""
         with open("vac_1_Cd_-1/vac_1_Cd_-1.txt", "w") as fp:
             fp.write(V_Cd_1_txt)
-        V_Cd_2_txt = f"""Bond_Distortion_-35.0%
+        V_Cd_2_txt = """Bond_Distortion_-35.0%
                          -205.700
                          Unperturbed
                          -205.800"""
@@ -55,7 +52,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             if_present_rm(f"vac_1_Cd_-1/{fake_dir}")
             os.mkdir(f"vac_1_Cd_-1/{fake_dir}")
             shutil.copyfile(
-                os.path.join(self.DATA_DIR, f"CdTe_V_Cd_-1_vgam_POSCAR"),
+                os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
                 f"vac_1_Cd_-1/{fake_dir}/CONTCAR",
             )
 
@@ -63,7 +60,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             if_present_rm(f"vac_1_Cd_-2/{fake_dir}")
             os.mkdir(f"vac_1_Cd_-2/{fake_dir}")
             shutil.copyfile(
-                os.path.join(self.DATA_DIR, f"CdTe_V_Cd_POSCAR"),
+                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR"),
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
@@ -134,16 +131,16 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # test correct structures written
         self.assertEqual(
             self.V_Cd_minus_0pt55_structure,
-            Structure.from_file(f"vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"),
+            Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"),
         )
         self.assertEqual(
             Structure.from_file(
-                os.path.join(self.DATA_DIR, f"CdTe_V_Cd_-1_vgam_POSCAR")
+                os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
             ),
-            Structure.from_file(f"vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
+            Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
         )
 
-        V_Cd_m1_txt_w_distortion = f"""Bond_Distortion_-55.0%_from_0
+        V_Cd_m1_txt_w_distortion = """Bond_Distortion_-55.0%_from_0
         -207.000
         Bond_Distortion_-7.5%
         -206.700
@@ -152,7 +149,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         with open("vac_1_Cd_-1/vac_1_Cd_-1.txt", "w") as fp:
             fp.write(V_Cd_m1_txt_w_distortion)
 
-        V_Cd_m2_txt_w_distortion = f"""Bond_Distortion_-55.0%_from_0
+        V_Cd_m2_txt_w_distortion = """Bond_Distortion_-55.0%_from_0
         -207.000
         Bond_Distortion_-7.5%_from_-1
         -207.700
@@ -216,46 +213,54 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
         @pytest.mark.mpl_image_compare(
-            baseline_dir=f"V_Cd_fake_test_distortion_plots",
+            baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$.png",
-            style=f"../shakenbreak/shakenbreak.mplstyle",
+            style="../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m2():
             with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
+                fig_dict = plotting.plot_all_defects(
+                    defect_charges_dict, save_format="png"
+                )
 
                 wd = os.getcwd()
                 mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
             return fig_dict["vac_1_Cd_-2"]
 
         @pytest.mark.mpl_image_compare(
-            baseline_dir=f"V_Cd_fake_test_distortion_plots",
+            baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-1}$.png",
-            style=f"../shakenbreak/shakenbreak.mplstyle",
+            style="../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m1():
             with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
+                fig_dict = plotting.plot_all_defects(
+                    defect_charges_dict, save_format="png"
+                )
 
                 wd = os.getcwd()
                 mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
             return fig_dict["vac_1_Cd_-1"]
 
         @pytest.mark.mpl_image_compare(
-            baseline_dir=f"V_Cd_fake_test_distortion_plots",
+            baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$.png",
-            style=f"../shakenbreak/shakenbreak.mplstyle",
+            style="../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_0():
             with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
+                fig_dict = plotting.plot_all_defects(
+                    defect_charges_dict, save_format="png"
+                )
 
                 wd = os.getcwd()
                 mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
-                mock_print.assert_has_calls([call(f"Plot saved to {wd}/distortion_plots/")]*3)
+                mock_print.assert_has_calls(
+                    [call(f"Plot saved to {wd}/distortion_plots/")] * 3
+                )
             return fig_dict["vac_1_Cd_0"]
 
 
