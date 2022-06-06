@@ -4,6 +4,7 @@ from unittest.mock import patch
 import shutil
 import warnings
 from copy import deepcopy 
+import pytest
 
 import numpy as np
 import pandas as pd
@@ -14,14 +15,14 @@ from shakenbreak import plotting
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-
+import seaborn
 
 def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
 
 
-class AnalyseDefectsTestCase(unittest.TestCase):
+class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
         self.V_Cd_distortion_data = analysis._open_file(
@@ -30,22 +31,31 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.organized_V_Cd_distortion_data = analysis._organize_data(
             self.V_Cd_distortion_data
         )
-        self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
-            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
-        )
-        self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
-            self.V_Cd_distortion_data_no_unperturbed
-        )
+        # self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
+        #     os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
+        # )
+        # self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
+        #     self.V_Cd_distortion_data_no_unperturbed
+        # )
         self.V_Cd_energies_dict = analysis.get_energies(
-            defect_species='vac_1_Cd_0', 
+            defect_species="vac_1_Cd_0", 
             output_path=self.DATA_DIR,
         )
         self.V_Cd_displacement_dict = analysis.calculate_struct_comparison(
             defect_structures_dict=analysis.get_structures(
-                defect_species='vac_1_Cd_0', 
+                defect_species="vac_1_Cd_0", 
                 output_path=self.DATA_DIR,
             )
         )
+        self.V_O_energies_dict_afm = analysis._sort_data(
+            energies_file = f"{self.DATA_DIR}/rTiO2_vac_2_O_0_nupdown_0.txt",
+        )[0]
+        self.V_O_energies_dict_fm = analysis._sort_data(
+            energies_file = f"{self.DATA_DIR}/rTiO2_vac_2_O_0_nupdown_2.txt",
+        )[0]
+        self.V_Cd_energies_dict_from_other_charge_states = analysis._sort_data(
+            energies_file= f"{self.DATA_DIR}/vac_1_Cd_0/fake_vac_1_Cd_0.txt"
+        )[0]
 
     def tearDown(self):
         if_present_rm(f"{os.getcwd()}/distortion_plots")
@@ -253,9 +263,3 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             save_format='svg'
         )
         self.assertTrue(os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg"))
-    
-    # def test_plot_datasets(self):
-    #     "Test _plot_datasets() function"
-        
-# if __name__ == "__main__":
-#     unittest.main()
