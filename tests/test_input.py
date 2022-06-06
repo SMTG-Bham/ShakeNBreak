@@ -155,6 +155,7 @@ class InputTestCase(unittest.TestCase):
         for fname in os.listdir("./"):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
+        if_present_rm("test_path")  # remove test_path if present
 
     def test_update_struct_defect_dict(self):
         """Test update_struct_defect_dict function"""
@@ -592,6 +593,20 @@ class InputTestCase(unittest.TestCase):
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
+        # test output_path option
+        input._create_vasp_input(
+            "vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            incar_settings=kwarged_incar_settings,
+            output_path="test_path",
+        )
+        V_Cd_kwarg_folder = "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
+        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+
     @patch("builtins.print")
     def test_apply_shakenbreak(self, mock_print):
         """Test apply_shakenbreak function"""
@@ -849,6 +864,32 @@ class InputTestCase(unittest.TestCase):
             write_files=False,
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
+
+        # test output_path parameter:
+        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            verbose=False,
+            stdev=0.15,
+            d_min=0.75 * 2.8333683853583165,
+            nbr_cutoff=3.4,
+            n_iter=3,
+            active_atoms=rattling_atom_indices,
+            width=0.3,
+            max_attempts=10000,
+            max_disp=1.0,
+            seed=20,
+            output_path="test_path",
+        )
+        self.assertTrue(os.path.exists("test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("test_path/distortion_metadata.json"))
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
 
 
 if __name__ == "__main__":

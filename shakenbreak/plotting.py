@@ -274,7 +274,6 @@ def _save_plot(
 def _get_line_colors(number_of_colors: int):
     """
     Get list of colors for plotting several lines.
-
     Args:
         number_of_colors (int): 
             Number of colors.

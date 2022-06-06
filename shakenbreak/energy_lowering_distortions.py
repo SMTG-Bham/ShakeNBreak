@@ -30,7 +30,7 @@ from shakenbreak.analysis import (
 #  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call
 def get_deep_distortions(
     defect_charges_dict: dict,
-    output_path: str = "./",
+    output_path: str = ".",
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
@@ -260,7 +260,7 @@ def get_deep_distortions(
 def compare_struct_to_distortions(
     distorted_struct: Structure,
     defect_species: str,
-    output_path: str = "./",
+    output_path: str = ".",
     stol: float = 0.5,
     min_dist: float = 0.2,
 ) -> tuple:
@@ -367,7 +367,7 @@ def compare_struct_to_distortions(
         )  # T/F, matching structure, energy_diff, distortion factor
 
 
-def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") -> None:
+def write_distorted_inputs(low_energy_defects: dict, output_path: str = ".") -> None:
     """
     Create folders with VASP input files for testing the low-energy distorted defect structures
     found for other charge states of that defect, as identified with `get_deep_distortions()`.
@@ -442,8 +442,8 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                         )
                 else:
                     subfolders_with_input_files = []
-                    for subfolder in os.walk(f"{output_path}/{defect_species}"):
-                        if os.path.exists(f"{subfolder}/INCAR"):
+                    for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+                        if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/INCAR"):
                             subfolders_with_input_files.append(subfolder)
                     if len(subfolders_with_input_files) > 0:
                         for i in ["INCAR", "KPOINTS", "POTCAR"]:
@@ -459,3 +459,6 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = "./") ->
                             f"file to {distorted_dir} directory."
                         )
 
+# TODO: Write convenience function that at this point takes the lowest energy structure for each
+# defect species, and writes it to the corresponding defect folder, with an optional name
+# (default "groundstate_POSCAR"), to then run continuation calculations
