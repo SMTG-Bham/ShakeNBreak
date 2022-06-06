@@ -994,16 +994,28 @@ def get_site_magnetizations(
         # significant magnetization and the defect
         if os.path.exists(f"{output_path}/distortion_metadata.json"):
             with open(f"{output_path}/distortion_metadata.json", 'r') as f:
-                defect_species_without_charge = '_'.join(defect_species.split('_')[0:-1]) # remove charge state
-                defect_site = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
-        
+                try:
+                    defect_species_without_charge = '_'.join(defect_species.split('_')[0:-1]) # remove charge state
+                    defect_site = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
+                except KeyError:
+                    warnings.warn(f"Could not find defect {defect_species} in distortion_metadata.json file. " 
+                                  "Will not include distance between defect and sites with significant magnetization.")
+                    defect_site = None
+    # TODO: This could be sped up by parallelising
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
         structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
+        if not isinstance(structure, Structure):
+            warnings.warn(f"Structure for {defect_species} either not convergence or not found. " 
+                          "Skipping magnetisation analysis.")
+            return None
         if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray): # for vacancies, append fake atom
             structure.append(species="V", coords = defect_site, coords_are_cartesian = False)
             defect_site = -1 # index of the added fake atom
-        assert os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"), f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR"
+        if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
+            warnings.warn(f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR. "
+                          "Skipping magnetization analysis.")
+            return None
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
         print(f"Analysing distortion {distortion}. Total magnetization:", round(outcar.total_mag, 3))
         df = _site_magnetizations(

@@ -220,9 +220,11 @@ def _purge_data_dicts(
         (this might be due to the lattice matching algorithm failing).
     Args:
         disp_dict (dict): 
-            dictionary with displacements (for each structure relative to Unperturbed)
+            dictionary with displacements (for each structure relative to Unperturbed),
+            in the output format of `analysis.calculate_struct_comparison()`
         energies_dict (dict): 
-            dictionary with final energies (for each structure relative to Unperturbed)
+            dictionary with final energies (for each structure relative to Unperturbed),
+            in the output format of `analysis.get_energies()` or analysis.organize_data()
 
     Returns:
         (dict, dict): Consistent dictionaries of displacements and energies, containing data for
@@ -269,7 +271,97 @@ def _save_plot(
         bbox_inches="tight",
     )
 
+def _get_line_colors(number_of_colors: int):
+    """
+    Get list of colors for plotting several lines.
 
+    Args:
+        number_of_colors (int): 
+            Number of colors.
+    """
+    if  11 > number_of_colors > 1:  # If user didnt specify colors and more than one color needed, use deep color palette
+        colors = sns.color_palette("deep", 10)
+    elif number_of_colors > 11:  # otherwise use colormap
+        colors = list(
+            mpl.cm.get_cmap("viridis", number_of_colors + 1).colors
+        )  # +1 to avoid yellow color (which is at the end of the colormap)
+    else:
+        colors = ["#59a590",] # Turquoise by default
+    return colors
+
+def _setup_colormap(disp_dict: dict):
+    """
+    Setup colormap to measure structural similarity between structures.
+    Args:
+        disp_dict (:obj: `dict`):
+            dictionary mapping distortion key to structural similarity between
+            the associated structure and the reference structure.
+    Returns:
+        colormap, vmin, vmedium, vmax, norm
+    """
+    array_disp = np.array(list(disp_dict.values()))
+    colormap = sns.cubehelix_palette(
+        start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
+    )
+    # colormap extremes, mapped to min and max displacements
+    vmin = round(min(array_disp), 1)
+    vmax = round(max(array_disp), 1)
+    vmedium = round((vmin + vmax) / 2, 1)
+    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
+    return colormap, vmin, vmedium, vmax, norm
+
+def _format_colorbar(
+        fig: mpl.figure.Figure,
+        ax: mpl.axes.Axes,
+        im: mpl.collections.PathCollection,
+        metric: str,
+        vmin: float,
+        vmax: float,
+        vmedium: float,
+        ):
+        """
+        Format colorbar of plot
+        Args:
+            fig (:obj:`mpl.figure.Figure`):
+                matplotlib.figure.Figure object
+            ax (:obj:`mpl.axes.Axes`):
+                current matplotlib.axes.Axes object
+            im (:obj:`mpl.collections.PathCollection`)
+            metric (:obj:`str`):
+                metric to be plotted: "disp" or "max_dist" 
+            vmin (:obj:`float`):
+            vmax (:obj:`float`):
+            vmedium (:obj:`float`):
+        Returns:
+            cbar (:obj:`mpl.colorbar.Colorbar`)
+        """
+        cbar = fig.colorbar(
+            im,
+            ax=ax,
+            boundaries=None,
+            drawedges=False,
+            aspect=20,
+            fraction=0.1,
+            pad=0.08,
+            shrink=0.8,
+        )
+        cbar.ax.tick_params(size=0)
+        cbar.outline.set_visible(False)
+        if metric == "disp":
+            cmap_label = "$\Sigma$ Disp $(\AA)$"
+        elif metric == "max_dist":
+            cmap_label = r"$d_{max}$ $(\AA)$"
+        cbar.ax.set_title(
+            cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5
+        )
+        if vmin != vmax:
+            cbar.set_ticks([vmin, vmedium, vmax])
+            cbar.set_ticklabels([vmin, vmedium, vmax])
+        else:
+            cbar.set_ticks([vmedium])
+            cbar.set_ticklabels([vmedium])
+        return cbar
+    
 def plot_all_defects(
     defects_dict: dict,
     output_path: Optional[str] = ".",
@@ -332,6 +424,7 @@ def plot_all_defects(
     for defect in defects_dict:
         for charge in defects_dict[defect]:
             defect_species = f"{defect}_{charge}"
+            # Parse energies
             if not os.path.isdir(f"{output_path}/{defect_species}"):
                 warnings.warn(
                     f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
@@ -345,6 +438,9 @@ def plot_all_defects(
                 continue
             energies_dict, energy_diff, gs_distortion = _sort_data(energies_file, verbose=False)
 
+            if not energy_diff: # if Unperturbed calc is not converged, warn user
+                warnings.warn(f"Unperturbed calculation for {defect}_{charge} not converged! Skipping plot.")
+                continue
             # If a significant energy lowering was found with bond distortions (not just rattling),
             # then further analyse this defect
             if (
@@ -410,7 +506,7 @@ def plot_defect(
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     units: Optional[str] = "eV",
-    save_tag: Optional[bool] = True,
+    save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
 ) -> Figure:
     """
@@ -423,7 +519,8 @@ def plot_defect(
         charge (:obj:`int`):
             Defect charge state
         energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()`.
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
+            `analysis.get_energies()`)..
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to calculate structure
             comparisons)
@@ -448,7 +545,7 @@ def plot_defect(
             Whether to include the site number (as generated by doped) in the defect name.
             Useful for materials with many symmetry-inequivalent sites
             (Default = False)
-        save_tag (:obj:`bool`):
+        save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
             (Default: True)
         y_label (:obj:`str`):
@@ -475,14 +572,19 @@ def plot_defect(
         raise FileNotFoundError(
             f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
         )
+    if not "Unperturbed" in energies_dict.keys():  # check if unperturbed energies exist
+        warnings.warn(f"Unperturbed energy not present in energies_dict of {defect_species}! Skipping plot.")
+        return None
+    
     if not all(
         isinstance(energy, float)
         for energy in list(energies_dict["distortions"].values())
-    ):  # check energies_dict values are floats
+    ) and isinstance(energies_dict["Unperturbed"], float):  # check energies_dict values are floats
         try:
             energies_dict["distortions"] = {
                 k: float(v) for k, v in energies_dict["distortions"].items()
             }
+            energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
         except ValueError:
             raise ValueError(
                 f"Values of energies_dict are not floats! Skipping {defect_species}."
@@ -555,7 +657,7 @@ def plot_defect(
             if num_nearest_neighbours != None
             else f"ShakeNBreak: {neighbour_atom}",
             metric=metric,
-            save_tag=save_tag,
+            save_plot=save_plot,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             line_color=line_color,
@@ -571,12 +673,12 @@ def plot_defect(
             dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"]
             if num_nearest_neighbours != None
             else [f"ShakeNBreak: {neighbour_atom}"],
-            save_tag=save_tag,
+            save_plot=save_plot,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             save_format=save_format,
         )
-    return f
+    return fig
 
 
 def plot_colorbar(
@@ -584,12 +686,12 @@ def plot_colorbar(
     disp_dict: dict,
     defect_name: str,
     num_nearest_neighbours: int,
-    neighbour_atom: str,
+    neighbour_atom: str = "NN",
     title: Optional[str] = None,
-    dataset_label: str = "NN:",
+    dataset_label: str = "SnB",
     metric: Optional[str] = "max_dist",
     max_energy_above_unperturbed: Optional[float] = 0.5,
-    save_tag: Optional[bool] = False,
+    save_plot: Optional[bool] = False,
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
@@ -600,22 +702,24 @@ def plot_colorbar(
 
     Args:
         energies_dict (:obj:`dict`):
-            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()`.
+            Dictionary matching distortion to final energy (eV), as produced by `analysis.get_energies()`
+            or `analysis._organize_data()`.
         disp_dict (:obj:`dict`):
             Dictionary matching bond distortions to structure comparison metric (metric = 'disp' or
-            'max_dist').
+            'max_dist'), as produced by `analysis.calculate_struct_comparison()`.
         defect_name (:obj:`str`):
             Specific defect name that will appear in plot labels and file names (e.g '$V_{Cd}^0$')
         num_nearest_neighbours (:obj:`int`):
             Number of distorted neighbour atoms (e.g. 2)
-        neighbour_atom (:obj:`str`):
+        neighbour_atom (:obj:`str`, optional):
             Name(s) of distorted neighbour atoms (e.g. 'Cd')
+            (Default: "NN)
         title (:obj:`str`, optional):
             Plot title
             (Default: None)
         dataset_label (:obj:`str`):
             Label for plot legend
-            (Default: 'NN')
+            (Default: 'SnB')
         metric (:obj:`str`):
             Defines the criteria for structural comparison, used for the colorbar.
             Can choose between root-mean-squared displacement for all sites ('disp') or the
@@ -628,7 +732,7 @@ def plot_colorbar(
         line_color (:obj:`str`):
             Color of the line conneting points.
             (Default: ShakeNBreak base style)
-        save_tag (:obj:`bool`):
+        save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
             (Default: True)
         y_label (:obj:`str`):
@@ -638,13 +742,11 @@ def plot_colorbar(
             (Default: 'svg')
 
     Returns:
-        Energy vs distortion plot with colorbar for structural similarity, as a mpl Figure
+        Energy vs distortion plot with colorbar for structural similarity, as a matplotlib.figure.Figure
         object
     """
-    f, ax = plt.subplots(
-        1,
-        1,
-    )
+    fig, ax = plt.subplots(1,1)
+
     # Title and format axis labels and locators
     if title:
         ax.set_title(title)
@@ -665,20 +767,11 @@ def plot_colorbar(
             energies_dict["distortions"].pop(key)
             disp_dict.pop(key)
 
-    array_disp = np.array(np.array(list(disp_dict.values())))
-
     # Setting line color and colorbar
     if not line_color:
         line_color = "#59a590"  # By default turquoise
-    colormap = sns.cubehelix_palette(
-        start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
-    )
-    # colormap extremes
-    vmin = round(min(array_disp), 1)
-    vmax = round(max(array_disp), 1)
-    vmedium = round((vmin + vmax) / 2, 1)
-    norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
-
+    colormap, vmin, vmedium, vmax, norm = _setup_colormap(disp_dict) # colormap to measure structural similarity
+    
     # all energies relative to unperturbed one
     for key, i in energies_dict["distortions"].items():
         energies_dict["distortions"][key] = i - energies_dict["Unperturbed"]
@@ -690,7 +783,9 @@ def plot_colorbar(
     for i, entry in enumerate(energies_dict["distortions"].keys()):
         if isinstance(entry, str) and "_from_" in entry:
             imported_indices.append(i)
-
+    
+    # sort displacements in same order as distortions and energies, for proper color mapping         
+    sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys()] 
     # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
     keys = [
         float(entry.split("%")[0]) / 100
@@ -699,14 +794,14 @@ def plot_colorbar(
         for entry in energies_dict["distortions"].keys()
     ]
     # sort keys and values
-    sorted_distortions, sorted_energies = zip(
-        *sorted(zip(keys, energies_dict["distortions"].values()))
+    sorted_distortions, sorted_energies, sorted_disp = zip(
+        *sorted(zip(keys, energies_dict["distortions"].values(), sorted_disp))
     )
-
+    
     im = ax.scatter(
         sorted_distortions,
         sorted_energies,
-        c=array_disp[:-1],
+        c=sorted_disp,
         ls="-",
         s=50,
         marker="o",
@@ -723,11 +818,11 @@ def plot_colorbar(
         color=line_color,
         label=dataset_label,
     )
-    if imported_indices:
+    if imported_indices: # datapoints from other charge states
         ax.scatter(
             np.array(keys)[imported_indices],
             np.array(list(energies_dict["distortions"].values()))[imported_indices],
-            c=array_disp[:-1],
+            c=sorted_disp,
             edgecolors="k",
             ls="-",
             s=50,
@@ -750,7 +845,7 @@ def plot_colorbar(
         s=120,
         marker="d",
         label="Unperturbed",
-    )
+    ) # plot reference energy
 
     # Formatting of tick labels.
     # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV, 2 if deltaE > 0.1 eV, otherwise 3.
@@ -758,50 +853,24 @@ def plot_colorbar(
     
     plt.legend(frameon=True)
 
-    # Colorbar formatting
-    cbar = f.colorbar(
-        im,
-        ax=ax,
-        boundaries=None,
-        drawedges=False,
-        aspect=20,
-        fraction=0.1,
-        pad=0.08,
-        shrink=0.8,
-    )
-    cbar.ax.tick_params(size=0)
-    cbar.outline.set_visible(False)
-    if metric == "disp":
-        cmap_label = "$\Sigma$ Disp"
-    elif metric == "max_dist":
-        cmap_label = r"$d_{max}$ $(\AA)$"
-    cbar.ax.set_title(
-        cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5
-    )
-    if vmin != vmax:
-        cbar.set_ticks([vmin, vmedium, vmax])
-        cbar.set_ticklabels([vmin, vmedium, vmax])
-    else:
-        cbar.set_ticks([vmedium])
-        cbar.set_ticklabels([vmedium])
-
+    cbar = _format_colorbar(fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium) # Colorbar formatting
+    
     # Save plot?
-    if save_tag:
+    if save_plot:
         _save_plot(
-            fig=f,
+            fig=fig,
             defect_name=defect_name,
             save_format=save_format,
         )
-    plt.show()
-    return f
+    return fig
 
 
 def plot_datasets(
     datasets: list,
     dataset_labels: list,
     defect_name: str,
-    neighbour_atom: str,
     title: Optional[str] = None,
+    neighbour_atom: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
     max_energy_above_unperturbed: Optional[float] = 0.6,
     y_label: str = r"Energy (eV)",
@@ -810,16 +879,17 @@ def plot_datasets(
     colors: Optional[list] = None,
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
-    save_tag: Optional[bool] = False,
+    save_plot: Optional[bool] = False,
     save_format: Optional[str] = "svg",
 ) -> Figure:
     """
-    Generate energy versus bond distortion plots for multiple datasets.
+    Generate energy versus bond distortion plots for multiple datasets. 
 
     Args:
         datasets (:obj:`list`):
             List of {distortion: energy} dictionaries to plot (each dictionary matching
-            distortion to final energy (eV), as produced by `_organize_data()`)
+            distortion to final energy (eV), as produced by `analysis._organize_data()` or
+            `analysis.get_energies()`)
         dataset_labels (:obj:`list`):
             Labels for each dataset plot legend.
         defect_name (:obj:`str`):
@@ -837,14 +907,14 @@ def plot_datasets(
             (Default: 0.5 eV)
         y_label (:obj:`str`):
             Y axis label (Default: 'Energy (eV)')
+        colors (:obj:`list`):
+            List of color codes to use for each dataset (e.g ["C1", "C2"])
+            (Default: None)
         markers (:obj:`list`):
             List of markers to use for each dataset (e.g ["o", "d"])
             (Default: None)
         linestyles (:obj:`list`):
             List of line styles to use for each dataset (e.g ["-", "-."])
-            (Default: None)
-        colors (:obj:`list`):
-            List of color codes to use for each dataset (e.g ["C1", "C2"])
             (Default: None)
         markersize (:obj:`float`):
             Marker size to use for plots (single value, or list of values for each dataset)
@@ -852,7 +922,7 @@ def plot_datasets(
         linewidth (:obj:`float`):
             Linewidth to use for plots (single value, or list of values for each dataset)
             (Default: None)
-        save_tag (:obj:`bool`):
+        save_plot (:obj:`bool`):
             Whether to save the plots.
             (Default: True)
         save_format (:obj:`str`):
@@ -861,19 +931,18 @@ def plot_datasets(
     Returns:
         Energy vs distortion plot for multiple datasets, as a matplotlib.figure.Figure object
     """
-    f, ax = plt.subplots(1,1)
-    # Colors
-    if (
-        colors == None and 11 > len(datasets) > 1
-    ):  # If user didnt specify colors and more than one color needed, use deep color palette
-        colors = sns.color_palette("deep", 10)
-    elif colors == None and len(datasets) > 11:  # otherwise use colormap
-        colors = list(
-            mpl.cm.get_cmap("viridis", len(datasets) + 1).colors
-        )  # +1 to avoid yellow color (which is at the end of the colormap)
-    else:
-        colors = ["#59a590",] # Turquoise
-        
+    # Validate input
+    assert(len(datasets) == len(dataset_labels), 
+           f"Number of datasets and labels must match! You gave me {len(datasets)} datasets and {len(dataset_labels)} labels.",
+    )
+    
+    fig, ax = plt.subplots(1,1)
+    # Line colors
+    if not colors:
+        colors = _get_line_colors(number_of_colors=len(datasets)) # get list of colors to use for each dataset
+    elif len(colors) < len(datasets):
+        warnings.warn(f"Insufficient colors provided for {len(datasets)} datasets. Using default colors.")
+        colors = _get_line_colors(number_of_colors=len(datasets))
     # Title and labels of axis
     if title:
         ax.set_title(title)
@@ -890,12 +959,12 @@ def plot_datasets(
         {}
     )  # energies for unperturbed structure obtained with different methods
 
-    # all energies relative to unperturbed one
+    # all energies relative to the unperturbed energy of first dataset
     for dataset_number, dataset in enumerate(datasets):
 
-        for key, i in dataset["distortions"].items():
+        for key, energy in dataset["distortions"].items():
             dataset["distortions"][key] = (
-                i - datasets[0]["Unperturbed"]
+                energy - datasets[0]["Unperturbed"]
             )  # Energies relative to unperturbed E of dataset 1
 
         if dataset_number >= 1:
@@ -924,7 +993,7 @@ def plot_datasets(
                         default_style_settings[key] = optional_style_settings[
                             dataset_number
                         ]
-                    except KeyError:
+                    except IndexError:
                         default_style_settings[key] = optional_style_settings[
                             0
                         ]  # in case not enough for each dataset
@@ -953,10 +1022,10 @@ def plot_datasets(
         ax.plot(
             sorted_distortions,
             sorted_energies,
+            c=colors[dataset_number],
             markersize=default_style_settings["markersize"],
             marker=default_style_settings["marker"],
             linestyle=default_style_settings["linestyle"],
-            c=colors[dataset_number],
             label=dataset_labels[dataset_number],
             linewidth=default_style_settings["linewidth"],
         )
@@ -980,10 +1049,11 @@ def plot_datasets(
 
     # Plot Unperturbed point for every dataset, relative to the unperturbed energy of first dataset
     for key, value in unperturbed_energies.items():
-        if abs(value) > 0.1:
+        if abs(value) > 0.1: # Only plot if different energy from the reference Unperturbed
             print(
                 f"Energies for unperturbed structures obtained with different methods "
-                f"({dataset_labels[key]}) differ by {value:.2f}. You may want to check this!"
+                f"({dataset_labels[key]}) differ by {value:.2f}. If testing different "
+                "magnetic states (FM, AFM) this is normal, otherwise you may want to check this!"
             )
             ax.plot(
                 0,
@@ -1006,16 +1076,17 @@ def plot_datasets(
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E > 0.4 eV, 3 if E < 0.1 eV, 2 otherwise
-    ax = _format_tick_labels(ax=ax, energy_range=list(datasets[0]["distortions"].values()) + [datasets[0]["Unperturbed"],] )
+    ax = _format_tick_labels(
+        ax=ax, 
+        energy_range=list(datasets[0]["distortions"].values()) + [datasets[0]["Unperturbed"],] 
+        )
 
     ax.legend(frameon=True)  # show legend
 
-    # Save plot?
-    if save_tag:
+    if save_plot: # Save plot?
         _save_plot(
-            fig=f,
+            fig=fig,
             defect_name=defect_name,
             save_format=save_format,
         )
-    f.show()
-    return f
+    return fig
