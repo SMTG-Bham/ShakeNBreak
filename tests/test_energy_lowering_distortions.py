@@ -60,18 +60,56 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "Int_Cd_2": [1],
         }  # explicitly set
 
+        self.defect_folders_list = [
+            "Int_Cd_2_0",
+            "Int_Cd_2_1",
+            "Int_Cd_2_-1",
+            "Int_Cd_2_2",
+            "as_1_Cd_on_Te_1",
+            "as_1_Cd_on_Te_2",
+            "sub_1_In_on_Cd_1",
+        ]
+
     def tearDown(self):
         # removed generated folders
         for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
             if_present_rm(os.path.join(self.DATA_DIR, defect_dir))
 
-    def test_get_deep_distortions(self):
-        """Test get_deep_distortions() function"""
+    def test_read_defects_directories(self):
+        """Test reading defect directories and parsing to dictionaries"""
+        for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
+            if_present_rm(os.path.join(self.DATA_DIR, defect_dir))
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+            self.DATA_DIR
+        )
+        self.assertDictEqual(defect_charges_dict, {"vac_1_Cd": [0]})
+
+        for i in self.defect_folders_list:
+            os.mkdir(os.path.join(self.DATA_DIR, i))
+
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+            self.DATA_DIR
+        )
+        expected_dict = {
+            "Int_Cd_2": [2, -1, 1, 0],
+            "as_1_Cd_on_Te": [1, 2],
+            "sub_1_In_on_Cd": [1],
+            "vac_1_Cd": [0],
+        }
+        self.assertEqual(
+            defect_charges_dict.keys(),
+            expected_dict.keys(),
+        )
+        for i in expected_dict:  # Need to do this way to allow different list orders
+            self.assertCountEqual(defect_charges_dict[i], expected_dict[i])
+
+    def test_get_energy_lowering_distortions(self):
+        """Test get_energy_lowering_distortions() function"""
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
         ) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR
             )
             mock_print.assert_any_call("\nvac_1_Cd")
@@ -148,7 +186,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
         # test verbose=False output:
         with patch("builtins.print") as mock_print:
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR, verbose=False
             )  # same call as before, just with verbose=False
             mock_print.assert_not_called_with(
@@ -165,7 +203,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             record=True
         ) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR, min_e_diff=0.8
             )
             mock_print.assert_any_call("\nvac_1_Cd")
@@ -214,7 +252,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
 
         with patch("builtins.print") as mock_print:
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR
             )  # same call as before
             mock_print.assert_not_called_with(
@@ -288,7 +326,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         with open(os.path.join(self.DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.txt"), "w") as fp:
             fp.write(V_Cd_1_txt_w_distortion)
         with patch("builtins.print") as mock_print:
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR
             )  # same call as before
             mock_print.assert_any_call(
@@ -320,11 +358,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.assertEqual(
                 low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
             )
-        # all print messages and potential structure matching outcomes in `get_deep_distortions`
+        # all print messages and potential structure matching outcomes in `get_energy_lowering_distortions`
         # have now been tested in the above code
 
         # test min_dist kwarg:
-        low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+        low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
             self.defect_charges_dict, self.DATA_DIR, min_dist=0.01
         )  # same call as before, but with min_dist
         self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
@@ -356,11 +394,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # test stol kwarg:
         with warnings.catch_warnings(record=True) as w:
             warnings.filterwarnings("ignore", category=DeprecationWarning)
-            low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+            low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.DATA_DIR, stol=0.01
             )  # same call as before, but with stol
             self.assertEqual(
-                len(w), 21  # 21 rather than 69
+                len(w), 21
             )  # many warnings due to difficulty in structure matching (20), no data parsed from Int_Cd_2_1 (1)
             # with small stol (confirming stol has been passed to compare_structures)
             for warning in w:
@@ -374,7 +412,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
 
     # functionality of compare_struct_to_distortions() essentially tested through above tests for
-    # `get_deep_distortions`
+    # `get_energy_lowering_distortions`
 
     def test_write_distorted_inputs(self):
         """Test write_distorted_inputs()."""
@@ -399,7 +437,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         with open(os.path.join(self.DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.txt"), "w") as fp:
             fp.write(V_Cd_1_txt_w_distortion)
 
-        low_energy_defects_dict = energy_lowering_distortions.get_deep_distortions(
+        low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
             self.defect_charges_dict, self.DATA_DIR
         )
         with patch("builtins.print") as mock_print:
