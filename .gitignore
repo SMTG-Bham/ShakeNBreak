@@ -128,11 +128,12 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# PyCharm
+# PyCharm files
 .idea/
 
-# MacOS
+# Mac OS Files
 .DS_Store
 
-# Affinity Logo ideas
+# Affinity Designer
 Affinity/
+.vscode/settings.json
