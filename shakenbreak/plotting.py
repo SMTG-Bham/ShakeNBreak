@@ -831,10 +831,10 @@ def plot_colorbar(
         color=line_color,
         label=dataset_label,
     )
-    if imported_indices: # datapoints from other charge states
+    for i in imported_indices:  # datapoints from other charge states
         ax.scatter(
-            np.array(keys)[imported_indices],
-            np.array(list(energies_dict["distortions"].values()))[imported_indices],
+            np.array(keys)[i],
+            list(energies_dict["distortions"].values())[i],
             c=sorted_disp,
             edgecolors="k",
             ls="-",
@@ -844,7 +844,8 @@ def plot_colorbar(
             cmap=colormap,
             norm=norm,
             alpha=1,
-            label="From other charge state",
+            label=f"From "
+                  f"{list(energies_dict['distortions'].keys())[i].split('_')[-1]} charge state",
         )
     unperturbed_color = colormap(
         0
@@ -1044,10 +1045,10 @@ def plot_datasets(
             label=dataset_labels[dataset_number],
             linewidth=default_style_settings["linewidth"],
         )
-        if imported_indices:
+        for i in imported_indices:
             ax.scatter(
-                np.array(keys)[imported_indices],
-                np.array(list(dataset["distortions"].values()))[imported_indices],
+                np.array(keys)[i],
+                list(dataset["distortions"].values())[i],
                 c=colors[dataset_number],
                 edgecolors="k",
                 ls="-",
@@ -1055,7 +1056,8 @@ def plot_datasets(
                 zorder=10,  # make sure it's on top of the other lines
                 marker="s",
                 alpha=1,
-                label="From other charge state",
+                label=f"From "
+                      f"{list(dataset['distortions'].keys())[i].split('_')[-1]} charge state",
             )
 
     datasets[0][
