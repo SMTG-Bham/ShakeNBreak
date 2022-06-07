@@ -932,8 +932,10 @@ def plot_datasets(
         Energy vs distortion plot for multiple datasets, as a matplotlib.figure.Figure object
     """
     # Validate input
-    assert(len(datasets) == len(dataset_labels), 
-           f"Number of datasets and labels must match! You gave me {len(datasets)} datasets and {len(dataset_labels)} labels.",
+    if len(datasets) != len(dataset_labels):
+        raise ValueError(
+           f"Number of datasets and labels must match! You gave me {len(datasets)} datasets and"
+           f" {len(dataset_labels)} labels."
     )
     
     fig, ax = plt.subplots(1,1)
