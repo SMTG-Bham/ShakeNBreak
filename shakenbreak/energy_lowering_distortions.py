@@ -98,7 +98,7 @@ def get_energy_lowering_distortions(
     Returns:
          low_energy_defects (:obj:`dict`):
              Dictionary of defects for which bond distortion found an energy-lowering distortion
-             which is missed with normal unperturbed relaxation), of the form {defect: [list of
+             (which is missed with normal unperturbed relaxation), of the form {defect: [list of
              distortion dictionaries (with corresponding charge states, energy lowering,
              distortion factors, structures and charge states for which these structures weren't
              found)]}.
@@ -366,13 +366,32 @@ def compare_struct_to_distortions(
         ]
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, float))
-        ].sort_values(by="Bond Distortion", key=abs)
+        ].sort_values(by="Bond Distortion", key=abs)  # if present, otherwise empty
+
+        string_vals_sorted_distorted_df = matching_sub_df[
+            matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, str))
+        ]
+        imported_sorted_distorted_df = string_vals_sorted_distorted_df[
+            string_vals_sorted_distorted_df["Bond Distortion"].apply(lambda x: "_from_" in x)
+        ]
+
+        if not imported_sorted_distorted_df.empty:
+            # convert "X%_from_Y" strings to floats and then sort
+            # needs to be done this way because 'key' in pd.sort_values() needs to be vectorised...
+            s = imported_sorted_distorted_df['Bond Distortion'].str.slice(0, 3)
+            s = s.astype(float)
+            imported_sorted_distorted_df = imported_sorted_distorted_df.loc[
+                s.sort_values(key=lambda x: abs(x)).index]
 
         # first unperturbed, then rattled, then distortions sorted by initial distortion magnitude
         # from low to high (if present)
         sorted_matching_df = pd.concat(
-            [unperturbed_df, rattled_df, sorted_distorted_df]
+            [unperturbed_df, rattled_df, sorted_distorted_df, imported_sorted_distorted_df]
         )
+
+        if sorted_matching_df.empty:  # TODO: Add test for this
+            raise KeyError(f"Unrecognized label in parsed structures:"
+                           f" {matching_sub_df['Bond Distortion'].values}")
 
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0

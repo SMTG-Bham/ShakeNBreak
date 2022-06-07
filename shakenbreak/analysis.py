@@ -318,7 +318,7 @@ def grab_contcar(
 
 def analyse_defect_site(
     structure: Structure,
-    name: str = "Unnamed Defect",
+    name: Optional[str] = None,
     site_num: Optional[int] = None,
     vac_site: Optional[list] = None,
 ) -> tuple:
@@ -329,7 +329,7 @@ def analyse_defect_site(
         structure (:obj:`Structure`):
             `pymatgen` Structure object to analyse
         name (:obj:`str`):
-            Defect name for printing. (Default: "Unnamed Defect")
+            Defect name for printing. (Default: None)
         site_num (:obj:`int`):
             Defect site index in the structure, starting from 1 (VASP rather than python
             indexing). (Default: None)
@@ -354,7 +354,8 @@ def analyse_defect_site(
     else:
         raise ValueError("Either site_num or vac_site must be specified")
 
-    print("==> ", name + " structural analysis ", " <==")
+    if name is not None:
+        print("==> ", name + " structural analysis ", " <==")
     print("Analysing site", struct[isite].specie, struct[isite].frac_coords)
     coordination = crystalNN.get_local_order_parameters(struct, isite)
     if coordination is not None:
@@ -413,7 +414,8 @@ def analyse_structure(
 
     if not os.path.exists(f"{output_path}/distortion_metadata.json"):
         raise FileNotFoundError(
-            f"No `distortion_metadata.json` file found in {output_path}. Use function `analyse_defect_site` instead."
+            f"No `distortion_metadata.json` file found in {output_path}. Use function "
+            f"`analyse_defect_site` instead."
         )
 
     distortion_metadata = _read_distortion_metadata(
