@@ -363,15 +363,15 @@ def _format_colorbar(
     
 def plot_all_defects(
     defects_dict: dict,
-    output_path: Optional[str] = ".",
-    add_colorbar: Optional[bool] = False,
-    metric: Optional[str] = "max_dist",
-    plot_tag: Optional[bool] = True,
-    max_energy_above_unperturbed: Optional[float] = 0.5,
-    units: Optional[str] = "eV",
-    energy_diff_tol: Optional[float] = -0.1,
+    output_path: str = ".",
+    add_colorbar: bool = False,
+    metric: str = "max_dist",
+    plot_tag: bool = True,
+    max_energy_above_unperturbed: float = 0.5,
+    units: str = "eV",
+    min_e_diff: float = 0.05,
     line_color: Optional[str] = None,
-    save_format: Optional[str] = "svg",
+    save_format: str = "svg",
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those which undergo
@@ -401,11 +401,12 @@ def plot_all_defects(
             (Default: 0.5 eV)
         units (:obj:`str`):
             Units for energy, either "eV" or "meV".
-        energy_diff_tol (:obj:`float`):
-            Minimum energy difference between unperturbed and identified ground state required to analyse the defect.
-            (Default: 0.1 eV)
+        min_e_diff (:obj:`float`):
+            Minimum energy difference (in eV) between the ground-state defect structure,
+             relative to the `Unperturbed` structure, to consider it as having found a new
+             energy-lowering distortion. Default is 0.05 eV.
         line_color (:obj:`str`):
-            Color of the line conneting points.
+            Color of the line connecting points.
             (Default: ShakeNBreak base style)
         save_format (:obj:`str`):
             Format to save the plot as.
@@ -426,8 +427,9 @@ def plot_all_defects(
             # Parse energies
             if not os.path.isdir(f"{output_path}/{defect_species}"):
                 warnings.warn(
-                    f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
-                )  # if defect directory doesnt exists, skip defect
+                    f"Path {output_path}/{defect_species} does not exist! "
+                    f"Skipping {defect_species}."
+                )  # if defect directory doesn't exist, skip defect
                 continue
             energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
             if not os.path.exists(energies_file):
@@ -437,15 +439,17 @@ def plot_all_defects(
                 continue
             energies_dict, energy_diff, gs_distortion = _sort_data(energies_file, verbose=False)
 
-            if not energy_diff: # if Unperturbed calc is not converged, warn user
-                warnings.warn(f"Unperturbed calculation for {defect}_{charge} not converged! Skipping plot.")
+            if not energy_diff:  # if Unperturbed calc is not converged, warn user
+                warnings.warn(f"Unperturbed calculation for {defect}_{charge} not converged! "
+                              f"Skipping plot.")
                 continue
             # If a significant energy lowering was found with bond distortions (not just rattling),
             # then further analyse this defect
+            # TODO: Also do two-datapoint plot for defects that were just rattled
             if (
                 plot_tag
                 and ("Rattled" not in energies_dict["distortions"].keys())
-                and abs(float(energy_diff)) > abs(energy_diff_tol)
+                and abs(float(energy_diff)) > abs(min_e_diff)
             ):
                 # Get number and element symbol of the distorted site(s)
                 num_nearest_neighbours = distortion_metadata["defects"][defect][
@@ -488,6 +492,15 @@ def plot_all_defects(
                     save_format=save_format,
                 )
                 figures[defect_species] = fig
+
+            elif (
+                    plot_tag
+                    and ("Rattled" in energies_dict["distortions"].keys())
+                    and abs(float(energy_diff)) > abs(min_e_diff)
+            ):
+                _sort_data(energies_file, verbose=True)  # Print energy-lowering info (remove
+                # this once 'plot rattling' TODO above is added)
+
     return figures
 
 
