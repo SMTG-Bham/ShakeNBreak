@@ -6,7 +6,6 @@ IBRION: 2
 ISPIN: 2
 POTIM: 0.2
 LVHAR: False
-LSUBROT: False
 LREAL: Auto
 LCHARG: False
 LWAVE : False
