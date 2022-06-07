@@ -1,0 +1,8 @@
+Bond_Distortion_-60.0%_from_0
+-207.000
+Bond_Distortion_20.0%_from_-1
+-207.700
+Rattled
+-205.700
+Unperturbed
+-205.800
