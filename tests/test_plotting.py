@@ -423,3 +423,16 @@ class PlottingDefectsTestCase(unittest.TestCase):
             neighbour_atom="Te",
         )
         return fig
+
+    def test_plot_datasets_value_error(self):
+        """Test plot_datasets() function when user provides non-matching `datasets` and
+        `dataset_labels`"""
+        self.assertRaises(
+            ValueError,
+            plotting.plot_datasets,
+            datasets=[self.V_Cd_energies_dict, ],
+            dataset_labels=["SnB: 2 Te", "Another one"],
+            defect_name="V$_{Cd}^{0}$",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+        )
