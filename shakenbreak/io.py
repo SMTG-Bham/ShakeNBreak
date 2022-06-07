@@ -64,6 +64,7 @@ def vasp_gam_files(
             (default: None)
     """
     supercell = single_defect_dict["Defect Structure"]
+    num_elements = len(supercell.composition.elements)  # for ROPT setting in INCAR
     poscar_comment = (
         single_defect_dict["POSCAR Comment"]
         if "POSCAR Comment" in single_defect_dict
@@ -116,8 +117,9 @@ def vasp_gam_files(
 
     # Variable parameters first
     vaspgamincardict = {
-        "# May need to change NELECT, IBRION, NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, "
-        "POTIM": "variable parameters",
+        "# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for "
+        "qualitative structure searching": "",
+        "# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM": "",
         "NELECT": nelect,
         "IBRION": "2 # While often slower than '1' (RMM-DIIS), this is more stable and "
         "reliable, and vasp_gam relaxations are typically cheap enough to justify it",
@@ -125,14 +127,10 @@ def vasp_gam_files(
         + "if strong spin polarisation or magnetic behaviour present",
         "ISPIN": "2 # Spin polarisation likely for defects",
         "NCORE": 12,
-        "#KPAR": "# No KPAR, only one kpoint here",
-        "AEXX": 0.25,
-        "ENCUT": 450,
-        "POTIM": 0.2,
+        "#KPAR": "# No KPAR, only one kpoint",
+        "ENCUT": 300,
         "ICORELEVEL": "0 # Needed if using the Kumagai-Oba (eFNV) anisotropic charge correction",
-        "LSUBROT": "False # Change to True if relaxation poorly convergent",
-        "ALGO": "All # Most stable. Normal likely faster but less stable",
-        "ADDGRID": True,
+        "ALGO": "Normal",
         "EDIFF": f"{scaled_ediff(supercell.num_sites)} # May need to reduce for tricky relaxations",
         "EDIFFG": -0.01,
         "HFSCREEN": 0.2,
@@ -151,6 +149,7 @@ def vasp_gam_files(
         "NSW": 300,
         "PREC": "Accurate",
         "PRECFOCK": "Fast",
+        "ROPT": "1e-3 " * num_elements,
         "SIGMA": 0.05,
     }
     if incar_settings:
@@ -163,14 +162,13 @@ def vasp_gam_files(
                 k not in incar_params.keys()
             ):  # this code is taken from pymatgen.io.vasp.inputs
                 warnings.warn(  # but only checking keys, not values so we can add comments etc
-                    "Cannot find %s from your incar_settings in the list of INCAR flags"
-                    % (k),
+                    f"Cannot find {k} from your incar_settings in the list of INCAR flags",
                     BadIncarWarning,
                 )
         vaspgamincardict.update(incar_settings)
 
     vaspgamkpts = Kpoints().from_dict(
-        {"comment": "Kpoints from doped.vasp_gam_files", "generation_style": "Gamma"}
+        {"comment": "Gamma-only KPOINTS from ShakeNBreak", "generation_style": "Gamma"}
     )
     vaspgamincar = Incar.from_dict(vaspgamincardict)
 
