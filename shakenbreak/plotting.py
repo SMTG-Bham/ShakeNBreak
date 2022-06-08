@@ -7,7 +7,6 @@ import warnings
 import json
 from typing import Optional, Tuple
 import numpy as np
-from copy import deepcopy
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -1183,7 +1182,7 @@ def plot_datasets(
 
         # Format distortion keys of the distortions imported from other charge states
         imported_indices, keys, sorted_distortions, sorted_energies = _format_datapoints_from_other_chargestates(
-            energies_dict=dataset, # deepcopy to avoid changing original energies_dict when dealing with Rattled keys
+            energies_dict=dataset, 
             disp_dict=None
         )
         
