@@ -24,8 +24,23 @@ from shakenbreak.analysis import (
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
-
 # Helper functions for formatting plots
+def _verify_data_directories_exist(
+        output_path: str,
+        defect_species: str,
+    ):
+        # Check directories and input
+        if not os.path.isdir(output_path):  # if output_path does not exist, raise error
+            raise FileNotFoundError(
+                f"Path {output_path} does not exist! Skipping {defect_species}."
+            )
+        if not os.path.isdir(
+            f"{output_path}/{defect_species}"
+        ):  # check if defect directory exists
+            raise FileNotFoundError(
+                f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
+            )
+            
 def _format_tick_labels(
     ax: mpl.axes.Axes,
     energy_range: list,
@@ -68,7 +83,6 @@ def _format_tick_labels(
     )  # add some extra space to avoid cutting off some data points
     # (e.g. using the energy range here in case units are meV)
     return ax
-
 
 def _format_axis(
     ax: mpl.axes.Axes,
@@ -115,9 +129,7 @@ def _format_axis(
     ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
     return ax
 
-
 def _format_defect_name(
-    charge: int,
     defect_species: str,
     include_site_num_in_name: bool,
 ) -> str:
@@ -125,20 +137,23 @@ def _format_defect_name(
     Format defect name. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
 
     Args:
-        charge (int): defect charge
-        defect_species (str): name of defect without charge state (i.e. vac_1_Cd)
-        include_site_num_in_name (bool): whether to include site number in name (i.e. $V_{Cd}^{0}$ or $V_{Cd,1}^{0}$)
+        defect_species (:obj:`str`): 
+            name of defect including charge state (i.e. vac_1_Cd_0)
+        include_site_num_in_name (:obj:`bool`): 
+            whether to include site number in name (i.e. $V_{Cd}^{0}$ or $V_{Cd,1}^{0}$)
 
     Returns:
         str: formatted defect name
     """
     if not isinstance(defect_species, str): # Check inputs 
         raise(TypeError(f"`defect_species` {defect_species} must be a string"))
-    if not isinstance(charge, int):
-        try:
-            charge = int(charge)
-        except ValueError:
-            raise(ValueError(f"`charge` {charge} must be an integer!"))
+    try:
+        charge = defect_species.split("_")[-1] # charge comes last
+        charge = int(charge)
+    except ValueError:
+        raise(ValueError(f"Problem reading defect name {defect_species}. " 
+                         "It should include the charge state (i.e `vac_1_Cd_0`).")
+              )
     # Format defect name for title/axis labels
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
@@ -177,7 +192,38 @@ def _format_defect_name(
             raise ValueError(f"Defect type {defect_type} not recognized. Please check spelling.")
     return defect_name
 
-
+def _cast_energies_to_floats(
+        energies_dict: dict,
+        defect_species: str,
+    ):
+        """
+        If values of the energies_dict are not floats, convert them to floats.
+        If any problem encountered during conversion, raise ValueError.
+        Args:
+            energies_dict (:obj:`dict`):
+                Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
+                `analysis.get_energies()`)..
+            defect_species (:obj:`str`):
+                Defect name including charge (e.g. 'vac_1_Cd_0')
+        Returns:
+            energies_dict (:obj:`dict`):
+                Dictionary matching distortion to final energy (eV), with all energy values as floats.
+        """
+        if not all(
+            isinstance(energy, float)
+            for energy in list(energies_dict["distortions"].values())
+        ) or not isinstance(energies_dict["Unperturbed"], float):  # check energies_dict values are floats
+            try:
+                energies_dict["distortions"] = {
+                    k: float(v) for k, v in energies_dict["distortions"].items()
+                }
+                energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
+            except ValueError:
+                raise ValueError(
+                    f"Values of energies_dict are not floats! Skipping {defect_species}."
+                )
+        return energies_dict
+    
 def _change_energy_units_to_meV(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
@@ -204,7 +250,6 @@ def _change_energy_units_to_meV(
         energies_dict["distortions"][key] = energies_dict["distortions"][key] * 1000
     energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
     return energies_dict, max_energy_above_unperturbed, y_label
-
 
 def _purge_data_dicts(
     disp_dict: dict,
@@ -243,7 +288,104 @@ def _purge_data_dicts(
                 energies_dict["distortions"].pop(key)
     return disp_dict, energies_dict
 
+def _remove_high_energy_points(
+        energies_dict: dict,
+        max_energy_above_unperturbed: float,
+        disp_dict: Optional[dict]=None,
+    ):
+        """
+        Remove points whose energy is higher than the reference (Unperturbed) by more than
+        max_energy_above_unperturbed.
+        Args:
+            energies_dict (:obj:`dict`):
+                Dictionary matching distortion to final energy (eV), as produced by `analysis._organize_data()`
+                or `analysis.get_energies()`
+            max_energy_above_unperturbed (:obj:`float`):
+                Maximum energy (in chosen `units`), relative to the unperturbed structure, to show on plot
+            disp_dict (:obj:`dict`):
+                Dictionary matching distortion to sum of atomic displacements, as produced by 
+                `analysis.calculate_struct_comparison()`
+                (Default: None)
+        Returns:
+            energies_dict, disp_dict 
+        """ 
+        for key in list(energies_dict["distortions"].keys()):  # remove high energy points
+            if (
+                energies_dict["distortions"][key] - energies_dict["Unperturbed"]
+                > max_energy_above_unperturbed
+            ):
+                energies_dict["distortions"].pop(key)
+                if disp_dict: # only exists if user selected `add_colorbar=True`
+                    disp_dict.pop(key)
+        return energies_dict, disp_dict
 
+def _get_displacement_dict(
+        defect_species: str,
+        output_path: str,
+        metric: str,
+        energies_dict: dict,
+        add_colorbar: bool,
+    ):
+        """
+        Parses structures of `defect_species` to calculate displacements between each 
+        of them and the reference configuration (Unperturbed). These displacements
+        are stored in a dictionary matching distortion key to displacement value. 
+        Then, ensures `energies_dict` and `disp_dict` are consistent (same keys),
+        and makes them consistent otherwise.
+        If any problems encountered when parsing or calculating structural
+        similarity, warning will be raised and `add_colorbar` will be set to False.
+        Args:
+            defect_species (:obj:`str`):
+                Defect name including charge (e.g. 'vac_1_Cd_0')
+            output_path (:obj:`str`):
+                Path to directory with your distorted defect calculations (to calculate structure
+                comparisons)
+                (Default: current directory)
+            metric (:obj:`str`): 
+                If add_colorbar is True, determines the criteria used for the structural comparison.
+                Can choose between root-mean-squared displacement for all sites ('disp') or the
+                maximum distance between matched sites ('max_dist', default).
+                (Default: "max_dist")
+            energies_dict (:obj:`dict`):
+                Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
+                `analysis.get_energies()`)
+            add_colorbar (:obj:`bool`):
+                Whether to add a colorbar indicating structural similarity between each structure and
+                the unperturbed one.
+        Returns:
+            tuple: tuple of `add_colorbar`, `energies_dict` and `disp_dict`
+        """
+        try:
+            defect_structs = get_structures(
+                defect_species=defect_species, output_path=output_path
+            )
+            disp_dict = calculate_struct_comparison(
+                defect_structs, metric=metric
+            )  # calculate sum of atomic displacements and maximum displacement between paired sites
+            if (
+                disp_dict
+            ):  # if struct_comparison algorithms worked (sometimes struggles matching
+                # lattices)
+                disp_dict, energies_dict = _purge_data_dicts(
+                    disp_dict=disp_dict,
+                    energies_dict=energies_dict,
+                )  # make disp and energies dict consistent
+                # by removing any data point if its energy is not in the energy dict and viceversa
+            else:
+                warnings.warn(
+                    "Structure comparison algorithm struggled matching lattices. Colorbar will not "
+                    "be added to plot."
+                )
+                add_colorbar = False
+                return add_colorbar, energies_dict, None
+        except FileNotFoundError:  # raised by analysis.get_structures() if defect_directory or distortion subdirectories do not exist
+            warnings.warn(
+                f"Could not find structures for {defect_species}. Colorbar will not be added to plot."
+            )
+            add_colorbar = False
+            return add_colorbar, energies_dict, None
+        return add_colorbar, energies_dict, disp_dict
+   
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
@@ -366,11 +508,11 @@ def plot_all_defects(
     output_path: str = ".",
     add_colorbar: bool = False,
     metric: str = "max_dist",
-    plot_tag: bool = True,
     max_energy_above_unperturbed: float = 0.5,
     units: str = "eV",
     min_e_diff: float = 0.05,
     line_color: Optional[str] = None,
+    save_plot: bool = True,
     save_format: str = "svg",
 ) -> dict:
     """
@@ -393,7 +535,7 @@ def plot_all_defects(
             Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
-        plot_tag (:obj:`bool`):
+        save_plot (:obj:`bool`):
             Whether to plot the results or not.
             (Default: True)
         max_energy_above_unperturbed (:obj:`float`):
@@ -447,7 +589,7 @@ def plot_all_defects(
             # then further analyse this defect
             # TODO: Also do two-datapoint plot for defects that were just rattled
             if (
-                plot_tag
+                save_plot
                 and ("Rattled" not in energies_dict["distortions"].keys())
                 and abs(float(energy_diff)) > abs(min_e_diff)
             ):
@@ -479,7 +621,6 @@ def plot_all_defects(
 
                 fig= plot_defect(
                     defect_species=defect_species,
-                    charge=charge,
                     energies_dict=energies_dict,
                     output_path=output_path,
                     neighbour_atom=neighbour_atom,
@@ -494,7 +635,7 @@ def plot_all_defects(
                 figures[defect_species] = fig
 
             elif (
-                    plot_tag
+                    save_plot
                     and ("Rattled" in energies_dict["distortions"].keys())
                     and abs(float(energy_diff)) > abs(min_e_diff)
             ):
@@ -503,10 +644,8 @@ def plot_all_defects(
 
     return figures
 
-
 def plot_defect(
     defect_species: str,
-    charge: int,
     energies_dict: dict,
     output_path: Optional[str] = ".",
     neighbour_atom: Optional[str] = None,
@@ -528,22 +667,23 @@ def plot_defect(
     Args:
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
-        charge (:obj:`int`):
-            Defect charge state
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
-            `analysis.get_energies()`)..
+            `analysis.get_energies()`)
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to calculate structure
             comparisons)
             (Default: current directory)
         neighbour_atom (:obj:`str`):
             Name(s) of distorted neighbour atoms (e.g. 'Cd')
+            (Default: None)
         num_nearest_neighbours (:obj:`int`):
             Number of distorted neighbour atoms (e.g. 2)
+            (Default: None)
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between each structure and
             the unperturbed one.
+            (Default: False)
         metric (:obj:`str`):
             If add_colorbar is True, determines the criteria used for the structural comparison.
             Can choose between root-mean-squared displacement for all sites ('disp') or the
@@ -553,95 +693,54 @@ def plot_defect(
             Maximum energy (in chosen `units`), relative to the unperturbed structure, to show on
             the plot.
             (Default: 0.5 eV)
+        units (:obj:`str`):
+            Units for energy, either "eV" or "meV" (Default: "eV")
         include_site_num_in_name (:obj:`bool`):
             Whether to include the site number (as generated by doped) in the defect name.
             Useful for materials with many symmetry-inequivalent sites
-            (Default = False)
-        save_plot (:obj:`bool`):
-            Whether to save the plot as an SVG file.
-            (Default: True)
+            (Default: False)
         y_label (:obj:`str`):
-            Y axis label (Default: 'Energy (eV)')
-        units (:obj:`str`):
-            Units for energy, either "eV" or "meV" (Default: "eV")
+            Y axis label 
+            (Default: "Energy (eV)")
         line_color (:obj:`str`):
             Color of the line conneting points.
             (Default: ShakeNBreak base style)
+        save_plot (:obj:`bool`):
+            Whether to save the plot as an SVG file.
+            (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: "svg")
     Returns:
-        Energy vs distortion plot, as a mpl Figure object
+        Energy vs distortion plot, as a mpl.figure.Figure object
     """
-    # Check directories and input
-    if not os.path.isdir(output_path):  # if output_path does not exist, raise error
-        raise FileNotFoundError(
-            f"Path {output_path} does not exist! Skipping {defect_species}."
-        )
-    if not os.path.isdir(
-        f"{output_path}/{defect_species}"
-    ):  # check if defect directory exists
-        raise FileNotFoundError(
-            f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
-        )
+    # Ensure necessary directories exist, and raised error if not
+    _verify_data_directories_exist(output_path=output_path, defect_species=defect_species)
+    
     if not "Unperturbed" in energies_dict.keys():  # check if unperturbed energies exist
         warnings.warn(f"Unperturbed energy not present in energies_dict of {defect_species}! Skipping plot.")
         return None
     
-    if not all(
-        isinstance(energy, float)
-        for energy in list(energies_dict["distortions"].values())
-    ) and isinstance(energies_dict["Unperturbed"], float):  # check energies_dict values are floats
-        try:
-            energies_dict["distortions"] = {
-                k: float(v) for k, v in energies_dict["distortions"].items()
-            }
-            energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
-        except ValueError:
-            raise ValueError(
-                f"Values of energies_dict are not floats! Skipping {defect_species}."
-            )
+    energies_dict = _cast_energies_to_floats(
+        energies_dict=energies_dict, defect_species=defect_species
+        ) # ensure all energy values are floats, otherwise cast them to floats
 
-    if add_colorbar:  # then get structures to compare their similarity
-        try:
-            defect_structs = get_structures(
-                defect_species=defect_species, output_path=output_path
-            )
-            disp_dict = calculate_struct_comparison(
-                defect_structs, metric=metric
-            )  # calculate sum of atomic displacements and maximum displacement between paired sites
-            if (
-                disp_dict
-            ):  # if struct_comparison algorithms worked (sometimes struggles matching
-                # lattices)
-                disp_dict, energies_dict = _purge_data_dicts(
-                    disp_dict=disp_dict,
-                    energies_dict=energies_dict,
-                )  # make disp and energies dict consistent
-                # by removing any data point if its energy is not in the energy dict and viceversa
-            else:
-                print(
-                    "Structure comparison algorithm struggled matching lattices. Colorbar will not "
-                    "be added to plot."
-                )
-                add_colorbar = False
-        except FileNotFoundError:  # raised by analysis.get_structures() if defect_directory or distortion subdirectories do not exist
-            warnings.warn(
-                f"Could not find structures for {defect_species}. Colorbar will not be added to plot."
-            )
-            add_colorbar = False
-
-    for key in list(energies_dict["distortions"].keys()):  # remove high energy points
-        if (
-            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
-            > max_energy_above_unperturbed
-        ):
-            energies_dict["distortions"].pop(key)
-            if add_colorbar:
-                disp_dict.pop(key)
+    if add_colorbar:  # then get structures and calculate structural similarity
+        add_colorbar, energies_dict, disp_dict = _get_displacement_dict(
+            defect_species=defect_species,
+            output_path=output_path,
+            add_colorbar=add_colorbar,
+            metric=metric,
+            energies_dict=energies_dict,
+        )
+    
+    energies_dict, disp_dict = _remove_high_energy_points(
+        energies_dict=energies_dict, 
+        max_energy_above_unperturbed=max_energy_above_unperturbed,
+        disp_dict=disp_dict,
+        ) # remove high energy points
 
     defect_name = _format_defect_name(
-        charge=charge,
         defect_species=defect_species,
         include_site_num_in_name=include_site_num_in_name,
     )  # Format defect name for title and axis labels
@@ -755,7 +854,7 @@ def plot_colorbar(
             (Default: 'svg')
 
     Returns:
-        Energy vs distortion plot with colorbar for structural similarity, as a matplotlib.figure.Figure
+        Energy vs distortion plot with colorbar for structural similarity, as a mpl.figure.Figure
         object
     """
     fig, ax = plt.subplots(1,1)
@@ -799,6 +898,7 @@ def plot_colorbar(
     
     # sort displacements in same order as distortions and energies, for proper color mapping         
     sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()] 
+    
     # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
     keys = [
         float(entry.split("%")[0]) / 100
@@ -835,7 +935,7 @@ def plot_colorbar(
         ax.scatter(
             np.array(keys)[i],
             list(energies_dict["distortions"].values())[i],
-            c=sorted_disp,
+            c=sorted_disp[i],
             edgecolors="k",
             ls="-",
             s=50,
@@ -943,7 +1043,7 @@ def plot_datasets(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        Energy vs distortion plot for multiple datasets, as a matplotlib.figure.Figure object
+        Energy vs distortion plot for multiple datasets, as a mpl.figure.Figure object
     """
     # Validate input
     if len(datasets) != len(dataset_labels):
@@ -987,7 +1087,7 @@ def plot_datasets(
             dataset["Unperturbed"] = dataset["Unperturbed"] - datasets[0]["Unperturbed"]
             unperturbed_energies[dataset_number] = dataset["Unperturbed"]
 
-        for key in list(dataset["distortions"].keys()):  # remove high E points
+        for key in list(dataset["distortions"].keys()):  # remove high E points (relative to reference)
             if dataset["distortions"][key] > max_energy_above_unperturbed:
                 dataset["distortions"].pop(key)
 
