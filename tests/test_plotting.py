@@ -509,7 +509,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             neighbour_atom="Te",
         )
         return fig
-
+    
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$_only_rattled.png",
@@ -541,6 +541,26 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         return fig
     
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{-2}$_only_rattled_and_rattled_dist_from_other_charges_tates.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_datasets_only_rattled_and_rattled_dist_from_other_chargestates(self):
+        """Test plot_datasets() function when one of the energy lowering distortions from other
+        charge states is Rattled (i.e. `Rattled_from_0`)"""
+        # Fake dataset
+        datasets=[self.V_Cd_m2_energies_dict_from_other_charge_states,]
+        datasets[0]['distortions'].pop('-52.5%_from_0')
+        datasets[0]['distortions'].update({"Rattled_from_0": -205.92311458})
+        fig = plotting.plot_datasets(
+            datasets=datasets,
+            dataset_labels=["SnB: 2 Te"],
+            defect_name="V$_{Cd}^{0}$",
+        )
+        return fig
+        
     def test_plot_datasets_value_error(self):
         """Test plot_datasets() function when user provides non-matching `datasets` and
         `dataset_labels`"""
