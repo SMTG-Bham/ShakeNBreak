@@ -58,16 +58,21 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )[0]
 
         self.V_Cd_m2_energies_dict = analysis._sort_data(
-            energies_file= f"{self.DATA_DIR}/fake_V_Cd_-2.txt"
+            energies_file= f"{self.DATA_DIR}/vac_1_Cd_-2.txt"
         )[0]
         
         self.V_Cd_m2_energies_dict_from_other_charge_states = analysis._sort_data(
             energies_file= f"{self.DATA_DIR}/fake_V_Cd_-2_from_other_charge_states.txt"
         )[0]
         
+        if not os.path.exists(f"{self.DATA_DIR}/vac_1_Cd_-2"):
+            os.mkdir(f"{self.DATA_DIR}/vac_1_Cd_-2")
+            shutil.copyfile(f"{self.DATA_DIR}/vac_1_Cd_-2.txt", f"{self.DATA_DIR}/vac_1_Cd_-2/vac_1_Cd_-2.txt")
+        
     def tearDown(self):
         if_present_rm(f"{os.getcwd()}/distortion_plots")
-    
+        if_present_rm(f"{self.DATA_DIR}/vac_1_Cd_-2")
+        
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
         self.assertRaises(
@@ -653,7 +658,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             add_colorbar=False,
             num_nearest_neighbours=2,
             neighbour_atom="Te",
-            include_site_num_in_name=True
+            include_site_num_in_name=True,
+            save_plot=False,
         )
         return fig
     
@@ -677,3 +683,59 @@ class PlottingDefectsTestCase(unittest.TestCase):
             units="meV",
         )
         return fig
+    
+    # Most keywords of `plot_all_defects` have already been tested by tests of 
+    # `plot_defect`, `plot_datasets` and `plot_colorbar`. Now we test:
+    # incorrect `output_path`, non-existent defect directory, 
+    # correct output of `plot_all_defects` (dict of figures), behaviour when distortion_metadata not found 
+    # or missing entry for a given charge state, and finally the keyword `min_e_diff`
+    
+    def test_plot_all_defects_incorrect_output_path(self):
+        """Test plot_all_defects() function when `output_path` is incorrect"""
+        self.assertRaises(
+            FileNotFoundError,
+            plotting.plot_all_defects,
+            output_path="./fake_output_path",
+            defects_dict={"vac_1_Cd": [0,]},
+            save_plot=False,
+        )
+    def test_plot_all_defects_nonexistent_defect_folder(self):
+        """Test plot_all_defects() function when one of the defect folders does not exist"""
+        with warnings.catch_warnings(record=True) as w:
+            plotting.plot_all_defects(
+                output_path=self.DATA_DIR,
+                defects_dict={"vac_1_Cd": [-1,]},
+                save_plot=False,
+            )
+            self.assertTrue("vac_1_Cd_-1 does not exist! Skipping vac_1_Cd_-1." in str(w[-1].message))
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{-2}$_only_rattled.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defects_output(self):
+        """Test output of plot_all_defects() function. Test plot still geenrated when 
+        distortion_metadata.json does not contain info for a given charge state"""
+        fig_dict = plotting.plot_all_defects(
+            output_path=self.DATA_DIR,
+            defects_dict={"vac_1_Cd": [0, -2]},
+            save_plot=False,
+            min_e_diff=0.05,
+            add_title=False,
+        )
+        [self.assertIsInstance(figure, mpl.figure.Figure) for figure in fig_dict.values()]
+        self.assertEqual(list(fig_dict.keys()), ["vac_1_Cd_0", "vac_1_Cd_-2"])
+        # No info on distortion_metadata.json for charge state -2, so its x label should be 'Bond Distortion Factor'
+        return fig_dict["vac_1_Cd_-2"] 
+    
+    def test_plot_all_defects_min_e_diff(self):
+        """Test plot_all_defects() function with keyword min_e_diff set"""
+        fig_dict = plotting.plot_all_defects(
+            output_path=self.DATA_DIR,
+            defects_dict={"vac_1_Cd": [0, -2]},
+            save_plot=False,
+            min_e_diff=0.15,
+        )
+        self.assertTrue("vac_1_Cd_-2" not in fig_dict.keys())
