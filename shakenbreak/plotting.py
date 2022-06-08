@@ -5,8 +5,9 @@ energy-lowering distortions.
 import os
 import warnings
 import json
-from typing import Optional
+from typing import Optional, Tuple
 import numpy as np
+from copy import deepcopy
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -25,21 +26,22 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
 # Helper functions for formatting plots
+
 def _verify_data_directories_exist(
-        output_path: str,
-        defect_species: str,
-    ):
-        # Check directories and input
-        if not os.path.isdir(output_path):  # if output_path does not exist, raise error
-            raise FileNotFoundError(
-                f"Path {output_path} does not exist! Skipping {defect_species}."
-            )
-        if not os.path.isdir(
-            f"{output_path}/{defect_species}"
-        ):  # check if defect directory exists
-            raise FileNotFoundError(
-                f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
-            )
+    output_path: str,
+    defect_species: str,    
+) -> None:
+    # Check directories and input
+    if not os.path.isdir(output_path):  # if output_path does not exist, raise error
+        raise FileNotFoundError(
+            f"Path {output_path} does not exist! Skipping {defect_species}."
+        )
+    if not os.path.isdir(
+        f"{output_path}/{defect_species}"
+    ):  # check if defect directory exists
+        raise FileNotFoundError(
+            f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
+        )
             
 def _format_tick_labels(
     ax: mpl.axes.Axes,
@@ -193,42 +195,42 @@ def _format_defect_name(
     return defect_name
 
 def _cast_energies_to_floats(
-        energies_dict: dict,
-        defect_species: str,
-    ):
-        """
-        If values of the energies_dict are not floats, convert them to floats.
-        If any problem encountered during conversion, raise ValueError.
-        Args:
-            energies_dict (:obj:`dict`):
-                Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
-                `analysis.get_energies()`)..
-            defect_species (:obj:`str`):
-                Defect name including charge (e.g. 'vac_1_Cd_0')
-        Returns:
-            energies_dict (:obj:`dict`):
-                Dictionary matching distortion to final energy (eV), with all energy values as floats.
-        """
-        if not all(
-            isinstance(energy, float)
-            for energy in list(energies_dict["distortions"].values())
-        ) or not isinstance(energies_dict["Unperturbed"], float):  # check energies_dict values are floats
-            try:
-                energies_dict["distortions"] = {
-                    k: float(v) for k, v in energies_dict["distortions"].items()
-                }
-                energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
-            except ValueError:
-                raise ValueError(
-                    f"Values of energies_dict are not floats! Skipping {defect_species}."
-                )
-        return energies_dict
+    energies_dict: dict,
+    defect_species: str,
+) -> dict:
+    """
+    If values of the energies_dict are not floats, convert them to floats.
+    If any problem encountered during conversion, raise ValueError.
+    Args:
+        energies_dict (:obj:`dict`):
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
+            `analysis.get_energies()`)..
+        defect_species (:obj:`str`):
+            Defect name including charge (e.g. 'vac_1_Cd_0')
+    Returns:
+        energies_dict (:obj:`dict`):
+            Dictionary matching distortion to final energy (eV), with all energy values as floats.
+    """
+    if not all(
+        isinstance(energy, float)
+        for energy in list(energies_dict["distortions"].values())
+    ) or not isinstance(energies_dict["Unperturbed"], float):  # check energies_dict values are floats
+        try:
+            energies_dict["distortions"] = {
+                k: float(v) for k, v in energies_dict["distortions"].items()
+            }
+            energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
+        except ValueError:
+            raise ValueError(
+                f"Values of energies_dict are not floats! Skipping {defect_species}."
+            )
+    return energies_dict
     
 def _change_energy_units_to_meV(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
     y_label: str,
-) -> tuple:
+) -> Tuple[dict, float, str]:
     """
     Converts energy values from eV to meV and format y label accordingly.
 
@@ -238,7 +240,7 @@ def _change_energy_units_to_meV(
         y_label (str): label for y axis
 
     Returns:
-        tuple: (max_energy_above_unperturbed, energies_dict, y_label) with energy values in meV
+        Tuple[dict, float, str]: (max_energy_above_unperturbed, energies_dict, y_label) with energy values in meV
     """
     if 'meV' not in y_label:
         y_label = y_label.replace("eV", "meV")
@@ -254,7 +256,7 @@ def _change_energy_units_to_meV(
 def _purge_data_dicts(
     disp_dict: dict,
     energies_dict: dict,
-) -> tuple:
+) -> Tuple[dict, dict]:
     """
     Purges dictionaries of displacements and energies so that they are consistent (i.e. contain
     data for same distortions).
@@ -272,7 +274,7 @@ def _purge_data_dicts(
             in the output format of `analysis.get_energies()` or analysis.organize_data()
 
     Returns:
-        (dict, dict): Consistent dictionaries of displacements and energies, containing data for
+        Tuple[dict, dict]: Consistent dictionaries of displacements and energies, containing data for
         same distortions.
     """
     for key in list(disp_dict.keys()):
@@ -289,103 +291,164 @@ def _purge_data_dicts(
     return disp_dict, energies_dict
 
 def _remove_high_energy_points(
-        energies_dict: dict,
-        max_energy_above_unperturbed: float,
-        disp_dict: Optional[dict]=None,
-    ):
-        """
-        Remove points whose energy is higher than the reference (Unperturbed) by more than
-        max_energy_above_unperturbed.
-        Args:
-            energies_dict (:obj:`dict`):
-                Dictionary matching distortion to final energy (eV), as produced by `analysis._organize_data()`
-                or `analysis.get_energies()`
-            max_energy_above_unperturbed (:obj:`float`):
-                Maximum energy (in chosen `units`), relative to the unperturbed structure, to show on plot
-            disp_dict (:obj:`dict`):
-                Dictionary matching distortion to sum of atomic displacements, as produced by 
-                `analysis.calculate_struct_comparison()`
-                (Default: None)
-        Returns:
-            energies_dict, disp_dict 
-        """ 
-        for key in list(energies_dict["distortions"].keys()):  # remove high energy points
-            if (
-                energies_dict["distortions"][key] - energies_dict["Unperturbed"]
-                > max_energy_above_unperturbed
-            ):
-                energies_dict["distortions"].pop(key)
-                if disp_dict: # only exists if user selected `add_colorbar=True`
-                    disp_dict.pop(key)
-        return energies_dict, disp_dict
+    energies_dict: dict,
+    max_energy_above_unperturbed: float,
+    disp_dict: Optional[dict]=None,
+) -> Tuple[dict, dict]:
+    """
+    Remove points whose energy is higher than the reference (Unperturbed) by more than
+    max_energy_above_unperturbed.
+    Args:
+        energies_dict (:obj:`dict`):
+            Dictionary matching distortion to final energy (eV), as produced by `analysis._organize_data()`
+            or `analysis.get_energies()`
+        max_energy_above_unperturbed (:obj:`float`):
+            Maximum energy (in chosen `units`), relative to the unperturbed structure, to show on plot
+        disp_dict (:obj:`dict`):
+            Dictionary matching distortion to sum of atomic displacements, as produced by 
+            `analysis.calculate_struct_comparison()`
+            (Default: None)
+    Returns:
+        Tuple[dict, dict]: energies_dict, disp_dict 
+    """ 
+    for key in list(energies_dict["distortions"].keys()):  # remove high energy points
+        if (
+            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
+            > max_energy_above_unperturbed
+        ):
+            energies_dict["distortions"].pop(key)
+            if disp_dict: # only exists if user selected `add_colorbar=True`
+                disp_dict.pop(key)
+    return energies_dict, disp_dict
 
 def _get_displacement_dict(
-        defect_species: str,
-        output_path: str,
-        metric: str,
-        energies_dict: dict,
-        add_colorbar: bool,
-    ):
-        """
-        Parses structures of `defect_species` to calculate displacements between each 
-        of them and the reference configuration (Unperturbed). These displacements
-        are stored in a dictionary matching distortion key to displacement value. 
-        Then, ensures `energies_dict` and `disp_dict` are consistent (same keys),
-        and makes them consistent otherwise.
-        If any problems encountered when parsing or calculating structural
-        similarity, warning will be raised and `add_colorbar` will be set to False.
-        Args:
-            defect_species (:obj:`str`):
-                Defect name including charge (e.g. 'vac_1_Cd_0')
-            output_path (:obj:`str`):
-                Path to directory with your distorted defect calculations (to calculate structure
-                comparisons)
-                (Default: current directory)
-            metric (:obj:`str`): 
-                If add_colorbar is True, determines the criteria used for the structural comparison.
-                Can choose between root-mean-squared displacement for all sites ('disp') or the
-                maximum distance between matched sites ('max_dist', default).
-                (Default: "max_dist")
-            energies_dict (:obj:`dict`):
-                Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
-                `analysis.get_energies()`)
-            add_colorbar (:obj:`bool`):
-                Whether to add a colorbar indicating structural similarity between each structure and
-                the unperturbed one.
-        Returns:
-            tuple: tuple of `add_colorbar`, `energies_dict` and `disp_dict`
-        """
-        try:
-            defect_structs = get_structures(
-                defect_species=defect_species, output_path=output_path
-            )
-            disp_dict = calculate_struct_comparison(
-                defect_structs, metric=metric
-            )  # calculate sum of atomic displacements and maximum displacement between paired sites
-            if (
-                disp_dict
-            ):  # if struct_comparison algorithms worked (sometimes struggles matching
-                # lattices)
-                disp_dict, energies_dict = _purge_data_dicts(
-                    disp_dict=disp_dict,
-                    energies_dict=energies_dict,
-                )  # make disp and energies dict consistent
-                # by removing any data point if its energy is not in the energy dict and viceversa
-            else:
-                warnings.warn(
-                    "Structure comparison algorithm struggled matching lattices. Colorbar will not "
-                    "be added to plot."
-                )
-                add_colorbar = False
-                return add_colorbar, energies_dict, None
-        except FileNotFoundError:  # raised by analysis.get_structures() if defect_directory or distortion subdirectories do not exist
+    defect_species: str,
+    output_path: str,
+    metric: str,
+    energies_dict: dict,
+    add_colorbar: bool,
+) -> Tuple[bool, dict, dict]:
+    """
+    Parses structures of `defect_species` to calculate displacements between each 
+    of them and the reference configuration (Unperturbed). These displacements
+    are stored in a dictionary matching distortion key to displacement value. 
+    Then, ensures `energies_dict` and `disp_dict` are consistent (same keys),
+    and makes them consistent otherwise.
+    If any problems encountered when parsing or calculating structural
+    similarity, warning will be raised and `add_colorbar` will be set to False.
+    Args:
+        defect_species (:obj:`str`):
+            Defect name including charge (e.g. 'vac_1_Cd_0')
+        output_path (:obj:`str`):
+            Path to directory with your distorted defect calculations (to calculate structure
+            comparisons)
+            (Default: current directory)
+        metric (:obj:`str`): 
+            If add_colorbar is True, determines the criteria used for the structural comparison.
+            Can choose between root-mean-squared displacement for all sites ('disp') or the
+            maximum distance between matched sites ('max_dist', default).
+            (Default: 'max_dist')
+        energies_dict (:obj:`dict`):
+            Dictionary matching distortion to final energy (eV), as produced by `_organize_data()` or
+            `analysis.get_energies()`)
+        add_colorbar (:obj:`bool`):
+            Whether to add a colorbar indicating structural similarity between each structure and
+            the unperturbed one.
+    Returns:
+        Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and `disp_dict`
+    """
+    try:
+        defect_structs = get_structures(
+            defect_species=defect_species, output_path=output_path
+        )
+        disp_dict = calculate_struct_comparison(
+            defect_structs, metric=metric
+        )  # calculate sum of atomic displacements and maximum displacement between paired sites
+        if (
+            disp_dict
+        ):  # if struct_comparison algorithms worked (sometimes struggles matching
+            # lattices)
+            disp_dict, energies_dict = _purge_data_dicts(
+                disp_dict=disp_dict,
+                energies_dict=energies_dict,
+            )  # make disp and energies dict consistent
+            # by removing any data point if its energy is not in the energy dict and viceversa
+        else:
             warnings.warn(
-                f"Could not find structures for {defect_species}. Colorbar will not be added to plot."
+                "Structure comparison algorithm struggled matching lattices. Colorbar will not "
+                "be added to plot."
             )
             add_colorbar = False
             return add_colorbar, energies_dict, None
-        return add_colorbar, energies_dict, disp_dict
-   
+    except FileNotFoundError:  # raised by analysis.get_structures() if defect_directory or distortion subdirectories do not exist
+        warnings.warn(
+            f"Could not find structures for {output_path}/{defect_species}. Colorbar will not be added to plot."
+        )
+        add_colorbar = False
+        return add_colorbar, energies_dict, None
+    return add_colorbar, energies_dict, disp_dict
+
+def _format_datapoints_from_other_chargestates(
+    energies_dict: dict,
+    disp_dict: Optional[dict]=None
+) -> tuple:
+    """
+    Format distortions keys of the energy lowering distortions imported from other charge states.
+    Args:
+        energies_dict (dict): _description_
+        disp_dict (Optional[dict], optional): _description_. Defaults to None.
+
+    Returns:
+        tuple: imported_indices, sorted_distortions, sorted_energies, sorted_disp (if disp_dict is not None)
+    """
+    # store indices of imported structures ("X%_from_Y") to plot differently later
+    # comparison
+    imported_indices = []
+    for i, entry in enumerate(energies_dict["distortions"].keys()):
+        if isinstance(entry, str) and "_from_" in entry:
+            imported_indices.append(i)
+
+    # reformat any "X%_from_Y" or "Rattled_from_Y" distortions to corresponding (X) distortion factor 
+    # or 0.0 for "Rattled"
+    keys = []
+    for entry in energies_dict["distortions"].keys():
+        if isinstance(entry, str) and "%_from_" in entry:
+            keys.append(float(entry.split("%")[0]) / 100)
+        elif isinstance(entry, str) and "Rattled_from_" in entry:
+            keys.append(0.0) # Rattled will be plotted at x=0.0
+        elif entry != "Rattled": # avoid adding Rattled to keys, 
+            # so we then sort keys by distortion factor
+            keys.append(entry)
+    
+    if disp_dict:
+        # sort displacements in same order as distortions and energies, for proper color mapping         
+        sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()] 
+        if "Rattled" in energies_dict["distortions"].keys() or "Rattled" in disp_dict.keys():
+            # remove Rattled from deepcopy of dictionary to avoid error when sorting distortions
+            sorted_disp.pop("Rattled", None)
+            energies_dict["distortions"].pop("Rattled", None)
+        try:
+            # sort keys and values
+            sorted_distortions, sorted_energies, sorted_disp = zip(
+                *sorted(zip(keys, energies_dict["distortions"].values(), sorted_disp))
+            )
+            return imported_indices, keys, sorted_distortions, sorted_energies, sorted_disp
+        except ValueError: # if keys and energies_dict["distortions"] are empty 
+            # (i.e. the only distortion is Rattled)
+            return [], [], None, None, None
+    # sort keys and values
+    if "Rattled" in energies_dict["distortions"].keys():
+        # remove Rattled from deepcopy of dictionary to avoid error when sorting distortions
+        energies_dict["distortions"].pop("Rattled", None)
+    try:
+        sorted_distortions, sorted_energies = zip(
+            *sorted(zip(keys, energies_dict["distortions"].values()))
+        )
+        return imported_indices, keys, sorted_distortions, sorted_energies
+    except ValueError: # if keys and energies_dict["distortions"] are empty 
+        # (i.e. the only distortion is Rattled)
+        return [], [], None, None
+
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
@@ -413,7 +476,7 @@ def _save_plot(
         bbox_inches="tight",
     )
 
-def _get_line_colors(number_of_colors: int):
+def _get_line_colors(number_of_colors: int) -> list:
     """
     Get list of colors for plotting several lines.
     Args:
@@ -430,7 +493,9 @@ def _get_line_colors(number_of_colors: int):
         colors = ["#59a590",] # Turquoise by default
     return colors
 
-def _setup_colormap(disp_dict: dict):
+def _setup_colormap(
+    disp_dict: dict,
+) -> Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
     """
     Setup colormap to measure structural similarity between structures.
     Args:
@@ -438,6 +503,7 @@ def _setup_colormap(disp_dict: dict):
             dictionary mapping distortion key to structural similarity between
             the associated structure and the reference structure.
     Returns:
+        Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]: 
         colormap, vmin, vmedium, vmax, norm
     """
     array_disp = np.array(list(disp_dict.values()))
@@ -452,56 +518,58 @@ def _setup_colormap(disp_dict: dict):
     return colormap, vmin, vmedium, vmax, norm
 
 def _format_colorbar(
-        fig: mpl.figure.Figure,
-        ax: mpl.axes.Axes,
-        im: mpl.collections.PathCollection,
-        metric: str,
-        vmin: float,
-        vmax: float,
-        vmedium: float,
-        ):
-        """
-        Format colorbar of plot
-        Args:
-            fig (:obj:`mpl.figure.Figure`):
-                matplotlib.figure.Figure object
-            ax (:obj:`mpl.axes.Axes`):
-                current matplotlib.axes.Axes object
-            im (:obj:`mpl.collections.PathCollection`)
-            metric (:obj:`str`):
-                metric to be plotted: "disp" or "max_dist" 
-            vmin (:obj:`float`):
-            vmax (:obj:`float`):
-            vmedium (:obj:`float`):
-        Returns:
-            cbar (:obj:`mpl.colorbar.Colorbar`)
-        """
-        cbar = fig.colorbar(
-            im,
-            ax=ax,
-            boundaries=None,
-            drawedges=False,
-            aspect=20,
-            fraction=0.1,
-            pad=0.09,
-            shrink=0.8,
-        )
-        cbar.ax.tick_params(size=0)
-        cbar.outline.set_visible(False)
-        if metric == "disp":
-            cmap_label = "$\Sigma$ Disp $(\AA)$"
-        elif metric == "max_dist":
-            cmap_label = r"$d_{max}$ $(\AA)$"
-        cbar.ax.set_title(
-            cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5
-        )
-        if vmin != vmax:
-            cbar.set_ticks([vmin, vmedium, vmax])
-            cbar.set_ticklabels([vmin, vmedium, vmax])
-        else:
-            cbar.set_ticks([vmedium])
-            cbar.set_ticklabels([vmedium])
-        return cbar
+    fig: mpl.figure.Figure,
+    ax: mpl.axes.Axes,
+    im: mpl.collections.PathCollection,
+    metric: str,
+    vmin: float,
+    vmax: float,
+    vmedium: float,
+) -> mpl.figure.Figure.colorbar:
+    """
+    Format colorbar of plot
+    Args:
+        fig (:obj:`mpl.figure.Figure`):
+            matplotlib.figure.Figure object
+        ax (:obj:`mpl.axes.Axes`):
+            current matplotlib.axes.Axes object
+        im (:obj:`mpl.collections.PathCollection`)
+        metric (:obj:`str`):
+            metric to be plotted: "disp" or "max_dist" 
+        vmin (:obj:`float`):
+        vmax (:obj:`float`):
+        vmedium (:obj:`float`):
+    Returns:
+        cbar (:obj:`mpl.colorbar.Colorbar`)
+    """
+    cbar = fig.colorbar(
+        im,
+        ax=ax,
+        boundaries=None,
+        drawedges=False,
+        aspect=20,
+        fraction=0.1,
+        pad=0.09,
+        shrink=0.8,
+    )
+    cbar.ax.tick_params(size=0)
+    cbar.outline.set_visible(False)
+    if metric == "disp":
+        cmap_label = "$\Sigma$ Disp $(\AA)$"
+    elif metric == "max_dist":
+        cmap_label = r"$d_{max}$ $(\AA)$"
+    cbar.ax.set_title(
+        cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5
+    )
+    if vmin != vmax:
+        cbar.set_ticks([vmin, vmedium, vmax])
+        cbar.set_ticklabels([vmin, vmedium, vmax])
+    else:
+        cbar.set_ticks([vmedium])
+        cbar.set_ticklabels([vmedium])
+    return cbar
+ 
+# Main plotting functions
     
 def plot_all_defects(
     defects_dict: dict,
@@ -512,6 +580,7 @@ def plot_all_defects(
     units: str = "eV",
     min_e_diff: float = 0.05,
     line_color: Optional[str] = None,
+    add_title: Optional[bool] = True,
     save_plot: bool = True,
     save_format: str = "svg",
 ) -> dict:
@@ -535,9 +604,6 @@ def plot_all_defects(
             Can choose between root-mean-squared displacement for all sites ('disp') or the
             maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
-        save_plot (:obj:`bool`):
-            Whether to plot the results or not.
-            (Default: True)
         max_energy_above_unperturbed (:obj:`float`):
             Maximum energy (in eV), relative to the unperturbed structure, to show on the plot.
             (Default: 0.5 eV)
@@ -550,6 +616,13 @@ def plot_all_defects(
         line_color (:obj:`str`):
             Color of the line connecting points.
             (Default: ShakeNBreak base style)
+        add_title (:obj:`bool`):
+            Whether to add a title to the plot. By default, the title is the formatted defect 
+            name (i.e. V$_{Cd}^{0}$).
+            (Default: True)
+        save_plot (:obj:`bool`):
+            Whether to plot the results or not.
+            (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
@@ -590,7 +663,6 @@ def plot_all_defects(
             # TODO: Also do two-datapoint plot for defects that were just rattled
             if (
                 save_plot
-                and ("Rattled" not in energies_dict["distortions"].keys())
                 and abs(float(energy_diff)) > abs(min_e_diff)
             ):
                 # Get number and element symbol of the distorted site(s)
@@ -630,18 +702,12 @@ def plot_all_defects(
                     units=units,
                     max_energy_above_unperturbed=max_energy_above_unperturbed,
                     line_color=line_color,
+                    add_title=add_title,
+                    save_plot=save_plot,
                     save_format=save_format,
                 )
                 figures[defect_species] = fig
-
-            elif (
-                    save_plot
-                    and ("Rattled" in energies_dict["distortions"].keys())
-                    and abs(float(energy_diff)) > abs(min_e_diff)
-            ):
-                _sort_data(energies_file, verbose=True)  # Print energy-lowering info (remove
-                # this once 'plot rattling' TODO above is added)
-
+                
     return figures
 
 def plot_defect(
@@ -655,6 +721,7 @@ def plot_defect(
     max_energy_above_unperturbed: Optional[float] = 0.5,
     include_site_num_in_name: Optional[bool] = False,
     y_label: Optional[str] = "Energy (eV)",
+    add_title: Optional[bool] = True,
     line_color: Optional[str] = None,
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
@@ -702,6 +769,10 @@ def plot_defect(
         y_label (:obj:`str`):
             Y axis label 
             (Default: "Energy (eV)")
+        add_title (:obj:`bool`):
+            Whether to add a title to the plot. By default, the title is the formatted defect 
+            name (i.e. V$_{Cd}^{0}$).
+            (Default: True)
         line_color (:obj:`str`):
             Color of the line conneting points.
             (Default: ShakeNBreak base style)
@@ -737,7 +808,7 @@ def plot_defect(
     energies_dict, disp_dict = _remove_high_energy_points(
         energies_dict=energies_dict, 
         max_energy_above_unperturbed=max_energy_above_unperturbed,
-        disp_dict=disp_dict,
+        disp_dict=disp_dict if add_colorbar else None,
         ) # remove high energy points
 
     defect_name = _format_defect_name(
@@ -761,36 +832,35 @@ def plot_defect(
             energies_dict=energies_dict,
             disp_dict=disp_dict,
             defect_name=defect_name,
+            title=defect_name if add_title else None,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
-            title=defect_name,
-            dataset_label=f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"
+            legend_label=f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
             if num_nearest_neighbours != None
-            else f"ShakeNBreak: {neighbour_atom}",
+            else f"Distortions: {neighbour_atom}",
             metric=metric,
-            save_plot=save_plot,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             line_color=line_color,
+            save_plot=save_plot,
             save_format=save_format,
         )
     else:
        fig= plot_datasets(
             datasets=[energies_dict],
             defect_name=defect_name,
+            title=defect_name if add_title else None,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
-            title=defect_name,
-            dataset_labels=[f"ShakeNBreak: {num_nearest_neighbours} {neighbour_atom}"]
+            dataset_labels=[f"Distortions: {num_nearest_neighbours} {neighbour_atom}"]
             if num_nearest_neighbours != None
-            else [f"ShakeNBreak: {neighbour_atom}"],
-            save_plot=save_plot,
+            else [f"Distortions: {neighbour_atom}"],
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
+            save_plot=save_plot,
             save_format=save_format,
         )
     return fig
-
 
 def plot_colorbar(
     energies_dict: dict,
@@ -799,7 +869,7 @@ def plot_colorbar(
     num_nearest_neighbours: int = None,
     neighbour_atom: str = "NN",
     title: Optional[str] = None,
-    dataset_label: str = "SnB",
+    legend_label: str = "SnB",
     metric: Optional[str] = "max_dist",
     max_energy_above_unperturbed: Optional[float] = 0.5,
     save_plot: Optional[bool] = False,
@@ -829,7 +899,7 @@ def plot_colorbar(
         title (:obj:`str`, optional):
             Plot title
             (Default: None)
-        dataset_label (:obj:`str`):
+        legend_label (:obj:`str`):
             Label for plot legend
             (Default: 'SnB')
         metric (:obj:`str`):
@@ -870,68 +940,64 @@ def plot_colorbar(
         neighbour_atom=neighbour_atom,
     )
 
-    # Remove high energy points
-    for key in list(energies_dict["distortions"].keys()):
-        if (
-            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
-            > max_energy_above_unperturbed
-        ):
-            energies_dict["distortions"].pop(key)
-            disp_dict.pop(key)
-
-    # Setting line color and colorbar
-    if not line_color:
-        line_color = "#59a590"  # By default turquoise
-    colormap, vmin, vmedium, vmax, norm = _setup_colormap(disp_dict) # colormap to measure structural similarity
-    
     # all energies relative to unperturbed one
     for key, i in energies_dict["distortions"].items():
         energies_dict["distortions"][key] = i - energies_dict["Unperturbed"]
     energies_dict["Unperturbed"] = 0.0
+    
+    energies_dict, disp_dict = _remove_high_energy_points(
+        energies_dict=energies_dict,
+        disp_dict=disp_dict,
+        max_energy_above_unperturbed=max_energy_above_unperturbed,
+    ) # Remove high energy points
+    
+    # Setting line color and colorbar
+    if not line_color:
+        line_color = "#59a590"  # By default turquoise
+    colormap, vmin, vmedium, vmax, norm = _setup_colormap(disp_dict) # colormap to measure structural similarity
 
+    # Format distortion keys from other charge states
+    imported_indices, keys, sorted_distortions, sorted_energies, sorted_disp = _format_datapoints_from_other_chargestates(
+        energies_dict=deepcopy(energies_dict), # deepcopy to avoid changing original dict when dealing with Rattled keys
+        disp_dict=deepcopy(disp_dict)
+    ) 
+    
     # Plotting
-    # store indices of imported structures ("X%_from_Y") to plot differently later comparison
-    imported_indices = []
-    for i, entry in enumerate(energies_dict["distortions"].keys()):
-        if isinstance(entry, str) and "_from_" in entry:
-            imported_indices.append(i)
-    
-    # sort displacements in same order as distortions and energies, for proper color mapping         
-    sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()] 
-    
-    # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
-    keys = [
-        float(entry.split("%")[0]) / 100
-        if isinstance(entry, str) and "_from_" in entry
-        else entry
-        for entry in energies_dict["distortions"].keys()
-    ]
-    # sort keys and values
-    sorted_distortions, sorted_energies, sorted_disp = zip(
-        *sorted(zip(keys, energies_dict["distortions"].values(), sorted_disp))
-    )
-    
-    im = ax.scatter(
-        sorted_distortions,
-        sorted_energies,
-        c=sorted_disp,
-        ls="-",
-        s=50,
-        marker="o",
-        cmap=colormap,
-        norm=norm,
-        alpha=1,
-    )
-    ax.plot(
-        sorted_distortions,
-        sorted_energies,
-        ls="-",
-        markersize=1,
-        marker="o",
-        color=line_color,
-        label=dataset_label,
-    )
-    for i in imported_indices:  # datapoints from other charge states
+    if "Rattled" in energies_dict["distortions"].keys() and "Rattled" in disp_dict.keys():
+        # plot Rattled energy
+        ax.scatter(
+            0.0,
+            energies_dict["distortions"]["Rattled"],
+            c=disp_dict["Rattled"],
+            label="Rattled",
+            s=50,
+            marker="o",
+            cmap=colormap,
+            norm=norm,
+            alpha=1,
+        )
+    else:
+        im = ax.scatter( # Points for each distortion
+            sorted_distortions,
+            sorted_energies,
+            c=sorted_disp,
+            ls="-",
+            s=50,
+            marker="o",
+            cmap=colormap,
+            norm=norm,
+            alpha=1,
+        )
+        ax.plot( # Line connecting points
+            sorted_distortions,
+            sorted_energies,
+            ls="-",
+            markersize=1,
+            marker="o",
+            color=line_color,
+            label=legend_label,
+        )
+    for i in imported_indices: # datapoints from other charge states
         ax.scatter(
             np.array(keys)[i],
             list(energies_dict["distortions"].values())[i],
@@ -951,7 +1017,7 @@ def plot_colorbar(
         0
     )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
     # to this structure)
-    ax.scatter(
+    ax.scatter( # plot reference energy
         0,
         energies_dict["Unperturbed"],
         color=unperturbed_color,
@@ -959,7 +1025,7 @@ def plot_colorbar(
         s=120,
         marker="d",
         label="Unperturbed",
-    ) # plot reference energy
+    ) 
 
     # Formatting of tick labels.
     # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV, 2 if deltaE > 0.1 eV, otherwise 3.
@@ -977,7 +1043,6 @@ def plot_colorbar(
             save_format=save_format,
         )
     return fig
-
 
 def plot_datasets(
     datasets: list,
@@ -1116,37 +1181,34 @@ def plot_datasets(
                 else:
                     default_style_settings[key] = optional_style_settings
 
-        # Plotting
-        # store indices of imported structures ("X%_from_Y") to plot differently later
-        # comparison
-        imported_indices = []
-        for i, entry in enumerate(dataset["distortions"].keys()):
-            if isinstance(entry, str) and "_from_" in entry:
-                imported_indices.append(i)
-
-        # reformat any "X%_from_Y" distortions to corresponding (X) distortion factor
-        keys = [
-            float(entry.split("%")[0]) / 100
-            if isinstance(entry, str) and "_from_" in entry
-            else entry
-            for entry in dataset["distortions"].keys()
-        ]
-        # sort keys and values
-        sorted_distortions, sorted_energies = zip(
-            *sorted(zip(keys, dataset["distortions"].values()))
+        # Format distortion keys of the distortions imported from other charge states
+        imported_indices, keys, sorted_distortions, sorted_energies = _format_datapoints_from_other_chargestates(
+            energies_dict=deepcopy(dataset), # deepcopy to avoid changing original energies_dict when dealing with Rattled keys
+            disp_dict=None
         )
-        ax.plot(
-            sorted_distortions,
-            sorted_energies,
-            c=colors[dataset_number],
-            markersize=default_style_settings["markersize"],
-            marker=default_style_settings["marker"],
-            linestyle=default_style_settings["linestyle"],
-            label=dataset_labels[dataset_number],
-            linewidth=default_style_settings["linewidth"],
-        )
+        
+        if "Rattled" in dataset["distortions"].keys():
+            ax.scatter( # Scatter plot for Rattled (1 datapoint)
+                0.0,
+                dataset["distortions"]["Rattled"],
+                c=colors[dataset_number],
+                s=50,
+                marker=default_style_settings["marker"],
+                label="Rattled"
+            )
+        else:
+            ax.plot( # plot bond distortions
+                sorted_distortions,
+                sorted_energies,
+                c=colors[dataset_number],
+                markersize=default_style_settings["markersize"],
+                marker=default_style_settings["marker"],
+                linestyle=default_style_settings["linestyle"],
+                label=dataset_labels[dataset_number],
+                linewidth=default_style_settings["linewidth"],
+            )
         for i in imported_indices:
-            ax.scatter(
+            ax.scatter( # distortions from other charge states
                 np.array(keys)[i],
                 list(dataset["distortions"].values())[i],
                 c=colors[dataset_number],
