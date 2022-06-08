@@ -50,6 +50,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
             os.path.join(self.DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
         )
+        if os.path.exists("fake_file.txt"):
+            os.remove("fake_file.txt")
 
     @patch("builtins.print")
     def test_open_file(self, mock_print):
@@ -214,6 +216,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             output = analysis._sort_data("fake_file")
             warning_message = "No data parsed from fake_file, returning None"
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, (None, None, None))
+
+        with warnings.catch_warnings(record=True) as w:
+            with open("fake_file.txt", "w") as fp:
+                fp.write("Unperturbed\n-378.66236832")  # only unperturbed data
+            output = analysis._sort_data("fake_file.txt")
+            warning_message = "No distortion results parsed from fake_file.txt, returning None"
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
