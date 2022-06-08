@@ -57,6 +57,14 @@ class PlottingDefectsTestCase(unittest.TestCase):
             energies_file= f"{self.DATA_DIR}/vac_1_Cd_0/fake_vac_1_Cd_0.txt"
         )[0]
 
+        self.V_Cd_m2_energies_dict = analysis._sort_data(
+            energies_file= f"{self.DATA_DIR}/fake_V_Cd_-2.txt"
+        )[0]
+        
+        self.V_Cd_m2_energies_dict_from_other_charge_states = analysis._sort_data(
+            energies_file= f"{self.DATA_DIR}/fake_V_Cd_-2_from_other_charge_states.txt"
+        )[0]
+        
     def tearDown(self):
         if_present_rm(f"{os.getcwd()}/distortion_plots")
     
@@ -281,6 +289,54 @@ class PlottingDefectsTestCase(unittest.TestCase):
             set(list(disp_dict.keys())) - set(list(energies_dict['distortions'].keys())), {'Unperturbed'}
             ) # only difference should be Unperturbed
 
+    def test_remove_high_energy_points(self):
+        """Test _remove_high_energy_points() function"""
+        purged_energies_dict, disp_dict = plotting._remove_high_energy_points(
+            energies_dict={"distortions": {-0.4: 1.5, -0.5: 0.2, -0.6: -0.3}, "Unperturbed": 0.0},
+            max_energy_above_unperturbed=0.4,
+            disp_dict=None
+        )
+        self.assertTrue(-0.4 not in purged_energies_dict["distortions"].keys())
+        purged_energies_dict, disp_dict = plotting._remove_high_energy_points(
+            energies_dict={"distortions": {-0.4: 1.5, -0.5: 0.2, -0.6: -0.3}, "Unperturbed": 0.0},
+            max_energy_above_unperturbed=0.4,
+            disp_dict={-0.4: 1.5, -0.5: 0.2, -0.6: -0.3, "Unperturbed": 0.0}
+        )
+        self.assertTrue(-0.4 not in purged_energies_dict["distortions"].keys())
+        self.assertTrue(-0.4 not in disp_dict.keys())
+    
+    def test_get_displacement_dict(self):
+        """Test _get_displacement_dict() function."""
+        # non existent defect directory, 
+        # `_get_displacement_dict` should catch the FileNotFoundError and set add_colorbar to False
+        with warnings.catch_warnings(record=True) as w:
+            plotting._get_displacement_dict(
+                defect_species="fake_defect_species",
+                output_path=self.DATA_DIR,
+                metric="max_dist",
+                energies_dict=self.V_Cd_energies_dict,
+                add_colorbar=True,
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertEqual(
+                str(w[0].message),
+                f"Could not find structures for {self.DATA_DIR}/fake_defect_species. Colorbar will not be added to plot."
+                )
+        # Test if energies_dict and disp_dict are returned correctly (same keys) and add_colorbar is set to True
+        add_colorbar, energies_dict, disp_dict = plotting._get_displacement_dict(
+                defect_species="vac_1_Cd_0",
+                output_path=self.DATA_DIR,
+                metric="max_dist",
+                energies_dict=self.V_Cd_energies_dict,
+                add_colorbar=True,
+            )
+        self.assertTrue(add_colorbar)
+        self.assertEqual( # using sets here to ignore order of dicts
+            set(energies_dict["distortions"].keys()).union({"Unperturbed",}),
+            set(disp_dict.keys()),
+        )
+        
     def test_save_plot(self):
         """Test _save_plot() function"""
         fig, ax = plt.subplots(1,1)
@@ -350,16 +406,16 @@ class PlottingDefectsTestCase(unittest.TestCase):
             style="../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
-    def test_plot_colorbar_dataset_label_linecolor_title_saveplot(self):
+    def test_plot_colorbar_legend_label_linecolor_title_saveplot(self):
         """Test plot_colorbar() function with several keyword arguments:
-        line_color, title, y_label, save_format, dataset_label and neighbour_atom=None"""
+        line_color, title, y_label, save_format, legend_label and neighbour_atom=None"""
         fig = plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
             defect_name="V$_{Cd}^{0}$",
             num_nearest_neighbours=2,
             neighbour_atom=None,
-            dataset_label="SnB: 2 Te",
+            legend_label="SnB: 2 Te",
             line_color='k',
             title="V$_{Cd}^{0}$",
             save_format="svg",
@@ -454,6 +510,37 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         return fig
 
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{-2}$_only_rattled.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_datasets_only_rattled(self):
+        """Test plot_datasets() function when the only distortion is 'Rattled'"""
+        fig = plotting.plot_datasets(
+            datasets=[self.V_Cd_m2_energies_dict, ],
+            dataset_labels=["SnB: 2 Te"],
+            defect_name="V$_{Cd}^{0}$",
+        )
+        return fig
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{-2}$_rattled_other_charge_states.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_datasets_rattled_and_dist_from_other_chargestates(self):
+        """Test plot_datasets() function when the distortion is "Rattled" 
+        and distortions from other charge states have been tried"""
+        fig = plotting.plot_datasets(
+            datasets=[self.V_Cd_m2_energies_dict_from_other_charge_states, ],
+            dataset_labels=["SnB: 2 Te"],
+            defect_name="V$_{Cd}^{0}$",
+        )
+        return fig
+    
     def test_plot_datasets_value_error(self):
         """Test plot_datasets() function when user provides non-matching `datasets` and
         `dataset_labels`"""
@@ -494,3 +581,79 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         self.assertEqual(len(w), 1)
         self.assertEqual(str(w[-1].message), "Unperturbed energy not present in energies_dict of vac_1_Cd_0! Skipping plot.")
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{0}$_plot_defect_add_colorbar_max_dist.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_add_colorbar(self):
+        """Test plot_defect() function when add_colorbar = True"""
+        fig = plotting.plot_defect(
+            output_path=self.DATA_DIR,
+            defect_species="vac_1_Cd_0",
+            energies_dict=self.V_Cd_energies_dict,
+            add_colorbar=True,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+        )
+        return fig
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{0}$_plot_defect_without_colorbar.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_without_colorbar(self):
+        """Test plot_defect() function when add_colorbar = False"""
+        fig = plotting.plot_defect(
+            output_path=self.DATA_DIR,
+            defect_species="vac_1_Cd_0",
+            energies_dict=self.V_Cd_energies_dict,
+            add_colorbar=False,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+        )
+        return fig
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}_^{0}$_include_site_num_in_name.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_include_site_num_in_name(self):
+        """Test plot_defect() function when include_site_number_in_name = True"""
+        fig = plotting.plot_defect(
+            output_path=self.DATA_DIR,
+            defect_species="vac_1_Cd_0",
+            energies_dict=self.V_Cd_energies_dict,
+            add_colorbar=False,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+            include_site_num_in_name=True
+        )
+        return fig
+    
+    @pytest.mark.mpl_image_compare(
+            baseline_dir="V_Cd_fake_test_distortion_plots",
+            filename="V$_{Cd}^{0}$_plot_defect_without_title_units_meV.png",
+            style="../shakenbreak/shakenbreak.mplstyle",
+            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_without_title_units_in_meV(self):
+        """Test plot_defect() function when add_title = False and units = 'meV'
+        """
+        fig = plotting.plot_defect(
+            output_path=self.DATA_DIR,
+            defect_species="vac_1_Cd_0",
+            energies_dict=self.V_Cd_energies_dict,
+            add_colorbar=False,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+            add_title=False,
+            units="meV",
+        )
+        return fig
