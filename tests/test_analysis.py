@@ -43,7 +43,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
             os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
         )
-
+        self.V_Cd_minus0pt3_dimer_ground_state = Structure.from_file(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-30.0%/CONTCAR")
+        )
+        self.V_Cd_unperturbed = Structure.from_file(
+            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR")
+        )
     def tearDown(self):
         # restore the original file (after 'no unperturbed' tests):
         shutil.copy(
@@ -818,6 +823,38 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, None)
 
+    @patch("builtins.print")
+    def test_get_homoionic_bonds(self, mock_print):
+        """Test get_homoionic_bonds() function"""
+        with patch("builtins.print") as mock_print:
+            bonds = analysis.get_homoionic_bonds(
+                structure=self.V_Cd_minus0pt3_dimer_ground_state,
+                element="Te",
+                radius=2.9,
+                verbose=False,
+            )
+            self.assertEqual(bonds, {'Te(32)': {'Te(41)': '2.75 A'}})
+            mock_print.assert_not_called()
+        
+        with patch("builtins.print") as mock_unperturbed_print:
+            bonds = analysis.get_homoionic_bonds(
+                structure=self.V_Cd_unperturbed,
+                element="Te",
+                radius=2.9,
+                verbose=True,
+            )
+            self.assertEqual(bonds, {})
+            mock_unperturbed_print.assert_called_once_with("No homoionic bonds found with a search radius of 2.9 A")
+    
+        with warnings.catch_warnings(record=True) as w:
+            bonds = analysis.get_homoionic_bonds(
+                structure=self.V_Cd_minus0pt3_dimer_ground_state,
+                element="Na",
+                radius=2.9,
+                verbose=False,
+            )
+            self.assertEqual(str(w[-1].message), "Your structure does not contain element Na!")
+            
     # TODO: Add magnetisation tests
 
 
