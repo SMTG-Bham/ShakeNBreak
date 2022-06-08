@@ -628,8 +628,15 @@ def plot_all_defects(
     if not os.path.isdir(output_path):  # check if output_path exists
         raise FileNotFoundError(f"Path {output_path} does not exist!")
 
-    distortion_metadata = _read_distortion_metadata(output_path=output_path)
-
+    try:
+        distortion_metadata = _read_distortion_metadata(output_path=output_path)
+    except FileNotFoundError:
+        warnings.warn(f"Path {output_path}/distortion_metadata.json does not exist. "
+                      "Will not parse its contents.")
+        distortion_metadata = None
+        num_nearest_neighbours = None
+        neighbour_atom = None
+        
     figures = {}
     for defect in defects_dict:
         for charge in defects_dict[defect]:
@@ -653,40 +660,39 @@ def plot_all_defects(
                 warnings.warn(f"Unperturbed calculation for {defect}_{charge} not converged! "
                               f"Skipping plot.")
                 continue
-            # If a significant energy lowering was found with bond distortions (not just rattling),
-            # then further analyse this defect
-            # TODO: Also do two-datapoint plot for defects that were just rattled
-            if (
-                save_plot
-                and abs(float(energy_diff)) > abs(min_e_diff)
-            ):
-                # Get number and element symbol of the distorted site(s)
-                num_nearest_neighbours = distortion_metadata["defects"][defect][
-                    "charges"
-                ][str(charge)][
-                    "num_nearest_neighbours"
-                ]  # get number of distorted neighbours
-                try:
-                    neighbour_atoms = list(
-                        i[1]  # element symbol
-                        for i in distortion_metadata["defects"][defect]["charges"][
-                            str(charge)
-                        ]["distorted_atoms"]
-                    )  # get element of the distorted site
+            # If a significant energy lowering was found, then further analyse this defect
+            if abs(float(energy_diff)) > abs(min_e_diff):
+                if distortion_metadata and defect in distortion_metadata["defects"].keys():
+                    try:
+                        # Get number and element symbol of the distorted site(s)
+                        num_nearest_neighbours = distortion_metadata["defects"][defect][
+                            "charges"
+                        ][str(charge)][
+                            "num_nearest_neighbours"
+                        ]  # get number of distorted neighbours
+                    except KeyError:
+                        num_nearest_neighbours = None
+                    try:
+                        neighbour_atoms = list(
+                            i[1]  # element symbol
+                            for i in distortion_metadata["defects"][defect]["charges"][
+                                str(charge)
+                            ]["distorted_atoms"]
+                        )  # get element of the distorted site
 
-                    if all(
-                        element == neighbour_atoms[0] for element in neighbour_atoms
-                    ):
-                        neighbour_atom = neighbour_atoms[0]
-                    else:
-                        neighbour_atom = "NN"  # if different elements were distorted, just use nearest  # neighbours (NN) for label
+                        if all(
+                            element == neighbour_atoms[0] for element in neighbour_atoms
+                        ):
+                            neighbour_atom = neighbour_atoms[0]
+                        else:
+                            neighbour_atom = "NN"  # if different elements were distorted, just use nearest  # neighbours (NN) for label
 
-                except TypeError:
-                    neighbour_atom = (
-                        "NN"  # if distorted_elements wasn't set, set label to "NN"
-                    )
-
-                fig= plot_defect(
+                    except (KeyError, TypeError, ValueError):
+                        neighbour_atom = (
+                            "NN"  # if distorted_elements wasn't set, set label to "NN"
+                        )
+                    
+                figures[defect_species] = plot_defect(
                     defect_species=defect_species,
                     energies_dict=energies_dict,
                     output_path=output_path,
@@ -701,7 +707,6 @@ def plot_all_defects(
                     save_plot=save_plot,
                     save_format=save_format,
                 )
-                figures[defect_species] = fig
                 
     return figures
 
