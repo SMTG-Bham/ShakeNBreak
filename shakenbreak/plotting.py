@@ -415,18 +415,16 @@ def _format_datapoints_from_other_chargestates(
         if isinstance(entry, str) and "%_from_" in entry:
             keys.append(float(entry.split("%")[0]) / 100)
         elif isinstance(entry, str) and "Rattled_from_" in entry:
-            keys.append(0.0) # Rattled will be plotted at x=0.0
-        elif entry != "Rattled": # avoid adding Rattled to keys, 
-            # so we then sort keys by distortion factor
+            keys.append(0.0) # Rattled will be plotted at x = 0.0
+        elif entry == "Rattled": # add 0.0 for Rattled
+            # (to avoid problems when sorting distortions)
+            keys.append(0.0)
+        else:
             keys.append(entry)
     
     if disp_dict:
         # sort displacements in same order as distortions and energies, for proper color mapping         
-        sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()] 
-        if "Rattled" in energies_dict["distortions"].keys() or "Rattled" in disp_dict.keys():
-            # remove Rattled from deepcopy of dictionary to avoid error when sorting distortions
-            sorted_disp.pop("Rattled", None)
-            energies_dict["distortions"].pop("Rattled", None)
+        sorted_disp = [disp_dict[k] for k in energies_dict["distortions"].keys() if k in disp_dict.keys()]
         try:
             # sort keys and values
             sorted_distortions, sorted_energies, sorted_disp = zip(
@@ -437,9 +435,6 @@ def _format_datapoints_from_other_chargestates(
             # (i.e. the only distortion is Rattled)
             return [], [], None, None, None
     # sort keys and values
-    if "Rattled" in energies_dict["distortions"].keys():
-        # remove Rattled from deepcopy of dictionary to avoid error when sorting distortions
-        energies_dict["distortions"].pop("Rattled", None)
     try:
         sorted_distortions, sorted_energies = zip(
             *sorted(zip(keys, energies_dict["distortions"].values()))
@@ -958,8 +953,8 @@ def plot_colorbar(
 
     # Format distortion keys from other charge states
     imported_indices, keys, sorted_distortions, sorted_energies, sorted_disp = _format_datapoints_from_other_chargestates(
-        energies_dict=deepcopy(energies_dict), # deepcopy to avoid changing original dict when dealing with Rattled keys
-        disp_dict=deepcopy(disp_dict)
+        energies_dict=energies_dict, 
+        disp_dict=disp_dict
     ) 
     
     # Plotting
@@ -1183,7 +1178,7 @@ def plot_datasets(
 
         # Format distortion keys of the distortions imported from other charge states
         imported_indices, keys, sorted_distortions, sorted_energies = _format_datapoints_from_other_chargestates(
-            energies_dict=deepcopy(dataset), # deepcopy to avoid changing original energies_dict when dealing with Rattled keys
+            energies_dict=dataset, # deepcopy to avoid changing original energies_dict when dealing with Rattled keys
             disp_dict=None
         )
         
@@ -1216,7 +1211,7 @@ def plot_datasets(
                 ls="-",
                 s=50,
                 zorder=10,  # make sure it's on top of the other lines
-                marker="s",
+                marker="s", # TODO: different markers for different charge states
                 alpha=1,
                 label=f"From "
                       f"{list(dataset['distortions'].keys())[i].split('_')[-1]} charge state",
