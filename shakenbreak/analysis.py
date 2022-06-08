@@ -265,6 +265,11 @@ def _sort_data(energies_file: str, verbose: bool = True):
     if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
+    elif len(defect_energies_dict["distortions"]) == 0 and "Unperturbed" in defect_energies_dict:
+        # no parsed distortion results but Unperturbed present
+        warnings.warn(f"No distortion results parsed from {energies_file}, returning None")
+        return None, None, None
+
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".txt")[0]
     if verbose:
