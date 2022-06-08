@@ -965,6 +965,7 @@ def get_site_magnetizations(
     threshold: float = 0.1,
     defect_site: Optional[int or list] = None,
     orbital_projections: Optional[bool] = False,
+    verbose: Optional[bool] = True,
 ) -> dict:
     """
     For given distortions, find sites with significant magnetization and return as dictionary.
@@ -986,11 +987,16 @@ def get_site_magnetizations(
         orbital_projections (bool, optional):
             Whether to print orbital projections. If not necessary, set to False (faster).
             (Default: False)
+        verbose (bool, optional):
+            Whether to print verbose output.
     Returns:
         magnetizations (:obj:`dict`):
             Dictionary matching distortion to DataFrame containing magnetization info.
     """
     magnetizations = {}
+    
+    if not os.path.exists(f"{output_path}/{defect_species}"):
+        raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
     
     if not defect_site: # look for defect site, in order to include the distance between sites with \
         # significant magnetization and the defect
@@ -1000,26 +1006,33 @@ def get_site_magnetizations(
                     defect_species_without_charge = '_'.join(defect_species.split('_')[0:-1]) # remove charge state
                     defect_site = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
                 except KeyError:
-                    warnings.warn(f"Could not find defect {defect_species} in distortion_metadata.json file. " 
-                                  "Will not include distance between defect and sites with significant magnetization.")
+                    warnings.warn(
+                        f"Could not find defect {defect_species} in distortion_metadata.json file. " 
+                        "Will not include distance between defect and sites with significant magnetization."
+                    )
                     defect_site = None
     # TODO: This could be sped up by parallelising
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
         structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
-            warnings.warn(f"Structure for {defect_species} either not convergence or not found. " 
-                          "Skipping magnetisation analysis.")
+            warnings.warn(
+                f"Structure for {defect_species} either not convergence or not found. " 
+                "Skipping magnetisation analysis."
+            )
             return None
         if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray): # for vacancies, append fake atom
             structure.append(species="V", coords = defect_site, coords_are_cartesian = False)
             defect_site = -1 # index of the added fake atom
         if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
-            warnings.warn(f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR. "
-                          "Skipping magnetization analysis.")
+            warnings.warn(
+                f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR. "
+                "Skipping magnetization analysis."
+            )
             return None
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
-        print(f"Analysing distortion {distortion}. Total magnetization:", round(outcar.total_mag, 3))
+        if verbose:
+            print(f"Analysing distortion {distortion}. Total magnetization: {round(outcar.total_mag, 3)}")
         df = _site_magnetizations(
             outcar = outcar, 
             structure = structure, 
@@ -1029,7 +1042,6 @@ def get_site_magnetizations(
             )
         if not df.empty:
             magnetizations[distortion] = df
-        else:
-            print(f"No significant magnetizations found for distortion: {distortion}.")
-        print()
+        elif verbose:
+            print(f"No significant magnetizations found for distortion: {distortion} \n")
     return magnetizations
