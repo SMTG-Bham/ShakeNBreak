@@ -15,7 +15,6 @@ from shakenbreak import plotting
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import seaborn
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -739,3 +738,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             min_e_diff=0.15,
         )
         self.assertTrue("vac_1_Cd_-2" not in fig_dict.keys())
+
+if __name__ == "__main__":
+    unittest.main()
