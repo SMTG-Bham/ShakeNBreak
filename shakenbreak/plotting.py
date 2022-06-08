@@ -4,7 +4,6 @@ energy-lowering distortions.
 """
 import os
 import warnings
-import json
 from typing import Optional, Tuple
 import numpy as np
 
