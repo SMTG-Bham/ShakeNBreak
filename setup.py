@@ -20,7 +20,7 @@ data_files = package_files("data/")
 
 setup(
     name="shakenbreak",
-    version="0.2.2",
+    version="0.2.3",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     author="Irea Mosquera, Seán Kavanagh",
@@ -40,4 +40,5 @@ setup(
     ],
     extras_require={"tests": ["pytest", "pytest-mpl"]},
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
+    include_package_data=True,
 )
