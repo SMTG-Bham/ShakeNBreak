@@ -86,7 +86,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         defect_charges_dict = energy_lowering_distortions.read_defects_directories(
             self.DATA_DIR
         )
-        self.assertDictEqual(defect_charges_dict, {"vac_1_Cd": [0]})
+        self.assertDictEqual(defect_charges_dict, {'vac_1_Ti': [0], "vac_1_Cd": [0]})
 
         for i in self.defect_folders_list:
             os.mkdir(os.path.join(self.DATA_DIR, i))
@@ -99,6 +99,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "as_1_Cd_on_Te": [1, 2],
             "sub_1_In_on_Cd": [1],
             "vac_1_Cd": [0],
+            'vac_1_Ti': [0]
         }
         self.assertEqual(
             defect_charges_dict.keys(),
