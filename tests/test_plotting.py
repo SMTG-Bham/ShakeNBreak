@@ -20,6 +20,7 @@ def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
 
+file_path = os.path.dirname(__file__)
 
 class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
@@ -355,7 +356,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_max_dist.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_colorbar_max_distance(self):
@@ -372,7 +373,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_fake_defect_name.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_colorbar_fake_defect_name(self):
@@ -389,7 +390,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_displacement.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_colorbar_displacement(self):
@@ -407,7 +408,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_maxdist_title_linecolor_label.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_colorbar_legend_label_linecolor_title_saveplot(self):
@@ -432,7 +433,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
         baseline_dir="V_O_TiO2_fake_test_distortion_plots",
         filename="V$_{O}^{0}$_colors.png",
-        style="../shakenbreak/shakenbreak.mplstyle",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_keywords(self):
@@ -455,7 +456,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
         baseline_dir="V_O_TiO2_fake_test_distortion_plots",
         filename="V$_{O}^{0}$_notitle.png",
-        style="../shakenbreak/shakenbreak.mplstyle",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_without_saving(self):
@@ -481,7 +482,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
         baseline_dir="V_O_TiO2_fake_test_distortion_plots",
         filename="V$_{O}^{0}$_not_enough_markers.png",
-        style="../shakenbreak/shakenbreak.mplstyle",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_not_enough_markers(self):
@@ -499,7 +500,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
         baseline_dir="V_Cd_fake_test_distortion_plots",
         filename="V$_{Cd}^{0}$_other_chargestates.png",
-        style="../shakenbreak/shakenbreak.mplstyle",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_from_other_charge_states(self):
@@ -517,7 +518,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$_only_rattled.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_only_rattled(self):
@@ -532,7 +533,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$_rattled_other_charge_states.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_rattled_and_dist_from_other_chargestates(self):
@@ -548,7 +549,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$_only_rattled_and_rattled_dist_from_other_charges_tates.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_datasets_only_rattled_and_rattled_dist_from_other_chargestates(self):
@@ -609,7 +610,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_plot_defect_add_colorbar_max_dist.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defect_add_colorbar(self):
@@ -627,7 +628,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_plot_defect_without_colorbar.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defect_without_colorbar(self):
@@ -645,7 +646,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}_^{0}$_include_site_num_in_name.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defect_include_site_num_in_name(self):
@@ -665,7 +666,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$_plot_defect_without_title_units_meV.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defect_without_title_units_in_meV(self):
@@ -711,7 +712,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$_only_rattled.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defects_output(self):
