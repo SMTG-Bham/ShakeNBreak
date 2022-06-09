@@ -247,7 +247,7 @@ def get_energy_lowering_distortions(
                     f"min_e_diff = {min_e_diff:.2f} eV found for {defect} with charge {charge}."
                 )
 
-    # Screen through defects to check that if any lower-energy distorted structures were already
+    # Screen through defects to check if any lower-energy distorted structures were already
     # found with/without bond distortions for other charge states (i.e. found but higher energy,
     # found but also with unperturbed, found but with energy lowering less than min_e_diff etc)
     print("\nComparing and pruning defect structures across charge states...")
