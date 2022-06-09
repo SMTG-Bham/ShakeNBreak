@@ -1,0 +1,12 @@
+ADDGRID: False
+ALGO: Normal
+EDIFFG: -0.05
+EDIFF: 1e-5
+IBRION: 2
+ISPIN: 2
+POTIM: 0.2
+LVHAR: False
+LREAL: Auto
+LCHARG: False
+LWAVE : False
+NELM: 40
