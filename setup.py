@@ -20,7 +20,7 @@ data_files = package_files("data/")
 
 setup(
     name="shakenbreak",
-    version="0.2.3",
+    version="0.2.4",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     author="Irea Mosquera, Seán Kavanagh",
