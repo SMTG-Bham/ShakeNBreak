@@ -465,7 +465,7 @@ def get_structures(
     defect_structures_dict = {}
     if (
         not bond_distortions
-    ):  # if the user didnt specify any set of distortions, loop over subdirectories
+    ):  # if the user didn't specify any set of distortions, loop over subdirectories
         if not os.path.isdir(
             f"{output_path}/{defect_species}"
         ):  # check if defect folder exists
@@ -495,7 +495,8 @@ def get_structures(
                     )
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}/{distortion_subdirectory}/, storing as 'Not converged'"
+                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"/{distortion_subdirectory}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
     else:
@@ -514,7 +515,8 @@ def get_structures(
                     )
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}/{distortion_subdirectory}/, storing as 'Not converged'"
+                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"/{distortion_label}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
 
@@ -668,10 +670,10 @@ def calculate_struct_comparison(
             ref_name = f"{ref_structure:.1%} bond distorted structure"
         try:
             ref_structure = defect_structures_dict[ref_structure]
-        except KeyError:
+        except KeyError as e:
             raise KeyError(
                 f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
-            )
+            ) from e
         if ref_structure == "Not converged":
             raise ValueError(
                 f"Specified reference structure ({ref_name}) is not converged and cannot be used "
@@ -971,7 +973,7 @@ def get_site_magnetizations(
     defect_site: Optional[int or list] = None,
     orbital_projections: Optional[bool] = False,
     verbose: Optional[bool] = True,
-) -> dict:
+) -> Optional[dict]:
     """
     For given distortions, find sites with significant magnetization and return as dictionary.
     Args:
@@ -1018,15 +1020,16 @@ def get_site_magnetizations(
                     defect_site = None
     # TODO: This could be sped up by parallelising
     for distortion in distortions:
-        dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
+        dist_label = _get_distortion_filename(distortion)  # get filename (e.g. Bond_Distortion_50.0%)
         structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
             warnings.warn(
-                f"Structure for {defect_species} either not convergence or not found. " 
+                f"Structure for {defect_species} either not converged or not found. " 
                 "Skipping magnetisation analysis."
             )
             return None
-        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray): # for vacancies, append fake atom
+        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+            # for vacancies, append fake atom
             structure.append(species="V", coords = defect_site, coords_are_cartesian = False)
             defect_site = -1 # index of the added fake atom
         if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
@@ -1039,11 +1042,11 @@ def get_site_magnetizations(
         if verbose:
             print(f"Analysing distortion {distortion}. Total magnetization: {round(outcar.total_mag, 3)}")
         df = _site_magnetizations(
-            outcar = outcar, 
-            structure = structure, 
-            threshold = threshold,
-            defect_site = defect_site,
-            orbital_projections = orbital_projections,
+            outcar=outcar,
+            structure=structure,
+            threshold=threshold,
+            defect_site=defect_site,
+            orbital_projections=orbital_projections,
             )
         if not df.empty:
             magnetizations[distortion] = df
