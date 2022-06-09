@@ -1,0 +1,8 @@
+Rattled
+-205.82650569
+Unperturbed
+-205.72311458
+Bond_Distortion_7.5%_from_-1
+-205.57790694
+Bond_Distortion_-52.5%_from_0
+-205.92311458
