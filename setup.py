@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This is a setup.py script to install shakenbreak
+This is a setup.py script to install ShakeNBreak
 """
 
 from setuptools import setup, find_packages
@@ -26,4 +26,7 @@ setup(
         "monty",
     ],
     extras_require={"tests": ["pytest", "pytest-mpl"]},
+    package_data={"shakenbreak": ["shakenbreak/*yaml", "shakenbreak/*txt",
+                                  "shakenbreak/*mplstyle"]},
+    data_files=["data/*"],
 )
