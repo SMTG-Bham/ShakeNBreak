@@ -963,7 +963,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertEqual(
                 str(w[-1].message), 
-                "Structure for vac_1_Ti_0 either not convergence or not found. " 
+                "Structure for vac_1_Ti_0 either not converged or not found. " 
                 "Skipping magnetisation analysis."
             )
         # Non existent OUTCAR
