@@ -42,3 +42,4 @@ jobs:
         run:  |
           pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
           pytest tests/test_shakenbreak.py --mpl  # test output plots
+          # pytest tests/test_plotting.py --mpl  # test output plots
