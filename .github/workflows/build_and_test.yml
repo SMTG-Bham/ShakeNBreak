@@ -42,15 +42,16 @@ jobs:
         run:  |
           pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
           pytest tests/test_shakenbreak.py --mpl  # test output plots
+          pytest tests/test_plotting.py --mpl  # test output plots
 
   build-linux-standard:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
-      
+
       matrix:
         python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22 which is incompatible with Python 3.10, should be fixed soon...
-    
+
     name: Python ${{ matrix.python-version }} Standard Test Pop
 
     steps:
@@ -60,7 +61,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Standard Install 
+      - name: Standard Install
         run: |
           python -m pip install --upgrade pip
           pip install setuptools setuptools_scm wheel

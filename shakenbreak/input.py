@@ -21,7 +21,7 @@ from shakenbreak.analysis import _get_distortion_filename
 
 # Load default INCAR settings for the ShakenBreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "incar.yml"))
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "incar.yaml"))
 
 warnings.filterwarnings(
     "ignore", category=UnknownPotcarWarning
@@ -587,7 +587,7 @@ def apply_shakenbreak(
             Dictionary of user VASP INCAR settings (e.g. {"ENCUT": 300, ...}), to overwrite the
             `ShakenBreak` defaults for those tags.
             Highly recommended to look at output `INCAR`s, or `doped.vasp_input` source code and
-            `incar.yml`, to see what the default `INCAR` settings are. (Default: None)
+            `incar.yaml`, to see what the default `INCAR` settings are. (Default: None)
         dict_number_electrons_user (:obj:`dict`):
             Optional argument to set the number of extra/missing charge (negative of electron count
             change) for the input defects, as a dictionary with format {'defect_name':

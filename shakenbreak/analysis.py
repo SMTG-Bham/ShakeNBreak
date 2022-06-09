@@ -15,6 +15,7 @@ from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.outputs import Outcar
+from pymatgen.core.periodic_table import Element
 
 crystalNN = CrystalNN(
     distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0
@@ -51,9 +52,7 @@ class HiddenPrints:  # https://stackoverflow.com/questions/8391411/how-to-block-
         sys.stdout = self._original_stdout
 
 
-###################################################################################################
 # Helper functions
-
 
 def _read_distortion_metadata(output_path: str) -> dict:
     """
@@ -71,7 +70,7 @@ def _read_distortion_metadata(output_path: str) -> dict:
     try:  # Read distortion parameters from distortion_metadata.json
         with open(f"{output_path}/distortion_metadata.json") as json_file:
             distortion_metadata = json.load(json_file)
-    except:
+    except FileNotFoundError:
         raise FileNotFoundError(
             f"No `distortion_metadata.json` file found in {output_path}."
         )
@@ -265,6 +264,11 @@ def _sort_data(energies_file: str, verbose: bool = True):
     if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
+    elif len(defect_energies_dict["distortions"]) == 0 and "Unperturbed" in defect_energies_dict:
+        # no parsed distortion results but Unperturbed present
+        warnings.warn(f"No distortion results parsed from {energies_file}, returning None")
+        return None, None, None
+
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".txt")[0]
     if verbose:
@@ -281,8 +285,7 @@ def _sort_data(energies_file: str, verbose: bool = True):
     return defect_energies_dict, energy_diff, gs_distortion
 
 
-###################################################################################################
-
+# Main analysis functions
 
 def grab_contcar(
     file_path: str,
@@ -435,7 +438,6 @@ def analyse_structure(
     return analyse_defect_site(structure, name=defect_species, site_num=defect_site)
 
 
-# TODO: Modify `get_structures` to enable user to decide if parsing all subdirectories or only standard BDM, or imported structures, or both?
 def get_structures(
     defect_species: str,
     output_path: str = ".",
@@ -463,7 +465,7 @@ def get_structures(
     defect_structures_dict = {}
     if (
         not bond_distortions
-    ):  # if the user didnt specify any set of distortions, loop over subdirectories
+    ):  # if the user didn't specify any set of distortions, loop over subdirectories
         if not os.path.isdir(
             f"{output_path}/{defect_species}"
         ):  # check if defect folder exists
@@ -493,7 +495,8 @@ def get_structures(
                     )
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}/{distortion_subdirectory}/, storing as 'Not converged'"
+                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"/{distortion_subdirectory}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
     else:
@@ -512,7 +515,8 @@ def get_structures(
                     )
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}/{distortion_subdirectory}/, storing as 'Not converged'"
+                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"/{distortion_label}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
 
@@ -666,10 +670,10 @@ def calculate_struct_comparison(
             ref_name = f"{ref_structure:.1%} bond distorted structure"
         try:
             ref_structure = defect_structures_dict[ref_structure]
-        except KeyError:
+        except KeyError as e:
             raise KeyError(
                 f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
-            )
+            ) from e
         if ref_structure == "Not converged":
             raise ValueError(
                 f"Specified reference structure ({ref_name}) is not converged and cannot be used "
@@ -867,6 +871,9 @@ def get_homoionic_bonds(
         distances (A) (e.g. {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
     """
     structure = structure.copy()
+    if Element(element) not in structure.composition.elements:
+        warnings.warn(f"Your structure does not contain element {element}!")
+        return {}
     sites = [
         (site_index, site)
         for site_index, site in enumerate(structure)
@@ -965,7 +972,8 @@ def get_site_magnetizations(
     threshold: float = 0.1,
     defect_site: Optional[int or list] = None,
     orbital_projections: Optional[bool] = False,
-) -> dict:
+    verbose: Optional[bool] = True,
+) -> Optional[dict]:
     """
     For given distortions, find sites with significant magnetization and return as dictionary.
     Args:
@@ -986,11 +994,16 @@ def get_site_magnetizations(
         orbital_projections (bool, optional):
             Whether to print orbital projections. If not necessary, set to False (faster).
             (Default: False)
+        verbose (bool, optional):
+            Whether to print verbose output.
     Returns:
         magnetizations (:obj:`dict`):
             Dictionary matching distortion to DataFrame containing magnetization info.
     """
     magnetizations = {}
+    
+    if not os.path.exists(f"{output_path}/{defect_species}"):
+        raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
     
     if not defect_site: # look for defect site, in order to include the distance between sites with \
         # significant magnetization and the defect
@@ -1000,36 +1013,43 @@ def get_site_magnetizations(
                     defect_species_without_charge = '_'.join(defect_species.split('_')[0:-1]) # remove charge state
                     defect_site = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
                 except KeyError:
-                    warnings.warn(f"Could not find defect {defect_species} in distortion_metadata.json file. " 
-                                  "Will not include distance between defect and sites with significant magnetization.")
+                    warnings.warn(
+                        f"Could not find defect {defect_species} in distortion_metadata.json file. " 
+                        "Will not include distance between defect and sites with significant magnetization."
+                    )
                     defect_site = None
     # TODO: This could be sped up by parallelising
     for distortion in distortions:
-        dist_label = _get_distortion_filename(distortion) # get filename (e.g. Bond_Distortion_50.0%)
+        dist_label = _get_distortion_filename(distortion)  # get filename (e.g. Bond_Distortion_50.0%)
         structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
-            warnings.warn(f"Structure for {defect_species} either not convergence or not found. " 
-                          "Skipping magnetisation analysis.")
+            warnings.warn(
+                f"Structure for {defect_species} either not converged or not found. " 
+                "Skipping magnetisation analysis."
+            )
             return None
-        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray): # for vacancies, append fake atom
+        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+            # for vacancies, append fake atom
             structure.append(species="V", coords = defect_site, coords_are_cartesian = False)
             defect_site = -1 # index of the added fake atom
         if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
-            warnings.warn(f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR. "
-                          "Skipping magnetization analysis.")
+            warnings.warn(
+                f"OUTCAR file not found in path {output_path}/{defect_species}/{dist_label}/OUTCAR. "
+                "Skipping magnetization analysis."
+            )
             return None
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
-        print(f"Analysing distortion {distortion}. Total magnetization:", round(outcar.total_mag, 3))
+        if verbose:
+            print(f"Analysing distortion {distortion}. Total magnetization: {round(outcar.total_mag, 3)}")
         df = _site_magnetizations(
-            outcar = outcar, 
-            structure = structure, 
-            threshold = threshold,
-            defect_site = defect_site,
-            orbital_projections = orbital_projections,
+            outcar=outcar,
+            structure=structure,
+            threshold=threshold,
+            defect_site=defect_site,
+            orbital_projections=orbital_projections,
             )
         if not df.empty:
             magnetizations[distortion] = df
-        else:
-            print(f"No significant magnetizations found for distortion: {distortion}.")
-        print()
+        elif verbose:
+            print(f"No significant magnetizations found for distortion: {distortion} \n")
     return magnetizations
