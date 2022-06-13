@@ -8,9 +8,9 @@ import sys
 from copy import deepcopy
 from typing import Optional, Union
 import warnings
-
 import pandas as pd
 import numpy as np
+
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -847,7 +847,6 @@ def compare_structures(
     return struct_comparison_df
 
 
-# TODO: Need to add tests for the following functions:
 def get_homoionic_bonds(
     structure: Structure,
     element: str,

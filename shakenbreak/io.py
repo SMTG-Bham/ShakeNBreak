@@ -7,9 +7,9 @@ from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 w
 import warnings
 from typing import TYPE_CHECKING
 import numpy as np
-
 from monty.io import zopen
 from monty.serialization import loadfn
+
 from pymatgen.io.vasp import Incar, Kpoints, Poscar
 from pymatgen.io.vasp.inputs import (
     incar_params,
@@ -35,10 +35,10 @@ def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
 
 
 def vasp_gam_files(
-    single_defect_dict: dict,
-    input_dir: str = None,
-    incar_settings: dict = None,
-    potcar_settings: dict = None,
+        single_defect_dict: dict,
+        input_dir: str = None,
+        incar_settings: dict = None,
+        potcar_settings: dict = None,
 ) -> None:
     """
     Generates input files for VASP Gamma-point-only rough relaxation
