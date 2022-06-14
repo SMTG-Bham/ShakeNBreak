@@ -11,10 +11,16 @@ import numpy as np
 from typing import Optional, Tuple
 from monty.serialization import loadfn
 import functools
+import yaml
+
+import ase
+from ase.calculators.espresso import Espresso
+from ase.calculators.cp2k import CP2K
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
+from pymatgen.io.ase import AseAtomsAdaptor
 
 from shakenbreak.distortions import distort, rattle
 from shakenbreak.io import vasp_gam_files
@@ -972,7 +978,7 @@ class Distortions:
                 Whether to write output files (Default: True)
             output_path (:obj:`str`):
                 Path to directory in which to write distorted defect structures and calculation
-                inputs. (Default is current directory = "./")
+                inputs. (Default is current directory = ".")
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and distances). (Default: False)
 
@@ -995,29 +1001,12 @@ class Distortions:
             
             for charge in defect_dict["charges"]:  # loop for each charge state of defect
                 
-                poscar_comment = self._generate_structure_comment(
-                        defect_name=defect_name,
-                        charge=charge,
-                        key_distortion="Unperturbed",
-                )
-                charged_defect["Unperturbed"] = {
-                    "Defect Structure": defect_dict["charges"][charge]["structures"]["Unperturbed"],
-                    "POSCAR Comment": poscar_comment,
-                    "Transformation Dict": copy.deepcopy(dict_transf)
-                } # Entry for the unperturbed defect to compare
-                charged_defect["Unperturbed"]["Transformation Dict"].update({"charge": charge})
-                
-                _create_vasp_input(
-                    defect_name=f"{defect_name}_{charge}",
-                    distorted_defect_dict=charged_defect,
-                    incar_settings=incar_settings,
-                    potcar_settings=potcar_settings,
-                    output_path=output_path,
-                )
-                           
-                for key_distortion, distorted_struct in defect_dict[
-                    "charges"][charge]["structures"]["distortions"].items():
-                    
+                for key_distortion, struct in zip(
+                    ["Unperturbed",]
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                ):                    
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
                         charge=charge,
@@ -1025,7 +1014,7 @@ class Distortions:
                     )
                     
                     charged_defect[key_distortion] = {
-                        "Defect Structure": distorted_struct,
+                        "Defect Structure": struct,
                         "POSCAR Comment": poscar_comment,
                         "Transformation Dict": copy.deepcopy(dict_transf)
                     }         
@@ -1040,7 +1029,79 @@ class Distortions:
                 )
 
         self.write_distortion_metadata(output_path=output_path)
+    
+    def write_qe_files(
+        self,
+        pseudopotentials: Optional[dict] = None,
+        input_parameters: Optional[str] = None,
+        output_path: str = ".",
+        verbose: Optional[bool] = False,
+    ):
+        """
+        Generates input files for Quantum Espresso relaxations of all output structures. 
+
+        Args:
+            pseudopotentials (:obj:`dict`, optional): 
+                Dictionary matching element to pseudopotential name.
+                Defaults to None.
+            input_parameters (:obj:`dict`, optional):
+                Dictionary of user Quantum Espresso input parameters, to overwrite/update `shakenbreak` 
+                default ones (see `qe_input.yaml`).
+                Defaults to None.
+            output_path (:obj:`str`, optional):
+                Path to directory in which to write distorted defect structures and calculation
+                inputs. (Default is current directory: ".")
+            verbose (:obj:`bool`):
+                Whether to print distortion information (bond atoms and distances). 
+                (Default: False)
+        """
+        distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
+            verbose=verbose, 
+        )
         
+        # Update default parameters with user values
+        if input_parameters and pseudopotentials:
+            with open("./qe_input.yaml", "r") as f:
+                default_input_parameters = yaml.safe_load(f)
+            default_input_parameters["SYSTEM"]["tot_charge"] = charge
+            for section in input_parameters:
+                for key in input_parameters[section]:
+                    if section in default_input_parameters:
+                        default_input_parameters[section][key] = input_parameters[section][key]
+                    else:
+                        default_input_parameters.update({section: {key: input_parameters[section][key]}})
+            
+        aaa = AseAtomsAdaptor()
+        
+        for defect_name, defect_dict in distorted_defects_dict.items():  # loop for each defect in dict
+                        
+            for charge in defect_dict["charges"]:  # loop for each charge state of defect
+                
+                for dist, struct in zip(
+                    ["Unperturbed",]
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                ):
+                    atoms = aaa.get_atoms(struct)
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    
+                    if not input_parameters and not pseudopotentials: # only wirte structures
+                        ase.io.write(filename=f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi", images=atoms, format="espresso-in")
+                    elif input_parameters and pseudopotentials: # write complete input file
+                        
+                        default_input_parameters["SYSTEM"]["tot_charge"] = charge
+                        
+                        calc = Espresso(
+                            pseudopotentials=pseudopotentials,
+                            tstress=False, 
+                            tprnfor=True,
+                            kpts=(1, 1, 1), 
+                            input_data=default_input_parameters,
+                        )
+                        calc.write_input(atoms)
+                        os.replace("./espresso.pwi", f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi")
+            
 # TODO: 
 # Refactor current tests for this
 # Methods for other codes
