@@ -40,6 +40,16 @@ jobs:
 
       - name: Test
         run:  |
-          pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
-          pytest tests/test_shakenbreak.py --mpl  # test output plots
-          pytest tests/test_plotting.py --mpl  # test output plots
+          #pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
+          #pytest tests/test_shakenbreak.py --mpl  # test output plots
+          pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # test output plots
+      - name: Archive test plots
+        uses: actions/upload-artifact@v3
+        with:
+          name: output-plots
+          path: tests/remote_baseline
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: output-plots
+
