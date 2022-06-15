@@ -659,7 +659,7 @@ def plot_all_defects(
                               f"Skipping plot.")
                 continue
             # If a significant energy lowering was found, then further analyse this defect
-            if abs(float(energy_diff)) > abs(min_e_diff):
+            if float(-energy_diff) > abs(min_e_diff):  # energy_diff is negative if energy is lowered
                 if distortion_metadata and defect in distortion_metadata["defects"].keys():
                     try:
                         # Get number and element symbol of the distorted site(s)
@@ -683,12 +683,16 @@ def plot_all_defects(
                         ):
                             neighbour_atom = neighbour_atoms[0]
                         else:
-                            neighbour_atom = "NN"  # if different elements were distorted, just use nearest  # neighbours (NN) for label
+                            neighbour_atom = "NN"  # if different elements were distorted,
+                            # just use nearest neighbours (NN) for label
 
                     except (KeyError, TypeError, ValueError):
                         neighbour_atom = (
                             "NN"  # if distorted_elements wasn't set, set label to "NN"
                         )
+                else:
+                    num_nearest_neighbours = None
+                    neighbour_atom = None
                     
                 figures[defect_species] = plot_defect(
                     defect_species=defect_species,
@@ -787,7 +791,8 @@ def plot_defect(
     _verify_data_directories_exist(output_path=output_path, defect_species=defect_species)
     
     if not "Unperturbed" in energies_dict.keys():  # check if unperturbed energies exist
-        warnings.warn(f"Unperturbed energy not present in energies_dict of {defect_species}! Skipping plot.")
+        warnings.warn(f"Unperturbed energy not present in energies_dict of {defect_species}! "
+                      f"Skipping plot.")
         return None
     
     energies_dict = _cast_energies_to_floats(
@@ -825,6 +830,13 @@ def plot_defect(
             y_label=y_label,
         )  # convert energy units from eV to meV, and update y label
 
+    if num_nearest_neighbours is not None and neighbour_atom is not None:
+        legend_label = f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
+    elif neighbour_atom is not None:
+        legend_label = f"Distortions: {neighbour_atom}"
+    else:
+        legend_label = "Distortions"
+
     if add_colorbar:
        fig= plot_colorbar(
             energies_dict=energies_dict,
@@ -833,9 +845,7 @@ def plot_defect(
             title=defect_name if add_title else None,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
-            legend_label=f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
-            if num_nearest_neighbours != None
-            else f"Distortions: {neighbour_atom}",
+            legend_label=legend_label,
             metric=metric,
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
@@ -850,9 +860,7 @@ def plot_defect(
             title=defect_name if add_title else None,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
-            dataset_labels=[f"Distortions: {num_nearest_neighbours} {neighbour_atom}"]
-            if num_nearest_neighbours != None
-            else [f"Distortions: {neighbour_atom}"],
+            dataset_labels=[legend_label],
             y_label=y_label,
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             save_plot=save_plot,
@@ -963,7 +971,7 @@ def plot_colorbar(
     # Plotting
     if "Rattled" in energies_dict["distortions"].keys() and "Rattled" in disp_dict.keys():
         # plot Rattled energy
-        ax.scatter(
+        im = ax.scatter(
             0.0,
             energies_dict["distortions"]["Rattled"],
             c=disp_dict["Rattled"],
