@@ -15,12 +15,13 @@ import yaml
 
 import ase
 from ase.calculators.espresso import Espresso
-from ase.calculators.cp2k import CP2K
+from  ase.calculators.castep import Castep
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
 from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.io.cp2k.inputs import Cp2kInput
 
 from shakenbreak.distortions import distort, rattle
 from shakenbreak.io import vasp_gam_files
@@ -1102,6 +1103,159 @@ class Distortions:
                         calc.write_input(atoms)
                         os.replace("./espresso.pwi", f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi")
             
+    def write_cp2k_files(
+        self,
+        input_file: Optional[str] = "./cp2k_input.inp",
+        write_structures_only: Optional[bool] = False,
+        output_path: str = ".",
+        verbose: Optional[bool] = False,
+    ):
+        """
+        Generates input files for CP2K relaxations of all output structures. 
+
+        Args:
+            input_file  (:obj:`str`, optional):
+                Path to CP2K input file. If not set, default input file will be used 
+                (see `chakenbreak/shakenbreak/cp2k_input.inp`).
+            write_structures_only (:obj:`bool`, optional):
+                Whether to only write the structure files (in CIF format) (without calculation inputs).
+            output_path (:obj:`str`, optional):
+                Path to directory in which to write distorted defect structures and calculation
+                inputs. 
+                (Default is current directory: ".")
+            verbose (:obj:`bool`, optional):
+                Whether to print distortion information (bond atoms and distances). 
+                (Default: False)
+        """
+        if os.path.exists(input_file) and not write_structures_only:
+            cp2k_input = Cp2kInput.from_file(input_file)
+        elif os.path.exists("./cp2k_input.inp") and not write_structures_only:
+            warnings.warn(f"Specified input file {input_file} does not exist! Using default CP2K input file "
+                          "(see shakenbreak/shakenbreak/cp2k_input.inp)"
+                          )
+            cp2k_input = Cp2kInput.from_file("./cp2k_input.inp")
+            
+        distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
+            verbose=verbose, 
+        )
+        
+        for defect_name, defect_dict in distorted_defects_dict.items():  # loop for each defect in dict
+                        
+            for charge in defect_dict["charges"]:  # loop for each charge state of defect
+                
+                cp2k_input.update({"FORCE_EVAL": {"DFT": {"CHARGE": charge}} } )
+                
+                for dist, struct in zip(
+                    ["Unperturbed",]
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                ):
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    struct.to('cif', f"{output_path}/{defect_name}_{charge}/{dist}/structure.cif")
+                    if not write_structures_only:
+                        cp2k_input.write_file(input_filename="cp2k_input_modified.inp", output_dir=f"{output_path}/{defect_name}_{charge}/{dist}")
+                    
+    def write_castep_files(
+        self,
+        input_file: Optional[str] = None,
+        output_path: str = ".",
+        verbose: Optional[bool] = False,
+    ):
+        """
+        Generates input `.cell` files for CASTEP relaxations of all output structures. 
+
+        Args:
+            output_path (:obj:`str`, optional):
+                Path to directory in which to write distorted defect structures and calculation
+                inputs. 
+                (Default is current directory: ".")
+            input_file (:obj:`str`, optional):
+                Path to CASTEP input (`.param`) file. If not set, only the structures (in CASTEP 
+                .cell format will be written).
+            verbose (:obj:`bool`, optional):
+                Whether to print distortion information (bond atoms and distances). 
+                (Default: False)
+        """            
+        distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
+            verbose=verbose, 
+        )
+        aaa = AseAtomsAdaptor()
+                       
+        for defect_name, defect_dict in distorted_defects_dict.items():  # loop for each defect in dict
+                        
+            for charge in defect_dict["charges"]:  # loop for each charge state of defect
+                
+                
+                for dist, struct in zip(
+                    ["Unperturbed",]
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                ):
+                    atoms = aaa.get_atoms(struct)
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    if input_file:
+                        try:
+                            warnings.filterwarnings('ignore', 
+                                                    '.*Could not determine the version of your CASTEP binary.*'
+                                                    )
+                            warnings.filterwarnings('ignore', 
+                                                    '.*Generating CASTEP keywords JSON file... hang on.*'
+                                                    )
+                            calc = Castep(directory=f"{output_path}/{defect_name}_{charge}/{dist}")
+                            calc.set_kpts({'size': (1, 1, 1), 'gamma': True})
+                            calc.merge_param(input_file)
+                            calc.param.charge = 1 # Defect charge state   
+                            calc.set_atoms(atoms)
+                            calc.initialize() 
+                        except:
+                            warnings.warn("Problem setting up the CASTEP .param file. Only structures will be written.")
+                            ase.io.write(
+                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", 
+                                images=atoms, format="castep-cell"
+                                ) 
+                    else:
+                        ase.io.write(
+                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", 
+                                images=atoms, format="castep-cell"
+                                )
+
+    def write_FHI_aims_files(
+        self,
+        output_path: str = ".",
+        verbose: Optional[bool] = False,
+    ):
+        """
+        Generates input geometry files for FHI-aims relaxations of all output structures. 
+
+        Args:
+            output_path (:obj:`str`, optional):
+                Path to directory in which to write distorted defect structures and calculation
+                inputs. 
+                (Default is current directory: ".")
+            verbose (:obj:`bool`, optional):
+                Whether to print distortion information (bond atoms and distances). 
+                (Default: False)
+        """            
+        distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
+            verbose=verbose, 
+        )
+        aaa = AseAtomsAdaptor()
+        
+        for defect_name, defect_dict in distorted_defects_dict.items():  # loop for each defect in dict
+                        
+            for charge in defect_dict["charges"]:  # loop for each charge state of defect
+                
+                for dist, struct in zip(
+                    ["Unperturbed",]
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                ):
+                    atoms = aaa.get_atoms(struct)
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    ase.io.write(filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", images=atoms, format="aims")
+                        
 # TODO: 
-# Refactor current tests for this
-# Methods for other codes
+# Refactor apply_shakenbreak tests for this
