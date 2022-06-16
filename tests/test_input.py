@@ -378,7 +378,7 @@ class InputTestCase(unittest.TestCase):
             V_Cd_kwarg_distorted_dict.get("defect_frac_coords"), vac_coords
         )
 
-    def test_apply_distortions_V_Cd(self):
+    def test_apply_snb_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""
         V_Cd_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_dict,
@@ -395,7 +395,7 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_rattled, distorted_V_Cd_struc)
 
-        V_Cd_0pt1_distorted_dict = input.apply_distortions(
+        V_Cd_0pt1_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
@@ -453,7 +453,7 @@ class InputTestCase(unittest.TestCase):
         # test zero distortion is written as positive zero (not "-0.0%")
         self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
 
-    def test_apply_distortions_Int_Cd_2(self):
+    def test_apply_snb_distortions_Int_Cd_2(self):
 
         """Test apply_distortions function for Int_Cd_2"""
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(

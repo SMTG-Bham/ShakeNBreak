@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     import pymatgen.core.structure
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_potcar_dict = loadfn(os.path.join(MODULE_DIR, "default_POTCARs.yaml"))
+default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
 
 # Duplicated code from doped
 def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
