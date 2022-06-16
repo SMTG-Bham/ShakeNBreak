@@ -13,13 +13,14 @@ from pymatgen.core.structure import Structure
 from shakenbreak.analysis import (
     _sort_data,
     _get_distortion_filename,
-    grab_contcar,
     get_structures,
     get_energies,
     calculate_struct_comparison,
     compare_structures,
 )
+from shakenbreak.io import parse_vasp_structure
 
+# TODO: These functions needs to be updated to offer this functionality for other codes
 
 def read_defects_directories(output_path: str = "./") -> dict:
     """
@@ -142,13 +143,13 @@ def get_energy_lowering_distortions(
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 file_path = f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
                 with warnings.catch_warnings(record=True) as w:
-                    gs_struct = grab_contcar(
+                    gs_struct = parse_vasp_structure(
                         file_path
                     )  # get the final structure of the
                     # energy lowering distortion
                     if any(warning.category == UserWarning for warning in w):
                         # problem parsing structure, user will have received appropriate
-                        # warning from grab_contcar()
+                        # warning from parse_vasp_structure()
                         print(
                             f"Problem parsing final, low-energy structure for {gs_distortion} "
                             f"bond distortion of {defect_species} at {file_path}. This species "
