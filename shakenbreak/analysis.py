@@ -17,6 +17,8 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.outputs import Outcar
 from pymatgen.core.periodic_table import Element
 
+from shakenbreak import io
+
 crystalNN = CrystalNN(
     distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0
 )
@@ -287,38 +289,6 @@ def _sort_data(energies_file: str, verbose: bool = True):
 
 # Main analysis functions
 
-def grab_contcar(
-    file_path: str,
-) -> Structure:
-    """
-    Read VASP structure from `file_path` and convert to `pymatgen` Structure object.
-
-    Args:
-        file_path (:obj:`str`):
-            Path to VASP `CONTCAR` file
-
-    Returns:
-        `pymatgen` Structure object
-    """
-    abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
-    if not os.path.isfile(abs_path_formatted):
-        warnings.warn(
-            f"{abs_path_formatted} file doesn't exist, storing as 'Not converged'. Check path & "
-            f"relaxation"
-        )
-        struct = "Not converged"
-    else:
-        try:
-            struct = Structure.from_file(abs_path_formatted)
-        except:
-            warnings.warn(
-                f"Problem obtaining structure from: {abs_path_formatted}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            struct = "Not converged"
-    return struct
-
-
 def analyse_defect_site(
     structure: Structure,
     name: Optional[str] = None,
@@ -442,6 +412,8 @@ def get_structures(
     defect_species: str,
     output_path: str = ".",
     bond_distortions: Optional[list] = None,
+    code: Optional[str] = "VASP",
+    structure_filename: Optional[str] = "CONTCAR",
 ) -> dict:
     """
     Import all structures found with rattling & bond distortions, and store them in a dictionary
@@ -459,6 +431,12 @@ def get_structures(
             List of bond distortions whose structures will be analysed (i.e. [-0.2, 0.0,
             0.5]). By default, all distortions present in subdirectories are considered.
             (Default: None)
+        code (:obj:`str`, optional):
+            Code used for the geometry relaxations.
+            (Default: VASP)
+        structure_filename (:obj:`str`, optional):
+            Name of the file containing the structure.
+            (Default: CONTCAR)
     Returns:
         Dictionary of bond distortions and corresponding final structures.
     """
@@ -490,12 +468,14 @@ def get_structures(
                 distortion != "Label_not_recognized"
             ):  # If the subdirectory name is recognised
                 try:
-                    defect_structures_dict[distortion] = grab_contcar(
-                        f"{output_path}/{defect_species}/{distortion_subdirectory}/CONTCAR"
+                    defect_structures_dict[distortion] = io.parse_structure(
+                        code=code,
+                        structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
+                        structure_filename=structure_filename,
                     )
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"Unable to parse structure at {output_path}/{defect_species}/{structure_filename}"
                         f"/{distortion_subdirectory}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
@@ -510,12 +490,14 @@ def get_structures(
                 distortion_label != "Label_not_recognized"
             ):  # If the distortion label is recognised
                 try:
-                    defect_structures_dict[distortion] = grab_contcar(
-                        f"{output_path}/{defect_species}/{distortion_label}/CONTCAR"
-                    )
+                    defect_structures_dict[distortion] = io.parse_structure(
+                        code=code,
+                        structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
+                        structure_filename=structure_filename,
+                    )                   
                 except:
                     warnings.warn(
-                        f"Unable to parse CONTCAR at {output_path}/{defect_species}"
+                        f"Unable to parse structure at {output_path}/{defect_species}"
                         f"/{distortion_label}/, storing as 'Not converged'"
                     )
                     defect_structures_dict[distortion] = "Not converged"
@@ -920,7 +902,7 @@ def _site_magnetizations(
 ) -> pd.DataFrame :
     """
     Prints sites with magnetization above threshold.
-
+    Only implemented for VASP calculations.
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
             Outcar object
@@ -975,6 +957,7 @@ def get_site_magnetizations(
 ) -> Optional[dict]:
     """
     For given distortions, find sites with significant magnetization and return as dictionary.
+    Only implemented for VASP calculations.
     Args:
         defect_species (:obj:`str`):
             Name of defect including charge state (e.g. 'vac_1_Cd_0')
@@ -1020,7 +1003,7 @@ def get_site_magnetizations(
     # TODO: This could be sped up by parallelising
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename (e.g. Bond_Distortion_50.0%)
-        structure = grab_contcar(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
+        structure = io.parse_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
             warnings.warn(
                 f"Structure for {defect_species} either not converged or not found. " 

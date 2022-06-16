@@ -243,6 +243,7 @@ def _get_displacement_dict(
     metric: str,
     energies_dict: dict,
     add_colorbar: bool,
+    code: Optional[str] = "VASP",
 ) -> Tuple[bool, dict, dict]:
     """
     Parses structures of `defect_species` to calculate displacements between each 
@@ -270,12 +271,15 @@ def _get_displacement_dict(
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between each structure and
             the unperturbed one.
+        code (:obj:`str`, optional):
+            Code used for the geometry relaxations.
+            (Default: VASP)
     Returns:
         Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and `disp_dict`
     """
     try:
         defect_structs = get_structures(
-            defect_species=defect_species, output_path=output_path
+            defect_species=defect_species, output_path=output_path, code=code,
         )
         disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
