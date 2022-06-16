@@ -82,9 +82,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [-2, -1, 0]
 
-        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
+        dist = input.Distortions(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
+        )
+        distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )

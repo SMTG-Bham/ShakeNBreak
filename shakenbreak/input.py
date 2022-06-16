@@ -942,7 +942,6 @@ class Distortions:
             str(key_distortion.split("_")[
                 -1
             ])  # Get distortion factor (-60.%) or 'Rattled'
-            + "__"
             + "__num_neighbours="
             + str(
                 self.distortion_metadata["defects"][defect_name]["charges"][
@@ -1031,6 +1030,7 @@ class Distortions:
                 )
 
         self.write_distortion_metadata(output_path=output_path)
+        return distorted_defects_dict, self.distortion_metadata
     
     def write_espresso_files(
         self,
@@ -1038,7 +1038,7 @@ class Distortions:
         input_parameters: Optional[str] = None,
         output_path: str = ".",
         verbose: Optional[bool] = False,
-    ):
+    ) -> Tuple[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output structures. 
 
@@ -1103,14 +1103,15 @@ class Distortions:
                         )
                         calc.write_input(atoms)
                         os.replace("./espresso.pwi", f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi")
-            
+        return distorted_defects_dict, self.distortion_metadata
+    
     def write_cp2k_files(
         self,
         input_file: Optional[str] = f"{MODULE_DIR}/../input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
-    ):
+    ) -> Tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output structures. 
 
@@ -1156,13 +1157,14 @@ class Distortions:
                     struct.to('cif', f"{output_path}/{defect_name}_{charge}/{dist}/structure.cif")
                     if not write_structures_only:
                         cp2k_input.write_file(input_filename="cp2k_input_modified.inp", output_dir=f"{output_path}/{defect_name}_{charge}/{dist}")
-                    
+        return distorted_defects_dict, self.distortion_metadata
+                
     def write_castep_files(
         self,
         input_file: Optional[str] = None,
         output_path: str = ".",
         verbose: Optional[bool] = False,
-    ):
+    ) -> Tuple[dict, dict]:
         """
         Generates input `.cell` files for CASTEP relaxations of all output structures. 
 
@@ -1221,6 +1223,7 @@ class Distortions:
                                 filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", 
                                 images=atoms, format="castep-cell"
                                 )
+        return distorted_defects_dict, self.distortion_metadata
 
     def write_fhi_aims_files(
         self,
@@ -1299,6 +1302,7 @@ class Distortions:
                             filename=f"{output_path}/{defect_name}_{charge}/{dist}/control.in", 
                             atoms=atoms
                         )
+        return distorted_defects_dict, self.distortion_metadata
 
 # TODO: 
-# Refactor apply_shakenbreak tests for class new methods
+# Refactor apply_shakenbreak tests in test_input.py for class new methods

@@ -478,7 +478,7 @@ class InputTestCase(unittest.TestCase):
         )
 
     @patch("builtins.print")
-    def test_apply_distortions_kwargs(self, mock_print):
+    def test_apply_snb_distortions_kwargs(self, mock_print):
         """Test apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
@@ -608,289 +608,299 @@ class InputTestCase(unittest.TestCase):
 
 
     # Ignoring this for now while class conversion is in progress
-    # @patch("builtins.print")
-    # def test_apply_shakenbreak(self, mock_print):
-    #     """Test apply_shakenbreak function"""
-    #     oxidation_states = {"Cd": +2, "Te": -2}
-    #     bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
+    @patch("builtins.print")
+    def test_Distortions(self, mock_print):
+        """Test apply_shakenbreak function"""
+        oxidation_states = {"Cd": +2, "Te": -2}
+        bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-    #     distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
-    #         self.cdte_defect_dict,
-    #         oxidation_states=oxidation_states,
-    #         bond_distortions=bond_distortions,
-    #         incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-    #         verbose=False,
-    #     )
+        dist = input.Distortions(
+            self.cdte_defect_dict,
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+        )    
+        distortion_defect_dict, distortion_metadata = dist.write_vasp_files(
+          incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+          verbose=False,
+        )
 
-    #     # check if expected folders were created:
-    #     self.assertTrue(set(self.cdte_defect_folders).issubset(set(os.listdir())))
-    #     # check expected info printing:
-    #     mock_print.assert_any_call(
-    #         "Applying ShakeNBreak...",
-    #         "Will apply the following bond distortions:",
-    #         "['-0.6', '-0.55', '-0.5', '-0.45', '-0.4', '-0.35', '-0.3', "
-    #         "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
-    #         "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
-    #         "'0.5', '0.55', '0.6'].",
-    #         "Then, will rattle with a std dev of 0.25 Å \n",
-    #     )
-    #     mock_print.assert_any_call("\nDefect:", "vac_1_Cd")
-    #     mock_print.assert_any_call("Number of missing electrons in neutral state: 2")
-    #     mock_print.assert_any_call(
-    #         "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
-    #         "neighbours: 0"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect vac_1_Cd in charge state: -1. Number of distorted "
-    #         "neighbours: 1"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
-    #     )
-    #     # test correct distorted neighbours based on oxidation states:
-    #     mock_print.assert_any_call(
-    #         "\nDefect vac_2_Te in charge state: -2. Number of distorted "
-    #         "neighbours: 4"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect as_1_Cd_on_Te in charge state: -2. Number of "
-    #         "distorted neighbours: 2"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect as_1_Te_on_Cd in charge state: -2. Number of "
-    #         "distorted neighbours: 2"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect Int_Cd_1 in charge state: 0. Number of distorted " "neighbours: 2"
-    #     )
-    #     mock_print.assert_any_call(
-    #         "\nDefect Int_Te_1 in charge state: -2. Number of distorted "
-    #         "neighbours: 0"
-    #     )
+        # check if expected folders were created:
+        self.assertTrue(set(self.cdte_defect_folders).issubset(set(os.listdir())))
+        # check expected info printing:
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.6', '-0.55', '-0.5', '-0.45', '-0.4', '-0.35', '-0.3', "
+            "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
+            "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
+            "'0.5', '0.55', '0.6'].",
+            "Then, will rattle with a std dev of 0.25 Å \n",
+        )
+        mock_print.assert_any_call("\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m") # bold print
+        mock_print.assert_any_call("\033[1m" +"Number of missing electrons in neutral state: 2" + "\033[0m")
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
+            "neighbours: 0"
+        )
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: -1. Number of distorted "
+            "neighbours: 1"
+        )
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        # test correct distorted neighbours based on oxidation states:
+        mock_print.assert_any_call(
+            "\nDefect vac_2_Te in charge state: -2. Number of distorted "
+            "neighbours: 4"
+        )
+        mock_print.assert_any_call(
+            "\nDefect as_1_Cd_on_Te in charge state: -2. Number of "
+            "distorted neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect as_1_Te_on_Cd in charge state: -2. Number of "
+            "distorted neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Int_Cd_1 in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Int_Te_1 in charge state: -2. Number of distorted "
+            "neighbours: 0"
+        )
 
-    #     # check if correct files were created:
-    #     V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-    #     self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-    #     V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
-    #     self.assertEqual(
-    #         V_Cd_POSCAR.comment,
-    #         "-50.0%__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
-    #     )  # default
-    #     self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-    #     # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-    #     # but tested locally
+        # check if correct files were created:
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
+        self.assertEqual(
+            V_Cd_POSCAR.comment,
+            "-50.0%__num_neighbours=2_vac_1_Cd",
+        )  # default
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
+        # but tested locally
 
-    #     Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
-    #     self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-    #     Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
-    #     self.assertEqual(
-    #         Int_Cd_2_POSCAR.comment,
-    #         "-60.0%__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
-    #     )
-    #     self.assertEqual(
-    #         Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
-    #     )
-    #     # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-    #     # but tested locally
+        Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        self.assertEqual(
+            Int_Cd_2_POSCAR.comment,
+            "-60.0%__num_neighbours=2_Int_Cd_2",
+        )
+        self.assertEqual(
+            Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
+        )
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
+        # but tested locally
 
-    #     # test rattle kwargs:
-    #     reduced_V_Cd_dict = self.V_Cd_dict.copy()
-    #     reduced_V_Cd_dict["charges"] = [0]
-    #     rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-    #     distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
-    #         {"vacancies": [reduced_V_Cd_dict]},
-    #         oxidation_states=oxidation_states,
-    #         bond_distortions=bond_distortions,
-    #         verbose=False,
-    #         stdev=0.15,
-    #         d_min=0.75 * 2.8333683853583165,
-    #         nbr_cutoff=3.4,
-    #         n_iter=3,
-    #         active_atoms=rattling_atom_indices,
-    #         width=0.3,
-    #         max_attempts=10000,
-    #         max_disp=1.0,
-    #         seed=20,
-    #     )
-    #     V_Cd_kwarged_POSCAR = Poscar.from_file(
-    #         "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
-    #     )
-    #     self.assertEqual(
-    #         V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
-    #     )
-    #     rounded_bond_distortions = np.around(bond_distortions, 3)
-    #     np.testing.assert_equal(
-    #         distortion_defect_dict["distortion_parameters"]["bond_distortions"],
-    #         rounded_bond_distortions,
-    #     )
+        # test rattle kwargs:
+        reduced_V_Cd_dict = self.V_Cd_dict.copy()
+        reduced_V_Cd_dict["charges"] = [0]
+        rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            stdev=0.15,
+            d_min=0.75 * 2.8333683853583165,
+            nbr_cutoff=3.4,
+            n_iter=3,
+            active_atoms=rattling_atom_indices,
+            width=0.3,
+            max_attempts=10000,
+            max_disp=1.0,
+            seed=20,
+        )
+        distortion_defect_dict, distortion_metadata = dist.write_vasp_files(
+            verbose=False,
+        )
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
+        rounded_bond_distortions = np.around(bond_distortions, 3)
+        np.testing.assert_equal(
+            distortion_metadata["distortion_parameters"]["bond_distortions"],
+            rounded_bond_distortions,
+        )
 
     #     # test other kwargs:
-    #     reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
-    #     reduced_Int_Cd_2_dict["charges"] = [1]
+        reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
+        reduced_Int_Cd_2_dict["charges"] = [1]
 
-    #     with patch("builtins.print") as mock_Int_Cd_2_print:
-    #         distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
-    #             {"interstitials": [reduced_Int_Cd_2_dict]},
-    #             oxidation_states=oxidation_states,
-    #             distortion_increment=0.25,
-    #             verbose=True,
-    #             distorted_elements={"Int_Cd_2": ["Cd"]},
-    #             dict_number_electrons_user={"Int_Cd_2": 3},
-    #         )
-    #         kwarged_Int_Cd_2_dict = {
-    #             "distortion_parameters": {
-    #                 "distortion_increment": 0.25,
-    #                 "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
-    #                 "rattle_stdev": 0.25,
-    #             },
-    #             "defects": {
-    #                 "Int_Cd_2": {
-    #                     "unique_site": reduced_Int_Cd_2_dict[
-    #                         "bulk_supercell_site"
-    #                     ].frac_coords,
-    #                     "charges": {
-    #                         1: {
-    #                             "num_nearest_neighbours": 4,
-    #                             "distorted_atoms": [
-    #                                 (10, "Cd"),
-    #                                 (22, "Cd"),
-    #                                 (29, "Cd"),
-    #                                 (38, "Te"),
-    #                             ],
-    #                             "distortion_parameters": {
-    #                                 "bond_distortions": [
-    #                                     -0.5,
-    #                                     -0.25,
-    #                                     0.0,
-    #                                     0.25,
-    #                                     0.5,
-    #                                 ],
-    #                                 "rattle_stdev": 0.25,
-    #                             },
-    #                         },
-    #                     },
-    #                     "defect_site_index": 65,
-    #                 },
-    #                 "vac_1_Cd": {
-    #                     "unique_site": [0.0, 0.0, 0.0],
-    #                     "charges": {
-    #                         0: {
-    #                             "num_nearest_neighbours": 2,
-    #                             "distorted_atoms": [[33, "Te"], [42, "Te"]],
-    #                             "distortion_parameters": {
-    #                                 "bond_distortions": [
-    #                                     -0.6,
-    #                                     -0.55,
-    #                                     -0.5,
-    #                                     -0.45,
-    #                                     -0.4,
-    #                                     -0.35,
-    #                                     -0.3,
-    #                                     -0.25,
-    #                                     -0.2,
-    #                                     -0.15,
-    #                                     -0.1,
-    #                                     -0.05,
-    #                                     0.0,
-    #                                     0.05,
-    #                                     0.1,
-    #                                     0.15,
-    #                                     0.2,
-    #                                     0.25,
-    #                                     0.3,
-    #                                     0.35,
-    #                                     0.4,
-    #                                     0.45,
-    #                                     0.5,
-    #                                     0.55,
-    #                                     0.6,
-    #                                 ],
-    #                                 "rattle_stdev": 0.15,
-    #                             },
-    #                         },
-    #                     },
-    #                 },
-    #             },
-    #         }
-    #         np.testing.assert_equal(
-    #             distortion_defect_dict["defects"]["Int_Cd_2"]["charges"][
-    #                 1
-    #             ],  # check defect in distortion_defect_dict
-    #             kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1],
-    #         )
-    #         self.assertTrue(os.path.exists("distortion_metadata.json"))
-    #         # check defects from old metadata file are in new metadata file
-    #         with open(f"distortion_metadata.json", "r") as metadata_file:
-    #             metadata = json.load(metadata_file)
-    #         np.testing.assert_equal(
-    #             metadata["defects"]["vac_1_Cd"]["charges"][
-    #                 "0"
-    #             ],  # check defect in distortion_defect_dict
-    #             kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0],
-    #         )
+        with patch("builtins.print") as mock_Int_Cd_2_print:
+            dist = input.Distortions(
+                {"interstitials": [reduced_Int_Cd_2_dict]},
+                oxidation_states=oxidation_states,
+                distortion_increment=0.25,
+                distorted_elements={"Int_Cd_2": ["Cd"]},
+                dict_number_electrons_user={"Int_Cd_2": 3},
+            )
+            distortion_defect_dict, distortion_metadata = dist.write_vasp_files(
+                verbose=True,
+            )
+ 
+            kwarged_Int_Cd_2_dict = {
+                "distortion_parameters": {
+                    "distortion_increment": 0.25,
+                    "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                    "rattle_stdev": 0.25,
+                },
+                "defects": {
+                    "Int_Cd_2": {
+                        "unique_site": reduced_Int_Cd_2_dict[
+                            "bulk_supercell_site"
+                        ].frac_coords,
+                        "charges": {
+                            1: {
+                                "num_nearest_neighbours": 4,
+                                "distorted_atoms": [
+                                    (10, "Cd"),
+                                    (22, "Cd"),
+                                    (29, "Cd"),
+                                    (38, "Te"),
+                                ],
+                                "distortion_parameters": {
+                                    "bond_distortions": [
+                                        -0.5,
+                                        -0.25,
+                                        0.0,
+                                        0.25,
+                                        0.5,
+                                    ],
+                                    "rattle_stdev": 0.25,
+                                },
+                            },
+                        },
+                        "defect_site_index": 65,
+                    },
+                    "vac_1_Cd": {
+                        "unique_site": [0.0, 0.0, 0.0],
+                        "charges": {
+                            0: {
+                                "num_nearest_neighbours": 2,
+                                "distorted_atoms": [[33, "Te"], [42, "Te"]],
+                                "distortion_parameters": {
+                                    "bond_distortions": [
+                                        -0.6,
+                                        -0.55,
+                                        -0.5,
+                                        -0.45,
+                                        -0.4,
+                                        -0.35,
+                                        -0.3,
+                                        -0.25,
+                                        -0.2,
+                                        -0.15,
+                                        -0.1,
+                                        -0.05,
+                                        0.0,
+                                        0.05,
+                                        0.1,
+                                        0.15,
+                                        0.2,
+                                        0.25,
+                                        0.3,
+                                        0.35,
+                                        0.4,
+                                        0.45,
+                                        0.5,
+                                        0.55,
+                                        0.6,
+                                    ],
+                                    "rattle_stdev": 0.15,
+                                },
+                            },
+                        },
+                    },
+                },
+            }
+            np.testing.assert_equal(
+                distortion_metadata["defects"]["Int_Cd_2"]["charges"][
+                    1
+                ],  # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1],
+            )
+            self.assertTrue(os.path.exists("distortion_metadata.json"))
+            # check defects from old metadata file are in new metadata file
+            with open(f"distortion_metadata.json", "r") as metadata_file:
+                metadata = json.load(metadata_file)
+            np.testing.assert_equal(
+                metadata["defects"]["vac_1_Cd"]["charges"][
+                    "0"
+                ],  # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0],
+            )
 
-    #         # check expected info printing:
-    #         mock_Int_Cd_2_print.assert_any_call(
-    #             "Applying ShakeNBreak...",
-    #             "Will apply the following bond distortions:",
-    #             "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
-    #             "Then, will rattle with a std dev of 0.25 Å \n",
-    #         )
-    #         mock_Int_Cd_2_print.assert_any_call("\nDefect:", "Int_Cd_2")
-    #         mock_Int_Cd_2_print.assert_any_call(
-    #             "Number of missing electrons in neutral state: 3"
-    #         )
-    #         mock_Int_Cd_2_print.assert_any_call(
-    #             "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
-    #         )
-    #         mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
-    #         mock_Int_Cd_2_print.assert_any_call(
-    #             f"\tDefect Site Index / Frac Coords: 65\n"
-    #             + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
-    #             + "(2.71, 29, 'Cd'), (2.71, 38, 'Te')]\n"
-    #             + "        Distorted Neighbour Distances:\n\t[(1.36, 10, 'Cd'), (1.36, 22, 'Cd'), "
-    #             + "(1.36, 29, 'Cd'), (1.36, 38, 'Te')]"
-    #         )
-    #         # check correct folder was created:
-    #         self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
+            # check expected info printing:
+            mock_Int_Cd_2_print.assert_any_call(
+                "Applying ShakeNBreak...",
+                "Will apply the following bond distortions:",
+                "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
+                "Then, will rattle with a std dev of 0.25 Å \n",
+            )
+            mock_Int_Cd_2_print.assert_any_call("\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m")
+            mock_Int_Cd_2_print.assert_any_call(
+                "\033[1m" + "Number of missing electrons in neutral state: 3" + "\033[0m" 
+            )
+            mock_Int_Cd_2_print.assert_any_call(
+                "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
+            )
+            mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
+            mock_Int_Cd_2_print.assert_any_call(
+                f"\tDefect Site Index / Frac Coords: 65\n"
+                + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+                + "(2.71, 29, 'Cd'), (2.71, 38, 'Te')]\n"
+                + "        Distorted Neighbour Distances:\n\t[(1.36, 10, 'Cd'), (1.36, 22, 'Cd'), "
+                + "(1.36, 29, 'Cd'), (1.36, 38, 'Te')]"
+            )
+            # check correct folder was created:
+            self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
 
-    #     # check files are not written if write_files=False:
-    #     for i in self.cdte_defect_folders:
-    #         if_present_rm(i)  # remove test-generated defect folders
-    #     distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
-    #         {"vacancies": [reduced_V_Cd_dict]},
-    #         oxidation_states=oxidation_states,
-    #         bond_distortions=bond_distortions,
-    #         verbose=False,
-    #         write_files=False,
-    #     )
-    #     self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        # check files are not written if `apply_distortions()` method is used
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+          )
+        distortion_defect_dict, distortion_metadata = dist.apply_distortions(
+            verbose=False,
+        )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
 
-    #     # test output_path parameter:
-    #     distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
-    #         {"vacancies": [reduced_V_Cd_dict]},
-    #         oxidation_states=oxidation_states,
-    #         bond_distortions=bond_distortions,
-    #         verbose=False,
-    #         stdev=0.15,
-    #         d_min=0.75 * 2.8333683853583165,
-    #         nbr_cutoff=3.4,
-    #         n_iter=3,
-    #         active_atoms=rattling_atom_indices,
-    #         width=0.3,
-    #         max_attempts=10000,
-    #         max_disp=1.0,
-    #         seed=20,
-    #         output_path="test_path",
-    #     )
-    #     self.assertTrue(os.path.exists("test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"))
-    #     self.assertTrue(os.path.exists("test_path/distortion_metadata.json"))
-    #     V_Cd_kwarged_POSCAR = Poscar.from_file(
-    #         "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
-    #     )
-    #     self.assertEqual(
-    #         V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
-    #     )
+        # test output_path parameter:
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            stdev=0.15,
+            d_min=0.75 * 2.8333683853583165,
+            nbr_cutoff=3.4,
+            n_iter=3,
+            active_atoms=rattling_atom_indices,
+            width=0.3,
+            max_attempts=10000,
+            max_disp=1.0,
+            seed=20,
+        )
+        distortion_defect_dict, distortion_metadata = dist.write_vasp_files(
+            output_path="test_path",
+            verbose=False,
+        )
+        self.assertTrue(os.path.exists("test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("test_path/distortion_metadata.json"))
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
 
 
 if __name__ == "__main__":
