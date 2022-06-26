@@ -6,6 +6,7 @@ import copy
 import os
 import shutil
 import warnings
+from typing import Optional
 import pandas as pd
 
 from pymatgen.core.structure import Structure
@@ -59,50 +60,60 @@ def read_defects_directories(output_path: str = "./") -> dict:
 # TODO: Add optional parameter to `get_energy_lowering_distortions()` that also then runs
 #  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call
 # TODO: Refactor so that `get_energy_lowering_distortions` can either take in a specified list of
-#  defect charges to parse, or will read from current directory using `_read_defects_directories(
-#  )` under the hood (and add test for this!)
+#  defect charges to parse, or will read from current directory using `read_defects_directories(
+#  )` under the hood (and add test for this!) -> Add test
 def get_energy_lowering_distortions(
-    defect_charges_dict: dict,
+    defect_charges_dict: Optional[dict],
     output_path: str = ".",
+    code: str="VASP",
+    structure_filename: str="CONTCAR",
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = True,
 ) -> dict:
-    """Convenience function to identify defect species undergoing energy-lowering distortions.
-     Useful for then testing these distorted structures for the other charge states of that defect.
-     Considers all identified energy-lowering distortions for each defect in each charge state,
-     and screens out duplicate distorted structures found for multiple charge states.
+    """
+    Convenience function to identify defect species undergoing energy-lowering distortions.
+    Useful for then testing these distorted structures for the other charge states of that defect.
+    Considers all identified energy-lowering distortions for each defect in each charge state,
+    and screens out duplicate distorted structures found for multiple charge states.
 
-     Args:
-         defect_charges_dict (:obj:`dict`):
-             Dictionary matching defect name(s) to list(s) of their charge states. (e.g {
-             "Int_Sb_1":[0,+1,+2]} etc)
-         output_path (:obj:`str`):
-             Path to directory with your distorted defect calculations (need CONTCAR files for
-             structure matching) and distortion_metadata.json. (Default is current directory = "./")
-         min_e_diff (:obj: `float`):
-             Minimum energy difference (in eV) between the ground-state defect structure,
-             relative to the `Unperturbed` structure, to consider it as having found a new
-             energy-lowering distortion. Default is 0.05 eV.
-         stol (:obj:`float`):
-             Site-matching tolerance for structure matching. Site tolerance. Defined as the
-             fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
-             (Default: 0.5)
-         min_dist (:obj:`float`):
+    Args:
+        defect_charges_dict (:obj:`dict`, optional):
+            Dictionary matching defect name(s) to list(s) of their charge states. (e.g {
+            "Int_Sb_1":[0,+1,+2]} etc). If not specified, all defects present in `output_path`
+            will be parsed.
+        output_path (:obj:`str`):
+            Path to directory with your distorted defect calculations (need CONTCAR files for
+            structure matching) and distortion_metadata.json. (Default is current directory = "./")
+        code (:obj:`str`, optional):
+            Code used for the geometry relaxations.
+            (Default: VASP)
+        structure_filename (:obj:`str`, optional):
+            Name of the file containing the structure.
+            (Default: CONTCAR)
+        min_e_diff (:obj: `float`):
+            Minimum energy difference (in eV) between the ground-state defect structure,
+            relative to the `Unperturbed` structure, to consider it as having found a new
+            energy-lowering distortion. Default is 0.05 eV.
+        stol (:obj:`float`):
+            Site-matching tolerance for structure matching. Site tolerance. Defined as the
+            fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
+            (Default: 0.5)
+        min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in order to consider them
             not matching (in Å, default = 0.2 Å).
-         verbose (:obj:`bool`):
+        verbose (:obj:`bool`):
             Whether to print verbose information about energy lowering distortions, if found.
             (Default: True)
 
     Returns:
-         low_energy_defects (:obj:`dict`):
-             Dictionary of defects for which bond distortion found an energy-lowering distortion
-             (which is missed with normal unperturbed relaxation), of the form {defect: [list of
-             distortion dictionaries (with corresponding charge states, energy lowering,
-             distortion factors, structures and charge states for which these structures weren't
-             found)]}.
+        low_energy_defects (:obj:`dict`):
+            Dictionary of defects for which bond distortion found an energy-lowering distortion
+            (which is missed with normal unperturbed relaxation), of the form {defect: [list of
+            distortion dictionaries (with corresponding charge states, energy lowering,
+            distortion factors, structures and charge states for which these structures weren't
+            found)]}.
     """
     if not os.path.isdir(output_path):  # check if output_path exists
         raise FileNotFoundError(f"Path {output_path} does not exist!")
@@ -111,9 +122,12 @@ def get_energy_lowering_distortions(
         {}
     )  # dict of defects undergoing energy-lowering distortions, relative to unperturbed structure
 
+    if not defect_charges_dict:
+        defect_charges_dict = read_defects_directories(output_path=output_path)
     defect_pruning_dict = copy.deepcopy(
         defect_charges_dict
-    )  # defects and charge states to do
+    )  # defects and charge states to analyse
+    
     # later comparison and pruning against other charge states
     for defect in defect_charges_dict:
         print(f"\n{defect}")
@@ -263,6 +277,8 @@ def get_energy_lowering_distortions(
                     distortion_dict["structures"][0],
                     defect_species,
                     output_path,
+                    code=code,
+                    structure_filename=structure_filename,
                     stol=stol,
                     min_dist=min_dist,
                 )
@@ -295,6 +311,8 @@ def compare_struct_to_distortions(
     distorted_struct: Structure,
     defect_species: str,
     output_path: str = ".",
+    code: str="VASP",
+    structure_filename: str="CONTCAR",
     stol: float = 0.5,
     min_dist: float = 0.2,
 ) -> tuple:
@@ -311,6 +329,12 @@ def compare_struct_to_distortions(
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to calculate structure
             comparisons – needs VASP CONTCAR files). (Default is current directory = "./")
+        code (:obj:`str`, optional):
+            Code used for the geometry relaxations.
+            (Default: VASP)
+        structure_filename (:obj:`str`, optional):
+            Name of the file containing the structure.
+            (Default: CONTCAR)
         stol (:obj:`float`):
              Site-matching tolerance for structure matching. Site tolerance. Defined as the
              fraction of the average free length per atom := ( V / Nsites ) ** (1/3).
@@ -328,7 +352,10 @@ def compare_struct_to_distortions(
     """
     try:
         defect_structures_dict = get_structures(
-            defect_species=defect_species, output_path=output_path
+            defect_species=defect_species, 
+            output_path=output_path,
+            code=code,
+            structure_filename=structure_filename,
         )
     except FileNotFoundError:  # catch exception raised by `get_structures`` if `defect_species`
         # folder does not exist
@@ -342,8 +369,8 @@ def compare_struct_to_distortions(
     )
 
     struct_comparison_df = compare_structures(
-        defect_structures_dict,
-        defect_energies_dict,
+        defect_structures_dict=defect_structures_dict,
+        defect_energies_dict=defect_energies_dict,
         ref_structure=distorted_struct,
         stol=stol,
         min_dist=min_dist,
@@ -421,7 +448,11 @@ def compare_struct_to_distortions(
         )  # T/F, matching structure, energy_diff, distortion factor
 
 
-def write_distorted_inputs(low_energy_defects: dict, output_path: str = ".") -> None:
+def write_distorted_inputs(
+    low_energy_defects: dict, 
+    output_path: str = ".",
+    code: str="VASP",    
+) -> None:
     """
     Create folders with VASP input files for testing the low-energy distorted defect structures
     found for other charge states of that defect, as identified with
@@ -437,7 +468,9 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = ".") -> 
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to write input files for
             distorted defect structures to test). (Default is current directory = "./")
-
+        code (:obk:`str`):
+            Code used for the geometry relaxations.
+            (Default: VASP)
     Returns:
         None
     """
@@ -495,7 +528,8 @@ def write_distorted_inputs(low_energy_defects: dict, output_path: str = ".") -> 
                     )
                     os.mkdir(f"{output_path}/{defect_species}")
                 os.mkdir(distorted_dir)
-                distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
+                if code == "VASP":
+                    distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
 
                 if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/INCAR"):
                     for i in ["INCAR", "KPOINTS", "POTCAR"]:
