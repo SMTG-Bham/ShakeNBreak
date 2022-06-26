@@ -10,6 +10,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 from monty.io import zopen
 from monty.serialization import loadfn
+from typing import Optional
+import yaml
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -23,6 +25,9 @@ from pymatgen.io.vasp.sets import DictSet, BadInputSetWarning
 
 import ase
 from ase.io.espresso import parse_pwo_start
+from ase.calculators.espresso import Espresso
+from  ase.calculators.castep import Castep
+from  ase.calculators.aims import Aims
 
 from doped.pycdt.utils.vasp import DefectRelaxSet, _check_psp_dir
 
@@ -32,6 +37,8 @@ if TYPE_CHECKING:
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
+
+aaa = AseAtomsAdaptor()
 
 # Duplicated code from doped
 def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
@@ -186,6 +193,39 @@ def write_vasp_gam_files(
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
 
 
+def write_qe_input(
+    structure: Structure,
+    pseudopotentials: Optional[dict] = None,
+    input_parameters: Optional[str] = None,
+    charge: Optional[int] = None,
+    output_path: str = ".",
+)-> None:
+    # Update default parameters with user values
+    if input_parameters and pseudopotentials:
+        with open(f"{MODULE_DIR}/../input_files/qe_input.yaml", "r") as f:
+            default_input_parameters = yaml.safe_load(f)
+        if charge:
+            default_input_parameters["SYSTEM"]["tot_charge"] = charge
+        for section in input_parameters:
+            for key in input_parameters[section]:
+                if section in default_input_parameters:
+                    default_input_parameters[section][key] = input_parameters[section][key]
+                else:
+                    default_input_parameters.update({section: {key: input_parameters[section][key]}})
+    atoms=aaa.get_atoms(structure)
+    calc = Espresso(
+            pseudopotentials=pseudopotentials,
+            tstress=False, 
+            tprnfor=True,
+            kpts=(1, 1, 1), 
+            input_data=default_input_parameters,
+        )
+    calc.write_input(atoms)
+    if output_path != "." or output_path != "./":
+        os.replace("./espresso.pwi", f"{output_path}/espresso.pwi")
+
+
+# Parsing output structures of different codes
 def read_vasp_structure(
     file_path: str,
 ) -> Structure:
@@ -371,9 +411,9 @@ def parse_structure(
             Name of the structure file or the output file containing the 
             optimized structure. If not set, the following values will be used 
             for each code:
-            VASP: CONTCAR, 
+            VASP: "CONTCAR", 
             CP2K: "cp2k.restart" (The restart file is used), 
-            Quantum espresso: espresso.out, 
+            Quantum espresso: "espresso.out", 
             CASTEP: "castep.castep" (CASTEP output file is used)
             FHI-aims: geometry.in.next_step
     Returns:

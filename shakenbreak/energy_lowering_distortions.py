@@ -10,6 +10,10 @@ from typing import Optional
 import pandas as pd
 
 from pymatgen.core.structure import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
+aaa = AseAtomsAdaptor()
+
+import ase
 
 from shakenbreak.analysis import (
     _sort_data,
@@ -19,7 +23,40 @@ from shakenbreak.analysis import (
     calculate_struct_comparison,
     compare_structures,
 )
-from shakenbreak.io import parse_vasp_structure
+from shakenbreak.io import read_vasp_structure, read_espresso_structure
+
+
+def _format_distortion_directory_name(
+    distorted_distortion: str,
+    distorted_charge: int,
+    defect_species: str,
+    output_path: str,
+)-> str:
+    """Format name of distortion directory"""
+    if (
+        isinstance(distorted_distortion, str)
+        and "_from_" not in distorted_distortion
+    ):
+        distorted_dir = (
+            f"{output_path}/{defect_species}/Bond_Distortion_"
+            f"{distorted_distortion}_from_{distorted_charge}"
+        )
+    elif (
+        isinstance(distorted_distortion, str)
+        and "_from_" in distorted_distortion
+    ):
+        distorted_dir = (
+            f"{output_path}/{defect_species}/Bond_Distortion_"
+            f"{distorted_distortion}"
+        )
+    else:
+        distorted_dir = (
+            f"{output_path}/{defect_species}/Bond_Distortion_"
+            f"{round(distorted_distortion * 100, 1)+0}%_from_"
+            f"{distorted_charge}"
+        )
+    return distorted_dir
+
 
 # TODO: These functions needs to be updated to offer this functionality for other codes
 
@@ -157,13 +194,13 @@ def get_energy_lowering_distortions(
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 file_path = f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
                 with warnings.catch_warnings(record=True) as w:
-                    gs_struct = parse_vasp_structure(
+                    gs_struct = read_vasp_structure(
                         file_path
                     )  # get the final structure of the
                     # energy lowering distortion
                     if any(warning.category == UserWarning for warning in w):
                         # problem parsing structure, user will have received appropriate
-                        # warning from parse_vasp_structure()
+                        # warning from read_vasp_structure()
                         print(
                             f"Problem parsing final, low-energy structure for {gs_distortion} "
                             f"bond distortion of {defect_species} at {file_path}. This species "
@@ -469,8 +506,9 @@ def write_distorted_inputs(
             Path to directory with your distorted defect calculations (to write input files for
             distorted defect structures to test). (Default is current directory = "./")
         code (:obk:`str`):
-            Code used for the geometry relaxations.
-            (Default: VASP)
+            Code used for the geometry relaxations. The supported codes include "VASP", 
+            "CP2K", "espresso", "CASTEP" and "FHI-aims".
+            (Default: "VASP")
     Returns:
         None
     """
@@ -490,28 +528,12 @@ def write_distorted_inputs(
                     0
                 ]  # first bond distortion for which this distortion was found
 
-                if (
-                    isinstance(distorted_distortion, str)
-                    and "_from_" not in distorted_distortion
-                ):
-                    distorted_dir = (
-                        f"{output_path}/{defect_species}/Bond_Distortion_"
-                        f"{distorted_distortion}_from_{distorted_charge}"
-                    )
-                elif (
-                    isinstance(distorted_distortion, str)
-                    and "_from_" in distorted_distortion
-                ):
-                    distorted_dir = (
-                        f"{output_path}/{defect_species}/Bond_Distortion_"
-                        f"{distorted_distortion}"
-                    )
-                else:
-                    distorted_dir = (
-                        f"{output_path}/{defect_species}/Bond_Distortion_"
-                        f"{round(distorted_distortion * 100, 1)+0}%_from_"
-                        f"{distorted_charge}"
-                    )
+                distorted_dir = _format_distortion_directory_name(
+                    distorted_distortion=distorted_distortion,
+                    distorted_charge=distorted_charge,
+                    output_path=output_path,
+                    defect_species=defect_species,
+                ) # Format distoriton directory name
 
                 if os.path.exists(distorted_dir):
                     print(
@@ -528,37 +550,123 @@ def write_distorted_inputs(
                     )
                     os.mkdir(f"{output_path}/{defect_species}")
                 os.mkdir(distorted_dir)
+                
+                # copy input files from Unperturbed directory
                 if code == "VASP":
-                    distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
-
-                if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/INCAR"):
-                    for i in ["INCAR", "KPOINTS", "POTCAR"]:
-                        shutil.copyfile(
-                            f"{output_path}/{defect_species}/Unperturbed/{i}",
-                            f"{distorted_dir}/{i}",
-                        )
-                else:
-                    subfolders_with_input_files = []
-                    for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-                        if os.path.exists(
-                            f"{output_path}/{defect_species}/{subfolder}/INCAR"
-                        ):
-                            subfolders_with_input_files.append(subfolder)
-                    if len(subfolders_with_input_files) > 0:
-                        for i in ["INCAR", "KPOINTS", "POTCAR"]:
-                            shutil.copyfile(
-                                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/"
-                                f"{i}",
-                                f"{distorted_dir}/{i}",
-                            )
-                    else:
-                        print(
-                            f"No subfolders with VASP input files found in "
-                            f"{output_path}/{defect_species}, so just writing distorted POSCAR "
-                            f"file to {distorted_dir} directory."
-                        )
+                    _copy_vasp_files(
+                        distorted_structure,
+                        distorted_dir,
+                        output_path,
+                        defect_species,
+                    )
+                elif code == "espresso":
+                    _copy_espresso_files(
+                        distorted_structure,
+                        distorted_dir,
+                        output_path,
+                        defect_species,
+                    )
+                elif code == "CP2K":
+                    pass
 
 
+def _copy_vasp_files(
+    distorted_structure: Structure,
+    distorted_dir: str,
+    output_path: str,
+    defect_species: str,
+)-> None:
+    """
+    Copy VASP input files from an existing Distortion directory
+    to a new directory.
+    """
+    distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
+
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/INCAR"):
+        for i in ["INCAR", "KPOINTS", "POTCAR"]:
+            shutil.copyfile(
+                f"{output_path}/{defect_species}/Unperturbed/{i}",
+                f"{distorted_dir}/{i}",
+            ) # copy input files from Unperturbed directory
+    else:
+        subfolders_with_input_files = []
+        for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+            if os.path.exists(
+                f"{output_path}/{defect_species}/{subfolder}/INCAR"
+            ):
+                subfolders_with_input_files.append(subfolder)
+        if len(subfolders_with_input_files) > 0:
+            for i in ["INCAR", "KPOINTS", "POTCAR"]:
+                shutil.copyfile(
+                    f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/"
+                    f"{i}",
+                    f"{distorted_dir}/{i}",
+                )
+        else:
+            print(
+                f"No subfolders with VASP input files found in "
+                f"{output_path}/{defect_species}, so just writing distorted POSCAR "
+                f"file to {distorted_dir} directory."
+            )
+    
+
+def _copy_espresso_files(
+    distorted_structure: Structure,
+    distorted_dir: str,
+    output_path: str,
+    defect_species: str,
+)-> None:
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/espresso.pwi"):
+        # Parse input parameters from file and update structural info with 
+        # new distorted structure
+        # ase/pymatgen dont support this
+        with open(f"{output_path}/{defect_species}/Unperturbed/espresso.pwi") as f:
+            params=f.read() # Read input parameters
+        # Write distorted structure in QE format, to then update input file 
+        atoms = aaa.get_atoms(distorted_structure)
+        ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
+        with open(f"{distorted_dir}/espresso.pwi") as f:
+            new_struct=f.read() 
+        params = params.replace(
+            params[params.find("ATOMIC_POSITIONS"):], 
+            new_struct[new_struct.find("ATOMIC_POSITIONS"):], 
+            1
+        ) # Replace ionic positions
+        with open(f"{distorted_dir}/espresso.pwi", "w") as f:
+            f.write(params)
+    else:
+        subfolders_with_input_files = []
+        for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+            if os.path.exists(
+                f"{output_path}/{defect_species}/{subfolder}/espresso.pwi"
+            ):
+                subfolders_with_input_files.append(subfolder)
+                break
+        if len(subfolders_with_input_files) > 0:
+            with open(f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/"
+                      "espresso.pwi")as f:
+                params=f.read() # Read input parameters
+            # Write distorted structure in QE format, to then update input file
+            atoms = aaa.get_atoms(distorted_structure)
+            ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
+            with open(f"{distorted_dir}/espresso.pwi") as f:
+                new_struct=f.read() 
+            params = params.replace(
+                params[params.find("ATOMIC_POSITIONS"):], 
+                new_struct[new_struct.find("ATOMIC_POSITIONS"):], 
+                1
+            ) # Replace ionic positions
+            with open(f"{distorted_dir}/espresso.pwi", "w") as f:
+                f.write(params)
+        else: # only write input structure
+            print(
+                f"No subfolders with Quantum Espresso input file (`espresso.pwi`) found in "
+                f"{output_path}/{defect_species}, so just writing distorted structure "
+                f"file to {distorted_dir} directory."
+            )
+            atoms = aaa.get_atoms(distorted_structure)
+            ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
+                            
 # TODO: Write convenience function that at this point takes the lowest energy structure for each
 # defect species, and writes it to the corresponding defect folder, with an optional name
 # (default "groundstate_POSCAR"), to then run continuation calculations
