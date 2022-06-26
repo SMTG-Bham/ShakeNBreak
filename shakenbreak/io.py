@@ -39,7 +39,7 @@ def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
     return ediff if ediff <= 1e-4 else 1e-4
 
 
-def vasp_gam_files(
+def write_vasp_gam_files(
         single_defect_dict: dict,
         input_dir: str = None,
         incar_settings: dict = None,
@@ -186,7 +186,7 @@ def vasp_gam_files(
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
 
 
-def parse_vasp_structure(
+def read_vasp_structure(
     file_path: str,
 ) -> Structure:
     """
@@ -318,6 +318,7 @@ def read_cp2k_structure(
         raise FileNotFoundError(f"File {filename} does not exist!")
     return structure
 
+
 def read_castep_structure(
     filename: str,
 ) -> Structure:
@@ -349,11 +350,12 @@ def read_castep_structure(
         raise FileNotFoundError(f"File {filename} does not exist!")
     return structure
 
+
 def parse_structure(
     code: str,
     structure_path: str,
     structure_filename: str,
-):
+)-> Structure:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
     CASTEP, FHI-aims) and converts it to 
@@ -375,12 +377,12 @@ def parse_structure(
             CASTEP: "castep.castep" (CASTEP output file is used)
             FHI-aims: geometry.in.next_step
     Returns:
-        pymatgen Structure object
+        `pymatgen` Structure object
     """
     if code == "VASP":
         if not structure_filename:
             structure_filename = "CONTCAR"
-        structure = parse_vasp_structure(
+        structure = read_vasp_structure(
                 f"{structure_path}/{structure_filename}"
             )
     elif code == "espresso":

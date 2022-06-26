@@ -25,7 +25,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 
 from shakenbreak.distortions import distort, rattle
-from shakenbreak.io import vasp_gam_files
+from shakenbreak.io import write_vasp_gam_files
 from shakenbreak.analysis import _get_distortion_filename
 
 # Load default INCAR settings for the ShakenBreak geometry relaxations
@@ -162,30 +162,6 @@ def _write_distortion_metadata(
         new_metadata_file.write(json.dumps(new_metadata, indent=4))
 
 
-def _update_struct_defect_dict(
-    defect_dict: dict, structure: Structure, poscar_comment: str
-) -> dict:
-    """
-    Given a Structure object and POSCAR comment, update the folders dictionary (generated with
-    `doped.vasp_input.prepare_vasp_defect_inputs()`) with the given values.
-
-    Args:
-        defect_dict (:obj:`dict`):
-            Dictionary with defect information, as generated with doped prepare_vasp_defect_inputs()
-        structure (:obj:`~pymatgen.core.structure.Structure`):
-            Defect structure as a pymatgen object
-        poscar_comment (:obj:`str`):
-            Comment to include in the top line of the POSCAR file
-
-    Returns:
-        single defect dict in the `doped` format.
-    """
-    defect_dict_copy = copy.deepcopy(defect_dict)
-    defect_dict_copy["Defect Structure"] = structure
-    defect_dict_copy["POSCAR Comment"] = poscar_comment
-    return defect_dict_copy
-
-
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
@@ -219,8 +195,8 @@ def _create_vasp_input(
     ):  # for each distortion, create sub-subfolder folder
         potcar_settings_copy = copy.deepcopy(
             potcar_settings
-        )  # vasp_gam_files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
-        vasp_gam_files(
+        )  # files empties `potcar_settings dict` (via pop()), so make a deepcopy each time
+        write_vasp_gam_files(
             single_defect_dict=single_defect_dict,
             input_dir=f"{output_path}/{defect_name}/{distortion}",
             incar_settings=incar_settings,

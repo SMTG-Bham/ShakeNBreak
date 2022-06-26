@@ -1003,7 +1003,7 @@ def get_site_magnetizations(
     # TODO: This could be sped up by parallelising
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename (e.g. Bond_Distortion_50.0%)
-        structure = io.parse_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
+        structure = io.read_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
             warnings.warn(
                 f"Structure for {defect_species} either not converged or not found. " 
