@@ -52,7 +52,8 @@ warnings.formatwarning = warning_on_one_line
 def _bold_print(string: str) -> None:
     """Prints the input string in bold."""
     print("\033[1m" + string + "\033[0m")
-    
+
+   
 def _create_folder(folder_name: str) -> None:
     """
     Creates a folder at `./folder_name` if it doesn't already exist.
@@ -1037,11 +1038,10 @@ class Distortions:
             verbose=verbose, 
         )
         
-        # Update default parameters with user values
+        # Update default parameters with user defined values
         if input_parameters and pseudopotentials:
             with open(f"{MODULE_DIR}/../input_files/qe_input.yaml", "r") as f:
                 default_input_parameters = yaml.safe_load(f)
-            default_input_parameters["SYSTEM"]["tot_charge"] = charge
             for section in input_parameters:
                 for key in input_parameters[section]:
                     if section in default_input_parameters:
@@ -1064,11 +1064,11 @@ class Distortions:
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     
-                    if not input_parameters and not pseudopotentials: # only wirte structures
+                    if not input_parameters and not pseudopotentials: # only write structures
                         ase.io.write(filename=f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi", images=atoms, format="espresso-in")
                     elif input_parameters and pseudopotentials: # write complete input file
                         
-                        default_input_parameters["SYSTEM"]["tot_charge"] = charge
+                        default_input_parameters["SYSTEM"]["tot_charge"] = charge # Update defect charge
                         
                         calc = Espresso(
                             pseudopotentials=pseudopotentials,
@@ -1279,6 +1279,3 @@ class Distortions:
                             atoms=atoms
                         )
         return distorted_defects_dict, self.distortion_metadata
-
-# TODO: 
-# Refactor apply_shakenbreak tests in test_input.py for class new methods
