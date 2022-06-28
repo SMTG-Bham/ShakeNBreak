@@ -24,6 +24,7 @@ class InputTestCase(unittest.TestCase):
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+        self.TEST_DIR = os.path.join(os.path.dirname(__file__))
         with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
             self.cdte_defect_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
@@ -156,28 +157,6 @@ class InputTestCase(unittest.TestCase):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
-
-    def test_update_struct_defect_dict(self):
-        """Test update_struct_defect_dict function"""
-        vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
-            copy.deepcopy(self.cdte_defect_dict)
-        )
-        for key, struc, comment in [
-            ("vac_1_Cd_0", self.V_Cd_struc, "V_Cd Undistorted"),
-            ("vac_1_Cd_0", self.V_Cd_minus0pt5_struc_rattled, "V_Cd Rattled"),
-            ("vac_1_Cd_-2", self.V_Cd_struc, "V_Cd_-2 Undistorted"),
-            ("Int_Cd_2_1", self.Int_Cd_2_minus0pt6_struc_rattled, "Int_Cd_2 Rattled"),
-        ]:
-            charged_defect_dict = vasp_defect_inputs[key]
-            output = input._update_struct_defect_dict(
-                charged_defect_dict, struc, comment
-            )
-            self.assertEqual(output["Defect Structure"], struc)
-            self.assertEqual(output["POSCAR Comment"], comment)
-            self.assertDictEqual(
-                output["Transformation Dict"],
-                charged_defect_dict["Transformation Dict"],
-            )
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
@@ -542,7 +521,8 @@ class InputTestCase(unittest.TestCase):
         )
 
     # test create_folder and create_vasp_input simultaneously:
-    def test_create_vasp_input(self):
+    # TODO: Update this test!
+    def test_create_vasp_input():
         """Test create_vasp_input function"""
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
@@ -607,10 +587,9 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
 
-    # Ignoring this for now while class conversion is in progress
     @patch("builtins.print")
     def test_Distortions(self, mock_print):
-        """Test apply_shakenbreak function"""
+        """Test `apply_distortions` and `write_vasp_files` function"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
@@ -618,7 +597,8 @@ class InputTestCase(unittest.TestCase):
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-        )    
+        )
+        # Test `write_vasp_files` method   
         distortion_defect_dict, distortion_metadata = dist.write_vasp_files(
           incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
           verbose=False,
@@ -728,7 +708,7 @@ class InputTestCase(unittest.TestCase):
             rounded_bond_distortions,
         )
 
-    #     # test other kwargs:
+        # test other kwargs:
         reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
         reduced_Int_Cd_2_dict["charges"] = [1]
 
@@ -902,6 +882,88 @@ class InputTestCase(unittest.TestCase):
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
 
+    @patch("builtins.print")
+    def test_Distortions_other_codes(self, mock_print):
+        """Test methods write_espresso_files"""
+        oxidation_states = {"Cd": +2, "Te": -2}
+        bond_distortions = [0.3,]
 
+        Dist = input.Distortions(
+            {"vacancies": [self.V_Cd_dict,]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+        )
+        
+        # Test `write_espresso_files` method   
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+            
+        pseudopotentials = { # Your chosen pseudopotentials
+            'Cd': 'Cd_pbe_v1.uspp.F.UPF',
+            'Te': 'Te.pbe-n-rrkjus_psl.1.0.0.UPF',
+        }
+        defects_dict, distortion_metadata = Dist.write_espresso_files(
+            pseudopotentials=pseudopotentials,
+        )
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+        with open(os.path.join(
+            self.TEST_DIR, "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi")) as f:
+            test_input = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi") as f:
+           generated_input = f.read()
+        self.assertEqual(test_input, generated_input)
+        
+        # Test `write_cp2k_files` method
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+        defects_dict, distortion_metadata = Dist.write_cp2k_files()
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+        # Test input parameter file
+        with open(os.path.join(
+            self.TEST_DIR, "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp")) as f:
+            test_input = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
+            generated_input = f.read()
+        self.assertEqual(test_input, generated_input)
+        # Test input structure file
+        with open(os.path.join(
+            self.TEST_DIR, "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")) as f:
+            test_input_struct = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif") as f:
+            generated_input_struct = f.read()
+        self.assertEqual(test_input_struct, generated_input_struct)
+        
+        # Test `write_castep_files` method, without specifing input file
+        # So only structure files (in castep .cell format) are written
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+        defects_dict, distortion_metadata = Dist.write_castep_files()
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+        with open(os.path.join(
+            self.TEST_DIR, "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell")) as f:
+            test_input = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell") as f:
+            generated_input = f.read()
+        
+        # Test `write_fhi_aims_files` method   
+        for i in self.cdte_defect_folders:
+            if_present_rm(i)  # remove test-generated defect folders
+        defects_dict, distortion_metadata = Dist.write_fhi_aims_files()
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+        # Test input parameter file
+        with open(os.path.join(
+            self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control.in")) as f:
+            test_input = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/control.in") as f:
+            generated_input = f.read()
+        self.assertEqual(test_input, generated_input)
+        # Test input structure file
+        with open(os.path.join(
+            self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in")) as f:
+            test_input_struct = f.read()
+        with open("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in") as f:
+            generated_input_struct = f.read()
+        self.assertEqual(test_input_struct, generated_input_struct)
+             
 if __name__ == "__main__":
     unittest.main()

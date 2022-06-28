@@ -1102,6 +1102,7 @@ class Distortions:
                 (see `shakenbreak/input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format) (without calculation inputs).
+                (Default: False)
             output_path (:obj:`str`, optional):
                 Path to directory in which to write distorted defect structures and calculation
                 inputs. 
@@ -1184,28 +1185,34 @@ class Distortions:
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     if input_file:
+                        warnings.filterwarnings('ignore', 
+                                                '.*Could not determine the version of your CASTEP binary.*'
+                        )
+                        warnings.filterwarnings('ignore', 
+                                                '.*Generating CASTEP keywords JSON file... hang on.*'
+                        )
                         try:
-                            warnings.filterwarnings('ignore', 
-                                                    '.*Could not determine the version of your CASTEP binary.*'
-                                                    )
-                            warnings.filterwarnings('ignore', 
-                                                    '.*Generating CASTEP keywords JSON file... hang on.*'
-                                                    )
-                            calc = Castep(directory=f"{output_path}/{defect_name}_{charge}/{dist}")
+                            calc = Castep(
+                                directory=f"{output_path}/{defect_name}_{charge}/{dist}"
+                            )
                             calc.set_kpts({'size': (1, 1, 1), 'gamma': True})
                             calc.merge_param(input_file)
                             calc.param.charge = 1 # Defect charge state   
                             calc.set_atoms(atoms)
                             calc.initialize() # this writes the .param file
                         except:
-                            warnings.warn("Problem setting up the CASTEP .param file. Only structures will be written" 
-                                          "with filenames `castep.cell`.")
+                            warnings.warn("Problem setting up the CASTEP `.param` file. Only structures will be written" 
+                                          "with filenames `castep.cell`."
+                            )
                             ase.io.write(
                                 filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
                                 images=atoms, format="castep-cell"
-                                ) 
+                            ) 
                     else:
-                        warnings.warn("No CASTEP input file was provided, so just writting input structures as `castep.cell`.")
+                        warnings.warn(
+                            "No CASTEP input file was provided." 
+                            "Only structures will be written as `castep.cell` files."
+                        )
                         ase.io.write(
                                 filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
                                 images=atoms, format="castep-cell"
