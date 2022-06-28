@@ -894,7 +894,7 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=bond_distortions,
         )
         
-        # Test `write_espresso_files` method   
+        # Test `write_espresso_files` method 
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
             
@@ -941,11 +941,12 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
         with open(os.path.join(
             self.TEST_DIR, "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell")) as f:
-            test_input = f.read()
+            test_input_struct = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell") as f:
-            generated_input = f.read()
+            generated_input_struct = f.read()
+        self.assertEqual(test_input_struct, generated_input_struct)
         
-        # Test `write_fhi_aims_files` method   
+        # Test `write_fhi_aims_files` method
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         defects_dict, distortion_metadata = Dist.write_fhi_aims_files()
@@ -953,17 +954,18 @@ class InputTestCase(unittest.TestCase):
         # Test input parameter file
         with open(os.path.join(
             self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control.in")) as f:
-            test_input = f.read()
+            test_input = f.readlines()[6:] # First 5 lines contain irrelevant info
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/control.in") as f:
-            generated_input = f.read()
+            generated_input = f.readlines()[6:]
         self.assertEqual(test_input, generated_input)
         # Test input structure file
         with open(os.path.join(
             self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in")) as f:
-            test_input_struct = f.read()
+            test_input_struct = f.readlines()[6:]
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in") as f:
-            generated_input_struct = f.read()
+            generated_input_struct = f.readlines()[6:]
         self.assertEqual(test_input_struct, generated_input_struct)
-             
+        
+ 
 if __name__ == "__main__":
     unittest.main()

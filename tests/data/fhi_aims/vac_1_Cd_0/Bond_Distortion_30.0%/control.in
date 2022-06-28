@@ -1,7 +1,7 @@
 #===============================================================================
 # FHI-aims file: ./vac_1_Cd_0/Bond_Distortion_30.0%/control.in
 # Created using the Atomic Simulation Environment (ASE)
-# Tue Jun 28 19:01:44 2022
+# Tue Jun 28 19:14:34 2022
 #===============================================================================
 k_grid                             1 1 1
 relax_geometry                     bfgs 0.005
