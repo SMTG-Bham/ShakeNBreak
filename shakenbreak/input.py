@@ -1132,7 +1132,11 @@ class Distortions:
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     struct.to('cif', f"{output_path}/{defect_name}_{charge}/{dist}/structure.cif")
                     if not write_structures_only:
-                        cp2k_input.write_file(input_filename="cp2k_input_modified.inp", output_dir=f"{output_path}/{defect_name}_{charge}/{dist}")
+                        cp2k_input.write_file(
+                            input_filename="cp2k_input.inp", 
+                            output_dir=f"{output_path}/{defect_name}_{charge}/{dist}"
+                        )
+                        
         return distorted_defects_dict, self.distortion_metadata
                 
     def write_castep_files(
@@ -1187,16 +1191,18 @@ class Distortions:
                             calc.merge_param(input_file)
                             calc.param.charge = 1 # Defect charge state   
                             calc.set_atoms(atoms)
-                            calc.initialize() 
+                            calc.initialize() # this writes the .param file
                         except:
-                            warnings.warn("Problem setting up the CASTEP .param file. Only structures will be written.")
+                            warnings.warn("Problem setting up the CASTEP .param file. Only structures will be written" 
+                                          "with filenames `castep.cell`.")
                             ase.io.write(
-                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", 
+                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
                                 images=atoms, format="castep-cell"
                                 ) 
                     else:
+                        warnings.warn("No CASTEP input file was provided, so just writting input structures as `castep.cell`.")
                         ase.io.write(
-                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/structure.cell", 
+                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
                                 images=atoms, format="castep-cell"
                                 )
         return distorted_defects_dict, self.distortion_metadata
@@ -1271,11 +1277,11 @@ class Distortions:
                         filename=f"{output_path}/{defect_name}_{charge}/{dist}/geometry.in", 
                         images=atoms, format="aims",
                         info_str=dist,
-                        )
+                        ) # write input structure file
                     
                     if isinstance(ase_calculator, Aims) and not write_structures_only:
                         ase_calculator.write_control(
                             filename=f"{output_path}/{defect_name}_{charge}/{dist}/control.in", 
                             atoms=atoms
-                        )
+                        ) # write parameters file
         return distorted_defects_dict, self.distortion_metadata

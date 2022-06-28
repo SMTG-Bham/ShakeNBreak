@@ -58,8 +58,6 @@ def _format_distortion_directory_name(
     return distorted_dir
 
 
-# TODO: These functions needs to be updated to offer this functionality for other codes
-
 def read_defects_directories(output_path: str = "./") -> dict:
     """
     Reads all defect folders in the `output_path` directory and stores defect names and charge
@@ -90,15 +88,15 @@ def read_defects_directories(output_path: str = "./") -> dict:
             defect_charges_dict[i[0]] = [int(i[1])]
     return defect_charges_dict
 
-
+# TODO: Add tests for the other codes
 # TODO: Update get_energy_lowering_distortions() to optionally also store non-spontaneous
 #  _metastable_ energy-lowering distortions, as these can become ground-state distortions for
 #  other charge states
 # TODO: Add optional parameter to `get_energy_lowering_distortions()` that also then runs
-#  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call
+#  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call -> Done
 # TODO: Refactor so that `get_energy_lowering_distortions` can either take in a specified list of
 #  defect charges to parse, or will read from current directory using `read_defects_directories(
-#  )` under the hood (and add test for this!) -> Add test
+#  )` under the hood (and add test for this!) -> Done, need to add test
 def get_energy_lowering_distortions(
     defect_charges_dict: Optional[dict],
     output_path: str = ".",
@@ -108,6 +106,7 @@ def get_energy_lowering_distortions(
     stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = True,
+    write_input_files: bool = False,
 ) -> dict:
     """
     Convenience function to identify defect species undergoing energy-lowering distortions.
@@ -143,7 +142,9 @@ def get_energy_lowering_distortions(
         verbose (:obj:`bool`):
             Whether to print verbose information about energy lowering distortions, if found.
             (Default: True)
-
+        write_input_files (:obj:`bool`):
+            Whether to write input files for the identified distortions
+            (Default: False)
     Returns:
         low_energy_defects (:obj:`dict`):
             Dictionary of defects for which bond distortion found an energy-lowering distortion
@@ -340,7 +341,14 @@ def get_energy_lowering_distortions(
                         f"skipped and will not be included in low_energy_defects (check relaxation "
                         f"folders with CONTCARs are present)."
                     )
-
+    
+    # Write input files for the identified distortions
+    if write_input_files:
+        write_distorted_inputs(
+            low_energy_defects=low_energy_defects,
+            output_path=output_path,
+            code=code,
+        )
     return low_energy_defects
 
 
@@ -567,7 +575,26 @@ def write_distorted_inputs(
                         defect_species,
                     )
                 elif code == "CP2K":
-                    pass
+                    _copy_cp2k_files(
+                        distorted_structure,
+                        distorted_dir,
+                        output_path,
+                        defect_species,
+                    )
+                elif code == "CASTEP":
+                    _copy_castep_files(
+                        distorted_structure,
+                        distorted_dir,
+                        output_path,
+                        defect_species,
+                    )
+                elif code == "FHI-aims":
+                    _copy_fhi_aims_files(
+                        distorted_structure,
+                        distorted_dir,
+                        output_path,
+                        defect_species,
+                    )
 
 
 def _copy_vasp_files(
@@ -616,6 +643,10 @@ def _copy_espresso_files(
     output_path: str,
     defect_species: str,
 )-> None:
+    """
+    Copy Quantum Espresso input files from an existing Distortion directory
+    to a new directory.
+    """
     if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/espresso.pwi"):
         # Parse input parameters from file and update structural info with 
         # new distorted structure
@@ -655,7 +686,7 @@ def _copy_espresso_files(
                 params[params.find("ATOMIC_POSITIONS"):], 
                 new_struct[new_struct.find("ATOMIC_POSITIONS"):], 
                 1
-            ) # Replace ionic positions
+            ) # Replace lines with the ionic positions
             with open(f"{distorted_dir}/espresso.pwi", "w") as f:
                 f.write(params)
         else: # only write input structure
@@ -666,7 +697,131 @@ def _copy_espresso_files(
             )
             atoms = aaa.get_atoms(distorted_structure)
             ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
-                            
+
+
+def _copy_cp2k_files(
+    distorted_structure: Structure,
+    distorted_dir: str,
+    output_path: str,
+    defect_species: str,
+)-> None:
+    """
+    Copy CP2K input files from an existing Distortion directory
+    to a new directory.
+    """
+    distorted_structure.to('cif', f"{distorted_dir}/structure.cif")
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/cp2k_input.inp"):
+        shutil.copyfile(
+            f"{output_path}/{defect_species}/Unperturbed/cp2k_input.inp",
+            f"{distorted_dir}/cp2k_input.inp",
+        )
+    else: # Check of input file present in the other distortion subfolders
+        subfolders_with_input_files = []
+        for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+            if os.path.exists(
+                f"{output_path}/{defect_species}/{subfolder}/cp2k_input.inp"
+            ):
+                subfolders_with_input_files.append(subfolder)
+                break
+        if len(subfolders_with_input_files) > 0:
+            shutil.copyfile(
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/cp2k_input.inp",
+                f"{distorted_dir}/cp2k_input.inp",
+            )
+            
+        else: # only write input structure
+            print(
+                f"No subfolders with CP2K input file (`cp2k_input.inp`) found in "
+                f"{output_path}/{defect_species}, so just writing distorted structure "
+                f"file to {distorted_dir} directory (in CIF format)."
+            )
+            
+
+def _copy_castep_files(
+    distorted_structure: Structure,
+    distorted_dir: str,
+    output_path: str,
+    defect_species: str,
+)-> None:
+    """
+    Copy CASTEP input files from an existing Distortion directory
+    to a new directory.
+    """
+    atoms = aaa.get_atoms(distorted_structure)
+    ase.io.write(
+                filename=f"{distorted_dir}/castep.cell", 
+                images=atoms, 
+                format="castep-cell"
+                ) # Write structure
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/castep.param"):
+        shutil.copyfile(
+            f"{output_path}/{defect_species}/Unperturbed/castep.param",
+            f"{distorted_dir}/castep.param",
+        )
+    else: # Check of input file present in the other distortion subfolders
+        subfolders_with_input_files = []
+        for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+            if os.path.exists(
+                f"{output_path}/{defect_species}/{subfolder}/castep.param"
+            ):
+                subfolders_with_input_files.append(subfolder)
+                break
+        if len(subfolders_with_input_files) > 0:
+            shutil.copyfile(
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/castep.param",
+                f"{distorted_dir}/castep.param",
+            )
+            
+        else: # only write input structure
+            print(
+                f"No subfolders with CASTEP input file (`castep.param`) found in "
+                f"{output_path}/{defect_species}, so just writing distorted structure "
+                f"file to {distorted_dir} directory (in CASTEP `.cell` format)."
+            )
+ 
+ 
+def _copy_fhi_aims_files(
+    distorted_structure: Structure,
+    distorted_dir: str,
+    output_path: str,
+    defect_species: str,
+)-> None:
+    """
+    Copy FHI-aims input files from an existing Distortion directory
+    to a new directory.
+    """
+    atoms = aaa.get_atoms(distorted_structure)
+    ase.io.write(
+            filename=f"{distorted_dir}/geometry.in", 
+            images=atoms, format="aims",
+            ) # write input structure file
+    
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/control.in"):
+        shutil.copyfile(
+            f"{output_path}/{defect_species}/Unperturbed/control.in",
+            f"{distorted_dir}/control.in",
+        )
+    else: # Check of input file present in the other distortion subfolders
+        subfolders_with_input_files = []
+        for subfolder in os.listdir(f"{output_path}/{defect_species}"):
+            if os.path.exists(
+                f"{output_path}/{defect_species}/{subfolder}/control.in"
+            ):
+                subfolders_with_input_files.append(subfolder)
+                break
+        if len(subfolders_with_input_files) > 0:
+            shutil.copyfile(
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/control.in",
+                f"{distorted_dir}/control.in",
+            )
+            
+        else: # only write input structure
+            print(
+                f"No subfolders with FHI-aims input file (`control.in`) found in "
+                f"{output_path}/{defect_species}, so just writing distorted structure "
+                f"file to {distorted_dir} directory (in FHI-aims `geometry.in` format)."
+            )           
+             
 # TODO: Write convenience function that at this point takes the lowest energy structure for each
 # defect species, and writes it to the corresponding defect folder, with an optional name
 # (default "groundstate_POSCAR"), to then run continuation calculations
