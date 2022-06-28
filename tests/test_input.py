@@ -19,6 +19,28 @@ def if_present_rm(path):
         shutil.rmtree(path)
 
 
+def _update_struct_defect_dict(
+    defect_dict: dict, structure: Structure, poscar_comment: str
+) -> dict:
+    """
+    Given a Structure object and POSCAR comment, update the folders dictionary (generated with
+    `doped.vasp_input.prepare_vasp_defect_inputs()`) with the given values.
+    Args:
+        defect_dict (:obj:`dict`):
+            Dictionary with defect information, as generated with doped prepare_vasp_defect_inputs()
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            Defect structure as a pymatgen object
+        poscar_comment (:obj:`str`):
+            Comment to include in the top line of the POSCAR file
+    Returns:
+        single defect dict in the `doped` format.
+    """
+    defect_dict_copy = copy.deepcopy(defect_dict)
+    defect_dict_copy["Defect Structure"] = structure
+    defect_dict_copy["POSCAR Comment"] = poscar_comment
+    return defect_dict_copy
+
+
 class InputTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
@@ -522,12 +544,12 @@ class InputTestCase(unittest.TestCase):
 
     # test create_folder and create_vasp_input simultaneously:
     # TODO: Update this test!
-    def test_create_vasp_input():
+    def test_create_vasp_input(self):
         """Test create_vasp_input function"""
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = input._update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -881,6 +903,7 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
+
 
     @patch("builtins.print")
     def test_Distortions_other_codes(self, mock_print):
