@@ -38,7 +38,7 @@ setup(
         "hiphive",
         "monty",
     ],
-    extras_require={"tests": ["pytest", "pytest-mpl"]},
+    extras_require={"tests": ["pytest", "pytest-mpl==0.15.1"]},
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
 )

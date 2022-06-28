@@ -1013,6 +1013,7 @@ class Distortions:
         self,
         pseudopotentials: Optional[dict] = None,
         input_parameters: Optional[str] = None,
+        write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
     ) -> Tuple[dict, dict]:
@@ -1027,6 +1028,8 @@ class Distortions:
                 Dictionary of user Quantum Espresso input parameters, to overwrite/update `shakenbreak` 
                 default ones (see `input_files/qe_input.yaml`).
                 Defaults to None.
+            write_structures_only (:obj:`bool`, optional):
+                Whether to only write the structure files (in CIF format) (without calculation inputs).
             output_path (:obj:`str`, optional):
                 Path to directory in which to write distorted defect structures and calculation
                 inputs. (Default is current directory: ".")
@@ -1039,15 +1042,16 @@ class Distortions:
         )
         
         # Update default parameters with user defined values
-        if input_parameters and pseudopotentials:
+        if pseudopotentials and not write_structures_only:
             with open(f"{MODULE_DIR}/../input_files/qe_input.yaml", "r") as f:
                 default_input_parameters = yaml.safe_load(f)
-            for section in input_parameters:
-                for key in input_parameters[section]:
-                    if section in default_input_parameters:
-                        default_input_parameters[section][key] = input_parameters[section][key]
-                    else:
-                        default_input_parameters.update({section: {key: input_parameters[section][key]}})
+            if input_parameters:
+                for section in input_parameters:
+                    for key in input_parameters[section]:
+                        if section in default_input_parameters:
+                            default_input_parameters[section][key] = input_parameters[section][key]
+                        else:
+                            default_input_parameters.update({section: {key: input_parameters[section][key]}})
             
         aaa = AseAtomsAdaptor()
         
@@ -1064,9 +1068,10 @@ class Distortions:
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     
-                    if not input_parameters and not pseudopotentials: # only write structures
+                    if not pseudopotentials: # only write structures
+                        warnings.warn("Since `pseudopotentials` have been specified, will only write input structures.")
                         ase.io.write(filename=f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi", images=atoms, format="espresso-in")
-                    elif input_parameters and pseudopotentials: # write complete input file
+                    elif pseudopotentials and not write_structures_only: # write complete input file
                         
                         default_input_parameters["SYSTEM"]["tot_charge"] = charge # Update defect charge
                         

@@ -496,7 +496,8 @@ def compare_struct_to_distortions(
 def write_distorted_inputs(
     low_energy_defects: dict, 
     output_path: str = ".",
-    code: str="VASP",    
+    code: str = "VASP",   
+    input_filename: str = None, 
 ) -> None:
     """
     Create folders with VASP input files for testing the low-energy distorted defect structures
@@ -513,10 +514,16 @@ def write_distorted_inputs(
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to write input files for
             distorted defect structures to test). (Default is current directory = "./")
-        code (:obk:`str`):
+        code (:obj:`str`):
             Code used for the geometry relaxations. The supported codes include "VASP", 
             "CP2K", "espresso", "CASTEP" and "FHI-aims".
             (Default: "VASP")
+        input_filename (:obj:`str`):
+            Name of the code input file if different from `ShakeNBreak` default. Only applies
+            to CP2K, Quantum Espresso, CASTEP and FHI-aims. If not specified, `ShakeNBreak` default
+            name is assumed, that is: Quantum Espresso: "espresso.pwi", CP2K: "cp2k_input.inp",
+            CASTEP: "castep.param", FHI-aims: "control.in"
+            (Default: None)
     Returns:
         None
     """
@@ -573,6 +580,7 @@ def write_distorted_inputs(
                         distorted_dir,
                         output_path,
                         defect_species,
+                        input_filename,
                     )
                 elif code == "CP2K":
                     _copy_cp2k_files(
@@ -580,6 +588,7 @@ def write_distorted_inputs(
                         distorted_dir,
                         output_path,
                         defect_species,
+                        input_filename,
                     )
                 elif code == "CASTEP":
                     _copy_castep_files(
@@ -587,6 +596,7 @@ def write_distorted_inputs(
                         distorted_dir,
                         output_path,
                         defect_species,
+                        input_filename,
                     )
                 elif code == "FHI-aims":
                     _copy_fhi_aims_files(
@@ -594,6 +604,7 @@ def write_distorted_inputs(
                         distorted_dir,
                         output_path,
                         defect_species,
+                        input_filename,
                     )
 
 
@@ -642,61 +653,64 @@ def _copy_espresso_files(
     distorted_dir: str,
     output_path: str,
     defect_species: str,
+    input_filename: str = "espresso.pwi",
 )-> None:
     """
     Copy Quantum Espresso input files from an existing Distortion directory
     to a new directory.
     """
-    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/espresso.pwi"):
+    if not input_filename:
+        input_filename = "espresso.pwi"
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         # Parse input parameters from file and update structural info with 
         # new distorted structure
         # ase/pymatgen dont support this
-        with open(f"{output_path}/{defect_species}/Unperturbed/espresso.pwi") as f:
+        with open(f"{output_path}/{defect_species}/Unperturbed/{input_filename}") as f:
             params=f.read() # Read input parameters
         # Write distorted structure in QE format, to then update input file 
         atoms = aaa.get_atoms(distorted_structure)
-        ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
-        with open(f"{distorted_dir}/espresso.pwi") as f:
+        ase.io.write(filename=f"{distorted_dir}/{input_filename}", images=atoms, format="espresso-in")
+        with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct=f.read() 
         params = params.replace(
             params[params.find("ATOMIC_POSITIONS"):], 
             new_struct[new_struct.find("ATOMIC_POSITIONS"):], 
             1
         ) # Replace ionic positions
-        with open(f"{distorted_dir}/espresso.pwi", "w") as f:
+        with open(f"{distorted_dir}/{input_filename}", "w") as f:
             f.write(params)
     else:
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
             if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/espresso.pwi"
+                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
             ):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             with open(f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/"
-                      "espresso.pwi")as f:
+                      "{input_filename}")as f:
                 params=f.read() # Read input parameters
             # Write distorted structure in QE format, to then update input file
             atoms = aaa.get_atoms(distorted_structure)
-            ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
-            with open(f"{distorted_dir}/espresso.pwi") as f:
+            ase.io.write(filename=f"{distorted_dir}/{input_filename}", images=atoms, format="espresso-in")
+            with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct=f.read() 
             params = params.replace(
                 params[params.find("ATOMIC_POSITIONS"):], 
                 new_struct[new_struct.find("ATOMIC_POSITIONS"):], 
                 1
             ) # Replace lines with the ionic positions
-            with open(f"{distorted_dir}/espresso.pwi", "w") as f:
+            with open(f"{distorted_dir}/{input_filename}", "w") as f:
                 f.write(params)
         else: # only write input structure
             print(
-                f"No subfolders with Quantum Espresso input file (`espresso.pwi`) found in "
+                f"No subfolders with Quantum Espresso input file (`{input_filename}`) found in "
                 f"{output_path}/{defect_species}, so just writing distorted structure "
                 f"file to {distorted_dir} directory."
             )
             atoms = aaa.get_atoms(distorted_structure)
-            ase.io.write(filename=f"{distorted_dir}/espresso.pwi", images=atoms, format="espresso-in")
+            ase.io.write(filename=f"{distorted_dir}/{input_filename}", images=atoms, format="espresso-in")
 
 
 def _copy_cp2k_files(
@@ -704,29 +718,32 @@ def _copy_cp2k_files(
     distorted_dir: str,
     output_path: str,
     defect_species: str,
+    input_filename: str = "cp2k_input.inp",
 )-> None:
     """
     Copy CP2K input files from an existing Distortion directory
     to a new directory.
     """
+    if not input_filename:
+        input_filename = "cp2k_input.inp"
     distorted_structure.to('cif', f"{distorted_dir}/structure.cif")
-    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/cp2k_input.inp"):
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         shutil.copyfile(
-            f"{output_path}/{defect_species}/Unperturbed/cp2k_input.inp",
-            f"{distorted_dir}/cp2k_input.inp",
+            f"{output_path}/{defect_species}/Unperturbed/{input_filename}",
+            f"{distorted_dir}/{input_filename}",
         )
     else: # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
             if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/cp2k_input.inp"
+                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
             ):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/cp2k_input.inp",
-                f"{distorted_dir}/cp2k_input.inp",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
+                f"{distorted_dir}/{input_filename}",
             )
             
         else: # only write input structure
@@ -742,39 +759,42 @@ def _copy_castep_files(
     distorted_dir: str,
     output_path: str,
     defect_species: str,
+    input_filename: str = "castep.param",
 )-> None:
     """
     Copy CASTEP input files from an existing Distortion directory
     to a new directory.
     """
+    if not input_filename:
+        input_filename = "castep.param"
     atoms = aaa.get_atoms(distorted_structure)
     ase.io.write(
                 filename=f"{distorted_dir}/castep.cell", 
                 images=atoms, 
                 format="castep-cell"
                 ) # Write structure
-    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/castep.param"):
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         shutil.copyfile(
-            f"{output_path}/{defect_species}/Unperturbed/castep.param",
-            f"{distorted_dir}/castep.param",
+            f"{output_path}/{defect_species}/Unperturbed/{input_filename}",
+            f"{distorted_dir}/{input_filename}",
         )
     else: # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
             if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/castep.param"
+                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
             ):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/castep.param",
-                f"{distorted_dir}/castep.param",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
+                f"{distorted_dir}/{input_filename}",
             )
             
         else: # only write input structure
             print(
-                f"No subfolders with CASTEP input file (`castep.param`) found in "
+                f"No subfolders with CASTEP input file (`{input_filename}`) found in "
                 f"{output_path}/{defect_species}, so just writing distorted structure "
                 f"file to {distorted_dir} directory (in CASTEP `.cell` format)."
             )
@@ -785,39 +805,42 @@ def _copy_fhi_aims_files(
     distorted_dir: str,
     output_path: str,
     defect_species: str,
+    input_filename: str ="control.in",
 )-> None:
     """
     Copy FHI-aims input files from an existing Distortion directory
     to a new directory.
     """
+    if not input_filename:
+        input_filename = "control.in"
     atoms = aaa.get_atoms(distorted_structure)
     ase.io.write(
             filename=f"{distorted_dir}/geometry.in", 
             images=atoms, format="aims",
             ) # write input structure file
     
-    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/control.in"):
+    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         shutil.copyfile(
-            f"{output_path}/{defect_species}/Unperturbed/control.in",
-            f"{distorted_dir}/control.in",
+            f"{output_path}/{defect_species}/Unperturbed/{input_filename}",
+            f"{distorted_dir}/{input_filename}",
         )
     else: # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
             if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/control.in"
+                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
             ):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/control.in",
-                f"{distorted_dir}/control.in",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
+                f"{distorted_dir}/{input_filename}",
             )
             
         else: # only write input structure
             print(
-                f"No subfolders with FHI-aims input file (`control.in`) found in "
+                f"No subfolders with FHI-aims input file (`{input_filename}`) found in "
                 f"{output_path}/{defect_species}, so just writing distorted structure "
                 f"file to {distorted_dir} directory (in FHI-aims `geometry.in` format)."
             )           
