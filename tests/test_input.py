@@ -543,7 +543,6 @@ class InputTestCase(unittest.TestCase):
         )
 
     # test create_folder and create_vasp_input simultaneously:
-    # TODO: Update this test!
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
