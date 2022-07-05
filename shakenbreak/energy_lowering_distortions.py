@@ -88,13 +88,9 @@ def read_defects_directories(output_path: str = "./") -> dict:
             defect_charges_dict[i[0]] = [int(i[1])]
     return defect_charges_dict
 
-# TODO: Add tests for the other codes
 # TODO: Update get_energy_lowering_distortions() to optionally also store non-spontaneous
 #  _metastable_ energy-lowering distortions, as these can become ground-state distortions for
 #  other charge states
-# TODO: Refactor so that `get_energy_lowering_distortions` can either take in a specified list of
-#  defect charges to parse, or will read from current directory using `read_defects_directories(
-#  )` under the hood (and add test for this!) -> Done, need to add test
 def get_energy_lowering_distortions(
     defect_charges_dict: Optional[dict] = None,
     output_path: str = ".",
@@ -520,7 +516,7 @@ def write_distorted_inputs(
         input_filename (:obj:`str`):
             Name of the code input file if different from `ShakeNBreak` default. Only applies
             to CP2K, Quantum Espresso, CASTEP and FHI-aims. If not specified, `ShakeNBreak` default
-            name is assumed, that is: Quantum Espresso: "espresso.pwi", CP2K: "cp2k_input.inp",
+            name is assumed, that is: for Quantum Espresso: "espresso.pwi", CP2K: "cp2k_input.inp",
             CASTEP: "castep.param", FHI-aims: "control.in"
             (Default: None)
     Returns:

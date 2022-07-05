@@ -274,10 +274,9 @@ def read_espresso_structure(
         with open(filename, 'r') as f:
             file_content = f.read()
         try:
-            try:
+            if "Begin final coordinates" in file_content:
                 file_content = file_content.split("Begin final coordinates")[-1] # last geometry
-            finally:
-                cell_lines = file_content.split("CELL_PARAMETERS")[1]
+            cell_lines = file_content.split("CELL_PARAMETERS")[1]
             parsed_info = parse_pwo_start(
                 lines=cell_lines.split("\n")
             )
