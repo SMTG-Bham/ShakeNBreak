@@ -92,16 +92,14 @@ def read_defects_directories(output_path: str = "./") -> dict:
 # TODO: Update get_energy_lowering_distortions() to optionally also store non-spontaneous
 #  _metastable_ energy-lowering distortions, as these can become ground-state distortions for
 #  other charge states
-# TODO: Add optional parameter to `get_energy_lowering_distortions()` that also then runs
-#  `write_distorted_inputs()` on the output dictionary, so can all be done in one function call -> Done
 # TODO: Refactor so that `get_energy_lowering_distortions` can either take in a specified list of
 #  defect charges to parse, or will read from current directory using `read_defects_directories(
 #  )` under the hood (and add test for this!) -> Done, need to add test
 def get_energy_lowering_distortions(
-    defect_charges_dict: Optional[dict],
+    defect_charges_dict: Optional[dict] = None,
     output_path: str = ".",
-    code: str="VASP",
-    structure_filename: str="CONTCAR",
+    code: str = "VASP",
+    structure_filename: str = "CONTCAR",
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
@@ -119,6 +117,7 @@ def get_energy_lowering_distortions(
             Dictionary matching defect name(s) to list(s) of their charge states. (e.g {
             "Int_Sb_1":[0,+1,+2]} etc). If not specified, all defects present in `output_path`
             will be parsed.
+            (Default: None)
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (need CONTCAR files for
             structure matching) and distortion_metadata.json. (Default is current directory = "./")
@@ -845,6 +844,37 @@ def _copy_fhi_aims_files(
                 f"file to {distorted_dir} directory (in FHI-aims `geometry.in` format)."
             )           
              
-# TODO: Write convenience function that at this point takes the lowest energy structure for each
-# defect species, and writes it to the corresponding defect folder, with an optional name
-# (default "groundstate_POSCAR"), to then run continuation calculations
+
+def write_groundstate_structure(
+    output_path: str = ".",
+    groundstate_filename: str = "groundstate_POSCAR",
+    structure_filename: str = "CONTCAR",
+) -> None:
+    """
+    Writes the groundstate structure of each defect to the corresponding 
+    defect folder, with an optional name (default "groundstate_POSCAR"), to then run 
+    continuation calculations.
+    Args:
+        output_path (:obj:`str`):
+            Path to directory with your distorted defect calculations (need CONTCAR files for
+            structure matching) and distortion_metadata.json. 
+            (Default: current directory = "./")
+        groundstate_filename (:obj:`str`):
+            Name of the file to write the groundstate structure to. 
+            (Default: "groundstate_POSCAR")
+        structure_filename (:obj:`str`):
+            Name of the file to read the structure from.
+            (Default: "CONTCAR")
+    Returns:
+        None
+    """
+    defect_charges_dict = read_defects_directories(output_path=output_path)
+    for defect_species in defect_charges_dict:
+        for charge in defect_charges_dict[defect_species]:
+            energies_file = f"{output_path}/{defect_species}_{charge}/{defect_species}_{charge}.txt"
+            _, _, gs_distortion = _sort_data(energies_file=energies_file, verbose=False)
+            bond_distortion = _get_distortion_filename(gs_distortion)
+            shutil.copyfile(
+                f"{output_path}/{defect_species}/{bond_distortion}/{structure_filename}",
+                f"{output_path}/{defect_species}/{groundstate_filename}",
+            )

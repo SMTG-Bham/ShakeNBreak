@@ -416,6 +416,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 any([str(warning.message) == warning_message for warning in w])
             )
 
+        # test no defects specified and write_input_files = True
+         
     # functionality of compare_struct_to_distortions() essentially tested through above tests for
     # `get_energy_lowering_distortions`
 
