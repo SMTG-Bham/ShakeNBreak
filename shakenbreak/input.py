@@ -1148,6 +1148,7 @@ class Distortions:
     def write_castep_files(
         self,
         input_file: Optional[str] = None,
+        write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
     ) -> Tuple[dict, dict]:
@@ -1160,8 +1161,11 @@ class Distortions:
                 inputs. 
                 (Default is current directory: ".")
             input_file (:obj:`str`, optional):
-                Path to CASTEP input (`.param`) file. If not set, only the structures (in CASTEP 
-                .cell format will be written).
+                Path to CASTEP input (`.param`) file. If not set, only the defect charge is written
+                to the `param` input file.
+            write_structures_only (:obj:`bool`, optional):
+                Whether to only write the structure files (in CIF format) (without calculation inputs).
+                (Default: False)
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and distances). 
                 (Default: False)
@@ -1170,7 +1174,12 @@ class Distortions:
             verbose=verbose, 
         )
         aaa = AseAtomsAdaptor()
-                       
+        warnings.filterwarnings('ignore', 
+                                '.*Could not determine the version of your CASTEP binary.*'
+        )
+        warnings.filterwarnings('ignore', 
+                                '.*Generating CASTEP keywords JSON file... hang on.*'
+        )               
         for defect_name, defect_dict in distorted_defects_dict.items(): # loop for each defect in dict
                         
             for charge in defect_dict["charges"]: # loop for each charge state of defect
@@ -1184,20 +1193,15 @@ class Distortions:
                 ):
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
-                    if input_file:
-                        warnings.filterwarnings('ignore', 
-                                                '.*Could not determine the version of your CASTEP binary.*'
-                        )
-                        warnings.filterwarnings('ignore', 
-                                                '.*Generating CASTEP keywords JSON file... hang on.*'
-                        )
+                    if not write_structures_only:
                         try:
                             calc = Castep(
                                 directory=f"{output_path}/{defect_name}_{charge}/{dist}"
                             )
                             calc.set_kpts({'size': (1, 1, 1), 'gamma': True})
-                            calc.merge_param(input_file)
-                            calc.param.charge = 1 # Defect charge state   
+                            if input_file and os.file.exists(input_file):
+                                calc.merge_param(input_file)
+                            calc.param.charge = charge # Defect charge state   
                             calc.set_atoms(atoms)
                             calc.initialize() # this writes the .param file
                         except:
@@ -1210,13 +1214,13 @@ class Distortions:
                             ) 
                     else:
                         warnings.warn(
-                            "No CASTEP input file was provided." 
+                            "No CASTEP input file was provided. " 
                             "Only structures will be written as `castep.cell` files."
                         )
                         ase.io.write(
-                                filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
-                                images=atoms, format="castep-cell"
-                                )
+                            filename=f"{output_path}/{defect_name}_{charge}/{dist}/castep.cell", 
+                            images=atoms, format="castep-cell"
+                        )
         return distorted_defects_dict, self.distortion_metadata
 
     def write_fhi_aims_files(
