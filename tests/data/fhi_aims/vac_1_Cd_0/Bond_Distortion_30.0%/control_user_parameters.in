@@ -1,0 +1,15 @@
+#===============================================================================
+# FHI-aims file: ./vac_1_Cd_0/Bond_Distortion_30.0%/control.in
+# Created using the Atomic Simulation Environment (ASE)
+# Wed Jul  6 11:23:59 2022
+#===============================================================================
+k_grid                             1 1 1
+relax_geometry                     bfgs 0.0005
+xc                                 hse06 0.11
+hse_unit                           A
+spin                               collinear
+default_initial_moment             0
+hybrid_xc_coeff                    0.15
+charge                             0
+#===============================================================================
+

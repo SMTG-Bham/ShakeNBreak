@@ -14,7 +14,7 @@ from shakenbreak import (
 
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-
+file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -82,9 +82,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [-2, -1, 0]
 
-        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
+        dist = input.Distortions(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
+        )
+        distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
@@ -239,7 +241,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m2():
@@ -255,7 +257,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-1}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m1():
@@ -271,7 +273,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_0():

@@ -9,8 +9,8 @@ import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import seaborn as sns
 from matplotlib.figure import Figure
+import seaborn as sns
 
 from shakenbreak.analysis import (
     _sort_data,
@@ -40,95 +40,8 @@ def _verify_data_directories_exist(
         raise FileNotFoundError(
             f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
         )
+
             
-def _format_tick_labels(
-    ax: mpl.axes.Axes,
-    energy_range: list,
-) -> mpl.axes.Axes:
-    """
-    Format axis labels of distortion plots and set limits of y axis. 
-    For the y-axis (energies), show number with: \
-     1 decimal point if energy range is higher than 0.4 eV, 
-     3 decimal points if energy range is smaller than 0.1 eV, 
-     2 decimal points otherwise.
-
-    Args:
-        ax (obj:`mpl.axes.Axes`): 
-            matplotlib.axes.Axes of figure to format
-        energy_range (:obj:`list`): 
-            List of y (energy) values
-
-    Returns:
-        mpl.axes.Axes: Formatted axes
-    """
-    if (max(energy_range) - min(energy_range)) > 0.4:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.1f}")  # 1 decimal point
-        )
-    elif (max(energy_range) - min(energy_range)) < 0.1:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.3f}")  # 3 decimal points
-        )
-    else:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.2f}")
-        )  # else 2 decimal points
-    ax.xaxis.set_major_formatter(
-        mpl.ticker.StrMethodFormatter("{x:,.1f}")
-    )  # 1 decimal for distortion factor (x axis)
-    # Limits for y axis:
-    ax.set_ylim(
-        bottom=min(energy_range) - 0.1 * (max(energy_range) - min(energy_range)),
-        top=max(energy_range) + 0.1 * (max(energy_range) - min(energy_range)),
-    )  # add some extra space to avoid cutting off some data points
-    # (e.g. using the energy range here in case units are meV)
-    return ax
-
-def _format_axis(
-    ax: mpl.axes.Axes,
-    defect_name: str,
-    y_label: str,
-    num_nearest_neighbours: Optional[int],
-    neighbour_atom: Optional[str],
-) -> mpl.axes.Axes:
-    """
-    Format and set axis labels of distortion plots, and set axis locators.
-
-    Args:
-        ax (:obj:`mpl.axes.Axes`): 
-            current matplotlib.axes.Axes 
-        defect_name (:obj:`str`): 
-            name of defect (e.g. 'vac_1_Cd_0')
-        y_label (:obj:`str`): 
-            label for y axis
-        num_nearest_neighbours (:obj:`int`): 
-            number of distorted nearest neighbours
-        neighbour_atom (:obj:`str`):  
-            element symbol of distorted nearest neighbour
-
-    Returns:
-        mpl.axes.Axes: axes with formatted labels
-    """
-    if num_nearest_neighbours and neighbour_atom and defect_name:
-        x_label = (
-            f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near"
-            f" {defect_name})"
-        )
-    elif num_nearest_neighbours and defect_name:
-        x_label = (
-            f"Bond Distortion Factor (for {num_nearest_neighbours} NN near"
-            f" {defect_name})"
-        )
-    else:
-        x_label = "Bond Distortion Factor"
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    # Format axis locators
-    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
-    ax.xaxis.set_major_locator(plt.MultipleLocator(0.3))
-    ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
-    return ax
-
 def _format_defect_name(
     defect_species: str,
     include_site_num_in_name: bool,
@@ -192,6 +105,7 @@ def _format_defect_name(
             raise ValueError(f"Defect type {defect_type} not recognized. Please check spelling.")
     return defect_name
 
+
 def _cast_energies_to_floats(
     energies_dict: dict,
     defect_species: str,
@@ -223,6 +137,7 @@ def _cast_energies_to_floats(
                 f"Values of energies_dict are not floats! Skipping {defect_species}."
             )
     return energies_dict
+
     
 def _change_energy_units_to_meV(
     energies_dict: dict,
@@ -250,6 +165,7 @@ def _change_energy_units_to_meV(
         energies_dict["distortions"][key] = energies_dict["distortions"][key] * 1000
     energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
     return energies_dict, max_energy_above_unperturbed, y_label
+
 
 def _purge_data_dicts(
     disp_dict: dict,
@@ -288,6 +204,7 @@ def _purge_data_dicts(
                 energies_dict["distortions"].pop(key)
     return disp_dict, energies_dict
 
+
 def _remove_high_energy_points(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
@@ -319,12 +236,14 @@ def _remove_high_energy_points(
                 disp_dict.pop(key)
     return energies_dict, disp_dict
 
+
 def _get_displacement_dict(
     defect_species: str,
     output_path: str,
     metric: str,
     energies_dict: dict,
     add_colorbar: bool,
+    code: Optional[str] = "VASP",
 ) -> Tuple[bool, dict, dict]:
     """
     Parses structures of `defect_species` to calculate displacements between each 
@@ -352,12 +271,15 @@ def _get_displacement_dict(
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between each structure and
             the unperturbed one.
+        code (:obj:`str`, optional):
+            Code used for the geometry relaxations.
+            (Default: VASP)
     Returns:
         Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and `disp_dict`
     """
     try:
         defect_structs = get_structures(
-            defect_species=defect_species, output_path=output_path
+            defect_species=defect_species, output_path=output_path, code=code,
         )
         disp_dict = calculate_struct_comparison(
             defect_structs, metric=metric
@@ -385,6 +307,7 @@ def _get_displacement_dict(
         add_colorbar = False
         return add_colorbar, energies_dict, None
     return add_colorbar, energies_dict, disp_dict
+
 
 def _format_datapoints_from_other_chargestates(
     energies_dict: dict,
@@ -442,6 +365,7 @@ def _format_datapoints_from_other_chargestates(
         # (i.e. the only distortion is Rattled)
         return [], [], None, None
 
+
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
@@ -469,6 +393,97 @@ def _save_plot(
         bbox_inches="tight",
     )
 
+
+def _format_tick_labels(
+    ax: mpl.axes.Axes,
+    energy_range: list,
+) -> mpl.axes.Axes:
+    """
+    Format axis labels of distortion plots and set limits of y axis. 
+    For the y-axis (energies), show number with: \
+     1 decimal point if energy range is higher than 0.4 eV, 
+     3 decimal points if energy range is smaller than 0.1 eV, 
+     2 decimal points otherwise.
+
+    Args:
+        ax (obj:`mpl.axes.Axes`): 
+            matplotlib.axes.Axes of figure to format
+        energy_range (:obj:`list`): 
+            List of y (energy) values
+
+    Returns:
+        mpl.axes.Axes: Formatted axes
+    """
+    if (max(energy_range) - min(energy_range)) > 0.4:
+        ax.yaxis.set_major_formatter(
+            mpl.ticker.StrMethodFormatter("{x:,.1f}")  # 1 decimal point
+        )
+    elif (max(energy_range) - min(energy_range)) < 0.1:
+        ax.yaxis.set_major_formatter(
+            mpl.ticker.StrMethodFormatter("{x:,.3f}")  # 3 decimal points
+        )
+    else:
+        ax.yaxis.set_major_formatter(
+            mpl.ticker.StrMethodFormatter("{x:,.2f}")
+        )  # else 2 decimal points
+    ax.xaxis.set_major_formatter(
+        mpl.ticker.StrMethodFormatter("{x:,.1f}")
+    )  # 1 decimal for distortion factor (x axis)
+    # Limits for y axis:
+    ax.set_ylim(
+        bottom=min(energy_range) - 0.1 * (max(energy_range) - min(energy_range)),
+        top=max(energy_range) + 0.1 * (max(energy_range) - min(energy_range)),
+    )  # add some extra space to avoid cutting off some data points
+    # (e.g. using the energy range here in case units are meV)
+    return ax
+
+
+def _format_axis(
+    ax: mpl.axes.Axes,
+    defect_name: str,
+    y_label: str,
+    num_nearest_neighbours: Optional[int],
+    neighbour_atom: Optional[str],
+) -> mpl.axes.Axes:
+    """
+    Format and set axis labels of distortion plots, and set axis locators.
+
+    Args:
+        ax (:obj:`mpl.axes.Axes`): 
+            current matplotlib.axes.Axes 
+        defect_name (:obj:`str`): 
+            name of defect (e.g. 'vac_1_Cd_0')
+        y_label (:obj:`str`): 
+            label for y axis
+        num_nearest_neighbours (:obj:`int`): 
+            number of distorted nearest neighbours
+        neighbour_atom (:obj:`str`):  
+            element symbol of distorted nearest neighbour
+
+    Returns:
+        mpl.axes.Axes: axes with formatted labels
+    """
+    if num_nearest_neighbours and neighbour_atom and defect_name:
+        x_label = (
+            f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near"
+            f" {defect_name})"
+        )
+    elif num_nearest_neighbours and defect_name:
+        x_label = (
+            f"Bond Distortion Factor (for {num_nearest_neighbours} NN near"
+            f" {defect_name})"
+        )
+    else:
+        x_label = "Bond Distortion Factor"
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    # Format axis locators
+    ax.yaxis.set_major_locator(plt.MaxNLocator(6))
+    ax.xaxis.set_major_locator(plt.MultipleLocator(0.3))
+    ax.xaxis.set_minor_locator(plt.MultipleLocator(0.1))
+    return ax
+
+
 def _get_line_colors(number_of_colors: int) -> list:
     """
     Get list of colors for plotting several lines.
@@ -485,6 +500,7 @@ def _get_line_colors(number_of_colors: int) -> list:
     else:
         colors = ["#59a590",] # Turquoise by default
     return colors
+
 
 def _setup_colormap(
     disp_dict: dict,
@@ -509,6 +525,7 @@ def _setup_colormap(
     vmedium = round((vmin + vmax) / 2, 1)
     norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
     return colormap, vmin, vmedium, vmax, norm
+
 
 def _format_colorbar(
     fig: mpl.figure.Figure,
@@ -561,6 +578,7 @@ def _format_colorbar(
         cbar.set_ticks([vmedium])
         cbar.set_ticklabels([vmedium])
     return cbar
+ 
  
 # Main plotting functions
     
@@ -707,6 +725,7 @@ def plot_all_defects(
                 )
                 
     return figures
+
 
 def plot_defect(
     defect_species: str,
@@ -859,6 +878,7 @@ def plot_defect(
             save_format=save_format,
         )
     return fig
+
 
 def plot_colorbar(
     energies_dict: dict,
@@ -1041,6 +1061,7 @@ def plot_colorbar(
             save_format=save_format,
         )
     return fig
+
 
 def plot_datasets(
     datasets: list,
