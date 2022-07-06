@@ -1,5 +1,5 @@
 #######################################################
-#CASTEP cell file: ./vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell
+#CASTEP cell file: /home/ireaml/Python_Modules/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell
 #Created using the Atomic Simulation Environment (ASE)#
 #######################################################
 
@@ -75,3 +75,5 @@ Te 11.559529 11.895370  4.746923
 Te 11.072262 11.648637 11.378040
 %ENDBLOCK POSITIONS_ABS
 
+KPOINT_MP_GRID: 1 1 1
+KPOINT_MP_OFFSET: 0.000000 0.000000 0.000000
