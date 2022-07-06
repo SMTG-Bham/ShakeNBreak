@@ -13,10 +13,10 @@
 		POTENTIAL_FILE_NAME GTH_POTENTIALS
 
 		CHARGE 0
-		SPIN_POLARIZED .TRUE.
+		SPIN_POLARIZED .FALSE.
 
 		&MGRID 
-			CUTOFF [eV] 500 ! PW cutoff 
+			CUTOFF [eV] 800 ! PW cutoff 
 		&END MGRID
 
 		&QS 
@@ -51,8 +51,8 @@
 		! SCF, suitable for all non-metallic systems.
 		&SCF 
 			SCF_GUESS RESTART ! can be used to RESTART an interrupted calculation
-			MAX_SCF 80
-			EPS_SCF 1e-06 ! accuracy of the SCF procedure typically 1.0E-6 - 1.0E-7
+			MAX_SCF 30
+			EPS_SCF 1e-07 ! accuracy of the SCF procedure typically 1.0E-6 - 1.0E-7
 			&OT 
 				PRECONDITIONER FULL_SINGLE_INVERSE
 				MINIMIZER DIIS
@@ -64,7 +64,7 @@
 
 			&OUTER_SCF ! repeat the inner SCF cycle 10 times
 				MAX_SCF 10
-				EPS_SCF 1e-06 ! must match the above
+				EPS_SCF 1e-07 ! must match the above
 			&END OUTER_SCF
 
 			! do not store the wfn
@@ -76,7 +76,6 @@
 		
 		! specify the exchange and correlation treatment
 		&XC 
-		
 			! use a PBE0 functional
 			&XC_FUNCTIONAL 
 				&PBE 
@@ -85,10 +84,9 @@
 				&END PBE
 			&END XC_FUNCTIONAL
 			! 75% GGA exchange 100% GGA correlation
-			
 			&HF 
-				FRACTION 0.25
-				! 25 % HFX exchange
+				FRACTION 0.35
+				! 35 % HFX exchange
 				&SCREENING 
 					EPS_SCHWARZ 1e-06
 					SCREEN_ON_INITIAL_P True
