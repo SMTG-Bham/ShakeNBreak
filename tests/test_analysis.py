@@ -9,7 +9,7 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 
 from pymatgen.core.structure import Structure, Element
-from shakenbreak import analysis
+from shakenbreak import analysis, io
 
 
 def if_present_rm(path):
@@ -237,10 +237,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, (None, None, None))
 
-    def test_grab_contcar(self):
-        """Test grab_contcar() function."""
+    def test_read_vasp_structure(self):
+        """Test read_vasp_structure() function."""
         with warnings.catch_warnings(record=True) as w:
-            output = analysis.grab_contcar("fake_file")
+            output = io.read_vasp_structure("fake_file")
             warning_message = (
                 "fake_file file doesn't exist, storing as 'Not converged'. Check "
                 "path & relaxation"
@@ -251,7 +251,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
-            output = analysis.grab_contcar(
+            output = io.read_vasp_structure(
                 os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
             )
             warning_message = (
@@ -265,7 +265,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
-            output = analysis.grab_contcar(
+            output = io.read_vasp_structure(
                 os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
             V_Cd_struc = Structure.from_file(
