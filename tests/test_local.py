@@ -16,12 +16,36 @@ import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
 from doped import vasp_input
-from shakenbreak import input, distortions
+from shakenbreak import input, io
 
 
 def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
+
+
+def _update_struct_defect_dict(
+    defect_dict: dict, structure: Structure, poscar_comment: str
+) -> dict:
+    """
+    Given a Structure object and POSCAR comment, update the folders dictionary 
+    (generated with `doped.vasp_input.prepare_vasp_defect_inputs()`) with 
+    the given values.
+    Args:
+        defect_dict (:obj:`dict`):
+            Dictionary with defect information, as generated with doped 
+            `prepare_vasp_defect_inputs()`
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            Defect structure as a pymatgen object
+        poscar_comment (:obj:`str`):
+            Comment to include in the top line of the POSCAR file
+    Returns:
+        single defect dict in the `doped` format.
+    """
+    defect_dict_copy = copy.deepcopy(defect_dict)
+    defect_dict_copy["Defect Structure"] = structure
+    defect_dict_copy["POSCAR Comment"] = poscar_comment
+    return defect_dict_copy
 
 
 class DistortionLocalTestCase(unittest.TestCase):
@@ -166,7 +190,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
-        V_Cd_updated_charged_defect_dict = input._update_struct_defect_dict(
+        V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
@@ -230,15 +254,17 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(V_Cd_kwarg_minus50_folder + "/POTCAR"))
 
     @patch("builtins.print")
-    def test_apply_shakenbreak(self, mock_print):
-        """Test apply_shakenbreak function"""
+    def test_write_vasp_files(self, mock_print):
+        """Test write_vasp_files method"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        distorted_defect_dict = input.apply_shakenbreak(
+        dist = input.Distortions(
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+        )
+        distorted_defect_dict, _ = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
@@ -255,8 +281,11 @@ class DistortionLocalTestCase(unittest.TestCase):
             "'0.5', '0.55', '0.6'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
-        mock_print.assert_any_call("\nDefect:", "vac_1_Cd")
-        mock_print.assert_any_call("Number of missing electrons in neutral state: 2")
+        mock_print.assert_any_call("\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
+        ) # bold print
+        mock_print.assert_any_call("\033[1m" 
+            + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        )
         mock_print.assert_any_call(
             "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
             "neighbours: 0"
@@ -266,7 +295,8 @@ class DistortionLocalTestCase(unittest.TestCase):
             "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " 
+            "neighbours: 2"
         )
         # test correct distorted neighbours based on oxidation states:
         mock_print.assert_any_call(
@@ -295,17 +325,18 @@ class DistortionLocalTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__vac_1_Cd[0. 0. 0.]_-dNELECT=0__num_neighbours=2",
+            "-50.0%__num_neighbours=2_vac_1_Cd",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set IBRION and EDIFF)
-        self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertFalse(io.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertEqual(V_Cd_INCAR.pop("ENCUT"), 212)
         self.assertEqual(V_Cd_INCAR.pop("IBRION"), 0)
         self.assertEqual(V_Cd_INCAR.pop("EDIFF"), 1e-4)
-        modified_default_incar_settings = input.default_incar_settings.copy()
+        self.assertEqual(V_Cd_INCAR.pop("ROPT"), "1e-3 1e-3")
+        modified_default_incar_settings = io.default_incar_settings.copy()
         modified_default_incar_settings.pop("IBRION")
         modified_default_incar_settings.pop("EDIFF")
         self.assertTrue(
@@ -319,12 +350,13 @@ class DistortionLocalTestCase(unittest.TestCase):
         # check if POTCARs have been written:
         self.assertTrue(os.path.isfile(V_Cd_minus50_folder + "/POTCAR"))
 
+        # Check POSCARs
         Int_Cd_2_minus60_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_minus60_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__Int_Cd_2[0.8125 0.1875 0.8125]_-dNELECT=0__num_neighbours=2",
+            "-60.0%__num_neighbours=2_Int_Cd_2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
