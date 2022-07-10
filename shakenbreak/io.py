@@ -24,7 +24,7 @@ from pymatgen.io.vasp.inputs import (
 from pymatgen.io.vasp.sets import DictSet, BadInputSetWarning
 
 import ase
-from ase.io.espresso import parse_pwo_start
+from ase.atoms import Atoms
 from ase.calculators.espresso import Espresso
 from  ase.calculators.castep import Castep
 from  ase.calculators.aims import Aims
@@ -37,6 +37,8 @@ if TYPE_CHECKING:
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
+# Load default INCAR settings for the ShakenBreak geometry relaxations
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
 
 aaa = AseAtomsAdaptor()
 
@@ -47,10 +49,10 @@ def scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
 
 
 def write_vasp_gam_files(
-        single_defect_dict: dict,
-        input_dir: str = None,
-        incar_settings: dict = None,
-        potcar_settings: dict = None,
+    single_defect_dict: dict,
+    input_dir: str = None,
+    incar_settings: dict = None,
+    potcar_settings: dict = None,
 ) -> None:
     """
     Generates input files for VASP Gamma-point-only rough relaxation
@@ -66,8 +68,8 @@ def write_vasp_gam_files(
             (default: None)
         incar_settings (:obj:`dict`):
             Dictionary of user INCAR settings (AEXX, NCORE etc.) to override default settings.
-            Highly recommended to look at output INCARs or doped.vasp_input
-            source code, to see what the default INCAR settings are.
+            Highly recommended to look at `/input_files/incar.yaml`, or output INCARs or 
+            doped.vasp_input source code, to see what the default INCAR settings are.
             (default: None)
         potcar_settings (:obj:`dict`):
             Dictionary of user POTCAR settings to override default settings.
@@ -127,43 +129,14 @@ def write_vasp_gam_files(
         # Get NELECT if no change (-dNELECT = 0)
         nelect = defect_relax_set.nelect
 
-    # Variable parameters first
-    vaspgamincardict = {
-        "# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for "
-        "qualitative structure searching": "",
-        "# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM": "",
+    # Update system dependent parameters
+    default_incar_settings.update({
         "NELECT": nelect,
-        "IBRION": "2 # While often slower than '1' (RMM-DIIS), this is more stable and "
-        "reliable, and vasp_gam relaxations are typically cheap enough to justify it",
         "NUPDOWN": f"{nelect % 2:.0f} # But could be {nelect % 2 + 2:.0f} "
         + "if strong spin polarisation or magnetic behaviour present",
-        "ISPIN": "2 # Spin polarisation likely for defects",
-        "NCORE": 12,
-        "#KPAR": "# No KPAR, only one kpoint",
-        "ENCUT": 300,
-        "ICORELEVEL": "0 # Needed if using the Kumagai-Oba (eFNV) anisotropic charge correction",
-        "ALGO": "Normal",
         "EDIFF": f"{scaled_ediff(supercell.num_sites)} # May need to reduce for tricky relaxations",
-        "EDIFFG": -0.01,
-        "HFSCREEN": 0.2,
-        "ICHARG": 1,
-        "ISIF": 2,
-        "ISYM": "0 # Symmetry breaking extremely likely for defects",
-        "ISMEAR": 0,
-        "LASPH": True,
-        "LHFCALC": True,
-        "LORBIT": 11,
-        "LREAL": False,
-        "LVHAR": "True # Needed if using the Freysoldt (FNV) charge correction scheme",
-        "LWAVE": True,
-        "NEDOS": 2000,
-        "NELM": 100,
-        "NSW": 300,
-        "PREC": "Accurate",
-        "PRECFOCK": "Fast",
         "ROPT": "1e-3 " * num_elements,
-        "SIGMA": 0.05,
-    }
+    })
     if incar_settings:
         for (
             k
@@ -177,13 +150,15 @@ def write_vasp_gam_files(
                     f"Cannot find {k} from your incar_settings in the list of INCAR flags",
                     BadIncarWarning,
                 )
-        vaspgamincardict.update(incar_settings)
+        default_incar_settings.update(incar_settings)
 
+    vaspgamincar = Incar.from_dict(default_incar_settings)
+
+    # kpoints
     vaspgamkpts = Kpoints().from_dict(
         {"comment": "Gamma-only KPOINTS from ShakeNBreak", "generation_style": "Gamma"}
     )
-    vaspgamincar = Incar.from_dict(vaspgamincardict)
-
+    
     vaspgamposcar = defect_relax_set.poscar
     if poscar_comment:
         vaspgamposcar.comment = poscar_comment
@@ -191,38 +166,6 @@ def write_vasp_gam_files(
     with zopen(vaspgaminputdir + "INCAR", "wt") as incar_file:
         incar_file.write(vaspgamincar.get_string())
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
-
-
-def write_qe_input(
-    structure: Structure,
-    pseudopotentials: Optional[dict] = None,
-    input_parameters: Optional[str] = None,
-    charge: Optional[int] = None,
-    output_path: str = ".",
-)-> None:
-    # Update default parameters with user values
-    if input_parameters and pseudopotentials:
-        with open(f"{MODULE_DIR}/../input_files/qe_input.yaml", "r") as f:
-            default_input_parameters = yaml.safe_load(f)
-        if charge:
-            default_input_parameters["SYSTEM"]["tot_charge"] = charge
-        for section in input_parameters:
-            for key in input_parameters[section]:
-                if section in default_input_parameters:
-                    default_input_parameters[section][key] = input_parameters[section][key]
-                else:
-                    default_input_parameters.update({section: {key: input_parameters[section][key]}})
-    atoms=aaa.get_atoms(structure)
-    calc = Espresso(
-            pseudopotentials=pseudopotentials,
-            tstress=False, 
-            tprnfor=True,
-            kpts=(1, 1, 1), 
-            input_data=default_input_parameters,
-        )
-    calc.write_input(atoms)
-    if output_path != "." or output_path != "./":
-        os.replace("./espresso.pwi", f"{output_path}/espresso.pwi")
 
 
 # Parsing output structures of different codes
@@ -270,27 +213,64 @@ def read_espresso_structure(
     Returns:
         `pymatgen` Structure object
     """
+    # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
         with open(filename, 'r') as f:
             file_content = f.read()
-        try:
-            if "Begin final coordinates" in file_content:
-                file_content = file_content.split("Begin final coordinates")[-1] # last geometry
-            cell_lines = file_content.split("CELL_PARAMETERS")[1]
-            parsed_info = parse_pwo_start(
-                lines=cell_lines.split("\n")
-            )
-            aaa = AseAtomsAdaptor()
-            structure = aaa.get_structure(parsed_info['atoms'])
-            structure = structure.get_sorted_structure() # Sort sites by electronegativity
-        except:
-            warnings.warn(
+    else:
+        warnings.warn(
+            f"{filename} file doesn't exist, storing as 'Not converged'. Check path & "
+            f"relaxation"
+        )
+        structure = "Not converged"
+    try:
+        if "Begin final coordinates" in file_content:
+            file_content = file_content.split("Begin final coordinates")[-1] # last geometry
+        if "End final coordinates" in file_content:
+            file_content = file_content.split("End final coordinates")[0] # last geometry
+        # Parse cell parameters and atomic positions
+        cell_lines = [
+            line for line in 
+            file_content.split("CELL_PARAMETERS (angstrom)")[1].split(
+                'ATOMIC_POSITIONS (angstrom)')[0].split("\n") 
+            if line != "" and line != " " and line != "   "
+        ]
+        atomic_positions = file_content.split("ATOMIC_POSITIONS (angstrom)")[1]
+        # Cell parameters
+        cell_lines_processed = [
+            [float(number) for number in line.split()] for line in cell_lines if len(line.split()) == 3
+        ]
+        # Atomic positions
+        atomic_positions_processed = [
+            [entry for entry in line.split()] for line in atomic_positions.split("\n") if len(line.split()) >= 4
+        ]
+        coordinates = [
+            [float(entry) for entry in line[1:4]] for line in atomic_positions_processed
+        ]
+        symbols = [
+            entry[0] for entry in atomic_positions_processed 
+            if entry != "" and entry != " " and entry != "  "
+        ]
+        # Check parsing is ok
+        for entry in coordinates:
+            assert len(entry) == 3 # Encure 3 numbers (xyz) are parsed from coordinates section
+        assert len(symbols) == len(coordinates) # Same number of atoms and coordinates
+        atoms = Atoms(
+            symbols=symbols,
+            positions=coordinates,
+            cell=cell_lines_processed,
+            pbc=True,
+            
+        )
+        aaa = AseAtomsAdaptor()
+        structure = aaa.get_structure(atoms)
+        structure = structure.get_sorted_structure() # Sort by atom type
+    except:
+        warnings.warn(
                 f"Problem parsing structure from: {filename}, storing as 'Not "
                 f"converged'. Check file & relaxation"
-            )
-            structure = "Not converged"
-    else:
-        raise FileNotFoundError(f"File {filename} does not exist!")
+        )
+        structure = "Not converged"
     return structure
 
 

@@ -28,14 +28,12 @@ from shakenbreak.distortions import distort, rattle
 from shakenbreak.io import write_vasp_gam_files
 from shakenbreak.analysis import _get_distortion_filename
 
-# Load default INCAR settings for the ShakenBreak geometry relaxations
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
+
 
 warnings.filterwarnings(
     "ignore", category=UnknownPotcarWarning
 )  # Ignore pymatgen POTCAR warnings
-
 
 # format warnings output:
 def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
@@ -43,7 +41,6 @@ def warning_on_one_line(message, category, filename, lineno, file=None, line=Non
     # To set this as warnings.formatwarning, we need to be able to take in `file` and `line`,
     # but don't want to print them, so unused arguments here
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
-
 
 warnings.formatwarning = warning_on_one_line
 
@@ -965,25 +962,31 @@ class Distortions:
             defect distortion parameters.
         """
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
-            verbose=verbose, 
+            verbose=verbose,
         )
         
         warnings.filterwarnings(
         "ignore", category=BadInputSetWarning
-        )  # Ignore POTCAR warnings because Pymatgen incorrectly detecting POTCAR types
+        ) # Ignore POTCAR warnings because Pymatgen incorrectly detecting POTCAR types
         
-        for defect_name, defect_dict in distorted_defects_dict.items():  # loop for each defect in dict
+        # loop for each defect in dict
+        for defect_name, defect_dict in distorted_defects_dict.items(): 
             
-            dict_transf = {k: v for k,v in defect_dict.items() if k != "charges"} # Single defect dict
+            dict_transf = {
+                k: v for k,v in defect_dict.items() if k != "charges"
+            } # Single defect dict
             charged_defect = {}
             
             for charge in defect_dict["charges"]:  # loop for each charge state of defect
                 
                 for key_distortion, struct in zip(
                     ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"][
+                        "Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].values())
                 ):                    
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
@@ -996,7 +999,8 @@ class Distortions:
                         "POSCAR Comment": poscar_comment,
                         "Transformation Dict": copy.deepcopy(dict_transf)
                     }         
-                    charged_defect[key_distortion]["Transformation Dict"].update({"charge": charge})
+                    charged_defect[key_distortion][
+                        "Transformation Dict"].update({"charge": charge})
                     
                 _create_vasp_input(
                     defect_name=f"{defect_name}_{charge}",
@@ -1018,15 +1022,17 @@ class Distortions:
         verbose: Optional[bool] = False,
     ) -> Tuple[dict, dict]:
         """
-        Generates input files for Quantum Espresso relaxations of all output structures. 
+        Generates input files for Quantum Espresso relaxations of all output 
+        structures. 
 
         Args:
             pseudopotentials (:obj:`dict`, optional): 
                 Dictionary matching element to pseudopotential name.
                 Defaults to None.
             input_parameters (:obj:`dict`, optional):
-                Dictionary of user Quantum Espresso input parameters, to overwrite/update `shakenbreak` 
-                default ones (see `input_files/qe_input.yaml`).
+                Dictionary of user Quantum Espresso input parameters, to
+                overwrite/update `shakenbreak` default ones (see 
+                `input_files/qe_input.yaml`).
                 Defaults to None.
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format) (without calculation inputs).
@@ -1049,32 +1055,43 @@ class Distortions:
                 for section in input_parameters:
                     for key in input_parameters[section]:
                         if section in default_input_parameters:
-                            default_input_parameters[section][key] = input_parameters[section][key]
+                            default_input_parameters[section][
+                                key] = input_parameters[section][key]
                         else:
-                            default_input_parameters.update({section: {key: input_parameters[section][key]}})
+                            default_input_parameters.update(
+                                {section: {key: input_parameters[section][key]}}
+                            )
             
         aaa = AseAtomsAdaptor()
         
-        for defect_name, defect_dict in distorted_defects_dict.items(): # loop for each defect in dict
+        # loop for each defect in dict
+        for defect_name, defect_dict in distorted_defects_dict.items(): 
                         
-            for charge in defect_dict["charges"]: # loop for each charge state of defect
+            for charge in defect_dict["charges"]: # loop for each charge state
                 
                 for dist, struct in zip(
                     ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].keys()),
                     [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].values())
                 ):
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     
                     if not pseudopotentials or write_structures_only: # only write structures
-                        warnings.warn("Since `pseudopotentials` have been specified, will only write input structures.")
-                        ase.io.write(filename=f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi", 
+                        warnings.warn("Since `pseudopotentials` have been specified, " 
+                                      "will only write input structures."
+                        )
+                        ase.io.write(filename=f"{output_path}/"
+                                     +"{defect_name}_{charge}/{dist}/espresso.pwi", 
                                      images=atoms, format="espresso-in"
                         )
-                    elif pseudopotentials and not write_structures_only: # write complete input file
-                        default_input_parameters["SYSTEM"]["tot_charge"] = charge # Update defect charge
+                    elif pseudopotentials and not write_structures_only: 
+                        # write complete input file
+                        default_input_parameters["SYSTEM"]["tot_charge"] = charge # Update 
+                        # defect charge
                         
                         calc = Espresso(
                             pseudopotentials=pseudopotentials,
@@ -1084,7 +1101,9 @@ class Distortions:
                             input_data=default_input_parameters,
                         )
                         calc.write_input(atoms)
-                        os.replace("./espresso.pwi", f"{output_path}/{defect_name}_{charge}/{dist}/espresso.pwi")
+                        os.replace("./espresso.pwi", f"{output_path}/"
+                                   + "{defect_name}_{charge}/{dist}/espresso.pwi"
+                        )
         return distorted_defects_dict, self.distortion_metadata
     
     def write_cp2k_files(
@@ -1102,11 +1121,12 @@ class Distortions:
                 Path to CP2K input file. If not set, default input file will be used 
                 (see `shakenbreak/input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):
-                Whether to only write the structure files (in CIF format) (without calculation inputs).
+                Whether to only write the structure files (in CIF format) 
+                (without calculation inputs).
                 (Default: False)
             output_path (:obj:`str`, optional):
-                Path to directory in which to write distorted defect structures and calculation
-                inputs. 
+                Path to directory in which to write distorted defect structures and 
+                calculation inputs. 
                 (Default is current directory: ".")
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and distances). 
@@ -1115,9 +1135,11 @@ class Distortions:
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/../input_files/cp2k_input.inp") and not write_structures_only:
-            warnings.warn(f"Specified input file {input_file} does not exist! Using default CP2K input file "
-                          "(see shakenbreak/shakenbreak/cp2k_input.inp)"
-                          )
+            warnings.warn(
+                f"Specified input file {input_file} does not exist! Using"
+                " default CP2K input file "
+                "(see shakenbreak/shakenbreak/cp2k_input.inp)"
+            )
             cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/../input_files/cp2k_input.inp")
             
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
@@ -1263,38 +1285,48 @@ class Distortions:
                 hybrid_xc_coeff=0.25,
                 # By default symmetry is not preserved
             )
-        for defect_name, defect_dict in distorted_defects_dict.items(): # loop for each defect in dict
+        # loop for each defect in dict
+        for defect_name, defect_dict in distorted_defects_dict.items(): 
                         
-            for charge in defect_dict["charges"]: # loop for each charge state of defect
+            # loop for each charge state of defect
+            for charge in defect_dict["charges"]: 
                 if isinstance(ase_calculator, Aims) and not write_structures_only:
                     ase_calculator.set(charge=charge) # Defect charge state
 
                     # Total number of electrons for net spin initialization
-                    # Must set initial spin moments (otherwise FHI-aims will lead to 0 final spin)
-                    struct = defect_dict["charges"][charge]["structures"]["Unperturbed"]
-                    if struct.composition.total_electrons % 2 == 0: # Even number of electrons -> net spin is 0
+                    # Must set initial spin moments (otherwise FHI-aims will 
+                    # lead to 0 final spin)
+                    struct = defect_dict["charges"][charge]["structures"][
+                        "Unperturbed"]
+                    if struct.composition.total_electrons % 2 == 0: 
+                        # Even number of electrons -> net spin is 0
                         ase_calculator.set(default_initial_moment=0)
                     else:
                         ase_calculator.set(default_initial_moment=1)
                         
                 for dist, struct in zip(
                     ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]] 
-                    + list(defect_dict["charges"][charge]["structures"]["distortions"].values())
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].keys()),
+                    [defect_dict["charges"][charge]["structures"][
+                        "Unperturbed"]] 
+                    + list(defect_dict["charges"][charge]["structures"][
+                        "distortions"].values())
                 ):
                     atoms = aaa.get_atoms(struct)
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     
                     ase.io.write(
-                        filename=f"{output_path}/{defect_name}_{charge}/{dist}/geometry.in", 
+                        filename=f"{output_path}/{defect_name}_{charge}"
+                        +"/{dist}/geometry.in", 
                         images=atoms, format="aims",
                         info_str=dist,
                         ) # write input structure file
                     
                     if isinstance(ase_calculator, Aims) and not write_structures_only:
                         ase_calculator.write_control(
-                            filename=f"{output_path}/{defect_name}_{charge}/{dist}/control.in", 
+                            filename=f"{output_path}/{defect_name}_{charge}"
+                            +"/{dist}/control.in", 
                             atoms=atoms
                         ) # write parameters file
         return distorted_defects_dict, self.distortion_metadata
