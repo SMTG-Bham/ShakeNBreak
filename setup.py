@@ -30,7 +30,7 @@ setup(
     install_requires=[
         "doped>=0.0.5",
         "numpy",
-        "pymatgen",
+        "pymatgen<2022.7.8", # version 2022.7.8 crashes
         "matplotlib",
         "ase",
         "pandas",
