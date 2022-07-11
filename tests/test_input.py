@@ -14,7 +14,7 @@ from ase.calculators.aims import Aims
 
 from doped import vasp_input
 
-from shakenbreak import input, distortions
+from shakenbreak import input, io, distortions
 
 
 def if_present_rm(path):
@@ -563,7 +563,7 @@ class InputTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=input.default_incar_settings,
+            incar_settings=io.default_incar_settings,
         )
         V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
@@ -582,7 +582,7 @@ class InputTestCase(unittest.TestCase):
             "LWAVE": True,
             "LCHARG": True,
         }
-        kwarged_incar_settings = input.default_incar_settings.copy()
+        kwarged_incar_settings = io.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
         input._create_vasp_input(
             "vac_1_Cd_0",

@@ -72,7 +72,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "distortion_plots",
         ]:
             if_present_rm(f"{fake_dir}")
-        os.remove("distortion_metadata.json")
+        if os.path.exists("distortion_metadata.json"):
+            os.remove("distortion_metadata.json")
 
     def test_SnB_integration(self):
         """Test full ShakeNBreak workflow, for the tricky case where at least 2 _different_
