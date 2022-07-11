@@ -31,7 +31,7 @@ def _format_distortion_directory_name(
     distorted_charge: int,
     defect_species: str,
     output_path: str,
-)-> str:
+) -> str:
     """Format name of distortion directory"""
     if (
         isinstance(distorted_distortion, str)
@@ -608,7 +608,7 @@ def _copy_vasp_files(
     distorted_dir: str,
     output_path: str,
     defect_species: str,
-)-> None:
+) -> None:
     """
     Copy VASP input files from an existing Distortion directory
     to a new directory.
@@ -649,7 +649,7 @@ def _copy_espresso_files(
     output_path: str,
     defect_species: str,
     input_filename: str = "espresso.pwi",
-)-> None:
+) -> None:
     """
     Copy Quantum Espresso input files from an existing Distortion directory
     to a new directory.
@@ -714,7 +714,7 @@ def _copy_cp2k_files(
     output_path: str,
     defect_species: str,
     input_filename: str = "cp2k_input.inp",
-)-> None:
+) -> None:
     """
     Copy CP2K input files from an existing Distortion directory
     to a new directory.
@@ -755,7 +755,7 @@ def _copy_castep_files(
     output_path: str,
     defect_species: str,
     input_filename: str = "castep.param",
-)-> None:
+) -> None:
     """
     Copy CASTEP input files from an existing Distortion directory
     to a new directory.
@@ -793,7 +793,7 @@ def _copy_castep_files(
                 f"{output_path}/{defect_species}, so just writing distorted structure "
                 f"file to {distorted_dir} directory (in CASTEP `.cell` format)."
             )
- 
+
  
 def _copy_fhi_aims_files(
     distorted_structure: Structure,
@@ -801,7 +801,7 @@ def _copy_fhi_aims_files(
     output_path: str,
     defect_species: str,
     input_filename: str ="control.in",
-)-> None:
+) -> None:
     """
     Copy FHI-aims input files from an existing Distortion directory
     to a new directory.
@@ -839,7 +839,7 @@ def _copy_fhi_aims_files(
                 f"{output_path}/{defect_species}, so just writing distorted structure "
                 f"file to {distorted_dir} directory (in FHI-aims `geometry.in` format)."
             )           
-             
+       
 
 def write_groundstate_structure(
     output_path: str = ".",
