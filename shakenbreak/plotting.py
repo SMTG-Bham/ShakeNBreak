@@ -19,9 +19,7 @@ from shakenbreak.analysis import (
     calculate_struct_comparison,
 )
 
-# Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-# plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
 # Helper functions for formatting plots
 
@@ -1018,7 +1016,8 @@ def plot_colorbar(
             norm=norm,
             alpha=1,
             label=f"From "
-                  f"{list(energies_dict['distortions'].keys())[i].split('_')[-1]} charge state",
+                  f"{int(list(energies_dict['distortions'].keys())[i].split('_')[-1]):+} charge "
+                  f"state",
         )
     unperturbed_color = colormap(
         0
@@ -1225,8 +1224,8 @@ def plot_datasets(
                 zorder=10,  # make sure it's on top of the other lines
                 marker="s", # TODO: different markers for different charge states
                 alpha=1,
-                label=f"From "
-                      f"{list(dataset['distortions'].keys())[i].split('_')[-1]} charge state",
+                label="From "
+                      f"{int(list(dataset['distortions'].keys())[i].split('_')[-1]):+} charge state",
             )
 
     datasets[0][
