@@ -21,7 +21,7 @@ from shakenbreak.analysis import (
 
 # Matplotlib Style formatting
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
+# plt.style.use(f"{MODULE_DIR}/shakenbreak.mplstyle")
 
 # Helper functions for formatting plots
 
@@ -837,35 +837,36 @@ def plot_defect(
     else:
         legend_label = "Distortions"
 
-    if add_colorbar:
-       fig= plot_colorbar(
-            energies_dict=energies_dict,
-            disp_dict=disp_dict,
-            defect_name=defect_name,
-            title=defect_name if add_title else None,
-            num_nearest_neighbours=num_nearest_neighbours,
-            neighbour_atom=neighbour_atom,
-            legend_label=legend_label,
-            metric=metric,
-            y_label=y_label,
-            max_energy_above_unperturbed=max_energy_above_unperturbed,
-            line_color=line_color,
-            save_plot=save_plot,
-            save_format=save_format,
-        )
-    else:
-       fig= plot_datasets(
-            datasets=[energies_dict],
-            defect_name=defect_name,
-            title=defect_name if add_title else None,
-            num_nearest_neighbours=num_nearest_neighbours,
-            neighbour_atom=neighbour_atom,
-            dataset_labels=[legend_label],
-            y_label=y_label,
-            max_energy_above_unperturbed=max_energy_above_unperturbed,
-            save_plot=save_plot,
-            save_format=save_format,
-        )
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        if add_colorbar:
+           fig= plot_colorbar(
+                energies_dict=energies_dict,
+                disp_dict=disp_dict,
+                defect_name=defect_name,
+                title=defect_name if add_title else None,
+                num_nearest_neighbours=num_nearest_neighbours,
+                neighbour_atom=neighbour_atom,
+                legend_label=legend_label,
+                metric=metric,
+                y_label=y_label,
+                max_energy_above_unperturbed=max_energy_above_unperturbed,
+                line_color=line_color,
+                save_plot=save_plot,
+                save_format=save_format,
+            )
+        else:
+           fig= plot_datasets(
+                datasets=[energies_dict],
+                defect_name=defect_name,
+                title=defect_name if add_title else None,
+                num_nearest_neighbours=num_nearest_neighbours,
+                neighbour_atom=neighbour_atom,
+                dataset_labels=[legend_label],
+                y_label=y_label,
+                max_energy_above_unperturbed=max_energy_above_unperturbed,
+                save_plot=save_plot,
+                save_format=save_format,
+            )
     return fig
 
 def plot_colorbar(
@@ -983,7 +984,7 @@ def plot_colorbar(
             alpha=1,
         )
     else:
-        im = ax.scatter( # Points for each distortion
+        im = ax.scatter(  # Points for each distortion
             sorted_distortions,
             sorted_energies,
             c=sorted_disp,
@@ -994,7 +995,7 @@ def plot_colorbar(
             norm=norm,
             alpha=1,
         )
-        ax.plot( # Line connecting points
+        ax.plot(  # Line connecting points
             sorted_distortions,
             sorted_energies,
             ls="-",
@@ -1003,7 +1004,7 @@ def plot_colorbar(
             color=line_color,
             label=legend_label,
         )
-    for i in imported_indices: # datapoints from other charge states
+    for i in imported_indices:  # datapoints from other charge states
         ax.scatter(
             np.array(keys)[i],
             list(energies_dict["distortions"].values())[i],
