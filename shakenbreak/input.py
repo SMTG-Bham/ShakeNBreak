@@ -490,11 +490,12 @@ def apply_rattle_bond_distortions(
                 active_atoms=active_atoms,
                 **kwargs,
             )
-            warnings.warn(
-                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                f"significantly smaller than this present), setting d_min to "
-                f"{reduced_d_min:.2f} \u212B for this defect."
-            )
+            if verbose:
+                warnings.warn(
+                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                    f"significantly smaller than this present), setting d_min to "
+                    f"{reduced_d_min:.2f} \u212B for this defect."
+                )
         else:
             raise e
 
