@@ -30,7 +30,7 @@ setup(
     install_requires=[
         "doped>=0.0.5",
         "numpy",
-        "pymatgen",
+        "pymatgen<2022.7.8", # version 2022.7.8 crashes
         "matplotlib",
         "ase",
         "pandas",
@@ -38,7 +38,12 @@ setup(
         "hiphive",
         "monty",
     ],
-    extras_require={"tests": ["pytest", "pytest-mpl"]},
+    extras_require={
+        "tests": [
+            "pytest", 
+            "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
+        ]
+    },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
 )
