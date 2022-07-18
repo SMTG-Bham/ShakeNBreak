@@ -18,7 +18,7 @@ from ase.calculators.espresso import Espresso
 from  ase.calculators.castep import Castep
 from  ase.calculators.aims import Aims
 
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Composition, Element
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -207,6 +207,57 @@ def _create_vasp_input(
             incar_settings=incar_settings,
             potcar_settings=potcar_settings_copy,
         )
+
+
+def _get_bulk_comp(defect_dict) -> Composition:
+    """
+    Convenience function to determine the chemical composition of the bulk structure for a
+    given defect. Useful for auto-determing oxidation states.
+
+    Args:
+        defect_dict (:obj:`dict`):
+            Defect dictionary in the
+            `doped.pycdt.core.defectsmaker.ChargedDefectsStructures()` format.
+
+    Returns:
+        Pymatgen Composition object for the bulk structure of the defect.
+    """
+    defect_struc = defect_dict["supercell"]["structure"].copy()
+    defect_sites = defect_struc.sites
+    defect_type = defect_dict["defect_type"]
+
+    if defect_type == "vacancy":
+        bulk_sites = defect_sites + [defect_dict["unique_site"]]
+
+    elif defect_type == "interstitial":
+        bulk_sites = defect_sites
+        bulk_sites.remove(defect_dict["unique_site"])
+
+    elif defect_type in ["substitution", "antisite"]:
+        bulk_sites = defect_sites
+        bulk_sites.remove(defect_dict["bulk_supercell_site"])
+        bulk_sites += [defect_dict["unique_site"]]
+
+    return Structure.from_sites(bulk_sites).composition
+
+
+def _most_common_oxi(element) -> int:
+    """
+    Convenience function to get the most common oxidation state of an element, using pymatgen's
+    elemental data.
+
+    Args:
+        element (:obj:`str`):
+            Element symbol.
+
+    Returns:
+        Most common oxidation state of the element.
+    """
+    empty_comp = Composition()
+    element_obj = Element(element)
+    oxi_probabilities = [(k,v) for k,v in empty_comp.oxi_prob.items() if k.element == element_obj]
+    most_common = max(oxi_probabilities, key = lambda x: x[1])[0]
+    return most_common.oxi_state
 
 
 def calc_number_electrons(
@@ -588,7 +639,7 @@ class Distortions:
     def __init__(
         self,
         defects_dict: dict,
-        oxidation_states: dict,
+        oxidation_states: Optional[dict] = None,
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
         bond_distortions: Optional[list] = None,
@@ -605,7 +656,9 @@ class Distortions:
             oxidation_states (:obj:`dict`):
                 Dictionary of oxidation states for species in your material,
                 used to determine the number of defect neighbours to distort
-                (e.g {"Cd": +2, "Te": -2}).
+                (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
+                states will be guessed based on the bulk composition and most
+                common oxidation states of any extrinsic species.
             dict_number_electrons_user (:obj:`dict`):
                 Optional argument to set the number of extra/missing charge
                 (negative of electron count change) for the input defects
@@ -645,7 +698,24 @@ class Distortions:
         self.distorted_elements = distorted_elements
         self.dict_number_electrons_user = dict_number_electrons_user                
         self.stdev = stdev
-        
+
+        if oxidation_states is None:
+            if "bulk" in self.defects_dict:
+                bulk_comp = self.defects_dict["bulk"]["supercell"]["structure"].composition
+                self.oxidation_states = bulk_comp.oxi_state_guesses()[0]
+
+            else:  # determine bulk composition from first defect in dict
+                defect_subdict = list(self.defects_dict.values())[0][0]
+                bulk_comp = _get_bulk_comp(defect_subdict)
+                self.oxidation_states = bulk_comp.oxi_state_guesses()[0]
+
+            if "substitutions" in self.defects_dict:
+                for substitution in self.defects_dict["substitutions"]:
+                    if substitution["defect_type"] == "substitution":  # substitution not antisite
+                        substitution_specie = substitution["substitution_specie"]
+                        likely_substitution_oxi = _most_common_oxi(substitution_specie)
+                        self.oxidation_states[substitution_specie] = likely_substitution_oxi
+
         if bond_distortions:
             self.distortion_increment = None  # user specified
             #  bond_distortions, so no increment
