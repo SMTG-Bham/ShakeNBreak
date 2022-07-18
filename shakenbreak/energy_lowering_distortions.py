@@ -81,11 +81,15 @@ def read_defects_directories(output_path: str = "./") -> dict:
     ]  # split by last "_" (separate defect name from charge state)
     defect_charges_dict = {}
     for i in list_name_charge:
-        if i[0] in defect_charges_dict:
-            if i[1] not in defect_charges_dict[i[0]]:  # if charge not in value
-                defect_charges_dict[i[0]].append(int(i[1]))
-        else:
-            defect_charges_dict[i[0]] = [int(i[1])]
+        try:
+            if i[0] in defect_charges_dict:
+                if i[1] not in defect_charges_dict[i[0]]:  # if charge not in value
+                    defect_charges_dict[i[0]].append(int(i[1]))
+            else:
+                defect_charges_dict[i[0]] = [int(i[1])]
+        except ValueError:
+            print(f"{i[0]}_{i[1]} not recognised as a valid defect name (should end with charge "
+                  f"e.g. 'vac_1_Cd_-2'), skipping...")
     return defect_charges_dict
 
 # TODO: Update get_energy_lowering_distortions() to optionally also store non-spontaneous
