@@ -7,7 +7,7 @@ import shutil
 import numpy as np
 import json
 
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Composition
 from pymatgen.io.vasp.inputs import Poscar
 
 from ase.calculators.aims import Aims
@@ -182,6 +182,33 @@ class InputTestCase(unittest.TestCase):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
+
+    def test_get_bulk_comp(self):
+        V_Cd_comp = input._get_bulk_comp(self.V_Cd_dict)
+        self.assertEqual(V_Cd_comp, Composition("Cd32Te32"))
+
+        Int_Cd_comp = input._get_bulk_comp(self.Int_Cd_2_dict)
+        self.assertEqual(Int_Cd_comp, Composition("Cd32Te32"))
+
+    def test_most_common_oxi(self):
+        self.assertEqual(input._most_common_oxi("Cd"), +2)
+        self.assertEqual(input._most_common_oxi("Te"), -2)
+        self.assertEqual(input._most_common_oxi("Cl"), -1)
+        self.assertEqual(input._most_common_oxi("Al"), +3)
+        self.assertEqual(input._most_common_oxi("Mg"), +2)
+        self.assertEqual(input._most_common_oxi("Si"), +4)
+        self.assertEqual(input._most_common_oxi("Ca"), +2)
+        self.assertEqual(input._most_common_oxi("Fe"), +3)
+        self.assertEqual(input._most_common_oxi("Ni"), 0)
+        self.assertEqual(input._most_common_oxi("Cu"), +1)
+        self.assertEqual(input._most_common_oxi("Ag"), +1)
+        self.assertEqual(input._most_common_oxi("Zn"), +2)
+        self.assertEqual(input._most_common_oxi("Pb"), +2)
+        self.assertEqual(input._most_common_oxi("Hg"), +2)
+        self.assertEqual(input._most_common_oxi("O"), -2)
+        self.assertEqual(input._most_common_oxi("S"), -2)
+        self.assertEqual(input._most_common_oxi("Se"), -2)
+        self.assertEqual(input._most_common_oxi("N"), -3)
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
