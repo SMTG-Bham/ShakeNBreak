@@ -52,6 +52,10 @@ class InputTestCase(unittest.TestCase):
         self.TEST_DIR = os.path.join(os.path.dirname(__file__))
         with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
             self.cdte_defect_dict = pickle.load(fp)
+        with open(
+            os.path.join(self.DATA_DIR, "CdTe_extrinsic_defects_dict.pickle"), "rb"
+        ) as fp:
+            self.cdte_extrinsic_defects_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
@@ -637,6 +641,30 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
+    def test_Distortions_initialisation(self):
+        # test auto oxidation state determination:
+        for defect_dict in [
+            self.cdte_defect_dict,
+            {"vacancies": [self.V_Cd_dict]},
+            {"interstitials": [self.Int_Cd_2_dict]},
+        ]:
+            dist = input.Distortions(defect_dict)
+            self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
+
+        extrinsic_dist = input.Distortions(self.cdte_extrinsic_defects_dict)
+        self.assertEqual(
+            extrinsic_dist.oxidation_states,
+            {
+                "Cd": 2.0,
+                "Te": -2.0,
+                "Zn": 2.0,
+                "Mn": 2.0,
+                "Al": 3.0,
+                "Sb": 0.0,
+                "Cl": -1,
+            },
+        )
+
     @patch("builtins.print")
     def test_write_vasp_files(self, mock_print):
         """Test `write_vasp_files` methods"""
@@ -648,10 +676,10 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
-        # Test `write_vasp_files` method   
+        # Test `write_vasp_files` method
         _, distortion_metadata = dist.write_vasp_files(
-          incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-          verbose=False,
+            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+            verbose=False,
         )
 
         # check if expected folders were created:
@@ -666,8 +694,12 @@ class InputTestCase(unittest.TestCase):
             "'0.5', '0.55', '0.6'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
-        mock_print.assert_any_call("\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m") # bold print
-        mock_print.assert_any_call("\033[1m" +"Number of missing electrons in neutral state: 2" + "\033[0m")
+        mock_print.assert_any_call(
+            "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
+        )  # bold print
+        mock_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        )
         mock_print.assert_any_call(
             "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
             "neighbours: 0"
@@ -773,7 +805,7 @@ class InputTestCase(unittest.TestCase):
             _, distortion_metadata = dist.write_vasp_files(
                 verbose=True,
             )
- 
+
             kwarged_Int_Cd_2_dict = {
                 "distortion_parameters": {
                     "distortion_increment": 0.25,
@@ -873,9 +905,13 @@ class InputTestCase(unittest.TestCase):
                 "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
                 "Then, will rattle with a std dev of 0.25 Å \n",
             )
-            mock_Int_Cd_2_print.assert_any_call("\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m")
             mock_Int_Cd_2_print.assert_any_call(
-                "\033[1m" + "Number of missing electrons in neutral state: 3" + "\033[0m" 
+                "\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m"
+            )
+            mock_Int_Cd_2_print.assert_any_call(
+                "\033[1m"
+                + "Number of missing electrons in neutral state: 3"
+                + "\033[0m"
             )
             mock_Int_Cd_2_print.assert_any_call(
                 "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
@@ -920,73 +956,100 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
-    
+
     @patch("builtins.print")
     def test_write_espresso_files(self, mock_print):
         """Test method write_espresso_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
-        bond_distortions = [0.3,]
+        bond_distortions = [
+            0.3,
+        ]
 
         Dist = input.Distortions(
-            {"vacancies": [self.V_Cd_dict,]},
+            {
+                "vacancies": [
+                    self.V_Cd_dict,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
-        
-        # Test `write_espresso_files` method 
+
+        # Test `write_espresso_files` method
         for i in self.cdte_defect_folders:
-            if_present_rm(i)  # remove test-generated defect folders          
-        pseudopotentials = { # Your chosen pseudopotentials
-            'Cd': 'Cd_pbe_v1.uspp.F.UPF',
-            'Te': 'Te.pbe-n-rrkjus_psl.1.0.0.UPF',
+            if_present_rm(i)  # remove test-generated defect folders
+        pseudopotentials = {  # Your chosen pseudopotentials
+            "Cd": "Cd_pbe_v1.uspp.F.UPF",
+            "Te": "Te.pbe-n-rrkjus_psl.1.0.0.UPF",
         }
         _, _ = Dist.write_espresso_files(
             pseudopotentials=pseudopotentials,
         )
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
-        with open(os.path.join(
-            self.TEST_DIR, "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi",
+            )
+        ) as f:
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi") as f:
-           generated_input = f.read()
+            generated_input = f.read()
         self.assertEqual(test_input, generated_input)
-        
+
         # Test parameter file is not written if write_structures_only = True
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_espresso_files(write_structures_only=True)
-        with open(os.path.join(
-            self.TEST_DIR, "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_structure.pwi")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_structure.pwi",
+            )
+        ) as f:
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi") as f:
-           generated_input = f.read()
+            generated_input = f.read()
         self.assertEqual(test_input, generated_input)
-        
-        # Test user defined parameters 
+
+        # Test user defined parameters
         _, _ = Dist.write_espresso_files(
             pseudopotentials=pseudopotentials,
             input_parameters={
                 "SYSTEM": {
-                    "ecutwfc": 40, "exx_fraction": 0.30, 
-                    "degauss": 0.02, "input_dft": "PBE", "nspin": 1
+                    "ecutwfc": 40,
+                    "exx_fraction": 0.30,
+                    "degauss": 0.02,
+                    "input_dft": "PBE",
+                    "nspin": 1,
                 }
             },
         )
-        with open(os.path.join(
-            self.TEST_DIR, "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_user_parameters.pwi")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_user_parameters.pwi",
+            )
+        ) as f:
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi") as f:
-           generated_input = f.read()
+            generated_input = f.read()
         self.assertEqual(test_input, generated_input)
-    
+
     @patch("builtins.print")
     def test_write_cp2k_files(self, mock_print):
         """Test method write_cp2k_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
-        bond_distortions = [0.3,]
+        bond_distortions = [
+            0.3,
+        ]
 
         Dist = input.Distortions(
-            {"vacancies": [self.V_Cd_dict,]},
+            {
+                "vacancies": [
+                    self.V_Cd_dict,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
@@ -996,48 +1059,70 @@ class InputTestCase(unittest.TestCase):
         _, _ = Dist.write_cp2k_files()
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
         # Test input parameter file
-        with open(os.path.join(
-            self.TEST_DIR, "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
+            )
+        ) as f:
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
             generated_input = f.read()
         self.assertEqual(test_input, generated_input)
         # Test input structure file
-        with open(os.path.join(
-            self.TEST_DIR, "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif",
+            )
+        ) as f:
             test_input_struct = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif") as f:
             generated_input_struct = f.read()
         self.assertEqual(test_input_struct, generated_input_struct)
-        
+
         # Test parameter file not written if write_structures_only = True
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_cp2k_files(write_structures_only=True)
-        self.assertFalse(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp"))
-        self.assertTrue(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif"))
-        
-        # Test user defined parameters 
+        self.assertFalse(
+            os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp")
+        )
+        self.assertTrue(
+            os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")
+        )
+
+        # Test user defined parameters
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_cp2k_files(
             input_file=os.path.join(self.DATA_DIR, "cp2k_input_mod.inp"),
         )
-        with open(os.path.join(
-            self.TEST_DIR, "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
+            )
+        ) as f:
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
             generated_input = f.read()
         self.assertEqual(test_input, generated_input)
-    
+
     @patch("builtins.print")
     def test_write_castep_files(self, mock_print):
         """Test method write_castep_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
-        bond_distortions = [0.3,]
+        bond_distortions = [
+            0.3,
+        ]
 
         Dist = input.Distortions(
-            {"vacancies": [self.V_Cd_dict,]},
+            {
+                "vacancies": [
+                    self.V_Cd_dict,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
@@ -1047,48 +1132,70 @@ class InputTestCase(unittest.TestCase):
         _, _ = Dist.write_castep_files()
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
         # Test input parameter file
-        with open(os.path.join(
-            self.TEST_DIR, "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.param")) as f:
-            test_input = f.readlines()[28:] # only last line contains parameter (charge)
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.param",
+            )
+        ) as f:
+            test_input = f.readlines()[
+                28:
+            ]  # only last line contains parameter (charge)
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.param") as f:
             generated_input = f.readlines()[28:]
         self.assertEqual(test_input, generated_input)
         # Test input structure file
-        with open(os.path.join(
-            self.TEST_DIR, "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell")) as f:
-            test_input_struct = f.readlines()[6:-3] # avoid comment with file path etc
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell",
+            )
+        ) as f:
+            test_input_struct = f.readlines()[6:-3]  # avoid comment with file path etc
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell") as f:
             generated_input_struct = f.readlines()[6:-3]
         self.assertEqual(test_input_struct, generated_input_struct)
-        
+
         # Test only structure files are written if write_structures_only = True
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_castep_files(write_structures_only=True)
-        self.assertFalse(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/castep.param"))
+        self.assertFalse(
+            os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/castep.param")
+        )
         self.assertTrue(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell"))
-        
+
         # Test user defined parameters
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_castep_files(
             input_file=os.path.join(self.DATA_DIR, "castep_mod.param"),
         )
-        with open(os.path.join(
-            self.TEST_DIR, "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep_user_parameters.param")) as f:
-            test_input = f.readlines()[28:] # avoid comment with file path etc
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep_user_parameters.param",
+            )
+        ) as f:
+            test_input = f.readlines()[28:]  # avoid comment with file path etc
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.param") as f:
-            generated_input = f.readlines()[28:] # avoid comment with file path etc
+            generated_input = f.readlines()[28:]  # avoid comment with file path etc
         self.assertEqual(test_input, generated_input)
-        
+
     @patch("builtins.print")
     def test_write_fhi_aims_files(self, mock_print):
         """Test method write_fhi_aims_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
-        bond_distortions = [0.3,]
+        bond_distortions = [
+            0.3,
+        ]
 
         Dist = input.Distortions(
-            {"vacancies": [self.V_Cd_dict,]},
+            {
+                "vacancies": [
+                    self.V_Cd_dict,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
@@ -1098,48 +1205,60 @@ class InputTestCase(unittest.TestCase):
         _, _ = Dist.write_fhi_aims_files()
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
         # Test input parameter file
-        with open(os.path.join(
-            self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control.in")) as f:
-            test_input = f.readlines()[6:] # First 5 lines contain irrelevant info
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control.in",
+            )
+        ) as f:
+            test_input = f.readlines()[6:]  # First 5 lines contain irrelevant info
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/control.in") as f:
             generated_input = f.readlines()[6:]
         self.assertEqual(test_input, generated_input)
         # Test input structure file
-        with open(os.path.join(
-            self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in")) as f:
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in",
+            )
+        ) as f:
             test_input_struct = f.readlines()[6:]
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in") as f:
             generated_input_struct = f.readlines()[6:]
         self.assertEqual(test_input_struct, generated_input_struct)
-        
+
         # Test parameter file not written if write_structures_only = True
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_fhi_aims_files(write_structures_only=True)
         self.assertFalse(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/control.in"))
         self.assertTrue(os.path.exists("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in"))
-        
+
         # User defined parameters
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         ase_calculator = Aims(
-            k_grid=(1,1,1), 
+            k_grid=(1, 1, 1),
             relax_geometry=("bfgs", 5e-4),
             xc=("hse06", 0.11),
-            hse_unit="A", # Angstrom
-            spin="collinear", # Spin polarized
-            default_initial_moment=0, # Needs to be set
+            hse_unit="A",  # Angstrom
+            spin="collinear",  # Spin polarized
+            default_initial_moment=0,  # Needs to be set
             hybrid_xc_coeff=0.15,
             # By default symmetry is not preserved
         )
         _, _ = Dist.write_fhi_aims_files(ase_calculator=ase_calculator)
-        with open(os.path.join(
-            self.TEST_DIR, "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control_user_parameters.in")) as f:
-            test_input = f.readlines()[6:] # First 5 lines contain irrelevant info
+        with open(
+            os.path.join(
+                self.TEST_DIR,
+                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control_user_parameters.in",
+            )
+        ) as f:
+            test_input = f.readlines()[6:]  # First 5 lines contain irrelevant info
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/control.in") as f:
             generated_input = f.readlines()[6:]
         self.assertEqual(test_input, generated_input)
-        
+
     @patch("builtins.print")
     def test_apply_distortions(self, mock_print):
         """Test method apply_distortions"""
@@ -1154,11 +1273,12 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-          )
+        )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(
             verbose=False,
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
+
 
 if __name__ == "__main__":
     unittest.main()
