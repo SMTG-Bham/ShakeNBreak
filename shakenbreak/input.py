@@ -34,6 +34,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 warnings.filterwarnings(
     "ignore", category=UnknownPotcarWarning
 )  # Ignore pymatgen POTCAR warnings
+warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
 
 # format warnings output:
 def warning_on_one_line(
