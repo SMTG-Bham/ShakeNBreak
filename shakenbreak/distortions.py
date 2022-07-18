@@ -5,8 +5,8 @@ import sys
 import os
 import warnings
 from typing import Optional
-
 import numpy as np
+
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from hiphive.structure_generation.rattle import generate_mc_rattled_structures
