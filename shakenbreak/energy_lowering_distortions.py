@@ -869,12 +869,12 @@ def write_groundstate_structure(
         None
     """
     defect_charges_dict = read_defects_directories(output_path=output_path)
-    for defect_species in defect_charges_dict:
-        for charge in defect_charges_dict[defect_species]:
-            energies_file = f"{output_path}/{defect_species}_{charge}/{defect_species}_{charge}.txt"
+    for defect in defect_charges_dict:
+        for charge in defect_charges_dict[defect]:
+            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.txt"
             _, _, gs_distortion = _sort_data(energies_file=energies_file, verbose=False)
             bond_distortion = _get_distortion_filename(gs_distortion)
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{bond_distortion}/{structure_filename}",
-                f"{output_path}/{defect_species}/{groundstate_filename}",
+                f"{output_path}/{defect}_{charge}/{bond_distortion}/{structure_filename}",
+                f"{output_path}/{defect}_{charge}/{groundstate_filename}",
             )
