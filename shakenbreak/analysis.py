@@ -119,7 +119,8 @@ def _format_distortion_names(
             "Unperturbed"/"Rattled"/"-60.0%_from_2")
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
-    if "Unperturbed" in distortion_label or "Rattled" in distortion_label:
+    if ("Unperturbed" in distortion_label or "Rattled" in distortion_label) and "from" not in \
+            distortion_label:
         distortion = distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
         "%"
