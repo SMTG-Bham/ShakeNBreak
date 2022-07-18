@@ -253,9 +253,10 @@ def _most_common_oxi(element) -> int:
     Returns:
         Most common oxidation state of the element.
     """
-    empty_comp = Composition()
+    comp_obj = Composition("O")
+    comp_obj.add_charges_from_oxi_state_guesses()
     element_obj = Element(element)
-    oxi_probabilities = [(k,v) for k,v in empty_comp.oxi_prob.items() if k.element == element_obj]
+    oxi_probabilities = [(k,v) for k,v in comp_obj.oxi_prob.items() if k.element == element_obj]
     most_common = max(oxi_probabilities, key = lambda x: x[1])[0]
     return most_common.oxi_state
 
