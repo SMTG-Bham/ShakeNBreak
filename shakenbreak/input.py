@@ -932,10 +932,9 @@ class Distortions:
             "supercell": defect["supercell"]["size"],
             "charges": {charge: {} for charge in defect["charges"]},
         } # General info about (neutral) defect
-        if "substitution_specie" in defect:
-            distorted_defects_dict[defect_name][
-                "substitution_specie"
-                ] = defect["substitution_specie"]
+        for key in ["substitution_specie", "substituting_specie"]:  # substitutions and antisites
+            if key in defect:
+                distorted_defects_dict[defect_name][key] = defect[key]
         return distorted_defects_dict
     
     def apply_distortions(
