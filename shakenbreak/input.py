@@ -714,7 +714,9 @@ class Distortions:
 
             if "substitutions" in self.defects_dict:
                 for substitution in self.defects_dict["substitutions"]:
-                    if substitution["defect_type"] == "substitution":  # substitution not antisite
+                    if substitution["defect_type"] == "substitution" and single_defect_dict[
+                        "bulk_supercell_site"].specie.symbol not in self.oxidation_states:
+                        # substituting species not in bulk composition
                         substitution_specie = substitution["substitution_specie"]
                         likely_substitution_oxi = _most_common_oxi(substitution_specie)
                         self.oxidation_states[substitution_specie] = likely_substitution_oxi
