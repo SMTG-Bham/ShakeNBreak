@@ -50,7 +50,9 @@ setup(
     entry_points={
         "console_scripts": [
             "snb = shakenbreak.cli:snb",
+            "snb-generate = shakenbreak.cli:generate",
             "shakenbreak = shakenbreak.cli:snb",
+            "shakenbreak-generate = shakenbreak.cli:generate",
         ],
     },
 )

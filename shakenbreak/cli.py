@@ -153,18 +153,18 @@ def identify_defect(defect_structure, bulk_structure,
 ## CLI Commands:
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
-@click.group('snb', context_settings=CONTEXT_SETTINGS)
+@click.group('snb', context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 def snb():
     """
     ShakeNBreak: Defect structure-searching
     """
-    return
 
 
-@snb.command()
-@click.option("defect", "-d", help="Path to defect structure",
+@snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
+             no_args_is_help=True)
+@click.option("defect", "-d", help="Path to defect structure", required=True,
                 type=click.Path(exists=True, dir_okay=False))
-@click.option("bulk", "-b", help="Path to bulk structure",
+@click.option("bulk", "-b", help="Path to bulk structure", required=True,
                 type=click.Path(exists=True, dir_okay=False))
 @click.option("charge", "-c", help="Defect charge state", default=None, type=int)
 @click.option("min_charge", "--min",
@@ -253,7 +253,7 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
-# generate all command where we loop over each directory and create our full defect_dict,
+# generate-all command where we loop over each directory and create our full defect_dict,
 # save to pickle and run through Distortions
 # for this will need to use folders as filenames so we know which goes where
 # – this ok if folders aren't typical defect names?
