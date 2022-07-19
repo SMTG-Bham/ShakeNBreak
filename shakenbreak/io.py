@@ -1,17 +1,14 @@
 """
 Submodule to generate input files for the ShakenBreak code.
 """
-
-from genericpath import exists
 import os
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 import warnings
 from typing import TYPE_CHECKING
+from genericpath import exists
 import numpy as np
 from monty.io import zopen
 from monty.serialization import loadfn
-from typing import Optional
-import yaml
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -38,7 +35,9 @@ if TYPE_CHECKING:
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
+default_incar_settings = loadfn(
+    os.path.join(MODULE_DIR, "../input_files/incar.yaml")
+)
 
 aaa = AseAtomsAdaptor()
 
@@ -67,14 +66,16 @@ def write_vasp_gam_files(
             output directory)
             (default: None)
         incar_settings (:obj:`dict`):
-            Dictionary of user INCAR settings (AEXX, NCORE etc.) to override default settings.
-            Highly recommended to look at `/input_files/incar.yaml`, or output INCARs or 
-            doped.vasp_input source code, to see what the default INCAR settings are.
+            Dictionary of user INCAR settings (AEXX, NCORE etc.) to override
+            default settings. Highly recommended to look at
+            `/input_files/incar.yaml`, or output INCARs or doped.vasp_input
+            source code, to see what the default INCAR settings are.
             (default: None)
         potcar_settings (:obj:`dict`):
             Dictionary of user POTCAR settings to override default settings.
-            Highly recommended to look at `default_potcar_dict` from doped.vasp_input to see what
-            the (Pymatgen) syntax and doped default settings are.
+            Highly recommended to look at `default_potcar_dict` from
+            doped.vasp_input to see what the (Pymatgen) syntax and doped
+            default settings are.
             (default: None)
     """
     supercell = single_defect_dict["Defect Structure"]
@@ -96,7 +97,9 @@ def write_vasp_gam_files(
     potcar_dict = deepcopy(default_potcar_dict)
     if potcar_settings:
         if "POTCAR_FUNCTIONAL" in potcar_settings.keys():
-            potcar_dict["POTCAR_FUNCTIONAL"] = potcar_settings["POTCAR_FUNCTIONAL"]
+            potcar_dict["POTCAR_FUNCTIONAL"] = potcar_settings[
+                "POTCAR_FUNCTIONAL"
+            ]
         if "POTCAR" in potcar_settings.keys():
             potcar_dict["POTCAR"].update(potcar_settings.pop("POTCAR"))
 
@@ -111,9 +114,9 @@ def write_vasp_gam_files(
         defect_relax_set.potcar.write_file(vaspgaminputdir + "POTCAR")
     else:  # make the folders without POTCARs
         warnings.warn(
-            "POTCAR directory not set up with pymatgen, so only POSCAR files will be "
-            "generated (POTCARs also needed to determine appropriate NELECT setting in "
-            "INCAR files)"
+            "POTCAR directory not set up with pymatgen, so only POSCAR files "
+            "will be generated (POTCARs also needed to determine appropriate "
+            "NELECT setting in INCAR files)"
         )
         vaspgamposcar = defect_relax_set.poscar
         if poscar_comment:
@@ -147,7 +150,8 @@ def write_vasp_gam_files(
                 k not in incar_params.keys()
             ):  # this code is taken from pymatgen.io.vasp.inputs
                 warnings.warn(  # but only checking keys, not values so we can add comments etc
-                    f"Cannot find {k} from your incar_settings in the list of INCAR flags",
+                    f"Cannot find {k} from your incar_settings in the list of "
+                    "INCAR flags",
                     BadIncarWarning,
                 )
         default_incar_settings.update(incar_settings)
@@ -156,9 +160,12 @@ def write_vasp_gam_files(
 
     # kpoints
     vaspgamkpts = Kpoints().from_dict(
-        {"comment": "Gamma-only KPOINTS from ShakeNBreak", "generation_style": "Gamma"}
+        {
+            "comment": "Gamma-only KPOINTS from ShakeNBreak",
+            "generation_style": "Gamma"
+        }
     )
-    
+
     vaspgamposcar = defect_relax_set.poscar
     if poscar_comment:
         vaspgamposcar.comment = poscar_comment
@@ -173,7 +180,8 @@ def read_vasp_structure(
     file_path: str,
 ) -> Structure:
     """
-    Read VASP structure from `file_path` and convert to `pymatgen` Structure object.
+    Read VASP structure from `file_path` and convert to `pymatgen` Structure
+    object.
 
     Args:
         file_path (:obj:`str`):
@@ -185,8 +193,8 @@ def read_vasp_structure(
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
         warnings.warn(
-            f"{abs_path_formatted} file doesn't exist, storing as 'Not converged'. Check path & "
-            f"relaxation"
+            f"{abs_path_formatted} file doesn't exist, storing as "
+            f"'Not converged'. Check path & relaxation"
         )
         struct = "Not converged"
     else:
@@ -194,8 +202,8 @@ def read_vasp_structure(
             struct = Structure.from_file(abs_path_formatted)
         except:
             warnings.warn(
-                f"Problem obtaining structure from: {abs_path_formatted}, storing as 'Not "
-                f"converged'. Check file & relaxation"
+                f"Problem obtaining structure from: {abs_path_formatted}, "
+                f"storing as 'Not converged'. Check file & relaxation"
             )
             struct = "Not converged"
     return struct
@@ -205,8 +213,9 @@ def read_espresso_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from Quantum Espresso output and returns it as a pymatgen Structure.
-    
+    Reads a structure from Quantum Espresso output and returns it as a pymatgen
+    Structure.
+
     Args:
         filename (:obj:`str`):
             Path to the Quantum Espresso output file.
@@ -219,8 +228,8 @@ def read_espresso_structure(
             file_content = f.read()
     else:
         warnings.warn(
-            f"{filename} file doesn't exist, storing as 'Not converged'. Check path & "
-            f"relaxation"
+            f"{filename} file doesn't exist, storing as 'Not converged'. "
+            f"Check path & relaxation"
         )
         structure = "Not converged"
     try:
@@ -230,25 +239,28 @@ def read_espresso_structure(
             file_content = file_content.split("End final coordinates")[0] # last geometry
         # Parse cell parameters and atomic positions
         cell_lines = [
-            line for line in 
+            line for line in
             file_content.split("CELL_PARAMETERS (angstrom)")[1].split(
-                'ATOMIC_POSITIONS (angstrom)')[0].split("\n") 
+                'ATOMIC_POSITIONS (angstrom)')[0].split("\n")
             if line != "" and line != " " and line != "   "
         ]
         atomic_positions = file_content.split("ATOMIC_POSITIONS (angstrom)")[1]
         # Cell parameters
         cell_lines_processed = [
-            [float(number) for number in line.split()] for line in cell_lines if len(line.split()) == 3
+            [float(number) for number in line.split()] for line in cell_lines
+            if len(line.split()) == 3
         ]
         # Atomic positions
         atomic_positions_processed = [
-            [entry for entry in line.split()] for line in atomic_positions.split("\n") if len(line.split()) >= 4
+            [entry for entry in line.split()] for line
+            in atomic_positions.split("\n") if len(line.split()) >= 4
         ]
         coordinates = [
-            [float(entry) for entry in line[1:4]] for line in atomic_positions_processed
+            [float(entry) for entry in line[1:4]]
+            for line in atomic_positions_processed
         ]
         symbols = [
-            entry[0] for entry in atomic_positions_processed 
+            entry[0] for entry in atomic_positions_processed
             if entry != "" and entry != " " and entry != "  "
         ]
         # Check parsing is ok
@@ -260,7 +272,6 @@ def read_espresso_structure(
             positions=coordinates,
             cell=cell_lines_processed,
             pbc=True,
-            
         )
         aaa = AseAtomsAdaptor()
         structure = aaa.get_structure(atoms)
@@ -278,8 +289,9 @@ def read_fhi_aims_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from FHI-aims output and returns it as a pymatgen Structure.
-    
+    Reads a structure from FHI-aims output and returns it as a pymatgen
+    Structure.
+
     Args:
         filename (:obj:`str`):
             Path to the FHI-aims output file.
@@ -287,14 +299,15 @@ def read_fhi_aims_structure(
         `pymatgen` Structure object
     """
     if os.path.exists(filename):
-        try:   
+        try:
             aaa = AseAtomsAdaptor()
             atoms = ase.io.read(
                 filename = filename,
                 format="aims"
             )
             structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure() # Sort sites by electronegativity
+            structure = structure.get_sorted_structure() # Sort sites by
+            # electronegativity
         except:
             warnings.warn(
                 f"Problem parsing structure from: {filename}, storing as 'Not "
@@ -310,8 +323,9 @@ def read_cp2k_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from CP2K restart file and returns it as a pymatgen Structure.
-    
+    Reads a structure from CP2K restart file and returns it as a pymatgen
+    Structure.
+
     Args:
         filename (:obj:`str`):
             Path to the CP2K restart file.
@@ -319,14 +333,15 @@ def read_cp2k_structure(
         `pymatgen` Structure object
     """
     if os.path.exists(filename):
-        try:   
+        try:
             aaa = AseAtomsAdaptor()
             atoms = ase.io.read(
                 filename=filename,
                 format="cp2k-restart",
             )
             structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure() # Sort sites by electronegativity
+            structure = structure.get_sorted_structure() # Sort sites by
+            # electronegativity
         except:
             warnings.warn(
                 f"Problem parsing structure from: {filename}, storing as 'Not "
@@ -342,8 +357,9 @@ def read_castep_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from CASTEP output (`.castep`) file and returns it as a pymatgen Structure.
-    
+    Reads a structure from CASTEP output (`.castep`) file and returns it as a
+    pymatgen Structure.
+
     Args:
         filename (:obj:`str`):
             Path to the CASTEP output file.
@@ -351,14 +367,15 @@ def read_castep_structure(
         `pymatgen` Structure object
     """
     if os.path.exists(filename):
-        try:   
+        try:
             aaa = AseAtomsAdaptor()
             atoms = ase.io.read(
                 filename=filename,
                 format="castep-castep",
             )
             structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure() # Sort sites by electronegativity
+            structure = structure.get_sorted_structure() # Sort sites by
+            # electronegativity
         except:
             warnings.warn(
                 f"Problem parsing structure from: {filename}, storing as 'Not "
@@ -377,22 +394,22 @@ def parse_structure(
 )-> Structure:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
-    CASTEP, FHI-aims) and converts it to 
+    CASTEP, FHI-aims) and converts it to
     a pymatgen Structure object.
 
     Args:
-        code (:obj:`str`): 
+        code (:obj:`str`):
             Code used for geometry optimizations. Valid code names are:
             "VASP", "espresso", "CP2K" and "FHI-aims".
-        structure_path (:obj:`str`): 
+        structure_path (:obj:`str`):
             Path to directory containing the structure file.
         structure_filename (:obj:`str`):
-            Name of the structure file or the output file containing the 
-            optimized structure. If not set, the following values will be used 
+            Name of the structure file or the output file containing the
+            optimized structure. If not set, the following values will be used
             for each code:
-            VASP: "CONTCAR", 
-            CP2K: "cp2k.restart" (The restart file is used), 
-            Quantum espresso: "espresso.out", 
+            VASP: "CONTCAR",
+            CP2K: "cp2k.restart" (The restart file is used),
+            Quantum espresso: "espresso.out",
             CASTEP: "castep.castep" (CASTEP output file is used)
             FHI-aims: geometry.in.next_step
     Returns:
@@ -414,18 +431,18 @@ def parse_structure(
         if not structure_filename:
             structure_filename = "cp2k.restart"
         structure = read_cp2k_structure(
-            filename=f"{structure_path}/{structure_filename}", 
+            filename=f"{structure_path}/{structure_filename}",
         )
     elif code == "FHI-aims":
         if not structure_filename:
             structure_filename = "geometry.in.next_step"
         structure = read_fhi_aims_structure(
-            filename=f"{structure_path}/{structure_filename}", 
+            filename=f"{structure_path}/{structure_filename}",
         )
     elif code == "CASTEP":
         if not structure_filename:
             structure_filename = "castep.castep"
         structure = read_castep_structure(
-            filename=f"{structure_path}/{structure_filename}", 
+            filename=f"{structure_path}/{structure_filename}",
         )
     return structure
