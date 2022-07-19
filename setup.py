@@ -37,6 +37,7 @@ setup(
         "seaborn",
         "hiphive",
         "monty",
+        "click",
     ],
     extras_require={
         "tests": [
@@ -46,4 +47,10 @@ setup(
     },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
+    entry_points={
+        "console_scripts": [
+            "snb = shakenbreak.cli:snb",
+            "shakenbreak = shakenbreak.cli:snb",
+        ],
+    },
 )

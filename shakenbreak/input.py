@@ -34,6 +34,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 warnings.filterwarnings(
     "ignore", category=UnknownPotcarWarning
 )  # Ignore pymatgen POTCAR warnings
+warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
 
 # format warnings output:
 def warning_on_one_line(
@@ -489,11 +490,12 @@ def apply_rattle_bond_distortions(
                 active_atoms=active_atoms,
                 **kwargs,
             )
-            warnings.warn(
-                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                f"significantly smaller than this present), setting d_min to "
-                f"{reduced_d_min:.2f} \u212B for this defect."
-            )
+            if verbose:
+                warnings.warn(
+                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                    f"significantly smaller than this present), setting d_min to "
+                    f"{reduced_d_min:.2f} \u212B for this defect."
+                )
         else:
             raise ex
 
@@ -711,10 +713,16 @@ class Distortions:
 
             if "substitutions" in self.defects_dict:
                 for substitution in self.defects_dict["substitutions"]:
-                    if substitution["defect_type"] == "substitution":  # substitution not antisite
+                    if substitution["defect_type"] == "substitution" and single_defect_dict[
+                        "bulk_supercell_site"].specie.symbol not in self.oxidation_states:
+                        # substituting species not in bulk composition
                         substitution_specie = substitution["substitution_specie"]
                         likely_substitution_oxi = _most_common_oxi(substitution_specie)
                         self.oxidation_states[substitution_specie] = likely_substitution_oxi
+
+            print(f"Oxidation states were not explicitly set, thus have been guessed as"
+                  f" {self.oxidation_states}. If this is unreasonable you should manually set "
+                  f"oxidation_states")
 
         if bond_distortions:
             self.distortion_increment = None  # user specified
@@ -927,10 +935,9 @@ class Distortions:
             "supercell": defect["supercell"]["size"],
             "charges": {charge: {} for charge in defect["charges"]},
         } # General info about (neutral) defect
-        if "substitution_specie" in defect:
-            distorted_defects_dict[defect_name][
-                "substitution_specie"
-                ] = defect["substitution_specie"]
+        for key in ["substitution_specie", "substituting_specie"]:  # substitutions and antisites
+            if key in defect:
+                distorted_defects_dict[defect_name][key] = defect[key]
         return distorted_defects_dict
 
     def apply_distortions(
