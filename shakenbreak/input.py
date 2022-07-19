@@ -719,6 +719,10 @@ class Distortions:
                         likely_substitution_oxi = _most_common_oxi(substitution_specie)
                         self.oxidation_states[substitution_specie] = likely_substitution_oxi
 
+            print(f"Oxidation states were not explicitly set, thus have been guessed as"
+                  f" {self.oxidation_states}. If this is unreasonable you should manually set "
+                  f"oxidation_states")
+
         if bond_distortions:
             self.distortion_increment = None  # user specified
             #  bond_distortions, so no increment
