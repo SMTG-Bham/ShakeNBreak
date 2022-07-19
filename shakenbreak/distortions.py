@@ -30,8 +30,9 @@ def distort(
     verbose: Optional[bool] = False,
 ) -> dict:
     """
-    Applies bond distortions to `num_nearest_neighbours` of the defect (specified by
-    `site_index` (for substitutions or interstitials) or `frac_coords`  (for vacancies))
+    Applies bond distortions to `num_nearest_neighbours` of the defect (specified
+    by `site_index` (for substitutions or interstitials) or `frac_coords`
+    (for vacancies))
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
@@ -39,15 +40,18 @@ def distort(
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         distortion factor (:obj:`float`):
-            The distortion factor to apply to the bond distance between the defect and nearest
-            neighbours. Typical choice is between 0.4 (-60%) and 1.6 (+60%).
+            The distortion factor to apply to the bond distance between the
+            defect and nearest neighbours. Typical choice is between 0.4 (-60%)
+            and 1.6 (+60%).
         site_index (:obj:`int`, optional):
-            Index of defect site in structure (for substitutions or interstitials), counting from 1
+            Index of defect site in structure (for substitutions or
+            interstitials), counting from 1.
         frac_coords (:obj:`numpy.ndarray`, optional):
-            Fractional coordinates of the defect site in the structure (for vacancies)
+            Fractional coordinates of the defect site in the structure (for
+            vacancies).
         distorted_element (:obj:`str`, optional):
-            Neighbouring element to distort. If None, the closest neighbours to the defect will
-            be chosen. (Default: None)
+            Neighbouring element to distort. If None, the closest neighbours to
+            the defect will be chosen. (Default: None)
         verbose (:obj:`bool`, optional):
             Whether to print distortion information. (Default: False)
 
@@ -68,8 +72,8 @@ def distort(
         atom_number = len(input_structure_ase) - 1
     else:
         raise ValueError(
-            "Insufficient information to apply bond distortions, no `site_index` or "
-            "`frac_coords` provided."
+            "Insufficient information to apply bond distortions, no `site_index`"
+            " or `frac_coords` provided."
         )
 
     neighbours = (
@@ -77,7 +81,10 @@ def distort(
     )  # Prevent self-counting of the defect atom itself
     distances = [  # Get all distances between the selected atom and all other atoms
         (
-            round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+            round(
+                input_structure_ase.get_distance(atom_number, index, mic=True),
+                4
+            ),
             index + 1,
             symbol,
         )
@@ -103,7 +110,8 @@ def distort(
             ):
                 nearest.append((dist, index, element))
 
-        # if the number of nearest neighbours not reached, add other neighbouring elements
+        # if the number of nearest neighbours not reached, add other neighbouring
+        # elements
         if len(nearest) < num_nearest_neighbours:
             for i in distances[1:]:
                 if (
@@ -113,10 +121,11 @@ def distort(
                 ):
                     nearest.append(i)
             warnings.warn(
-                f"{distorted_element} was specified as the nearest neighbour element to distort, "
-                f"with `distortion_factor` {distortion_factor} but did not find "
-                f"`num_nearest_neighbours` ({num_nearest_neighbours}) of these elements within "
-                f"4.5 \u212B of the defect site. For the remaining neighbours to distort, "
+                f"{distorted_element} was specified as the nearest neighbour "
+                f"element to distort, with `distortion_factor` {distortion_factor} "
+                f"but did not find `num_nearest_neighbours` "
+                f"({num_nearest_neighbours}) of these elements within 4.5 \u212B "
+                f"of the defect site. For the remaining neighbours to distort, "
                 f"we ignore the elemental identity. The final distortion information is:"
             )
             sys.stderr.flush()  # ensure warning message printed before distortion info
@@ -176,20 +185,21 @@ def rattle(
     seed: int = 42,
 ) -> Structure:
     """
-    Given a pymatgen Structure object, apply random displacements to all atomic positions,
-    with the displacement distances randomly drawn from a Gaussian distribution of standard
-    deviation `stdev`.
+    Given a pymatgen Structure object, apply random displacements to all atomic
+    positions, with the displacement distances randomly drawn from a Gaussian
+    distribution of standard deviation `stdev`.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Structure as a pymatgen object
         stdev (:obj:`float`):
-            Standard deviation (in Angstroms) of the Gaussian distribution from which atomic
-            displacement distances are drawn.
+            Standard deviation (in Angstroms) of the Gaussian distribution from
+            which atomic displacement distances are drawn.
             (Default: 0.25)
         d_min (:obj:`float`):
-            Minimum interatomic distance (in Angstroms). Monte Carlo rattle moves that put atoms at
-            distances less than this will be heavily penalised.
+            Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+            moves that put atoms at distances less than this will be heavily
+            penalised.
             (Default: 2.25)
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles to perform.
@@ -198,22 +208,23 @@ def rattle(
             List of which atomic indices should undergo Monte Carlo rattling.
             (Default: None)
         nbr_cutoff (:obj:`float`):
-            The radial cutoff distance (in Angstroms) used to construct the list of atomic
-            neighbours for checking interatomic distances.
+            The radial cutoff distance (in Angstroms) used to construct the
+            list of atomic neighbours for checking interatomic distances.
             (Default: 5)
         width (:obj:`float`):
             Width of the Monte Carlo rattling error function, in Angstroms.
             (Default: 0.1)
         max_disp (:obj:`float`):
-            Maximum atomic displacement (in Angstroms) during Monte Carlo rattling. Rarely occurs
-            and is used primarily as a safety net.
+            Maximum atomic displacement (in Angstroms) during Monte Carlo
+            rattling. Rarely occurs and is used primarily as a safety net.
             (Default: 2.0)
         max_attempts (:obj:`int`):
-            Maximum Monte Carlo rattle move attempts allowed for a single atom; if this limit is
-            reached an `Exception` is raised.
+            Maximum Monte Carlo rattle move attempts allowed for a single atom;
+            if this limit is reached an `Exception` is raised.
             (Default: 5000)
         seed (:obj:`int`):
-            Seed for NumPy random state from which random displacements are generated.
+            Seed for NumPy random state from which random displacements are
+            generated.
             (Default: 42)
 
     Returns:
