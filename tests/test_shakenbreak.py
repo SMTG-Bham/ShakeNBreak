@@ -76,9 +76,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.remove("distortion_metadata.json")
 
     def test_SnB_integration(self):
-        """Test full ShakeNBreak workflow, for the tricky case where at least 2 _different_
-        energy-lowering distortions are found for other charge states (y and z) that are then to be
-        tested for a different charge state (x), then reparsed and plotted successfully"""
+        """Test full ShakeNBreak workflow, for the tricky case where at least 2
+        _different_energy-lowering distortions are found for other charge states
+        (y and z) that are then to be tested for a different charge state (x),
+        then reparsed and plotted successfully
+        """
         oxidation_states = {"Cd": +2, "Te": -2}
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [-2, -1, 0]
@@ -99,7 +101,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         if "vac_1_Ti" in defect_charges_dict:
             del defect_charges_dict["vac_1_Ti"] # Used for magnetization tests
-            
+
         low_energy_defects = (
             energy_lowering_distortions.get_energy_lowering_distortions(
                 defect_charges_dict
@@ -122,7 +124,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(low_energy_defects)
+            energy_lowering_distortions.write_distorted_inputs(
+                low_energy_defects
+            )
 
             mock_print.assert_any_call(
                 "Writing low-energy distorted structure to "
@@ -144,13 +148,17 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # test correct structures written
         self.assertEqual(
             self.V_Cd_minus_0pt55_structure,
-            Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"),
+            Structure.from_file(
+                "vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"
+            ),
         )
         self.assertEqual(
             Structure.from_file(
                 os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
             ),
-            Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
+            Structure.from_file(
+                "vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"
+            ),
         )
 
         V_Cd_m1_txt_w_distortion = """Bond_Distortion_-55.0%_from_0
@@ -177,7 +185,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # Bond_Distortion_-7.5%_from_-1 folder is already present in this directory
 
         shutil.copyfile(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"),
+            os.path.join(
+                self.DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+            ),
             "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/CONTCAR",
         )
         shutil.copyfile(
