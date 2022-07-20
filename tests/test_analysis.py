@@ -50,6 +50,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.V_Cd_unperturbed = Structure.from_file(
             os.path.join(self.DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR")
         )
+
     def tearDown(self):
         # restore the original file (after 'no unperturbed' tests):
         shutil.copy(
@@ -848,7 +849,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertEqual(bonds, {'Te(32)': {'Te(41)': '2.75 A'}})
             mock_print.assert_not_called()
-        
+
         with patch("builtins.print") as mock_unperturbed_print:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_unperturbed,
@@ -858,7 +859,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertEqual(bonds, {})
             mock_unperturbed_print.assert_called_once_with("No homoionic bonds found with a search radius of 2.9 A")
-    
+
         with warnings.catch_warnings(record=True) as w:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_minus0pt3_dimer_ground_state,
@@ -867,7 +868,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 verbose=False,
             )
             self.assertEqual(str(w[-1].message), "Your structure does not contain element Na!")
-        
+
     def test_get_site_magnetizations(self):
         """Test get_site_magnetizations() function"""
         # Non existent defect folder
@@ -878,7 +879,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             output_path=self.DATA_DIR,
             distortions=["Unperturbed", -0.4]
         )
-        
+
         # User gives defect_site and threshold
         with patch("builtins.print") as mock_print:
             mags = analysis.get_site_magnetizations(
@@ -893,7 +894,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             mock_print.assert_any_call("Analysing distortion Unperturbed. Total magnetization: 4.0")
             mock_print.assert_any_call("Analysing distortion -0.4. Total magnetization: -0.0")
             mock_print.assert_any_call("No significant magnetizations found for distortion: -0.4 \n")
-            
+
             pd.testing.assert_frame_equal(
                 mags["Unperturbed"],
                 DataFrame({
@@ -915,7 +916,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                     }
                 })
             )
-            
+
         # Without defect site and with orbital projections
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
@@ -926,7 +927,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 orbital_projections=True,
             )
             self.assertAlmostEqual(
-                str(w[-1].message), 
+                str(w[-1].message),
                 "Could not find defect vac_1_Ti_0 in distortion_metadata.json file. "
                 "Will not include distance between defect and sites with significant magnetization."
             )
@@ -948,7 +949,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                     },
                 's': {'O(35)': 0.012, 'O(53)': 0.013, 'O(62)': 0.013, 'O(68)': 0.013},
                 'p': {'O(35)': 0.717, 'O(53)': 0.726, 'O(62)': 0.748, 'O(68)': 0.747},
-                'd': {'O(35)': 0.0, 'O(53)': 0.0, 'O(62)': 0.0, 'O(68)': 0.0}           
+                'd': {'O(35)': 0.0, 'O(53)': 0.0, 'O(62)': 0.0, 'O(68)': 0.0}
                 })
             )
 
@@ -962,8 +963,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
             self.assertEqual(
-                str(w[-1].message), 
-                "Structure for vac_1_Ti_0 either not converged or not found. " 
+                str(w[-1].message),
+                "Structure for vac_1_Ti_0 either not converged or not found. "
                 "Skipping magnetisation analysis."
             )
         # Non existent OUTCAR
@@ -975,7 +976,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-            self.assertTrue("OUTCAR file not found in path" in str(w[-1].message))                        
+            self.assertTrue("OUTCAR file not found in path" in str(w[-1].message))
 
 if __name__ == "__main__":
     unittest.main()

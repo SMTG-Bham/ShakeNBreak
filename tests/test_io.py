@@ -30,7 +30,7 @@ class IoTestCase(unittest.TestCase):
         )
         self.assertTrue(
             _calculate_atomic_disp(
-                structure_from_cif, 
+                structure_from_cif,
                 structure_from_espresso_output
             )[0]
             < 0.01

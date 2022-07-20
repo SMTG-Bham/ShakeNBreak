@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Created on Wed Jun 23 16:12:21 2021
-
-@author: Irea
+ShakeNBreak is a defect structure-searching method employing chemically-guided
+bond distortions to locate ground-state and metastable structures of point
+defects in solid materials.
 """
-

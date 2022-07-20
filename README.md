@@ -4,7 +4,7 @@
 Main feautures include:
 1. Defect structure generation:
    * Automatised generation of distorted structures for all input defects. 
-   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders.s
+   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders.
 2. Analysis:
    * Automatised parsing of the geometry relaxation results.
    * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified.
