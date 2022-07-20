@@ -1,6 +1,6 @@
 '# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM': ''
 '# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''
-'#KPAR': '# No KPAR, only one kpoint'
+'# KPAR': '# No KPAR, only one kpoint'
 ALGO: Normal
 EDIFFG: -0.01
 ENCUT: 300

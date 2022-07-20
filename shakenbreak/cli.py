@@ -5,6 +5,7 @@ import warnings
 import pickle
 import click
 import numpy as np
+from monty.serialization import loadfn
 
 from pymatgen.core.structure import Structure
 from monty.json import MontyDecoder
@@ -153,6 +154,7 @@ def identify_defect(defect_structure, bulk_structure,
 ## CLI Commands:
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
+
 @click.group('snb', context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 def snb():
     """
@@ -163,26 +165,28 @@ def snb():
 @snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
              no_args_is_help=True)
 @click.option("defect", "-d", help="Path to defect structure", required=True,
-                type=click.Path(exists=True, dir_okay=False))
+              type=click.Path(exists=True, dir_okay=False))
 @click.option("bulk", "-b", help="Path to bulk structure", required=True,
-                type=click.Path(exists=True, dir_okay=False))
+              type=click.Path(exists=True, dir_okay=False))
 @click.option("charge", "-c", help="Defect charge state", default=None, type=int)
 @click.option("min_charge", "--min",
-                help="Minimum defect charge state for which to generate distortions", default=None,
-                type=int)
+              help="Minimum defect charge state for which to generate distortions", default=None,
+              type=int)
 @click.option("max_charge", "--max",
-                help="Maximum defect charge state for which to generate distortions", default=None,
-                type=int)
+              help="Maximum defect charge state for which to generate distortions", default=None,
+              type=int)
 @click.option("defect_index", "--idx",
-                help="Index of defect site in defect structure, in case auto site-matching fails",
-                default=None, type=int)
+              help="Index of defect site in defect structure, in case auto site-matching fails",
+              default=None, type=int)
 @click.option("defect_coords", "--def-coords",
-                help="Fractional coordinates of defect site in defect structure, in case auto "
-                     "site-matching fails",
-                default=None)
-@click.option("--verbose", "-v", help ="Print information about identified defects and generated "
-                                       "distortions", default = False, is_flag = True)
-def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_coords, verbose):
+              help="Fractional coordinates of defect site in defect structure, in case auto "
+                   "site-matching fails",
+              default=None)
+@click.option("--config", help="Config file for advanced distortion settings", default=None)
+@click.option("--verbose", "-v", help="Print information about identified defects and generated "
+                                      "distortions", default=False, is_flag=True)
+def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_coords,
+             config, verbose):
     """
     Generate the trial distortions for structure-searching for a given defect.
     """
@@ -198,7 +202,7 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
             f"with site {defect_object.site}")
 
     if charge is not None:
-        charges = [charge,]
+        charges = [charge, ]
 
     elif max_charge is not None or min_charge is not None:
         if max_charge is None or min_charge is None:
@@ -248,7 +252,10 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     elif single_defect_dict["defect_type"] == "substitution":
         defects_dict = {"substitutions": [single_defect_dict, ]}
 
-    Dist = Distortions(defects_dict)
+    if config is not None:
+        user_settings = loadfn(config)
+
+    Dist = Distortions(defects_dict, **user_settings)
     distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)

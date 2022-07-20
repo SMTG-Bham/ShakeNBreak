@@ -48,30 +48,41 @@ class InputTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
-        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        self.TEST_DIR = os.path.join(os.path.dirname(__file__))
-        with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.CASTEP_DATA_DIR = os.path.join(self.DATA_DIR, "castep")
+        self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
+        self.FHI_AIMS_DATA_DIR = os.path.join(self.DATA_DIR, "fhi_aims")
+        self.ESPRESSO_DATA_DIR = os.path.join(self.DATA_DIR, "quantum_espresso")
+
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
         with open(
-            os.path.join(self.DATA_DIR, "CdTe_extrinsic_defects_dict.pickle"), "rb"
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_extrinsic_defects_dict.pickle"),
+            "rb",
         ) as fp:
             self.cdte_extrinsic_defects_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
         self.V_Cd_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(
-                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR",
             )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
         self.V_Cd_distortion_parameters = {
             "unique_site": np.array([0.0, 0.0, 0.0]),
@@ -79,13 +90,17 @@ class InputTestCase(unittest.TestCase):
             "distorted_atoms": [(33, "Te"), (42, "Te")],
         }
         self.Int_Cd_2_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
+            )
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
+            )
         )
         self.Int_Cd_2_normal_distortion_parameters = {
             "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
@@ -988,8 +1003,7 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi",
+                self.ESPRESSO_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi"
             )
         ) as f:
             test_input = f.read()
@@ -1003,8 +1017,8 @@ class InputTestCase(unittest.TestCase):
         _, _ = Dist.write_espresso_files(write_structures_only=True)
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_structure.pwi",
+                self.ESPRESSO_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/espresso_structure.pwi",
             )
         ) as f:
             test_input = f.read()
@@ -1027,8 +1041,8 @@ class InputTestCase(unittest.TestCase):
         )
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso_user_parameters.pwi",
+                self.ESPRESSO_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/espresso_user_parameters.pwi",
             )
         ) as f:
             test_input = f.read()
@@ -1061,8 +1075,8 @@ class InputTestCase(unittest.TestCase):
         # Test input parameter file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
+                self.CP2K_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
             )
         ) as f:
             test_input = f.read()
@@ -1072,8 +1086,8 @@ class InputTestCase(unittest.TestCase):
         # Test input structure file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif",
+                self.CP2K_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif",
             )
         ) as f:
             test_input_struct = f.read()
@@ -1096,12 +1110,12 @@ class InputTestCase(unittest.TestCase):
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_cp2k_files(
-            input_file=os.path.join(self.DATA_DIR, "cp2k_input_mod.inp"),
+            input_file=os.path.join(self.CP2K_DATA_DIR, "cp2k_input_mod.inp"),
         )
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/cp2k/vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
+                self.CP2K_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
             )
         ) as f:
             test_input = f.read()
@@ -1134,8 +1148,8 @@ class InputTestCase(unittest.TestCase):
         # Test input parameter file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.param",
+                self.CASTEP_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/castep.param",
             )
         ) as f:
             test_input = f.readlines()[
@@ -1147,8 +1161,8 @@ class InputTestCase(unittest.TestCase):
         # Test input structure file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell",
+                self.CASTEP_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/castep.cell",
             )
         ) as f:
             test_input_struct = f.readlines()[6:-3]  # avoid comment with file path etc
@@ -1169,12 +1183,12 @@ class InputTestCase(unittest.TestCase):
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
         _, _ = Dist.write_castep_files(
-            input_file=os.path.join(self.DATA_DIR, "castep_mod.param"),
+            input_file=os.path.join(self.CASTEP_DATA_DIR, "castep_mod.param"),
         )
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/castep/vac_1_Cd_0/Bond_Distortion_30.0%/castep_user_parameters.param",
+                self.CASTEP_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/castep_user_parameters.param",
             )
         ) as f:
             test_input = f.readlines()[28:]  # avoid comment with file path etc
@@ -1207,8 +1221,8 @@ class InputTestCase(unittest.TestCase):
         # Test input parameter file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control.in",
+                self.FHI_AIMS_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/control.in",
             )
         ) as f:
             test_input = f.readlines()[6:]  # First 5 lines contain irrelevant info
@@ -1218,8 +1232,8 @@ class InputTestCase(unittest.TestCase):
         # Test input structure file
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in",
+                self.FHI_AIMS_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in",
             )
         ) as f:
             test_input_struct = f.readlines()[6:]
@@ -1250,8 +1264,8 @@ class InputTestCase(unittest.TestCase):
         _, _ = Dist.write_fhi_aims_files(ase_calculator=ase_calculator)
         with open(
             os.path.join(
-                self.TEST_DIR,
-                "data/fhi_aims/vac_1_Cd_0/Bond_Distortion_30.0%/control_user_parameters.in",
+                self.FHI_AIMS_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_30.0%/control_user_parameters.in",
             )
         ) as f:
             test_input = f.readlines()[6:]  # First 5 lines contain irrelevant info
