@@ -11,7 +11,6 @@ from typing import Optional, Tuple
 import functools
 import numpy as np
 from monty.serialization import loadfn
-import yaml
 
 import ase
 from ase.calculators.espresso import Espresso
@@ -1221,8 +1220,9 @@ class Distortions:
 
         # Update default parameters with user defined values
         if pseudopotentials and not write_structures_only:
-            with open(f"{MODULE_DIR}/../input_files/qe_input.yaml", "r") as file:
-                default_input_parameters = yaml.safe_load(file)
+            default_input_parameters = loadfn(
+                os.path.join(MODULE_DIR, "../input_files/qe_input.yaml")
+            )
             if input_parameters:
                 for section in input_parameters:
                     for key in input_parameters[section]:
