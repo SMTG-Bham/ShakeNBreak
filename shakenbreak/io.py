@@ -5,8 +5,6 @@ import os
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 import warnings
 from typing import TYPE_CHECKING
-from genericpath import exists
-import numpy as np
 from monty.io import zopen
 from monty.serialization import loadfn
 
@@ -16,15 +14,11 @@ from pymatgen.io.vasp import Incar, Kpoints, Poscar
 from pymatgen.io.vasp.inputs import (
     incar_params,
     BadIncarWarning,
-    Kpoints_supported_modes,
 )
 from pymatgen.io.vasp.sets import DictSet, BadInputSetWarning
 
 import ase
 from ase.atoms import Atoms
-from ase.calculators.espresso import Espresso
-from  ase.calculators.castep import Castep
-from  ase.calculators.aims import Aims
 
 from doped.pycdt.utils.vasp import DefectRelaxSet, _check_psp_dir
 
