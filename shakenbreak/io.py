@@ -127,12 +127,13 @@ def write_vasp_gam_files(
         nelect = defect_relax_set.nelect
 
     # Update system dependent parameters
-    default_incar_settings.update({
+    default_incar_settings_copy = default_incar_settings.copy()
+    default_incar_settings_copy.update({
         "NELECT": nelect,
         "NUPDOWN": f"{nelect % 2:.0f} # But could be {nelect % 2 + 2:.0f} "
         + "if strong spin polarisation or magnetic behaviour present",
         "EDIFF": f"{scaled_ediff(supercell.num_sites)} # May need to reduce for tricky relaxations",
-        "ROPT": "1e-3 " * num_elements,
+        "ROPT": ("1e-3 " * num_elements).rstrip(),
     })
     if incar_settings:
         for (
@@ -148,9 +149,9 @@ def write_vasp_gam_files(
                     "INCAR flags",
                     BadIncarWarning,
                 )
-        default_incar_settings.update(incar_settings)
+        default_incar_settings_copy.update(incar_settings)
 
-    vaspgamincar = Incar.from_dict(default_incar_settings)
+    vaspgamincar = Incar.from_dict(default_incar_settings_copy)
 
     # kpoints
     vaspgamkpts = Kpoints().from_dict(

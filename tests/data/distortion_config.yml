@@ -1,0 +1,49 @@
+# Example config file for snb-generate
+oxidation_states:
+  Cd: 3
+  Te: -3
+dict_number_electrons_user:
+  Cd: 3
+  Te: 5
+distortion_increment: 0.15
+stdev: 0.15
+
+# use test settings
+d_min: 2,
+    n_iter: int = 1,
+    active_atoms: Optional[list] = None,
+    nbr_cutoff: float = 5,
+    width: float = 0.1,
+    max_attempts: int = 5000,
+    max_disp: float = 2.0,
+    seed: int = 42,
+
+    num_nearest_neighbours: int,
+    distortion_factor: float,
+    site_index: Optional[int] = None,  # starting from 1
+    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    distorted_element: Optional[str] = None,
+    verbose: Optional[bool] = False,
+INCAR:
+  ALGO: All
+  EDIFF_PER_ATOM: 5.0e-05
+  ENCUT: 520
+  HFSCREEN: 0.2
+  IBRION: 2
+  ICHARG: 1
+  ISIF: 3
+  ISMEAR: 0
+  ISPIN: 2
+  LHFCALC: true
+  LORBIT: 11
+  LREAL: AUTO
+  LWAVE: false
+  NELM: 100
+  NSW: 99
+  PREC: Accurate
+  PRECFOCK: Fast
+  SIGMA: 0.05
+KPOINTS:
+  reciprocal_density: 50
+POTCAR_FUNCTIONAL: PBE_52
+POTCAR:

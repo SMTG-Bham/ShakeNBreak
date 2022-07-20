@@ -13,7 +13,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 aaa = AseAtomsAdaptor()
 
-import ase
+from ase.io import write as ase_write
 
 from shakenbreak.analysis import (
     _sort_data,
@@ -728,7 +728,7 @@ def _copy_espresso_files(
             params=f.read() # Read input parameters
         # Write distorted structure in QE format, to then update input file
         atoms = aaa.get_atoms(distorted_structure)
-        ase.io.write(
+        ase_write(
             filename=f"{distorted_dir}/{input_filename}",
             images=atoms,
             format="espresso-in"
@@ -758,7 +758,7 @@ def _copy_espresso_files(
                 params=f.read() # Read input parameters
             # Write distorted structure in QE format, to then update input file
             atoms = aaa.get_atoms(distorted_structure)
-            ase.io.write(
+            ase_write(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in"
@@ -779,7 +779,7 @@ def _copy_espresso_files(
                 f"distorted structure file to {distorted_dir} directory."
             )
             atoms = aaa.get_atoms(distorted_structure)
-            ase.io.write(
+            ase_write(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in"
@@ -845,7 +845,7 @@ def _copy_castep_files(
     if not input_filename:
         input_filename = "castep.param"
     atoms = aaa.get_atoms(distorted_structure)
-    ase.io.write(
+    ase_write(
                 filename=f"{distorted_dir}/castep.cell",
                 images=atoms,
                 format="castep-cell"
@@ -895,7 +895,7 @@ def _copy_fhi_aims_files(
     if not input_filename:
         input_filename = "control.in"
     atoms = aaa.get_atoms(distorted_structure)
-    ase.io.write(
+    ase_write(
             filename=f"{distorted_dir}/geometry.in",
             images=atoms, format="aims",
             ) # write input structure file

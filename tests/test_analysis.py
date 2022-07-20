@@ -14,51 +14,63 @@ from shakenbreak import analysis, io
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
-        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.V_Cd_distortion_data = analysis._open_file(
-            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
         self.organized_V_Cd_distortion_data = analysis._organize_data(
             self.V_Cd_distortion_data
         )
         self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
-            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+            )
         )
         self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
             self.V_Cd_distortion_data_no_unperturbed
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+            )
         )
         self.In_Cd_1_distortion_data = analysis._open_file(
-            os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
         self.organized_In_Cd_1_distortion_data = analysis._organize_data(
             self.In_Cd_1_distortion_data
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
+            )
         )
         self.V_Cd_minus0pt3_dimer_ground_state = Structure.from_file(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-30.0%/CONTCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-30.0%/CONTCAR"
+            )
         )
         self.V_Cd_unperturbed = Structure.from_file(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR")
         )
 
     def tearDown(self):
         # restore the original file (after 'no unperturbed' tests):
         shutil.copy(
-            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
         )
-        if os.path.exists("fake_file.txt"):
-            os.remove("fake_file.txt")
+        for i in ["fake_file.txt", os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json")]:
+            if_present_rm(i)
 
     @patch("builtins.print")
     def test_open_file(self, mock_print):
@@ -159,7 +171,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test V_Cd_distortion_data:
         gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
         sorted_V_Cd_distortion_data = analysis._sort_data(
-            os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
         )
         self.assertEqual(
             sorted_V_Cd_distortion_data,
@@ -173,7 +185,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test verbose = False
         with patch("builtins.print") as mock_not_verbose_print:
             sorted_V_Cd_distortion_data = analysis._sort_data(
-                os.path.join(self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
                 verbose=False,
             )
             self.assertEqual(
@@ -188,7 +200,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_In_Cd_print:
             sorted_In_Cd_1_distortion_data = analysis._sort_data(
-                os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
             )
             mock_In_Cd_print.assert_not_called()
         self.assertEqual(
@@ -203,7 +215,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_no_unperturbed_print:
             organized_V_Cd_distortion_data_no_unperturbed = analysis._sort_data(
                 os.path.join(
-                    self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                    self.VASP_CDTE_DATA_DIR,
+                    "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt",
                 )
             )
             self.assertEqual(
@@ -215,7 +228,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             mock_no_unperturbed_print.assert_called_once_with(
                 f"CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed: Unperturbed energy not found in "
-                f"{os.path.join(self.DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
                 f"Lowest energy structure found with -0.55 bond distortion."
             )
 
@@ -232,7 +245,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             with open("fake_file.txt", "w") as fp:
                 fp.write("Unperturbed\n-378.66236832")  # only unperturbed data
             output = analysis._sort_data("fake_file.txt")
-            warning_message = "No distortion results parsed from fake_file.txt, returning None"
+            warning_message = (
+                "No distortion results parsed from fake_file.txt, returning None"
+            )
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
@@ -253,11 +268,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as w:
             output = io.read_vasp_structure(
-                os.path.join(self.DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
             )
             warning_message = (
                 f"Problem obtaining structure from: "
-                f"{os.path.join(self.DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, storing as 'Not "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, storing as 'Not "
                 f"converged'. Check file & relaxation"
             )
             self.assertEqual(len(w), 1)
@@ -267,10 +282,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as w:
             output = io.read_vasp_structure(
-                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
             V_Cd_struc = Structure.from_file(
-                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
             self.assertEqual(len(w), 0)
             self.assertEqual(output, V_Cd_struc)
@@ -389,7 +404,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test get_structures() function."""
         # V_Cd_0 with defaults (reading from subdirectories):
         defect_structures_dict = analysis.get_structures(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
         bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
@@ -398,7 +413,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         relaxed_0pt5_V_Cd_structure = Structure.from_file(
             os.path.join(
-                self.DATA_DIR,
+                self.VASP_CDTE_DATA_DIR,
                 "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
             )
         )
@@ -407,7 +422,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # V_Cd_0 with a defined subset (using `bond_distortions`):
         defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0",
-            output_path=self.DATA_DIR,
+            output_path=self.VASP_CDTE_DATA_DIR,
             bond_distortions=[-0.5, -0.25, 0],
         )
         self.assertEqual(
@@ -415,7 +430,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )  # 3 distortions plus unperturbed
         relaxed_0pt5_V_Cd_structure = Structure.from_file(
             os.path.join(
-                self.DATA_DIR,
+                self.VASP_CDTE_DATA_DIR,
                 "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
             )
         )
@@ -424,11 +439,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test exception for wrong defect species
         with self.assertRaises(FileNotFoundError) as e:
             wrong_path_error = FileNotFoundError(
-                f"Path {self.DATA_DIR}/vac_1_Cd_1 does not exist!"
+                f"Path {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_1 does not exist!"
             )
             analysis.get_structures(
                 defect_species="vac_1_Cd_1",
-                output_path=self.DATA_DIR,  # wrong defect species
+                output_path=self.VASP_CDTE_DATA_DIR,  # wrong defect species
             )
             self.assertIn(wrong_path_error, e.exception)
 
@@ -446,7 +461,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test get_energies() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_dict = analysis.get_energies(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         energies_dict_keys_dict = {"distortions": None, "Unperturbed": None}
         self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
@@ -466,7 +481,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test verbose = False
         with patch("builtins.print") as mock_not_verbose_print:
             defect_energies_dict = analysis.get_energies(
-                defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, verbose=False
+                defect_species="vac_1_Cd_0",
+                output_path=self.VASP_CDTE_DATA_DIR,
+                verbose=False,
             )
             # no print called:
             mock_not_verbose_print.assert_not_called()
@@ -485,7 +502,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
         defect_energies_meV_dict = analysis.get_energies(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR, units="meV"
+            defect_species="vac_1_Cd_0",
+            output_path=self.VASP_CDTE_DATA_DIR,
+            units="meV",
         )
         self.assertEqual(
             defect_energies_meV_dict.keys(), energies_dict_keys_dict.keys()
@@ -505,9 +524,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test if 'Unperturbed' is not present:
         shutil.copy(
             os.path.join(
-                self.DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
             ),
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
         )
         # Note we copy back to original in self.tearDown()
         with warnings.catch_warnings(record=True) as w:
@@ -516,7 +535,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "relative to the lowest energy defect structure found."
             )
             defect_energies_dict = analysis.get_energies(
-                defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+                defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
             )
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
@@ -543,7 +562,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         with patch("builtins.print") as mock_print:
             max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict)
@@ -663,10 +682,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test compare_structures() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         defect_energies_dict = analysis.get_energies(
-            defect_species="vac_1_Cd_0", output_path=self.DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         with patch("builtins.print") as mock_print:
             struct_comparison_df = analysis.compare_structures(
@@ -847,7 +866,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 radius=2.9,
                 verbose=False,
             )
-            self.assertEqual(bonds, {'Te(32)': {'Te(41)': '2.75 A'}})
+            self.assertEqual(bonds, {"Te(32)": {"Te(41)": "2.75 A"}})
             mock_print.assert_not_called()
 
         with patch("builtins.print") as mock_unperturbed_print:
@@ -858,7 +877,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 verbose=True,
             )
             self.assertEqual(bonds, {})
-            mock_unperturbed_print.assert_called_once_with("No homoionic bonds found with a search radius of 2.9 A")
+            mock_unperturbed_print.assert_called_once_with(
+                "No homoionic bonds found with a search radius of 2.9 A"
+            )
 
         with warnings.catch_warnings(record=True) as w:
             bonds = analysis.get_homoionic_bonds(
@@ -867,7 +888,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 radius=2.9,
                 verbose=False,
             )
-            self.assertEqual(str(w[-1].message), "Your structure does not contain element Na!")
+            self.assertEqual(
+                str(w[-1].message), "Your structure does not contain element Na!"
+            )
 
     def test_get_site_magnetizations(self):
         """Test get_site_magnetizations() function"""
@@ -876,107 +899,148 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             FileNotFoundError,
             analysis.get_site_magnetizations,
             defect_species="vac_1_Ti_-1",
-            output_path=self.DATA_DIR,
-            distortions=["Unperturbed", -0.4]
+            output_path=os.path.join(self.DATA_DIR, "vasp"),
+            distortions=["Unperturbed", -0.4],
         )
 
         # User gives defect_site and threshold
         with patch("builtins.print") as mock_print:
             mags = analysis.get_site_magnetizations(
-                defect_species='vac_1_Ti_0',
+                defect_species="vac_1_Ti_0",
                 defect_site=[0.0, 0.16666666666666669, 0.25],
-                output_path=self.DATA_DIR,
+                output_path=os.path.join(self.DATA_DIR, "vasp"),
                 distortions=["Unperturbed", -0.4],
                 threshold=0.3,
                 orbital_projections=False,
                 verbose=True,
             )
-            mock_print.assert_any_call("Analysing distortion Unperturbed. Total magnetization: 4.0")
-            mock_print.assert_any_call("Analysing distortion -0.4. Total magnetization: -0.0")
-            mock_print.assert_any_call("No significant magnetizations found for distortion: -0.4 \n")
+            mock_print.assert_any_call(
+                "Analysing distortion Unperturbed. Total magnetization: 4.0"
+            )
+            mock_print.assert_any_call(
+                "Analysing distortion -0.4. Total magnetization: -0.0"
+            )
+            mock_print.assert_any_call(
+                "No significant magnetizations found for distortion: -0.4 \n"
+            )
 
             pd.testing.assert_frame_equal(
                 mags["Unperturbed"],
-                DataFrame({
-                'Site': {
-                    'O(35)': 'O(35)',
-                    'O(53)': 'O(53)',
-                    'O(62)': 'O(62)',
-                    'O(68)': 'O(68)'},
-                'Coords': {
-                    'O(35)': [0.0, 0.167, 0.014],
-                    'O(53)': [-0.0, 0.167, 0.486],
-                    'O(62)': [0.165, 0.167, 0.292],
-                    'O(68)': [0.835, 0.167, 0.292]},
-                'Total mag': {
-                    'O(35)': 1.458, 'O(53)': 1.478, 'O(62)': 1.522, 'O(68)': 1.521
-                    },
-                'Dist. (A)': {
-                    'O(35)': 2.3, 'O(53)': 2.3, 'O(62)': 1.9, 'O(68)': 1.9
+                DataFrame(
+                    {
+                        "Site": {
+                            "O(35)": "O(35)",
+                            "O(53)": "O(53)",
+                            "O(62)": "O(62)",
+                            "O(68)": "O(68)",
+                        },
+                        "Coords": {
+                            "O(35)": [0.0, 0.167, 0.014],
+                            "O(53)": [-0.0, 0.167, 0.486],
+                            "O(62)": [0.165, 0.167, 0.292],
+                            "O(68)": [0.835, 0.167, 0.292],
+                        },
+                        "Total mag": {
+                            "O(35)": 1.458,
+                            "O(53)": 1.478,
+                            "O(62)": 1.522,
+                            "O(68)": 1.521,
+                        },
+                        "Dist. (A)": {
+                            "O(35)": 2.3,
+                            "O(53)": 2.3,
+                            "O(62)": 1.9,
+                            "O(68)": 1.9,
+                        },
                     }
-                })
+                ),
             )
 
         # Without defect site and with orbital projections
         with warnings.catch_warnings(record=True) as w:
+            # copy distortion_metadata.json without TiO2 data into folder, to check warning
+            shutil.copyfile(os.path.join(self.VASP_CDTE_DATA_DIR, "distortion_metadata.json"),
+                            os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"))
             mags = analysis.get_site_magnetizations(
-                defect_species='vac_1_Ti_0',
-                output_path=self.DATA_DIR,
-                distortions=["Unperturbed",],
+                defect_species="vac_1_Ti_0",
+                output_path=os.path.join(self.DATA_DIR, "vasp"),
+                distortions=["Unperturbed"],
                 threshold=0.3,
                 orbital_projections=True,
             )
             self.assertAlmostEqual(
                 str(w[-1].message),
-                "Could not find defect vac_1_Ti_0 in distortion_metadata.json file. "
-                "Will not include distance between defect and sites with significant magnetization."
+                "Could not find defect vac_1_Ti_0 in distortion_metadata.json file. Will not "
+                "include distance between defect and sites with significant magnetization.",
             )
             pd.testing.assert_frame_equal(
                 mags["Unperturbed"],
-                DataFrame({
-                'Site': {
-                    'O(35)': 'O(35)',
-                    'O(53)': 'O(53)',
-                    'O(62)': 'O(62)',
-                    'O(68)': 'O(68)'},
-                'Coords': {
-                    'O(35)': [0.0, 0.167, 0.014],
-                    'O(53)': [-0.0, 0.167, 0.486],
-                    'O(62)': [0.165, 0.167, 0.292],
-                    'O(68)': [0.835, 0.167, 0.292]},
-                'Total mag': {
-                    'O(35)': 1.458, 'O(53)': 1.478, 'O(62)': 1.522, 'O(68)': 1.521
-                    },
-                's': {'O(35)': 0.012, 'O(53)': 0.013, 'O(62)': 0.013, 'O(68)': 0.013},
-                'p': {'O(35)': 0.717, 'O(53)': 0.726, 'O(62)': 0.748, 'O(68)': 0.747},
-                'd': {'O(35)': 0.0, 'O(53)': 0.0, 'O(62)': 0.0, 'O(68)': 0.0}
-                })
+                DataFrame(
+                    {
+                        "Site": {
+                            "O(35)": "O(35)",
+                            "O(53)": "O(53)",
+                            "O(62)": "O(62)",
+                            "O(68)": "O(68)",
+                        },
+                        "Coords": {
+                            "O(35)": [0.0, 0.167, 0.014],
+                            "O(53)": [-0.0, 0.167, 0.486],
+                            "O(62)": [0.165, 0.167, 0.292],
+                            "O(68)": [0.835, 0.167, 0.292],
+                        },
+                        "Total mag": {
+                            "O(35)": 1.458,
+                            "O(53)": 1.478,
+                            "O(62)": 1.522,
+                            "O(68)": 1.521,
+                        },
+                        "s": {
+                            "O(35)": 0.012,
+                            "O(53)": 0.013,
+                            "O(62)": 0.013,
+                            "O(68)": 0.013,
+                        },
+                        "p": {
+                            "O(35)": 0.717,
+                            "O(53)": 0.726,
+                            "O(62)": 0.748,
+                            "O(68)": 0.747,
+                        },
+                        "d": {"O(35)": 0.0, "O(53)": 0.0, "O(62)": 0.0, "O(68)": 0.0},
+                    }
+                ),
             )
 
         # Non existent structure
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
-                defect_species='vac_1_Ti_0',
-                output_path=self.DATA_DIR,
-                distortions=[0.2,], # no CONTCAR in this distortion folder
+                defect_species="vac_1_Ti_0",
+                output_path=os.path.join(self.DATA_DIR, "vasp"),
+                distortions=[
+                    0.2,
+                ],  # no CONTCAR in this distortion folder
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
             self.assertEqual(
                 str(w[-1].message),
                 "Structure for vac_1_Ti_0 either not converged or not found. "
-                "Skipping magnetisation analysis."
+                "Skipping magnetisation analysis.",
             )
         # Non existent OUTCAR
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
-                defect_species='vac_1_Ti_0',
-                output_path=self.DATA_DIR,
-                distortions=[0.1,], # no OUTCAR in this distortion folder
+                defect_species="vac_1_Ti_0",
+                output_path=os.path.join(self.DATA_DIR, "vasp"),
+                distortions=[
+                    0.1,
+                ],  # no OUTCAR in this distortion folder
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
             self.assertTrue("OUTCAR file not found in path" in str(w[-1].message))
+
 
 if __name__ == "__main__":
     unittest.main()

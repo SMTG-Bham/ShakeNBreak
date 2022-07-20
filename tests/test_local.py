@@ -52,25 +52,31 @@ class DistortionLocalTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
-        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
         self.V_Cd_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(
-                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR",
             )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
         self.V_Cd_distortion_parameters = {
             "unique_site": np.array([0.0, 0.0, 0.0]),
@@ -78,13 +84,17 @@ class DistortionLocalTestCase(unittest.TestCase):
             "distorted_atoms": [(33, "Te"), (42, "Te")],
         }
         self.Int_Cd_2_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
+            )
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
+            )
         )
         self.Int_Cd_2_normal_distortion_parameters = {
             "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
@@ -178,6 +188,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             "vac_2_Te_2",
         ]
 
+        self.parsed_default_incar_settings = {
+            k: v for k, v in io.default_incar_settings.items() if "#" not in k
+        }  # pymatgen doesn't parsed commented lines
+        self.parsed_incar_settings_wo_comments = {
+            k: v for k, v in self.parsed_default_incar_settings.items() if "#" not in str(v)
+        }  # pymatgen ignores comments after values
+
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
@@ -212,7 +229,9 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertTrue(io.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertTrue(
+            self.parsed_incar_settings_wo_comments.items() <= V_Cd_INCAR.items()
+        )
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
@@ -228,8 +247,9 @@ class DistortionLocalTestCase(unittest.TestCase):
             "LVHAR": True,
             "LWAVE": True,
             "LCHARG": True,
+            "ENCUT": 200,
         }
-        kwarged_incar_settings = io.default_incar_settings.copy()
+        kwarged_incar_settings = self.parsed_incar_settings_wo_comments.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
         input._create_vasp_input(
             "vac_1_Cd_0",
@@ -244,7 +264,9 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertFalse(io.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertFalse(
+            self.parsed_incar_settings_wo_comments.items() <= V_Cd_INCAR.items()
+        )
         self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_minus50_folder + "/KPOINTS")
@@ -281,10 +303,11 @@ class DistortionLocalTestCase(unittest.TestCase):
             "'0.5', '0.55', '0.6'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
-        mock_print.assert_any_call("\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
-        ) # bold print
-        mock_print.assert_any_call("\033[1m"
-            + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        mock_print.assert_any_call(
+            "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
+        )  # bold print
+        mock_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
             "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
@@ -295,8 +318,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect vac_1_Cd in charge state: 0. Number of distorted "
-            "neighbours: 2"
+            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
         )
         # test correct distorted neighbours based on oxidation states:
         mock_print.assert_any_call(
@@ -330,19 +352,19 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
-        # check if default INCAR is subset of INCAR: (not here because we set IBRION and EDIFF)
-        self.assertFalse(io.default_incar_settings.items() <= V_Cd_INCAR.items())
+        # check if default INCAR is subset of INCAR: (not here because we set ENCUT)
+        self.assertFalse(
+            self.parsed_incar_settings_wo_comments.items() <= V_Cd_INCAR.items()
+        )
         self.assertEqual(V_Cd_INCAR.pop("ENCUT"), 212)
         self.assertEqual(V_Cd_INCAR.pop("IBRION"), 0)
         self.assertEqual(V_Cd_INCAR.pop("EDIFF"), 1e-4)
         self.assertEqual(V_Cd_INCAR.pop("ROPT"), "1e-3 1e-3")
-        modified_default_incar_settings = io.default_incar_settings.copy()
-        modified_default_incar_settings.pop("IBRION")
-        modified_default_incar_settings.pop("EDIFF")
+        parsed_settings = self.parsed_incar_settings_wo_comments.copy()
+        parsed_settings.pop("ENCUT")
         self.assertTrue(
-            modified_default_incar_settings.items()
-            <= V_Cd_INCAR.items()  # matches after removing
-            # kwarg settings
+            parsed_settings.items() <= V_Cd_INCAR.items()  # matches after
+            # removing kwarg settings
         )
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])

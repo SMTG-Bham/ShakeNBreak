@@ -1,0 +1,2 @@
+# Example config file for snb-generate
+bond_distortions: [-0.3, 0.0, 0.3]
