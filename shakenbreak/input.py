@@ -713,16 +713,16 @@ class Distortions:
 
             if "substitutions" in self.defects_dict:
                 for substitution in self.defects_dict["substitutions"]:
-                    if substitution["defect_type"] == "substitution" and single_defect_dict[
+                    if substitution["defect_type"] == "substitution" and substitution[
                         "bulk_supercell_site"].specie.symbol not in self.oxidation_states:
                         # substituting species not in bulk composition
                         substitution_specie = substitution["substitution_specie"]
                         likely_substitution_oxi = _most_common_oxi(substitution_specie)
                         self.oxidation_states[substitution_specie] = likely_substitution_oxi
 
-            print(f"Oxidation states were not explicitly set, thus have been guessed as"
-                  f" {self.oxidation_states}. If this is unreasonable you should manually set "
-                  f"oxidation_states")
+            print(f"Oxidation states were not explicitly set, thus have been "
+                  f"guessed as {self.oxidation_states}. If this is unreasonable "
+                  f"you should manually set oxidation_states")
 
         if bond_distortions:
             self.distortion_increment = None  # user specified

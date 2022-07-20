@@ -817,7 +817,8 @@ def _copy_cp2k_files(
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}"
+                f"/{input_filename}",
                 f"{distorted_dir}/{input_filename}",
             )
 
@@ -845,8 +846,8 @@ def _copy_castep_files(
         input_filename = "castep.param"
     atoms = aaa.get_atoms(distorted_structure)
     ase.io.write(
-                filename=f"{distorted_dir}/castep.cell", 
-                images=atoms, 
+                filename=f"{distorted_dir}/castep.cell",
+                images=atoms,
                 format="castep-cell"
                 ) # Write structure
     if os.path.exists(
@@ -879,7 +880,7 @@ def _copy_castep_files(
                 f"CASTEP `.cell` format)."
             )
 
- 
+
 def _copy_fhi_aims_files(
     distorted_structure: Structure,
     distorted_dir: str,
@@ -895,7 +896,7 @@ def _copy_fhi_aims_files(
         input_filename = "control.in"
     atoms = aaa.get_atoms(distorted_structure)
     ase.io.write(
-            filename=f"{distorted_dir}/geometry.in", 
+            filename=f"{distorted_dir}/geometry.in",
             images=atoms, format="aims",
             ) # write input structure file
 

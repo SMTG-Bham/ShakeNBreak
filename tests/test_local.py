@@ -28,12 +28,12 @@ def _update_struct_defect_dict(
     defect_dict: dict, structure: Structure, poscar_comment: str
 ) -> dict:
     """
-    Given a Structure object and POSCAR comment, update the folders dictionary 
-    (generated with `doped.vasp_input.prepare_vasp_defect_inputs()`) with 
+    Given a Structure object and POSCAR comment, update the folders dictionary
+    (generated with `doped.vasp_input.prepare_vasp_defect_inputs()`) with
     the given values.
     Args:
         defect_dict (:obj:`dict`):
-            Dictionary with defect information, as generated with doped 
+            Dictionary with defect information, as generated with doped
             `prepare_vasp_defect_inputs()`
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure as a pymatgen object
@@ -202,7 +202,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=input.default_incar_settings,
+            incar_settings=io.default_incar_settings,
         )
         V_Cd_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_minus50_folder))
@@ -212,7 +212,7 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertTrue(input.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertTrue(io.default_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
@@ -229,7 +229,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "LWAVE": True,
             "LCHARG": True,
         }
-        kwarged_incar_settings = input.default_incar_settings.copy()
+        kwarged_incar_settings = io.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
         input._create_vasp_input(
             "vac_1_Cd_0",
@@ -244,7 +244,7 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         V_Cd_INCAR = Incar.from_file(V_Cd_kwarg_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR:
-        self.assertFalse(input.default_incar_settings.items() <= V_Cd_INCAR.items())
+        self.assertFalse(io.default_incar_settings.items() <= V_Cd_INCAR.items())
         self.assertTrue(kwarged_incar_settings.items() <= V_Cd_INCAR.items())
 
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_kwarg_minus50_folder + "/KPOINTS")
@@ -283,7 +283,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         )
         mock_print.assert_any_call("\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
         ) # bold print
-        mock_print.assert_any_call("\033[1m" 
+        mock_print.assert_any_call("\033[1m"
             + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
@@ -295,7 +295,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " 
+            "\nDefect vac_1_Cd in charge state: 0. Number of distorted "
             "neighbours: 2"
         )
         # test correct distorted neighbours based on oxidation states:
