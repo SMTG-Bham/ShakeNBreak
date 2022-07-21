@@ -697,7 +697,7 @@ class Distortions:
         local_rattle: bool = False,
         stdev: float = 0.25,
         distorted_elements: Optional[dict] = None,
-        **kwargs, # for mc rattle
+        **kwargs,  # for mc rattle
     ):
         """
         Setup the distortion parameters
@@ -909,7 +909,7 @@ class Distortions:
             num_electrons_charged_defect
         )  # Number of distorted neighbours for each charge state
         print(
-            f"\nDefect {defect_name} in charge state: {charge}. "
+            f"\nDefect {defect_name} in charge state: {'+' if charge > 0 else ''}{charge}. "
             f"Number of distorted neighbours: {num_nearest_neighbours}"
         )
         return num_nearest_neighbours
@@ -1298,7 +1298,7 @@ class Distortions:
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
 
-            for charge in defect_dict["charges"]: # loop for each charge state
+            for charge in defect_dict["charges"]:  # loop for each charge state
 
                 for dist, struct in zip(
                     ["Unperturbed",]
@@ -1561,7 +1561,7 @@ class Distortions:
             for charge in defect_dict["charges"]:
                 if isinstance(ase_calculator, Aims) and \
                     not write_structures_only:
-                    ase_calculator.set(charge=charge) # Defect charge state
+                    ase_calculator.set(charge=charge)  # Defect charge state
 
                     # Total number of electrons for net spin initialization
                     # Must set initial spin moments (otherwise FHI-aims will

@@ -929,7 +929,7 @@ class InputTestCase(unittest.TestCase):
                 + "\033[0m"
             )
             mock_Int_Cd_2_print.assert_any_call(
-                "\nDefect Int_Cd_2 in charge state: 1. Number of distorted neighbours: 4"
+                "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 4"
             )
             mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
             mock_Int_Cd_2_print.assert_any_call(
