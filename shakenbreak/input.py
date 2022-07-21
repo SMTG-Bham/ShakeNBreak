@@ -883,7 +883,7 @@ class Distortions:
         if number_electrons < 0:
             _bold_print(
                 f"Number of extra electrons in neutral state: "
-                + f"{number_electrons}"
+                + f"{abs(number_electrons)}"
             )
         elif number_electrons >= 0:
             _bold_print(
