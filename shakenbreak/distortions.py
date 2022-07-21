@@ -9,8 +9,12 @@ import numpy as np
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-from hiphive.structure_generation.rattle import generate_mc_rattled_structures
+from pymatgen.analysis.local_env import MinimumDistanceNN
+from pymatgen.io.ase import AseAtomsAdaptor
 
+from hiphive.structure_generation.rattle import generate_mc_rattled_structures
+from hiphive.structure_generation.rattle import *
+from hiphive.structure_generation.rattle import _probability_mc_rattle
 
 # format warnings output:
 def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
@@ -253,3 +257,320 @@ def rattle(
 
 # TODO: Implement rattle function where the rattle amplitude tails off as a function of distance
 #  from the defect site, as an improved version of the localised rattle
+def _local_mc_rattle_displacements(
+    atoms,
+    site_index,
+    rattle_std,
+    d_min,
+    width=0.1,
+    n_iter=10,
+    max_attempts=5000,
+    max_disp=2.0,
+    active_atoms=None,
+    nbr_cutoff=None,
+    seed=42
+):
+    # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
+    """Generate displacements using the Monte Carlo rattle method.
+    The displacements tail off as we move away from the defect site.
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        prototype structure
+    site: index of defect, starting from 0
+    rattle_std : float
+        rattle amplitude (standard deviation in normal distribution)
+    d_min : float
+        interatomic distance used for computing the probability for each rattle
+        move. Center position of the error function
+    width : float
+        width of the error function
+    n_iter : int
+        number of Monte Carlo cycle
+    max_disp : float
+        rattle moves that yields a displacement larger than max_disp will
+        always be rejected. This rarley occurs and is more used as a safety net
+        for not generating structures where two or more have swapped positions.
+    max_attempts : int
+        limit for how many attempted rattle moves are allowed a single atom;
+        if this limit is reached an `Exception` is raised.
+    active_atoms : list
+        list of which atomic indices should undergo Monte Carlo rattling
+    nbr_cutoff : float
+        The cutoff used to construct the neighborlist used for checking
+        interatomic distances, defaults to 2 * d_min
+    seed : int
+        seed for setting up NumPy random state from which random numbers are
+        generated
+
+    Returns
+    -------
+    numpy.ndarray
+        atomic displacements (`Nx3`)
+    """
+
+    def scale_stdev(disp, r_min, r):
+        """
+        Linearly scale the rattle standard deviation used for a given site
+        according to its distance to the defect (e.g. sites further away
+        from defect will experience a smaller distortion).
+        """
+        if r == 0: # avoid dividing by 0 for defect site
+            r = r_min
+        return disp * r_min / r
+
+    # Transform to pymatgen structure
+    aaa = AseAtomsAdaptor()
+    structure = aaa.get_structure(atoms)
+    dist_defect_to_nn = max(
+        structure[site_index].distance(_["site"]) for _ in MinimumDistanceNN().get_nn_info(
+            structure, site_index
+        )
+    ) # distance between defect and nearest neighbours
+
+    # setup
+    rs = np.random.RandomState(seed)
+
+    if nbr_cutoff is None:
+        nbr_cutoff = 2 * d_min
+
+    if active_atoms is None:
+        active_atoms = range(len(atoms))
+
+    atoms_rattle = atoms.copy()
+    reference_positions = atoms_rattle.get_positions()
+    nbr_list = NeighborList(
+        [nbr_cutoff/2]*len(atoms_rattle),
+        skin=0.0,
+        self_interaction=False,
+        bothways=True
+    )
+    nbr_list.update(atoms_rattle)
+
+    # run Monte Carlo
+    for _ in range(n_iter):
+        for i in active_atoms:
+            i_nbrs = np.setdiff1d(nbr_list.get_neighbors(i)[0], [i])
+
+            # Distance between defect and site i
+            dist_defect_to_i = atoms.get_distance(site_index, i, mic=True)
+
+            for n in range(max_attempts):
+
+                # generate displacement
+                delta_disp = rs.normal(
+                    0.0,
+                    scale_stdev(rattle_std, dist_defect_to_nn, dist_defect_to_i),
+                    3,
+                ) # displacement tails off with distance from defect
+                atoms_rattle.positions[i] += delta_disp
+                disp_i = atoms_rattle.positions[i] - reference_positions[i]
+
+                # if total displacement of atom is greater than max_disp, then reject delta_disp
+                if np.linalg.norm(disp_i) > max_disp:
+                    # revert delta_disp
+                    atoms_rattle[i].position -= delta_disp
+                    continue
+
+                # compute min distance
+                if len(i_nbrs) == 0:
+                    min_distance = np.inf
+                else:
+                    min_distance = np.min(atoms_rattle.get_distances(i, i_nbrs, mic=True))
+
+                # accept or reject delta_disp
+                if _probability_mc_rattle(min_distance, d_min, width) > rs.rand():
+                    # accept delta_disp
+                    break
+                else:
+                    # revert delta_disp
+                    atoms_rattle[i].position -= delta_disp
+            else:
+                raise Exception('Maxmium attempts for atom {}'.format(i))
+    displacements = atoms_rattle.positions - reference_positions
+    return displacements
+
+
+def _generate_local_mc_rattled_structures(
+    atoms,
+    site_index,
+    n_configs,
+    rattle_std,
+    d_min,
+    seed=42,
+    **kwargs
+):
+    # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
+    """Returns list of configurations after applying a Monte Carlo local
+    rattle.
+    Compared to the standard Monte Carlo rattle, here the displacements
+    tail off as we move away from the defect site.
+
+    Rattling atom `i` is carried out as a Monte Carlo move that is
+    accepted with a probability determined from the minimum
+    interatomic distance :math:`d_{ij}`.  If :math:`\\min(d_{ij})` is
+    smaller than :math:`d_{min}` the move is only accepted with a low
+    probability.
+
+    This process is repeated for each atom a number of times meaning
+    the magnitude of the final displacements is not *directly*
+    connected to `rattle_std`.
+
+    Warning
+    -------
+    Repeatedly calling this function *without* providing different
+    seeds will yield identical or correlated results. To avoid this
+    behavior it is recommended to specify a different seed for each
+    call to this function.
+
+    Notes
+    ------
+    The procedure implemented here might not generate a symmetric
+    distribution for the displacements `kwargs` will be forwarded to
+    `mc_rattle` (see user guide for a detailed explanation)
+
+    Parameters
+    ----------
+    atoms : ase.Atoms
+        prototype structure
+    site_index: int
+        Index of defect site in structure (for substitutions or
+        interstitials), counting from 1.
+    n_structures : int
+        number of structures to generate
+    rattle_std : float
+        rattle amplitude (standard deviation in normal distribution);
+        note this value is not connected to the final
+        average displacement for the structures
+    d_min : float
+        interatomic distance used for computing the probability for each rattle
+        move
+    seed : int
+        seed for setting up NumPy random state from which random numbers are
+        generated
+    n_iter : int
+        number of Monte Carlo cycles
+
+    Returns
+    -------
+    list of ase.Atoms
+        generated structures
+    """
+    rs = np.random.RandomState(seed)
+    atoms_list = []
+    for _ in range(n_configs):
+        atoms_tmp = atoms.copy()
+        seed = rs.randint(1, 1000000000)
+        displacements = _local_mc_rattle_displacements(
+            atoms_tmp, site_index, rattle_std, d_min, seed=seed, **kwargs
+        )
+        atoms_tmp.positions += displacements
+        atoms_list.append(atoms_tmp)
+    return atoms_list
+
+
+def local_mc_rattle(
+    structure: Structure,
+    site_index: Optional[int] = None,  # starting from 1
+    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    stdev: float = 0.25,
+    d_min: float = 2.25,
+    n_iter: int = 1,
+    active_atoms: Optional[list] = None,
+    nbr_cutoff: float = 5,
+    width: float = 0.1,
+    max_attempts: int = 5000,
+    max_disp: float = 2.0,
+    seed: int = 42,
+) -> Structure:
+    """
+    Given a pymatgen Structure object, apply random displacements to all atomic
+    positions, with the displacement distances randomly drawn from a Gaussian
+    distribution of standard deviation `stdev`. The random displacements
+    tail off as we move away from the defect site.
+
+    Args:
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            Structure as a pymatgen object
+        site_index (:obj:`int`, optional):
+            Index of defect site in structure (for substitutions or
+            interstitials), counting from 1.
+        frac_coords (:obj:`numpy.ndarray`, optional):
+            Fractional coordinates of the defect site in the structure (for
+            vacancies).
+        stdev (:obj:`float`):
+            Standard deviation (in Angstroms) of the Gaussian distribution from
+            which atomic displacement distances are drawn.
+            (Default: 0.25)
+        d_min (:obj:`float`):
+            Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+            moves that put atoms at distances less than this will be heavily
+            penalised.
+            (Default: 2.25)
+        n_iter (:obj:`int`):
+            Number of Monte Carlo cycles to perform.
+            (Default: 1)
+        active_atoms (:obj:`list`, optional):
+            List of which atomic indices should undergo Monte Carlo rattling.
+            (Default: None)
+        nbr_cutoff (:obj:`float`):
+            The radial cutoff distance (in Angstroms) used to construct the
+            list of atomic neighbours for checking interatomic distances.
+            (Default: 5)
+        width (:obj:`float`):
+            Width of the Monte Carlo rattling error function, in Angstroms.
+            (Default: 0.1)
+        max_disp (:obj:`float`):
+            Maximum atomic displacement (in Angstroms) during Monte Carlo
+            rattling. Rarely occurs and is used primarily as a safety net.
+            (Default: 2.0)
+        max_attempts (:obj:`int`):
+            Maximum Monte Carlo rattle move attempts allowed for a single atom;
+            if this limit is reached an `Exception` is raised.
+            (Default: 5000)
+        seed (:obj:`int`):
+            Seed for NumPy random state from which random displacements are
+            generated.
+            (Default: 42)
+
+    Returns:
+        Rattled pymatgen Structure object
+    """
+    aaa = AseAtomsAdaptor()
+    ase_struct = aaa.get_atoms(structure)
+
+    if isinstance(site_index, int):
+        atom_number = site_index - 1  # Align atom number with python 0-indexing
+    elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
+        ase_struct.append("V")  # fake "V" at vacancy
+        ase_struct.positions[-1] = np.dot(
+            frac_coords, ase_struct.cell
+        )
+        atom_number = len(ase_struct) - 1
+    else:
+        raise ValueError(
+            "Insufficient information to apply local rattle, no `site_index`"
+            " or `frac_coords` provided."
+        )
+
+    local_rattled_ase_struct = _generate_local_mc_rattled_structures(
+        ase_struct,
+        site_index=atom_number,
+        n_configs=1,
+        rattle_std=stdev,
+        d_min=d_min,
+        n_iter=n_iter,
+        active_atoms=active_atoms,
+        nbr_cutoff=nbr_cutoff,
+        width=width,
+        max_attempts=max_attempts,
+        max_disp=max_disp,
+        seed=seed,
+    )[0]
+
+    if isinstance(frac_coords, np.ndarray):
+        local_rattled_ase_struct.pop(-1)  # remove fake V from vacancy structure
+    local_rattled_structure = aaa.get_structure(local_rattled_ase_struct)
+
+    return local_rattled_structure
