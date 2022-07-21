@@ -1096,8 +1096,7 @@ def plot_colorbar(
             cmap=colormap,
             norm=norm,
             alpha=1,
-            label=f"From {other_charge_state:+} charge state"
-            if other_charge_state != 0 else "From 0 charge state",
+            label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
         )
     unperturbed_color = colormap(
         0
@@ -1286,7 +1285,8 @@ def plot_datasets(
                     default_style_settings[key] = optional_style_settings
 
         # Format distortion keys of the distortions imported from other charge states
-        imported_indices, keys, sorted_distortions, sorted_energies = _format_datapoints_from_other_chargestates(
+        imported_indices, keys, sorted_distortions, sorted_energies = \
+            _format_datapoints_from_other_chargestates(
             energies_dict=dataset,
             disp_dict=None
         )
@@ -1325,8 +1325,8 @@ def plot_datasets(
                 zorder=10,  # make sure it's on top of the other lines
                 marker="s", # TODO: different markers for different charge states
                 alpha=1,
-                label=f"From {other_charge_state:+} charge state"
-                if other_charge_state != 0 else f"From 0 charge state",
+                label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
+                      f"state"
             )
 
     datasets[0][
