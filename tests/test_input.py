@@ -942,6 +942,29 @@ class InputTestCase(unittest.TestCase):
             # check correct folder was created:
             self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
 
+        # check correct output for "extra" electrons and positive charge state:
+        with patch("builtins.print") as mock_Int_Cd_2_print:
+            dist = input.Distortions(
+                {"interstitials": [reduced_Int_Cd_2_dict]},
+                oxidation_states=oxidation_states,
+            )
+            _, distortion_metadata = dist.write_vasp_files(
+                verbose=True,
+            )
+            self.assertTrue(os.path.exists("distortion_metadata.json"))
+            # check expected info printing:
+            mock_Int_Cd_2_print.assert_any_call(
+                "\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m"
+            )
+            mock_Int_Cd_2_print.assert_any_call(
+                "\033[1m"
+                + "Number of extra electrons in neutral state: 2"
+                + "\033[0m"
+            )
+            mock_Int_Cd_2_print.assert_any_call(
+                "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 1"
+            )
+
         # test output_path parameter:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
