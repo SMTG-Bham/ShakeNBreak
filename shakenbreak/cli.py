@@ -164,21 +164,21 @@ def snb():
 
 @snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
              no_args_is_help=True)
-@click.option("defect", "-d", help="Path to defect structure", required=True,
+@click.option("--defect", "-d", help="Path to defect structure", required=True,
               type=click.Path(exists=True, dir_okay=False))
-@click.option("bulk", "-b", help="Path to bulk structure", required=True,
+@click.option("--bulk", "-b", help="Path to bulk structure", required=True,
               type=click.Path(exists=True, dir_okay=False))
-@click.option("charge", "-c", help="Defect charge state", default=None, type=int)
-@click.option("min_charge", "--min",
+@click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
+@click.option("--min-charge", "--min",
               help="Minimum defect charge state for which to generate distortions", default=None,
               type=int)
-@click.option("max_charge", "--max",
+@click.option("--max-charge", "--max",
               help="Maximum defect charge state for which to generate distortions", default=None,
               type=int)
-@click.option("defect_index", "--idx",
+@click.option("--defect-index", "--idx",
               help="Index of defect site in defect structure, in case auto site-matching fails",
               default=None, type=int)
-@click.option("defect_coords", "--def-coords",
+@click.option("--defect-coords", "--def-coords",
               help="Fractional coordinates of defect site in defect structure, in case auto "
                    "site-matching fails",
               default=None)
@@ -252,10 +252,10 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     elif single_defect_dict["defect_type"] == "substitution":
         defects_dict = {"substitutions": [single_defect_dict, ]}
 
-    if config is not None:
-        user_settings = loadfn(config)
+    # if config is not None:
+    #     user_settings = loadfn(config)
 
-    Dist = Distortions(defects_dict, **user_settings)
+    Dist = Distortions(defects_dict)#, **user_settings)
     distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
