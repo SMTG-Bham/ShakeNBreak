@@ -1,9 +1,11 @@
 """
 ShakeNBreak command-line-interface (CLI)
 """
+import os
 import warnings
 import pickle
 import click
+from copy import deepcopy
 import numpy as np
 from monty.serialization import loadfn
 
@@ -151,72 +153,8 @@ def identify_defect(defect_structure, bulk_structure,
     return defect
 
 
-## CLI Commands:
-CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-
-
-@click.group('snb', context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
-def snb():
-    """
-    ShakeNBreak: Defect structure-searching
-    """
-
-
-@snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
-             no_args_is_help=True)
-@click.option("--defect", "-d", help="Path to defect structure", required=True,
-              type=click.Path(exists=True, dir_okay=False))
-@click.option("--bulk", "-b", help="Path to bulk structure", required=True,
-              type=click.Path(exists=True, dir_okay=False))
-@click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
-@click.option("--min-charge", "--min",
-              help="Minimum defect charge state for which to generate distortions", default=None,
-              type=int)
-@click.option("--max-charge", "--max",
-              help="Maximum defect charge state for which to generate distortions", default=None,
-              type=int)
-@click.option("--defect-index", "--idx",
-              help="Index of defect site in defect structure, in case auto site-matching fails",
-              default=None, type=int)
-@click.option("--defect-coords", "--def-coords",
-              help="Fractional coordinates of defect site in defect structure, in case auto "
-                   "site-matching fails",
-              default=None)
-@click.option("--config", help="Config file for advanced distortion settings", default=None)
-@click.option("--verbose", "-v", help="Print information about identified defects and generated "
-                                      "distortions", default=False, is_flag=True)
-def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_coords,
-             config, verbose):
-    """
-    Generate the trial distortions for structure-searching for a given defect.
-    """
-    defect_struc = Structure.from_file(defect)
-    bulk_struc = Structure.from_file(bulk)
-
-    defect_object = identify_defect(defect_structure=defect_struc, bulk_structure=bulk_struc,
-                                    defect_index=defect_index, defect_coords=defect_coords)
-    if verbose:
-        click.echo(
-            f"Auto site-matching identified {defect} to be "
-            f"type {defect_object.as_dict()['@class']} "
-            f"with site {defect_object.site}")
-
-    if charge is not None:
-        charges = [charge, ]
-
-    elif max_charge is not None or min_charge is not None:
-        if max_charge is None or min_charge is None:
-            raise ValueError("If using min/max defect charge, both options must be set!")
-
-        charge_lims = [min_charge, max_charge]
-        charges = list(range(min(charge_lims),
-                             max(charge_lims) + 1))  # just in case user mixes min and max
-        # because of different signs ("+1 to -3" etc)
-
-    else:
-        warnings.warn("No charge (range) set for defect, assuming default range of +/-2")
-        charges = list(range(-2, +3))
-
+def _generate_defect_dict(defect_object, charges):
+    """Create defect dictionary from a defect object"""
     single_defect_dict = {"name": defect_object.name,
                           "bulk_supercell_site": defect_object.site,
                           "defect_type": defect_object.as_dict()["@class"].lower(),
@@ -252,11 +190,93 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     elif single_defect_dict["defect_type"] == "substitution":
         defects_dict = {"substitutions": [single_defect_dict, ]}
 
+    return defects_dict
+
+## CLI Commands:
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+@click.group('snb', context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
+def snb():
+    """
+    ShakeNBreak: Defect structure-searching
+    """
+
+
+@snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
+             no_args_is_help=True)
+@click.option("--defect", "-d", help="Path to defect structure", required=True,
+              type=click.Path(exists=True, dir_okay=False))
+@click.option("--bulk", "-b", help="Path to bulk structure", required=True,
+              type=click.Path(exists=True, dir_okay=False))
+@click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
+@click.option("--min-charge", "--min",
+              help="Minimum defect charge state for which to generate distortions", default=None,
+              type=int)
+@click.option("--max-charge", "--max",
+              help="Maximum defect charge state for which to generate distortions", default=None,
+              type=int)
+@click.option("--defect-index", "--idx",
+              help="Index of defect site in defect structure, in case auto site-matching fails",
+              default=None, type=int)
+@click.option("--defect-coords", "--def-coords",
+              help="Fractional coordinates of defect site in defect structure, in case auto "
+                   "site-matching fails",
+              default=None)
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'",
+              default="VASP", type=str)
+@click.option("--config", help="Config file for advanced distortion settings", default=None)
+@click.option("--verbose", "-v", help="Print information about identified defects and generated "
+                                      "distortions", default=False, is_flag=True)
+def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_coords,
+             code, config, verbose):
+    """
+    Generate the trial distortions for structure-searching for a given defect.
+    """
+    defect_struc = Structure.from_file(defect)
+    bulk_struc = Structure.from_file(bulk)
+
+    defect_object = identify_defect(defect_structure=defect_struc, bulk_structure=bulk_struc,
+                                    defect_index=defect_index, defect_coords=defect_coords)
+    if verbose:
+        click.echo(
+            f"Auto site-matching identified {defect} to be "
+            f"type {defect_object.as_dict()['@class']} "
+            f"with site {defect_object.site}")
+
+    if charge is not None:
+        charges = [charge, ]
+
+    elif max_charge is not None or min_charge is not None:
+        if max_charge is None or min_charge is None:
+            raise ValueError("If using min/max defect charge, both options must be set!")
+
+        charge_lims = [min_charge, max_charge]
+        charges = list(range(min(charge_lims),
+                             max(charge_lims) + 1))  # just in case user mixes min and max
+        # because of different signs ("+1 to -3" etc)
+
+    else:
+        warnings.warn("No charge (range) set for defect, assuming default range of +/-2")
+        charges = list(range(-2, +3))
+
+    defects_dict = _generate_defect_dict(defect_object, charges)
+
     # if config is not None:
     #     user_settings = loadfn(config)
 
     Dist = Distortions(defects_dict)#, **user_settings)
-    distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
+    if code == "VASP":
+        distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
+    elif code == "CP2K":
+        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(verbose=verbose)
+    elif code == "espresso":
+        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(verbose=verbose)
+    elif code == "CASTEP":
+        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(verbose=verbose)
+    elif code == "FHI-aims":
+        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
@@ -264,3 +284,117 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
 # save to pickle and run through Distortions
 # for this will need to use folders as filenames so we know which goes where
 # – this ok if folders aren't typical defect names?
+@snb.command()
+@click.option("--defects", "-d", help="Path root directory with defect folders/files",
+                type=click.Path(exists=True, dir_okay=True))
+@click.option("--structure_file", "-f", help="File termination/name from which to"
+              "parse defect structure from. Only required if defects are stored "
+              "in individual directories", type=str, default="POSCAR")
+@click.option("--bulk", "-b", help="Path to bulk structure",
+              type=click.Path(exists=True, dir_okay=False))
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'",
+              default="VASP", type=str)
+@click.option("--config", help="Config file for advanced distortion settings", default=None)
+@click.option("--verbose", "-v", help ="Print information about identified defects and generated "
+                                       "distortions", default = False, is_flag = True)
+def generate_all(defects, bulk, structure_file, code, config, verbose):
+    """
+    Generate the trial distortions for structure-searching for all defects
+    in a given directory.
+    """
+    bulk_struc = Structure.from_file(bulk)
+    defects = os.listdir(defects)
+    if config is not None:
+        # In the config file, user can specify index/frac_coords and charges for each defect
+        # This way they also provide the names, that should match either the defect folder names
+        # or the defect file names (if they are not organised in folders)
+        user_settings = loadfn(config)
+    else:
+        user_settings = {}
+
+    def parse_defect_name(defect, user_settings):
+        """Parse defect name from file/folder name"""
+        if user_settings.get("defects"):
+            defect_names = user_settings["defects"].keys()
+            if defect in defect_names:
+                defect_name = defect
+        elif [substring in defect_name.lower() for substring in ("as", "vac", "int")]:
+            # if user didnt specify defect names in config file,
+            # check if defect filename correspond to standard defect names
+            defect_name = defect
+        else:
+            defect_name = None
+            raise ValueError(
+            "Error in defect name parsing; could not parse defect name "
+            f"from {defect}. Please include its name in the 'defects' section of "
+            " the config file.")
+        return defect_name
+
+    def parse_defect_charges(defect_name, user_settings):
+        if user_settings.get("defects"):
+            charges = user_settings["defects"].get(defect_name).get("charges")
+        else:
+            warnings.warn("No charge (range) set for defect, assuming default range of +/-2")
+            charges = list(range(-2, +3))
+        return charges
+
+    def parse_defect_position(defect_name, user_settings):
+        if user_settings.get("defects"):
+            defect_index = user_settings["defects"].get(defect_name).get("defect_index")
+            if defect_index:
+                return int(defect_index), None
+            else:
+                defect_coords = user_settings["defects"].get(defect_name).get("defect_coords")
+                return None, defect_coords
+        return None, None
+
+    defects_dict = {}
+    for defect in defects:
+        if os.path.isfile(defect):
+            try: # try to parse structure from it
+                defect_struc = Structure.from_file(defect)
+                defect_name = parse_defect_name(defect, user_settings)
+            except:
+                continue
+
+        elif os.path.isdir(defect):
+            defect_file = [
+                file for file in os.listdir(defect) if structure_file in file
+                or "cif" in file
+            ]  # check for POSCAR and cif by default
+            if defect_file:
+                defect_struc = Structure.from_file(os.path.join(defect, defect_file[0]))
+                defect_name = parse_defect_name(defect, user_settings)
+
+        # Check if charges / indices are provided in config file
+        charges = parse_defect_charges(defect_name, user_settings)
+        defect_index, defect_coords = parse_defect_position(defect_name, user_settings)
+        defect_object = identify_defect(defect_structure=defect_struc, bulk_structure=bulk_struc,
+                                    defect_index=defect_index, defect_coords=defect_coords)
+        if verbose:
+            click.echo(
+                f"Auto site-matching identified {defect} to be "
+                f"type {defect_object.as_dict()['@class']} "
+                f"with site {defect_object.site}")
+
+        defect_dict = _generate_defect_dict(defect_object, charges)
+    # Add defect entry to full defect_dict
+    if defect_dict[list(defect_dict.keys())[0]] in defects_dict: # vacancies, antisites or interstitials
+        defects_dict[list(defect_dict.keys())[0]] += deepcopy(defect_dict[list(defect_dict.keys())[0]])
+    else:
+        defects_dict[list(defect_dict.keys())[0]] = [deepcopy(defect_dict[list(defect_dict.keys())[0]]), ]
+
+    Dist = Distortions(defects_dict)
+    if code == "VASP":
+        distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
+    elif code == "CP2K":
+        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(verbose=verbose)
+    elif code == "espresso":
+        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(verbose=verbose)
+    elif code == "CASTEP":
+        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(verbose=verbose)
+    elif code == "FHI-aims":
+        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(verbose=verbose)
+    with open("./parsed_defects_dict.pickle", "wb") as fp:
+        pickle.dump(defects_dict, fp)
