@@ -1,6 +1,7 @@
 """
 ShakeNBreak command-line-interface (CLI)
 """
+import sys
 import warnings
 import pickle
 import click
@@ -151,6 +152,20 @@ def identify_defect(defect_structure, bulk_structure,
     return defect
 
 
+def CommandWithConfigFile(config_file_param_name):  # can also set CLI options using config file
+    class CustomCommandClass(click.Command):
+        def invoke(self, ctx):
+            config_file = ctx.params[config_file_param_name]
+            if config_file is not None:
+                with open(config_file) as f:
+                    config_data = loadfn(config_file)
+                    for param, value in ctx.params.items():
+                        if ctx.get_parameter_source(param) == click.core.ParameterSource.DEFAULT \
+                                and param in config_data:
+                            ctx.params[param] = config_data[param]
+            return super(CustomCommandClass, self).invoke(ctx)
+    return CustomCommandClass
+
 ## CLI Commands:
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
@@ -163,7 +178,7 @@ def snb():
 
 
 @snb.command(name="generate", context_settings=CONTEXT_SETTINGS,
-             no_args_is_help=True)
+             no_args_is_help=True, cls=CommandWithConfigFile("config"))
 @click.option("--defect", "-d", help="Path to defect structure", required=True,
               type=click.Path(exists=True, dir_okay=False))
 @click.option("--bulk", "-b", help="Path to bulk structure", required=True,
@@ -180,22 +195,37 @@ def snb():
               default=None, type=int)
 @click.option("--defect-coords", "--def-coords",
               help="Fractional coordinates of defect site in defect structure, in case auto "
-                   "site-matching fails",
-              default=None)
-@click.option("--config", help="Config file for advanced distortion settings", default=None)
+                   "site-matching fails. In the form 'x y z' (3 arguments)",
+              type=click.Tuple([float, float, float]), default=None)
+@click.option("--name", "-n", help="Defect name for folder and metadata generation. Defaults to "
+                                   "pymatgen standard: '{Defect Type}_mult{Supercell Multiplicity}'",
+              default=None, type=str)
+@click.option("--config", help="Config file for advanced distortion settings", default=None,
+              type=click.Path(exists=True, dir_okay=False))
 @click.option("--verbose", "-v", help="Print information about identified defects and generated "
-                                      "distortions", default=False, is_flag=True)
+                                      "distortions", default=False, is_flag=True, show_default=True)
 def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_coords,
-             config, verbose):
+             name, config, verbose):
     """
     Generate the trial distortions for structure-searching for a given defect.
     """
+    if config is not None:
+        user_settings = loadfn(config)
+    else:
+        user_settings = {}
+
+    func_args = list(locals().keys())
+    if user_settings:
+        for key in func_args:
+            if key in user_settings:
+                user_settings.pop(key, None)
+
     defect_struc = Structure.from_file(defect)
     bulk_struc = Structure.from_file(bulk)
 
     defect_object = identify_defect(defect_structure=defect_struc, bulk_structure=bulk_struc,
                                     defect_index=defect_index, defect_coords=defect_coords)
-    if verbose:
+    if verbose and defect_index is None and defect_coords is None:
         click.echo(
             f"Auto site-matching identified {defect} to be "
             f"type {defect_object.as_dict()['@class']} "
@@ -216,8 +246,9 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     else:
         warnings.warn("No charge (range) set for defect, assuming default range of +/-2")
         charges = list(range(-2, +3))
-
-    single_defect_dict = {"name": defect_object.name,
+    if name is None:
+        name = defect_object.name
+    single_defect_dict = {"name": name,
                           "bulk_supercell_site": defect_object.site,
                           "defect_type": defect_object.as_dict()["@class"].lower(),
                           "site_multiplicity": defect_object.multiplicity,
@@ -233,7 +264,7 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
         if not poss_deflist:
             raise ValueError(
                 "Error in defect object generation; could not find substitution "
-                f"site inside bulk structure for {defect_object.name}")
+                f"site inside bulk structure for {name}")
         defindex = poss_deflist[0][2]
         sub_site_in_bulk = defect_object.bulk_structure[defindex]  # bulk site of substitution
 
@@ -252,11 +283,9 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     elif single_defect_dict["defect_type"] == "substitution":
         defects_dict = {"substitutions": [single_defect_dict, ]}
 
-    # if config is not None:
-    #     user_settings = loadfn(config)
-
-    Dist = Distortions(defects_dict)#, **user_settings)
+    Dist = Distortions(defects_dict, **user_settings)
     distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
+    print(distortion_metadata)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
