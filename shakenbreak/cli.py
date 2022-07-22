@@ -156,7 +156,7 @@ def identify_defect(defect_structure, bulk_structure,
 
 def _generate_defect_dict(defect_object, charges, defect_name):
     """Create defect dictionary from a defect object"""
-    single_defect_dict = {"name": name,
+    single_defect_dict = {"name": defect_name,
                           "bulk_supercell_site": defect_object.site,
                           "defect_type": defect_object.as_dict()["@class"].lower(),
                           "site_multiplicity": defect_object.multiplicity,
@@ -172,7 +172,7 @@ def _generate_defect_dict(defect_object, charges, defect_name):
         if not poss_deflist:
             raise ValueError(
                 "Error in defect object generation; could not find substitution "
-                f"site inside bulk structure for {name}")
+                f"site inside bulk structure for {defect_name}")
         defindex = poss_deflist[0][2]
         sub_site_in_bulk = defect_object.bulk_structure[defindex]  # bulk site of substitution
 
