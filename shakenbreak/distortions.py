@@ -255,8 +255,7 @@ def rattle(
     return rattled_structure
 
 
-# TODO: Implement rattle function where the rattle amplitude tails off as a function of distance
-#  from the defect site, as an improved version of the localised rattle
+# TODO: Implement tests for the local_mc_rattle function
 def _local_mc_rattle_displacements(
     atoms,
     site_index,

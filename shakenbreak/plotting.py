@@ -1290,44 +1290,44 @@ def plot_datasets(
             energies_dict=dataset,
             disp_dict=None
         )
-
-        if "Rattled" in dataset["distortions"].keys():
-            ax.scatter( # Scatter plot for Rattled (1 datapoint)
-                0.0,
-                dataset["distortions"]["Rattled"],
-                c=colors[dataset_number],
-                s=50,
-                marker=default_style_settings["marker"],
-                label="Rattled"
-            )
-        else:
-            ax.plot( # plot bond distortions
-                sorted_distortions,
-                sorted_energies,
-                c=colors[dataset_number],
-                markersize=default_style_settings["markersize"],
-                marker=default_style_settings["marker"],
-                linestyle=default_style_settings["linestyle"],
-                label=dataset_labels[dataset_number],
-                linewidth=default_style_settings["linewidth"],
-            )
-        for i in imported_indices:
-            other_charge_state = int(
-                list(dataset['distortions'].keys())[i].split('_')[-1]
-            )
-            ax.scatter( # distortions from other charge states
-                np.array(keys)[i],
-                list(dataset["distortions"].values())[i],
-                c=colors[dataset_number],
-                edgecolors="k",
-                ls="-",
-                s=50,
-                zorder=10,  # make sure it's on top of the other lines
-                marker="s", # TODO: different markers for different charge states
-                alpha=1,
-                label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
-                      f"state"
-            )
+        with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+            if "Rattled" in dataset["distortions"].keys():
+                ax.scatter( # Scatter plot for Rattled (1 datapoint)
+                    0.0,
+                    dataset["distortions"]["Rattled"],
+                    c=colors[dataset_number],
+                    s=50,
+                    marker=default_style_settings["marker"],
+                    label="Rattled"
+                )
+            else:
+                ax.plot( # plot bond distortions
+                    sorted_distortions,
+                    sorted_energies,
+                    c=colors[dataset_number],
+                    markersize=default_style_settings["markersize"],
+                    marker=default_style_settings["marker"],
+                    linestyle=default_style_settings["linestyle"],
+                    label=dataset_labels[dataset_number],
+                    linewidth=default_style_settings["linewidth"],
+                )
+            for i in imported_indices:
+                other_charge_state = int(
+                    list(dataset['distortions'].keys())[i].split('_')[-1]
+                )
+                ax.scatter( # distortions from other charge states
+                    np.array(keys)[i],
+                    list(dataset["distortions"].values())[i],
+                    c=colors[dataset_number],
+                    edgecolors="k",
+                    ls="-",
+                    s=50,
+                    zorder=10,  # make sure it's on top of the other lines
+                    marker="s", # TODO: different markers for different charge states
+                    alpha=1,
+                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
+                        f"state"
+                )
 
     datasets[0][
         "Unperturbed"
@@ -1341,24 +1341,26 @@ def plot_datasets(
                 f"({dataset_labels[key]}) differ by {value:.2f}. If testing different "
                 "magnetic states (FM, AFM) this is normal, otherwise you may want to check this!"
             )
-            ax.plot(
-                0,
-                datasets[key]["Unperturbed"],
-                ls="None",
-                marker="d",
-                markersize=9,
-                c=colors[key],
-            )
+            with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+                ax.plot(
+                    0,
+                    datasets[key]["Unperturbed"],
+                    ls="None",
+                    marker="d",
+                    markersize=9,
+                    c=colors[key],
+                )
 
-    ax.plot(  # plot our reference energy
-        0,
-        datasets[0]["Unperturbed"],
-        ls="None",
-        marker="d",
-        markersize=9,
-        c=colors[0],
-        label="Unperturbed",
-    )
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        ax.plot(  # plot our reference energy
+            0,
+            datasets[0]["Unperturbed"],
+            ls="None",
+            marker="d",
+            markersize=9,
+            c=colors[0],
+            label="Unperturbed",
+        )
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E
@@ -1366,7 +1368,7 @@ def plot_datasets(
     ax = _format_tick_labels(
         ax=ax,
         energy_range=list(datasets[0]["distortions"].values()) + [datasets[0]["Unperturbed"],]
-        )
+    )
 
     ax.legend(frameon=True)  # show legend
 

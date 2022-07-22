@@ -694,7 +694,7 @@ class Distortions:
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
         bond_distortions: Optional[list] = None,
-        local_rattle: bool = False,
+        local_rattle: bool = True,
         stdev: float = 0.25,
         distorted_elements: Optional[dict] = None,
         **kwargs,  # for mc rattle
@@ -729,9 +729,10 @@ class Distortions:
                 (Default: None)
             local_rattle (:obj:`bool`):
                 Whether to apply random displacements that tail off as we move
-                away from the defect site. If False, all supercell sites are
-                rattled with the same amplitude.
-            (Default: False)
+                away from the defect site. Recommended as it is often faster than
+                the full rattle (requires less ionic relaxation steps). If False,
+                all supercell sites are rattled with the same amplitude (full ratlle).
+                (Default: True)
             stdev (:obj:`float`):
                 Standard deviation (in Angstroms) of the Gaussian distribution
                 from which random atomic displacement distances are drawn during
