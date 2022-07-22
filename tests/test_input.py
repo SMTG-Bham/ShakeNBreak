@@ -666,7 +666,9 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions(defect_dict)
             self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
-        extrinsic_dist = input.Distortions(self.cdte_extrinsic_defects_dict)
+        extrinsic_dist = input.Distortions(
+            self.cdte_extrinsic_defects_dict,
+        )
         self.assertEqual(
             extrinsic_dist.oxidation_states,
             {
@@ -690,6 +692,7 @@ class InputTestCase(unittest.TestCase):
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         # Test `write_vasp_files` method
         _, distortion_metadata = dist.write_vasp_files(
@@ -789,6 +792,7 @@ class InputTestCase(unittest.TestCase):
             max_attempts=10000,
             max_disp=1.0,
             seed=20,
+            local_rattle=False,
         )
         _, distortion_metadata = dist.write_vasp_files(
             verbose=False,
@@ -816,6 +820,7 @@ class InputTestCase(unittest.TestCase):
                 distortion_increment=0.25,
                 distorted_elements={"Int_Cd_2": ["Cd"]},
                 dict_number_electrons_user={"Int_Cd_2": 3},
+                local_rattle=False,
             )
             _, distortion_metadata = dist.write_vasp_files(
                 verbose=True,
@@ -947,6 +952,7 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions(
                 {"interstitials": [reduced_Int_Cd_2_dict]},
                 oxidation_states=oxidation_states,
+                local_rattle=False,
             )
             _, distortion_metadata = dist.write_vasp_files(
                 verbose=True,
@@ -981,6 +987,7 @@ class InputTestCase(unittest.TestCase):
             max_attempts=10000,
             max_disp=1.0,
             seed=20,
+            local_rattle=False,
         )
         _, distortion_metadata = dist.write_vasp_files(
             output_path="test_path",
@@ -1011,6 +1018,7 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
 
         # Test `write_espresso_files` method
@@ -1089,6 +1097,7 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         # Test `write_cp2k_files` method
         for i in self.cdte_defect_folders:
@@ -1162,6 +1171,7 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         # Test `write_castep_files` method, without specifing input file
         for i in self.cdte_defect_folders:
@@ -1235,6 +1245,7 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         # Test `write_fhi_aims_files` method
         for i in self.cdte_defect_folders:
@@ -1310,6 +1321,7 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,  # default is True
         )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(
             verbose=False,
@@ -1325,6 +1337,7 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3],
+            local_rattle=True,  # default
         )
         self.assertTrue(dist.local_rattle)
         defects_dict, metadata_dict = dist.apply_distortions()
@@ -1348,6 +1361,7 @@ class InputTestCase(unittest.TestCase):
             {"interstitials": [int_Cd_2]},
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3,], # zero electron change
+            local_rattle=True,  # default
         )
         defects_dict, metadata_dict = dist.apply_distortions()
         self.assertEqual(
