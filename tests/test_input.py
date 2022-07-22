@@ -1316,6 +1316,48 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
 
+    def test_local_rattle(self,):
+        """"Test option local_rattle of Distortions class"""
+        reduced_V_Cd_dict = self.V_Cd_dict.copy()
+        reduced_V_Cd_dict["charges"] = [0]
+        oxidation_states = {"Cd": +2, "Te": -2}
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=[-0.3],
+        )
+        self.assertTrue(dist.local_rattle)
+        defects_dict, metadata_dict = dist.apply_distortions()
+        # Check structure
+        self.assertEqual(
+            Structure.from_file(
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0_-30.0%_Distortion_tailed_off_rattle_POSCAR"
+            ),
+            defects_dict['vac_1_Cd']["charges"][0]["structures"]["distortions"][
+                "Bond_Distortion_-30.0%"
+            ]
+        )
+        # Check if option written to metadata file
+        self.assertTrue(metadata_dict["distortion_parameters"]["local_rattle"])
+
+        # Check interstitial (internally uses defect_index rather fractional coords)
+        int_Cd_2 = self.Int_Cd_2_dict.copy()
+        int_Cd_2["charges"] = [+2]
+        oxidation_states = {"Cd": +2, "Te": -2}
+        dist = input.Distortions(
+            {"interstitials": [int_Cd_2]},
+            oxidation_states=oxidation_states,
+            bond_distortions=[-0.3,], # zero electron change
+        )
+        defects_dict, metadata_dict = dist.apply_distortions()
+        self.assertEqual(
+            Structure.from_file(
+                f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
+            ),
+            defects_dict['Int_Cd_2']["charges"][2]["structures"]["distortions"][
+                "Rattled"
+            ]
+        )
 
 if __name__ == "__main__":
     unittest.main()
