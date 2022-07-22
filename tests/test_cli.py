@@ -49,7 +49,6 @@ class CLITestCase(unittest.TestCase):
     def tearDown(self):
         for i in [
             "parsed_defects_dict.pickle",
-            "Vac_Cd_mult32_0",
             "distortion_metadata.json",
             "test_config.yml",
         ]:
@@ -58,6 +57,8 @@ class CLITestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
+            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i:
+                shutil.rmtree(i)
 
     def test_snb_generate(self):
         runner = CliRunner()
