@@ -2,6 +2,10 @@ import unittest
 import os
 import datetime
 import shutil
+import pickle
+import json
+import warnings
+import numpy as np
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
@@ -26,15 +30,28 @@ class CLITestCase(unittest.TestCase):
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_minus0pt5_struc_local_rattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_V_Cd_minus0pt5_struc_local_rattled_POSCAR",
             )
-        ) # Local rattle is default
+        )  # Local rattle is default
+        self.CdTe_distortion_config = os.path.join(
+            self.VASP_CDTE_DATA_DIR, "distortion_config.yml"
+        )
+        self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+        )
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
+            self.cdte_defect_dict = pickle.load(fp)
+        self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
     def tearDown(self):
         for i in [
             "parsed_defects_dict.pickle",
             "Vac_Cd_mult32_0",
             "distortion_metadata.json",
+            "test_config.yml",
         ]:
             if_present_rm(i)
 
@@ -55,6 +72,7 @@ class CLITestCase(unittest.TestCase):
                 "-c 0",
                 "-v",
             ],
+            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
@@ -106,7 +124,8 @@ class CLITestCase(unittest.TestCase):
             "-50.0%__num_neighbours=2_Vac_Cd_mult32",
         )  # default
         self.assertEqual(
-            V_Cd_minus0pt5_rattled_POSCAR.structure, self.V_Cd_minus0pt5_struc_local_rattled
+            V_Cd_minus0pt5_rattled_POSCAR.structure,
+            self.V_Cd_minus0pt5_struc_local_rattled,
         )
 
         # Test recognises distortion_metadata.json:
@@ -122,6 +141,7 @@ class CLITestCase(unittest.TestCase):
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 "-c 0",
             ],
+            catch_exceptions=False,
         )  # non-verbose this time
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn(
@@ -168,9 +188,554 @@ class CLITestCase(unittest.TestCase):
             "Combining old and new metadata in distortion_metadata.json", result.output
         )
 
+        # test defect_index option:
+        self.tearDown()
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--defect-index",
+                "4",
+                "-v",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertNotIn(f"Auto site-matching", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertIn("Applying ShakeNBreak...", result.output)
+        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertIn(
+            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+
+        wrong_site_V_Cd_dict = {
+            "distortion_parameters": {
+                "distortion_increment": 0.1,
+                "bond_distortions": [
+                    -0.6,
+                    -0.5,
+                    -0.4,
+                    -0.3,
+                    -0.2,
+                    -0.1,
+                    0.0,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                ],
+                "rattle_stdev": 0.25,
+                "local_rattle": True,
+            },
+            "defects": {
+                "Vac_Cd_mult32": {
+                    "unique_site": [0.5, 0.0, 0.0],
+                    "charges": {
+                        "0": {  # json converts integer strings to keys
+                            "num_nearest_neighbours": 2,
+                            "distorted_atoms": [
+                                [37, "Te"],
+                                [46, "Te"],
+                            ],
+                            "distortion_parameters": {
+                                "bond_distortions": [
+                                    -0.6,
+                                    -0.5,
+                                    -0.4,
+                                    -0.3,
+                                    -0.2,
+                                    -0.1,
+                                    0.0,
+                                    0.1,
+                                    0.2,
+                                    0.3,
+                                    0.4,
+                                    0.5,
+                                    0.6,
+                                ],
+                                "rattle_stdev": 0.25,
+                            },
+                        },
+                    },
+                }
+            },
+        }
+        # check defects from old metadata file are in new metadata file
+        with open(f"distortion_metadata.json", "r") as metadata_file:
+            metadata = json.load(metadata_file)
+        np.testing.assert_equal(metadata, wrong_site_V_Cd_dict)
+
+        # test warning with defect_coords option but wrong site:
+        self.tearDown()
+        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c", "0",
+                    "--defect-coords",
+                    0.5, 0.5, 0.5,
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+            self.assertEqual(result.exit_code, 0)
+            warning_message = "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) " \
+                              "vacancy defect, but could not find it in bulk structure (found 0 " \
+                              "possible defect sites). Will attempt auto site-matching instead."
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertIn("--Distortion -60.0%", result.output)
+            self.assertIn(
+                f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                result.output,
+            )
+
+        self.tearDown()
+        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c", "0",
+                    "--defect-coords",
+                    0.5, 0.5, 0.5,
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+            self.assertEqual(result.exit_code, 0)
+            warning_message = "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) " \
+                              "vacancy defect, but could not find it in bulk structure (found 0 " \
+                              "possible defect sites). Will attempt auto site-matching instead."
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertIn("--Distortion -60.0%", result.output)
+            self.assertIn(
+                f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                result.output,
+            )
+
+        # test defect_coords working:
+        self.tearDown()
+        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c", "0",
+                    "--defect-coords",
+                    0.1, 0.1, 0.1,  # close just not quite 0,0,0
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+            self.assertEqual(result.exit_code, 0)
+            self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
+            # being caught, so just check no UserWarning
+            self.assertNotIn("Coordinates", str(w[0].message))
+            self.assertIn("--Distortion -60.0%", result.output)
+            self.assertIn(
+                f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                result.output,
+            )
+            self.assertNotIn(f"Auto site-matching", result.output)
+            spec_coords_V_Cd_dict = {
+                "distortion_parameters": {
+                    "distortion_increment": 0.1,
+                    "bond_distortions": [
+                        -0.6,
+                        -0.5,
+                        -0.4,
+                        -0.3,
+                        -0.2,
+                        -0.1,
+                        0.0,
+                        0.1,
+                        0.2,
+                        0.3,
+                        0.4,
+                        0.5,
+                        0.6,
+                    ],
+                    "rattle_stdev": 0.25,
+                    "local_rattle": True,
+                },
+                "defects": {
+                    "Vac_Cd_mult32": {
+                        "unique_site": [0.0, 0.0, 0.0],  # matching final site not slightly-off
+                        # user input
+                        "charges": {
+                            "0": {  # json converts integer strings to keys
+                                "num_nearest_neighbours": 2,
+                                "distorted_atoms": [
+                                    [33, "Te"],
+                                    [42, "Te"],
+                                ],
+                                "distortion_parameters": {
+                                    "bond_distortions": [
+                                        -0.6,
+                                        -0.5,
+                                        -0.4,
+                                        -0.3,
+                                        -0.2,
+                                        -0.1,
+                                        0.0,
+                                        0.1,
+                                        0.2,
+                                        0.3,
+                                        0.4,
+                                        0.5,
+                                        0.6,
+                                    ],
+                                    "rattle_stdev": 0.25,
+                                },
+                            },
+                        },
+                    }
+                },
+            }
+            # check defects from old metadata file are in new metadata file
+            with open(f"distortion_metadata.json", "r") as metadata_file:
+                metadata = json.load(metadata_file)
+            np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
+
+    def test_snb_generate_config(self):
+        # test config file:
+        test_yml = f"""
+distortion_increment: 0.05
+stdev: 0.15
+d_min: 2.1250262890187375  # 0.75 * 2.8333683853583165
+nbr_cutoff: 3.4
+n_iter: 3
+active_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] # np.arange(0,31)
+width: 0.3
+max_attempts: 10000
+max_disp: 1.0
+seed: 20
+local_rattle: False"""
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-v",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
+
+        test_yml = f"""
+oxidation_states:
+  Cd: 3
+  Te: -3
+        """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertNotIn(f"Auto site-matching identified", result.output)
+        self.assertNotIn("Oxidation states were not explicitly set", result.output)
+        self.assertIn(
+            "Applying ShakeNBreak... Will apply the following bond distortions: ["
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
+            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
+            result.output,
+        )
+        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 3", result.output)
+        self.assertIn(
+            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 3",
+            result.output,
+        )
+        V_Cd_ox3_POSCAR = Poscar.from_file(
+            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertNotEqual(
+            V_Cd_ox3_POSCAR.structure, self.V_Cd_minus0pt5_struc_local_rattled
+        )
+
+        self.tearDown()
+        test_yml = f"""
+distortion_increment: 0.25
+name: Int_Cd_2
+dict_number_electrons_user:
+  Int_Cd_2: 
+    3
+distorted_elements:
+  Int_Cd_2: 
+    Cd
+local_rattle: False
+"""
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c" "1",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertNotIn(f"Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertIn(
+            "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', "
+            "'-0.25', '0.0', '0.25', '0.5']. Then, will rattle with a std dev of 0.25 Å",
+            result.output,
+        )
+        self.assertIn("Defect: Int_Cd_2", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 3", result.output)
+        self.assertIn(
+            "Defect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 4",
+            result.output,
+        )
+
+        reduced_Int_Cd_2_dict = self.Int_Cd_2_dict.copy()
+        reduced_Int_Cd_2_dict["charges"] = [1]
+        kwarged_Int_Cd_2_dict = {
+            "distortion_parameters": {
+                "distortion_increment": 0.25,
+                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                "rattle_stdev": 0.25,
+                "local_rattle": False,
+            },
+            "defects": {
+                "Int_Cd_2": {
+                    "unique_site": reduced_Int_Cd_2_dict["bulk_supercell_site"]
+                    .frac_coords.round(4)
+                    .tolist(),
+                    "charges": {
+                        "1": {  # json converts integer strings to keys
+                            "num_nearest_neighbours": 4,
+                            "distorted_atoms": [
+                                [10, "Cd"],
+                                [22, "Cd"],
+                                [29, "Cd"],
+                                [1, "Cd"],
+                            ],
+                            "distortion_parameters": {
+                                "bond_distortions": [
+                                    -0.5,
+                                    -0.25,
+                                    0.0,
+                                    0.25,
+                                    0.5,
+                                ],
+                                "rattle_stdev": 0.25,
+                            },
+                        },
+                    },
+                    "defect_site_index": 65,
+                }
+            },
+        }
+        # check defects from old metadata file are in new metadata file
+        with open(f"distortion_metadata.json", "r") as metadata_file:
+            metadata = json.load(metadata_file)
+        np.testing.assert_equal(metadata, kwarged_Int_Cd_2_dict)
+
+        self.tearDown()
+        test_yml = f"""
+        bond_distortions: [-0.5, -0.25, 0.0, 0.25, 0.5]
+        name: Wally_McDoodle
+        local_rattle: True
+        """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c" "0",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertNotIn(f"Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertIn(
+            "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', '-0.25', "
+            "'0.0', '0.25', '0.5']. Then, will rattle with a std dev of 0.25 Å",
+            result.output,
+        )
+        self.assertIn("Defect: Wally_McDoodle", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertIn(
+            "Defect Wally_McDoodle in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        # check if correct files were created:
+        V_Cd_Bond_Distortion_folder = "Wally_McDoodle_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        self.assertTrue(os.path.exists("Wally_McDoodle_0/Unperturbed"))
+        V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(
+            V_Cd_Bond_Distortion_folder + "/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_minus0pt5_rattled_POSCAR.comment,
+            "-50.0%__num_neighbours=2_Wally_McDoodle",
+        )  # default
+        self.assertEqual(
+            V_Cd_minus0pt5_rattled_POSCAR.structure,
+            self.V_Cd_minus0pt5_struc_local_rattled,
+        )
+
+        # test min, max charge setting:
+        self.tearDown()
+        test_yml = f"""
+                min_charge: -7
+                max_charge: -5
+                """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(
+            "Defect Vac_Cd_mult32 in charge state: -7. Number of distorted neighbours: 3",
+            result.output,
+        )
+        self.assertIn(
+            "Defect Vac_Cd_mult32 in charge state: -6. Number of distorted neighbours: 4",
+            result.output,
+        )
+        self.assertIn(
+            "Defect Vac_Cd_mult32 in charge state: -5. Number of distorted neighbours: 3",
+            result.output,
+        )
+        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: -4", result.output)
+        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
+        self.assertTrue(os.path.exists("Vac_Cd_mult32_-7"))
+        self.assertTrue(os.path.exists("Vac_Cd_mult32_-6"))
+        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5"))
+        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5/Unperturbed"))
+        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5/Bond_Distortion_40.0%"))
+        self.assertFalse(os.path.exists("Vac_Cd_mult32_-4"))
+
+        # test priority (CLI > config)
+        self.tearDown()
+        test_yml = f"""
+                        charge: 1
+                        """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c" "0",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
+        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: +1", result.output)
+
+        # TODO:
+        # test parsed defects pickle
+        # test error handling and all print messages
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
-        # test all options etc etc
 
 
 if __name__ == "__main__":
