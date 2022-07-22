@@ -44,6 +44,7 @@ def warning_on_one_line(
     # and `line`, but don't want to print them, so unused arguments here
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
+
 warnings.formatwarning = warning_on_one_line
 
 
@@ -256,8 +257,10 @@ def _most_common_oxi(element) -> int:
     comp_obj = Composition("O")
     comp_obj.add_charges_from_oxi_state_guesses()
     element_obj = Element(element)
-    oxi_probabilities = [(k,v) for k,v in comp_obj.oxi_prob.items() if k.element == element_obj]
-    most_common = max(oxi_probabilities, key = lambda x: x[1])[0]
+    oxi_probabilities = [
+        (k, v) for k, v in comp_obj.oxi_prob.items() if k.element == element_obj
+    ]
+    most_common = max(oxi_probabilities, key=lambda x: x[1])[0]
     return most_common.oxi_state
 
 
@@ -429,7 +432,7 @@ def apply_rattle_bond_distortions(
         defect_site_index = len(
             defect_dict["supercell"]["structure"]
         )  # defect atom comes last in structure, using doped or pymatgen
-        frac_coords = None # only for vacancies
+        frac_coords = None  # only for vacancies
         bond_distorted_defect = distort(
             structure=defect_dict["supercell"]["structure"],
             num_nearest_neighbours=num_nearest_neighbours,
@@ -467,9 +470,7 @@ def apply_rattle_bond_distortions(
             i - 1 for i in distorted_atom_indices if i is not None
         ]  # remove
         # 'None' if defect is vacancy, and convert to python indexing
-        rattling_atom_indices = np.arange(0, len(defect_dict["supercell"][
-            "structure"
-        ]))
+        rattling_atom_indices = np.arange(0, len(defect_dict["supercell"]["structure"]))
         idx = np.in1d(
             rattling_atom_indices, distorted_atom_indices
         )  # returns True for matching indices
@@ -497,11 +498,8 @@ def apply_rattle_bond_distortions(
     except Exception as ex:
         if "attempts" in str(ex):
             distorted_defect_struc = bond_distorted_defect["distorted_structure"]
-            sorted_distances = np.sort(
-                distorted_defect_struc.distance_matrix.flatten()
-            )
-            reduced_d_min = sorted_distances[len(distorted_defect_struc)] \
-            + (2 * stdev)
+            sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
+            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (2 * stdev)
             if local_rattle:
                 bond_distorted_defect["distorted_structure"] = local_mc_rattle(
                     structure=bond_distorted_defect["distorted_structure"],
@@ -633,15 +631,13 @@ def apply_snb_distortions(
             defect_site_index = None
             frac_coords = defect_dict["bulk_supercell_site"].frac_coords
         else:
-            frac_coords = None # only for vacancies!
+            frac_coords = None  # only for vacancies!
             defect_site_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
         if not d_min:
             defect_supercell = defect_dict["supercell"]["structure"]
-            sorted_distances = np.sort(
-                defect_supercell.distance_matrix.flatten()
-            )
+            sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
             d_min = (
                 0.8 * sorted_distances[len(defect_supercell) + 20]
             )  # ignoring interstitials by
@@ -662,12 +658,14 @@ def apply_snb_distortions(
                 frac_coords=frac_coords,
                 stdev=stdev,
                 d_min=d_min,
-                **kwargs
+                **kwargs,
             )
         else:
             perturbed_structure = rattle(
-                defect_dict["supercell"]["structure"], stdev=stdev, d_min=d_min,
-                **kwargs
+                defect_dict["supercell"]["structure"],
+                stdev=stdev,
+                d_min=d_min,
+                **kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
@@ -687,6 +685,7 @@ class Distortions:
     Class to apply rattle and bond distortion to all defects in `defects_dict`
     (in `doped` `ChargedDefectsStructures()` format).
     """
+
     def __init__(
         self,
         defects_dict: dict,
@@ -760,7 +759,9 @@ class Distortions:
 
         if oxidation_states is None:
             if "bulk" in self.defects_dict:
-                bulk_comp = self.defects_dict["bulk"]["supercell"]["structure"].composition
+                bulk_comp = self.defects_dict["bulk"]["supercell"][
+                    "structure"
+                ].composition
                 self.oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
             else:  # determine bulk composition from first defect in dict
@@ -770,16 +771,23 @@ class Distortions:
 
             if "substitutions" in self.defects_dict:
                 for substitution in self.defects_dict["substitutions"]:
-                    if substitution["defect_type"] == "substitution" and substitution[
-                        "bulk_supercell_site"].specie.symbol not in self.oxidation_states:
+                    if (
+                        substitution["defect_type"] == "substitution"
+                        and substitution["bulk_supercell_site"].specie.symbol
+                        not in self.oxidation_states
+                    ):
                         # substituting species not in bulk composition
                         substitution_specie = substitution["substitution_specie"]
                         likely_substitution_oxi = _most_common_oxi(substitution_specie)
-                        self.oxidation_states[substitution_specie] = likely_substitution_oxi
+                        self.oxidation_states[
+                            substitution_specie
+                        ] = likely_substitution_oxi
 
-            print(f"Oxidation states were not explicitly set, thus have been "
-                  f"guessed as {self.oxidation_states}. If this is unreasonable "
-                  f"you should manually set oxidation_states")
+            print(
+                f"Oxidation states were not explicitly set, thus have been "
+                f"guessed as {self.oxidation_states}. If this is unreasonable "
+                f"you should manually set oxidation_states"
+            )
 
         if bond_distortions:
             self.distortion_increment = None  # user specified
@@ -791,18 +799,23 @@ class Distortions:
             # If the user does not specify bond_distortions, use
             # distortion_increment:
             self.distortion_increment = distortion_increment
-            self.bond_distortions = list(np.flip(np.around(
-                    np.arange(0, 0.601, self.distortion_increment), decimals=3
-            )) * -1 )[:-1] + list(np.around(
-                np.arange(0, 0.601, self.distortion_increment), decimals=3
-            ))
+            self.bond_distortions = list(
+                np.flip(
+                    np.around(
+                        np.arange(0, 0.601, self.distortion_increment), decimals=3
+                    )
+                )
+                * -1
+            )[:-1] + list(
+                np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)
+            )
 
         self._mc_rattle_kwargs = kwargs
 
         # Create dictionary to keep track of the bond distortions applied
         self.distortion_metadata = {
             "distortion_parameters": {
-                "distortion_increment": self.distortion_increment, # None if
+                "distortion_increment": self.distortion_increment,  # None if
                 # user specified bond_distortions
                 "bond_distortions": self.bond_distortions,
                 "rattle_stdev": self.stdev,
@@ -835,8 +848,7 @@ class Distortions:
             except KeyError:
                 warnings.warn(
                     "Problem reading the keys in distorted_elements.",
-                    "Are they the correct defect names (without charge "
-                    + "states)?",
+                    "Are they the correct defect names (without charge states)?",
                     "Proceeding without discriminating which neighbour "
                     + "elements to distort.",
                 )
@@ -965,8 +977,8 @@ class Distortions:
         return distortion_metadata
 
     def write_distortion_metadata(
-      self,
-      output_path = ".",
+        self,
+        output_path=".",
     ) -> None:
         """
         Write metadata to file. If the file already exists, it will be
@@ -992,8 +1004,11 @@ class Distortions:
             "defect_multiplicity": defect["site_multiplicity"],
             "supercell": defect["supercell"]["size"],
             "charges": {charge: {} for charge in defect["charges"]},
-        } # General info about (neutral) defect
-        for key in ["substitution_specie", "substituting_specie"]:  # substitutions and antisites
+        }  # General info about (neutral) defect
+        for key in [
+            "substitution_specie",
+            "substituting_specie",
+        ]:  # substitutions and antisites
             if key in defect:
                 distorted_defects_dict[defect_name][key] = defect[key]
         return distorted_defects_dict
@@ -1028,20 +1043,17 @@ class Distortions:
             and dictionary with distortion parameters for each defect.
         """
         self._print_distortion_info(
-            bond_distortions=self.bond_distortions,
-            stdev=self.stdev
+            bond_distortions=self.bond_distortions, stdev=self.stdev
         )
 
-        distorted_defects_dict = {} # Store distorted & undistorted structures
+        distorted_defects_dict = {}  # Store distorted & undistorted structures
 
         comb_defs = functools.reduce(
-            lambda x, y: x + y, [
-                self.defects_dict[key] for key in self.defects_dict
-                if key != "bulk"
-            ]
+            lambda x, y: x + y,
+            [self.defects_dict[key] for key in self.defects_dict if key != "bulk"],
         )
 
-        for defect in comb_defs: # loop for each defect
+        for defect in comb_defs:  # loop for each defect
             defect_name = defect["name"]  # name without charge state
             bulk_supercell_site = defect["bulk_supercell_site"]
 
@@ -1066,7 +1078,7 @@ class Distortions:
             distorted_defects_dict = self._setup_distorted_defect_dict(
                 distorted_defects_dict=distorted_defects_dict,
                 defect_name=defect_name,
-                defect=defect
+                defect=defect,
             )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
@@ -1088,24 +1100,22 @@ class Distortions:
                 )
 
                 # Add distorted structures to dictionary
-                distorted_defects_dict[defect_name]["charges"][charge][
-                    "structures"
-                ] =  {
+                distorted_defects_dict[defect_name]["charges"][charge]["structures"] = {
                     "Unperturbed": defect_distorted_structures["Unperturbed"][
-                        "supercell"]["structure"
-                    ],
+                        "supercell"
+                    ]["structure"],
                     "distortions": {
-                        dist: struct for dist, struct in
-                        defect_distorted_structures["distortions"].items()
-                    }
+                        dist: struct
+                        for dist, struct in defect_distorted_structures[
+                            "distortions"
+                        ].items()
+                    },
                 }
 
                 # Store distortion parameters/info in self.distortion_metadata
                 defect_site_index = defect_distorted_structures[
                     "distortion_parameters"
-                ].get(
-                    "defect_site_index"
-                )
+                ].get("defect_site_index")
                 self.distortion_metadata = self._update_distortion_metadata(
                     distortion_metadata=self.distortion_metadata,
                     defect_name=defect_name,
@@ -1114,9 +1124,7 @@ class Distortions:
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=defect_distorted_structures[
                         "distortion_parameters"
-                    ][
-                        "distorted_atoms"
-                    ]
+                    ]["distorted_atoms"],
                 )
 
         return distorted_defects_dict, self.distortion_metadata
@@ -1129,14 +1137,14 @@ class Distortions:
     ) -> str:
         """Generate comment for structure files"""
         poscar_comment = (
-            str(key_distortion.split("_")[
-                -1
-            ])  # Get distortion factor (-60.%) or 'Rattled'
+            str(
+                key_distortion.split("_")[-1]
+            )  # Get distortion factor (-60.%) or 'Rattled'
             + "__num_neighbours="
             + str(
-                self.distortion_metadata["defects"][defect_name]["charges"][
-                    charge
-                ]["num_nearest_neighbours"]
+                self.distortion_metadata["defects"][defect_name]["charges"][charge][
+                    "num_nearest_neighbours"
+                ]
             )
             + "_"
             + defect_name
@@ -1191,29 +1199,36 @@ class Distortions:
         )
 
         warnings.filterwarnings(
-        "ignore", category=BadInputSetWarning
-        ) # Ignore POTCAR warnings because Pymatgen incorrectly detecting
+            "ignore", category=BadInputSetWarning
+        )  # Ignore POTCAR warnings because Pymatgen incorrectly detecting
         # POTCAR types
 
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
 
             dict_transf = {
-                k: v for k,v in defect_dict.items() if k != "charges"
-            } # Single defect dict
+                k: v for k, v in defect_dict.items() if k != "charges"
+            }  # Single defect dict
             charged_defect = {}
 
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
 
                 for key_distortion, struct in zip(
-                    ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].values())
+                    [
+                        "Unperturbed",
+                    ]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].keys()
+                    ),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].values()
+                    ),
                 ):
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
@@ -1224,10 +1239,11 @@ class Distortions:
                     charged_defect[key_distortion] = {
                         "Defect Structure": struct,
                         "POSCAR Comment": poscar_comment,
-                        "Transformation Dict": copy.deepcopy(dict_transf)
+                        "Transformation Dict": copy.deepcopy(dict_transf),
                     }
-                    charged_defect[key_distortion][
-                        "Transformation Dict"].update({"charge": charge})
+                    charged_defect[key_distortion]["Transformation Dict"].update(
+                        {"charge": charge}
+                    )
 
                 _create_vasp_input(
                     defect_name=f"{defect_name}_{charge}",
@@ -1287,12 +1303,13 @@ class Distortions:
                 for section in input_parameters:
                     for key in input_parameters[section]:
                         if section in default_input_parameters:
-                            default_input_parameters[section][
-                                key] = input_parameters[section][key]
+                            default_input_parameters[section][key] = input_parameters[
+                                section
+                            ][key]
                         else:
-                            default_input_parameters.update({
-                                section: {key: input_parameters[section][key]}
-                           })
+                            default_input_parameters.update(
+                                {section: {key: input_parameters[section][key]}}
+                            )
 
         aaa = AseAtomsAdaptor()
 
@@ -1302,18 +1319,23 @@ class Distortions:
             for charge in defect_dict["charges"]:  # loop for each charge state
 
                 for dist, struct in zip(
-                    ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].values())
+                    [
+                        "Unperturbed",
+                    ]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].keys()
+                    ),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].values()
+                    ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(
-                        f"{output_path}/{defect_name}_{charge}/{dist}"
-                    )
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
 
                     if not pseudopotentials or write_structures_only:
                         # only write structures
@@ -1324,12 +1346,14 @@ class Distortions:
                         ase.io.write(
                             filename=f"{output_path}/"
                             + f"{defect_name}_{charge}/{dist}/espresso.pwi",
-                            images=atoms, format="espresso-in"
+                            images=atoms,
+                            format="espresso-in",
                         )
                     elif pseudopotentials and not write_structures_only:
                         # write complete input file
                         default_input_parameters["SYSTEM"][
-                            "tot_charge"] = charge # Update defect charge
+                            "tot_charge"
+                        ] = charge  # Update defect charge
 
                         calc = Espresso(
                             pseudopotentials=pseudopotentials,
@@ -1340,8 +1364,9 @@ class Distortions:
                         )
                         calc.write_input(atoms)
                         os.replace(
-                            "./espresso.pwi", f"{output_path}/"
-                            + f"{defect_name}_{charge}/{dist}/espresso.pwi"
+                            "./espresso.pwi",
+                            f"{output_path}/"
+                            + f"{defect_name}_{charge}/{dist}/espresso.pwi",
                         )
         return distorted_defects_dict, self.distortion_metadata
 
@@ -1374,8 +1399,10 @@ class Distortions:
         """
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
-        elif os.path.exists(f"{MODULE_DIR}/../input_files/cp2k_input.inp") and \
-            not write_structures_only:
+        elif (
+            os.path.exists(f"{MODULE_DIR}/../input_files/cp2k_input.inp")
+            and not write_structures_only
+        ):
             warnings.warn(
                 f"Specified input file {input_file} does not exist! Using"
                 " default CP2K input file "
@@ -1395,29 +1422,35 @@ class Distortions:
             for charge in defect_dict["charges"]:
 
                 if not write_structures_only and cp2k_input:
-                    cp2k_input.update({
-                        "FORCE_EVAL": {"DFT": {"CHARGE": charge}}
-                    })
+                    cp2k_input.update({"FORCE_EVAL": {"DFT": {"CHARGE": charge}}})
 
                 for dist, struct in zip(
-                    ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].values())
+                    [
+                        "Unperturbed",
+                    ]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].keys()
+                    ),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].values()
+                    ),
                 ):
-                    _create_folder(
-                        f"{output_path}/{defect_name}_{charge}/{dist}"
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    struct.to(
+                        "cif",
+                        f"{output_path}/{defect_name}_{charge}/"
+                        + f"{dist}/structure.cif",
                     )
-                    struct.to('cif', f"{output_path}/{defect_name}_{charge}/"
-                              + f"{dist}/structure.cif")
                     if not write_structures_only and cp2k_input:
                         cp2k_input.write_file(
                             input_filename="cp2k_input.inp",
                             output_dir=f"{output_path}/{defect_name}_{charge}/"
-                            + f"{dist}"
+                            + f"{dist}",
                         )
 
         return distorted_defects_dict, self.distortion_metadata
@@ -1455,11 +1488,10 @@ class Distortions:
         )
         aaa = AseAtomsAdaptor()
         warnings.filterwarnings(
-            'ignore',
-            '.*Could not determine the version of your CASTEP binary.*'
+            "ignore", ".*Could not determine the version of your CASTEP binary.*"
         )
         warnings.filterwarnings(
-            'ignore', '.*Generating CASTEP keywords JSON file... hang on.*'
+            "ignore", ".*Generating CASTEP keywords JSON file... hang on.*"
         )
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
@@ -1467,32 +1499,38 @@ class Distortions:
             for charge in defect_dict["charges"]:
 
                 for dist, struct in zip(
-                    ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].values())
+                    [
+                        "Unperturbed",
+                    ]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].keys()
+                    ),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].values()
+                    ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(
-                        f"{output_path}/{defect_name}_{charge}/{dist}"
-                    )
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
 
                     if write_structures_only:
                         ase.io.write(
                             filename=f"{output_path}/{defect_name}_{charge}/"
                             + f"{dist}/castep.cell",
-                            images=atoms, format="castep-cell"
+                            images=atoms,
+                            format="castep-cell",
                         )
                     else:
                         try:
                             calc = Castep(
                                 directory=f"{output_path}/"
-                                +f"{defect_name}_{charge}/{dist}"
+                                + f"{defect_name}_{charge}/{dist}"
                             )
-                            calc.set_kpts({'size': (1, 1, 1), 'gamma': True})
+                            calc.set_kpts({"size": (1, 1, 1), "gamma": True})
                             calc.merge_param(input_file)
                             calc.param.charge = charge  # Defect charge state
                             calc.set_atoms(atoms)
@@ -1506,7 +1544,8 @@ class Distortions:
                             ase.io.write(
                                 filename=f"{output_path}/{defect_name}_{charge}/"
                                 + f"{dist}/castep.cell",
-                                images=atoms, format="castep-cell"
+                                images=atoms,
+                                format="castep-cell",
                             )
         return distorted_defects_dict, self.distortion_metadata
 
@@ -1546,12 +1585,12 @@ class Distortions:
 
         if not ase_calculator and not write_structures_only:
             ase_calculator = Aims(
-                k_grid=(1,1,1),
+                k_grid=(1, 1, 1),
                 relax_geometry=("bfgs", 5e-3),
                 xc=("hse06", 0.11),
-                hse_unit="A", # Angstrom
-                spin="collinear", # Spin polarized
-                default_initial_moment=0, # Needs to be set
+                hse_unit="A",  # Angstrom
+                spin="collinear",  # Spin polarized
+                default_initial_moment=0,  # Needs to be set
                 hybrid_xc_coeff=0.25,
                 # By default symmetry is not preserved
             )
@@ -1560,15 +1599,13 @@ class Distortions:
 
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
-                if isinstance(ase_calculator, Aims) and \
-                    not write_structures_only:
+                if isinstance(ase_calculator, Aims) and not write_structures_only:
                     ase_calculator.set(charge=charge)  # Defect charge state
 
                     # Total number of electrons for net spin initialization
                     # Must set initial spin moments (otherwise FHI-aims will
                     # lead to 0 final spin)
-                    struct = defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]
+                    struct = defect_dict["charges"][charge]["structures"]["Unperturbed"]
                     if struct.composition.total_electrons % 2 == 0:
                         # Even number of electrons -> net spin is 0
                         ase_calculator.set(default_initial_moment=0)
@@ -1576,32 +1613,37 @@ class Distortions:
                         ase_calculator.set(default_initial_moment=1)
 
                 for dist, struct in zip(
-                    ["Unperturbed",]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].keys()),
-                    [defect_dict["charges"][charge]["structures"][
-                        "Unperturbed"]]
-                    + list(defect_dict["charges"][charge]["structures"][
-                        "distortions"].values())
+                    [
+                        "Unperturbed",
+                    ]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].keys()
+                    ),
+                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    + list(
+                        defect_dict["charges"][charge]["structures"][
+                            "distortions"
+                        ].values()
+                    ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(
-                        f"{output_path}/{defect_name}_{charge}/{dist}"
-                    )
+                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
 
                     ase.io.write(
                         filename=f"{output_path}/{defect_name}_{charge}"
                         + f"/{dist}/geometry.in",
-                        images=atoms, format="aims",
+                        images=atoms,
+                        format="aims",
                         info_str=dist,
-                        ) # write input structure file
+                    )  # write input structure file
 
-                    if isinstance(ase_calculator, Aims) and \
-                        not write_structures_only:
+                    if isinstance(ase_calculator, Aims) and not write_structures_only:
                         ase_calculator.write_control(
                             filename=f"{output_path}/{defect_name}_{charge}"
                             + f"/{dist}/control.in",
-                            atoms=atoms
-                        ) # write parameters file
+                            atoms=atoms,
+                        )  # write parameters file
 
         return distorted_defects_dict, self.distortion_metadata

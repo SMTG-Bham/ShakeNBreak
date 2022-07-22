@@ -97,7 +97,7 @@ class InputTestCase(unittest.TestCase):
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
             )
         )
-        self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
+        self.Int_Cd_2_minus0pt6_NN_10_struc_unrattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
             )
@@ -363,7 +363,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             Int_Cd_2_distorted_dict["distorted_structure"],
-            self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
+            self.Int_Cd_2_minus0pt6_NN_10_struc_unrattled,
         )
         self.assertEqual(
             Int_Cd_2_distorted_dict["undistorted_structure"], self.Int_Cd_2_struc
@@ -545,7 +545,7 @@ class InputTestCase(unittest.TestCase):
         ]
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
         self.assertEqual(
-            self.Int_Cd_2_minus0pt6_NN_10_struc_rattled, distorted_Int_Cd_2_struc
+            self.Int_Cd_2_minus0pt6_NN_10_struc_unrattled, distorted_Int_Cd_2_struc
         )
         np.testing.assert_equal(
             Int_Cd_2_distorted_dict["distortion_parameters"],
@@ -831,6 +831,7 @@ class InputTestCase(unittest.TestCase):
                     "distortion_increment": 0.25,
                     "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
                     "rattle_stdev": 0.25,
+                    "local_rattle": False,
                 },
                 "defects": {
                     "Int_Cd_2": {
@@ -911,11 +912,14 @@ class InputTestCase(unittest.TestCase):
             # check defects from old metadata file are in new metadata file
             with open(f"distortion_metadata.json", "r") as metadata_file:
                 metadata = json.load(metadata_file)
+            for defect in metadata["defects"].values():
+                defect["charges"] = {int(k): v for k,v in defect["charges"].items()}
+                # json converts integer keys to strings
+            metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"] = [
+                tuple(x) for x in metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"]]
             np.testing.assert_equal(
-                metadata["defects"]["vac_1_Cd"]["charges"][
-                    "0"
-                ],  # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict["defects"]["vac_1_Cd"]["charges"][0],
+                metadata,  # check defect in distortion_defect_dict
+                kwarged_Int_Cd_2_dict
             )
 
             # check expected info printing:
