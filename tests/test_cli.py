@@ -24,11 +24,11 @@ class CLITestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
+        self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_minus0pt5_struc_local_rattled_POSCAR"
             )
-        )
+        ) # Local rattle is default
 
     def tearDown(self):
         for i in [
@@ -106,7 +106,7 @@ class CLITestCase(unittest.TestCase):
             "-50.0%__num_neighbours=2_Vac_Cd_mult32",
         )  # default
         self.assertEqual(
-            V_Cd_minus0pt5_rattled_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled
+            V_Cd_minus0pt5_rattled_POSCAR.structure, self.V_Cd_minus0pt5_struc_local_rattled
         )
 
         # Test recognises distortion_metadata.json:

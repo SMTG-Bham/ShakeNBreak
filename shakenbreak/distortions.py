@@ -255,7 +255,6 @@ def rattle(
     return rattled_structure
 
 
-# TODO: Implement tests for the local_mc_rattle function
 def _local_mc_rattle_displacements(
     atoms,
     site_index,
