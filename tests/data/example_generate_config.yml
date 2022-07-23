@@ -1,0 +1,36 @@
+### Example config file for snb-generate, with all options commented out
+
+## General/distortion options
+# oxidation_states:
+#   Cd: 2
+#   Te: -2
+# distortion_increment: 0.1
+# bond_distortions: [-0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+# distorted_elements:  # (Default = None, distorts nearest neighbours)
+#   Int_Cd_2:
+#     Cd
+# dict_number_electrons_user:  # (Default = None, determines from electron change at defect site)
+#   Int_Cd_2:
+#     2
+
+## Rattle options
+# stdev: 0.25
+# d_min: 2.25  # (Default = 80% of auto-determined bulk bond length)
+# n_iter: 1
+# active_atoms: = None  # (Default = all atoms)
+# nbr_cutoff: 5
+# width: 0.1
+# max_attempts: 5000
+# max_disp: 2.0
+# seed: 42
+# local_rattle: True
+
+## CLI arguments can also be specified using the config file:
+# charge: 0  # (Default = None, assumes charge range from -2 to +2)
+# min_charge: -2  # (Default = None, assumes charge range from -2 to +2)
+# max_charge: 2  # (Default = None, assumes charge range from -2 to +2)
+# defect_index: 1 # (Default = None, determines defect position automatically)
+# defect_coords: [0, 0, 0] # (Default = None, determines defect position automatically)
+# code: VASP
+# name: Int_1_Sb  # (Default = None, automatically generated using pymatgen syntax)
+# verbose: False
