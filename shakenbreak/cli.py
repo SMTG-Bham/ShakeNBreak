@@ -239,7 +239,8 @@ def snb():
                    "site-matching fails. In the form 'x y z' (3 arguments)",
               type=click.Tuple([float, float, float]), default=None)
 @click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'",
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
               default="VASP", type=str)
 @click.option("--name", "-n", help="Defect name for folder and metadata generation. Defaults to "
                                    "pymatgen standard: '{Defect Type}_mult{Supercell Multiplicity}'",
@@ -310,112 +311,166 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
+
 # generate-all command where we loop over each directory and create our full defect_dict,
 # save to pickle and run through Distortions
 # for this will need to use folders as filenames so we know which goes where
 # – this ok if folders aren't typical defect names?
-@snb.command()
+# TODO: if defect names specified as folders/filenames are non-standard,
+# this can raise issues when analysing the results (some of our functions expect standard defect names)
+# Maybe we should check for this, and replace with standard defect names
+@snb.command(name="generate_all", context_settings=CONTEXT_SETTINGS,
+             no_args_is_help=True,)
 @click.option("--defects", "-d", help="Path root directory with defect folders/files",
-                type=click.Path(exists=True, dir_okay=True))
+            type=click.Path(exists=True, dir_okay=True))
 @click.option("--structure_file", "-f", help="File termination/name from which to"
               "parse defect structure from. Only required if defects are stored "
-              "in individual directories", type=str, default="POSCAR")
+              "in individual directories. Defaults to POSCAR",
+              type=str, default="POSCAR")
 @click.option("--bulk", "-b", help="Path to bulk structure",
               type=click.Path(exists=True, dir_okay=False))
 @click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'",
-              default="VASP", type=str)
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
+              type=str, default="VASP")
+# @click.option("--distortions", help=f"List of bond distortions to apply. "
+#               f"Defaults to {list(round(d, 1) for d in np.arange(-0.6, 0.61, 0.1))}",
+#              default=None, type=list)  # Better to specify it in the config file
 @click.option("--config", help="Config file for advanced distortion settings", default=None)
 @click.option("--verbose", "-v", help ="Print information about identified defects and generated "
-                                       "distortions", default = False, is_flag = True)
+              "distortions", default = False, is_flag = True)
 def generate_all(defects, bulk, structure_file, code, config, verbose):
     """
     Generate the trial distortions for structure-searching for all defects
     in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
-    defects = os.listdir(defects)
+    defects_dirs = os.listdir(defects)
     if config is not None:
         # In the config file, user can specify index/frac_coords and charges for each defect
         # This way they also provide the names, that should match either the defect folder names
         # or the defect file names (if they are not organised in folders)
         user_settings = loadfn(config)
-    else:
-        user_settings = {}
-
-    def parse_defect_name(defect, user_settings):
-        """Parse defect name from file/folder name"""
         if user_settings.get("defects"):
-            defect_names = user_settings["defects"].keys()
+            defect_settings = deepcopy(user_settings["defects"])
+            user_settings.pop("defects", None)
+        else:
+            defect_settings = {}
+    else:
+        defect_settings, user_settings = {}, {}
+
+    def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
+        """Parse defect name from file/folder name"""
+        defect_name = None
+        # if user included cif/POSCAR as part of the defect
+        # structure name, remove it
+        for substring in ("cif", "POSCAR", structure_file):
+            defect = defect.replace(substring, "")
+            for symbol in ("-", "_", "."):
+                if defect.endswith(symbol): # trailing characters
+                    defect = defect[:-1]
+        # Check if defect specified in config file
+        if defect_settings:
+            defect_names = defect_settings.keys()
             if defect in defect_names:
                 defect_name = defect
-        elif [substring in defect_name.lower() for substring in ("as", "vac", "int")]:
+            else:
+                warnings.warn(
+                    f"Defect {defect} not found in config file {config}. "
+                    f"Will parse defect name from folders/files."
+                )
+        if (not defect_name) and any([substring in defect.lower() for substring in ("as", "vac", "int")]):
+            # TODO: Include other typical defect abbreviations like "V", "I" etc
             # if user didnt specify defect names in config file,
             # check if defect filename correspond to standard defect names
             defect_name = defect
-        else:
-            defect_name = None
+        if not defect_name:
             raise ValueError(
-            "Error in defect name parsing; could not parse defect name "
-            f"from {defect}. Please include its name in the 'defects' section of "
-            " the config file.")
+                "Error in defect name parsing; could not parse defect name "
+                f"from {defect}. Please include its name in the 'defects' section of "
+                "the config file."
+            )
         return defect_name
 
-    def parse_defect_charges(defect_name, user_settings):
-        if user_settings.get("defects"):
-            charges = user_settings["defects"].get(defect_name).get("charges")
-        else:
-            warnings.warn("No charge (range) set for defect, assuming default range of +/-2")
+    def parse_defect_charges(defect_name, defect_settings):
+        charges = None
+        if isinstance(defect_settings, dict):
+            if defect_name in defect_settings:
+                charges = defect_settings.get(defect_name).get("charges")
+        if not charges:
+            warnings.warn(f"No charge (range) set for defect {defect_name} in config file,"
+                            " assuming default range of +/-2")
             charges = list(range(-2, +3))
         return charges
 
-    def parse_defect_position(defect_name, user_settings):
-        if user_settings.get("defects"):
-            defect_index = user_settings["defects"].get(defect_name).get("defect_index")
-            if defect_index:
-                return int(defect_index), None
-            else:
-                defect_coords = user_settings["defects"].get(defect_name).get("defect_coords")
-                return None, defect_coords
+    def parse_defect_position(defect_name, defect_settings):
+        if defect_settings:
+            if defect_name in defect_settings:
+                defect_index = defect_settings.get(defect_name).get("defect_index")
+                if defect_index:
+                    return int(defect_index), None
+                else:
+                    defect_coords = defect_settings.get(defect_name).get("defect_coords")
+                    return None, defect_coords
         return None, None
 
     defects_dict = {}
-    for defect in defects:
-        if os.path.isfile(defect):
+    for defect in defects_dirs:
+        if os.path.isfile(f"{defects}/{defect}"):
             try: # try to parse structure from it
-                defect_struc = Structure.from_file(defect)
-                defect_name = parse_defect_name(defect, user_settings)
+                defect_struc = Structure.from_file(f"{defects}/{defect}")
+                defect_name = parse_defect_name(defect, defect_settings)
             except:
                 continue
 
-        elif os.path.isdir(defect):
-            defect_file = [
-                file for file in os.listdir(defect) if structure_file in file
-                or "cif" in file
-            ]  # check for POSCAR and cif by default
+        elif os.path.isdir(f"{defects}/{defect}"):
+            if len(os.listdir(f"{defects}/{defect}")) == 1:  # if only 1 file in directory,
+                # assume it's the defect structure
+                defect_file = os.listdir(f"{defects}/{defect}")[0]
+            else:
+                defect_file = [
+                    file.lower() for file in os.listdir(f"{defects}/{defect}")
+                    if structure_file.lower() in file
+                    or "cif" in file
+                ][0]  # check for POSCAR and cif by default
             if defect_file:
-                defect_struc = Structure.from_file(os.path.join(defect, defect_file[0]))
-                defect_name = parse_defect_name(defect, user_settings)
-
+                defect_struc = Structure.from_file(
+                    os.path.join(defects, defect, defect_file)
+                )
+                defect_name = parse_defect_name(defect, defect_settings)
+        else:
+            raise FileNotFoundError(f"Could not parse defects from path {defects}")
         # Check if charges / indices are provided in config file
-        charges = parse_defect_charges(defect_name, user_settings)
-        defect_index, defect_coords = parse_defect_position(defect_name, user_settings)
-        defect_object = identify_defect(defect_structure=defect_struc, bulk_structure=bulk_struc,
-                                    defect_index=defect_index, defect_coords=defect_coords)
+        charges = parse_defect_charges(defect_name, defect_settings)
+        defect_index, defect_coords = parse_defect_position(
+            defect_name,
+            defect_settings
+        )
+        defect_object = identify_defect(
+            defect_structure=defect_struc,
+            bulk_structure=bulk_struc,
+            defect_index=defect_index,
+            defect_coords=defect_coords
+        )
         if verbose:
             click.echo(
                 f"Auto site-matching identified {defect} to be "
                 f"type {defect_object.as_dict()['@class']} "
                 f"with site {defect_object.site}")
 
-        defect_dict = _generate_defect_dict(defect_object, charges)
-    # Add defect entry to full defect_dict
-    if defect_dict[list(defect_dict.keys())[0]] in defects_dict: # vacancies, antisites or interstitials
-        defects_dict[list(defect_dict.keys())[0]] += deepcopy(defect_dict[list(defect_dict.keys())[0]])
-    else:
-        defects_dict[list(defect_dict.keys())[0]] = [deepcopy(defect_dict[list(defect_dict.keys())[0]]), ]
+        defect_dict = _generate_defect_dict(defect_object, charges, defect_name)
 
-    Dist = Distortions(defects_dict)
+        # Add defect entry to full defect_dict
+        defect_type = str(list(defect_dict.keys())[0])
+        if defect_type in defects_dict: # vacancies, antisites or interstitials
+            defects_dict[defect_type] += deepcopy(defect_dict[defect_type][0])
+        else:
+            defects_dict.update({
+                defect_type: deepcopy(defect_dict[defect_type]),
+            })
+
+    # Apply distortions and write input files
+    Dist = Distortions(defects_dict, **user_settings)
     if code == "VASP":
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
     elif code == "CP2K":
