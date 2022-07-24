@@ -169,8 +169,8 @@ def distort(
         nearest = [(round(i[0], 2), i[1], i[2]) for i in nearest]  # round numbers
         print(
             f"""\tDefect Site Index / Frac Coords: {site_index or frac_coords}
-        Original Neighbour Distances: {nearest}
-        Distorted Neighbour Distances:\n\t{distorted}"""
+            Original Neighbour Distances: {nearest}
+            Distorted Neighbour Distances:\n\t{distorted}"""
         )
 
     return bond_distorted_defect
@@ -385,7 +385,7 @@ def _local_mc_rattle_displacements(
                     # revert delta_disp
                     atoms_rattle[i].position -= delta_disp
             else:
-                raise Exception('Maxmium attempts for atom {}'.format(i))
+                raise Exception(f"Maxmium attempts ({n}) for atom {i}")
     displacements = atoms_rattle.positions - reference_positions
     return displacements
 

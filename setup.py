@@ -41,7 +41,7 @@ setup(
     ],
     extras_require={
         "tests": [
-            "pytest", 
+            "pytest",
             "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
         ]
     },
@@ -51,8 +51,10 @@ setup(
         "console_scripts": [
             "snb = shakenbreak.cli:snb",
             "snb-generate = shakenbreak.cli:generate",
+            "snb-generate_all = shakenbreak.cli:generate_all",
             "shakenbreak = shakenbreak.cli:snb",
             "shakenbreak-generate = shakenbreak.cli:generate",
+            "shakenbreak-generate_all = shakenbreak.cli:generate_all",
         ],
     },
 )
