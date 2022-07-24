@@ -296,17 +296,22 @@ class CLITestCase(unittest.TestCase):
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
                     "-b",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c", "0",
+                    "-c",
+                    "0",
                     "--defect-coords",
-                    0.5, 0.5, 0.5,
+                    0.5,
+                    0.5,
+                    0.5,
                     "-v",
                 ],
                 catch_exceptions=False,
             )
             self.assertEqual(result.exit_code, 0)
-            warning_message = "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) " \
-                              "vacancy defect, but could not find it in bulk structure (found 0 " \
-                              "possible defect sites). Will attempt auto site-matching instead."
+            warning_message = (
+                "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) "
+                "vacancy defect, but could not find it in bulk structure (found 0 "
+                "possible defect sites). Will attempt auto site-matching instead."
+            )
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
@@ -328,17 +333,22 @@ class CLITestCase(unittest.TestCase):
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
                     "-b",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c", "0",
+                    "-c",
+                    "0",
                     "--defect-coords",
-                    0.5, 0.5, 0.5,
+                    0.5,
+                    0.5,
+                    0.5,
                     "-v",
                 ],
                 catch_exceptions=False,
             )
             self.assertEqual(result.exit_code, 0)
-            warning_message = "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) " \
-                              "vacancy defect, but could not find it in bulk structure (found 0 " \
-                              "possible defect sites). Will attempt auto site-matching instead."
+            warning_message = (
+                "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) "
+                "vacancy defect, but could not find it in bulk structure (found 0 "
+                "possible defect sites). Will attempt auto site-matching instead."
+            )
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
@@ -361,16 +371,21 @@ class CLITestCase(unittest.TestCase):
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
                     "-b",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c", "0",
+                    "-c",
+                    "0",
                     "--defect-coords",
-                    0.1, 0.1, 0.1,  # close just not quite 0,0,0
+                    0.1,
+                    0.1,
+                    0.1,  # close just not quite 0,0,0
                     "-v",
                 ],
                 catch_exceptions=False,
             )
             self.assertEqual(result.exit_code, 0)
             if w:
-                self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
+                self.assertNotEqual(
+                    w[0].category, UserWarning
+                )  # we have other POTCAR warnings
                 # being caught, so just check no UserWarning
                 self.assertNotIn("Coordinates", str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
@@ -404,7 +419,11 @@ class CLITestCase(unittest.TestCase):
                 },
                 "defects": {
                     "Vac_Cd_mult32": {
-                        "unique_site": [0.0, 0.0, 0.0],  # matching final site not slightly-off
+                        "unique_site": [
+                            0.0,
+                            0.0,
+                            0.0,
+                        ],  # matching final site not slightly-off
                         # user input
                         "charges": {
                             "0": {  # json converts integer strings to keys
@@ -745,7 +764,7 @@ local_rattle: False
         # test error handling and all print messages
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
-
+        # test user incar, kpoints, potcar settings via config file
 
     def test_snb_generate_all(self):
         """Test generate_all function."""
@@ -757,7 +776,8 @@ local_rattle: False
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
-            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}/POSCAR",
         )
         # CONFIG file
         test_yml = """bond_distortions: [0.3,]"""
@@ -775,7 +795,7 @@ local_rattle: False
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                     "-v",
                     "--config",
-                    "test_config.yml"
+                    "test_config.yml",
                 ],
                 catch_exceptions=False,
             )
@@ -787,7 +807,7 @@ local_rattle: False
         self.assertEqual(
             f"No charge (range) set for defect {defect_name} in config file,"
             " assuming default range of +/-2",
-            str(w[0].message)
+            str(w[0].message),
         )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['0.3']."
@@ -845,7 +865,7 @@ local_rattle: False
             + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te'), (3.68, 63, 'Te')]",
             result.output,
         )
-        for charge in range(-1,3):
+        for charge in range(-1, 3):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
                 self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
         for dist in ["Unperturbed", "Rattled"]:
@@ -854,10 +874,10 @@ local_rattle: False
         # check POSCAR
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
-            self.V_Cd_0pt3_local_rattled
+            self.V_Cd_0pt3_local_rattled,
         )
         if_present_rm(defects_dir)
-        for charge in range(-2,3):
+        for charge in range(-2, 3):
             if_present_rm(f"{defect_name}_{charge}")
         self.tearDown()
 
@@ -867,7 +887,7 @@ local_rattle: False
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-            f"{defects_dir}/{defect_name}_POSCAR"
+            f"{defects_dir}/{defect_name}_POSCAR",
         )
         # CONFIG file
         test_yml = f"""
@@ -891,7 +911,7 @@ local_rattle: False
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                     "-v",
                     "--config",
-                    "test_config.yml"
+                    "test_config.yml",
                 ],
                 catch_exceptions=False,
             )
@@ -899,7 +919,7 @@ local_rattle: False
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f"Auto site-matching identified", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
-        self.assertFalse(w) # no warnings (charges set in config file)
+        self.assertFalse(w)  # no warnings (charges set in config file)
         # Only neutral charge state
         self.assertNotIn(
             f"Defect {defect_name} in charge state: -1. Number of distorted neighbours: 1",
@@ -922,7 +942,7 @@ local_rattle: False
         # check POSCAR
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
-            self.V_Cd_0pt3_local_rattled
+            self.V_Cd_0pt3_local_rattled,
         )
         if_present_rm(f"{defect_name}_0")
         self.tearDown()
@@ -936,7 +956,8 @@ local_rattle: False
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
-            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}/POSCAR",
         )
         wrong_defect_name = "Wally_McDoodle"
         test_yml = f"""
@@ -960,7 +981,7 @@ local_rattle: False
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                     "-v",
                     "--config",
-                    "test_config.yml"
+                    "test_config.yml",
                 ],
                 catch_exceptions=False,
             )
@@ -972,13 +993,13 @@ local_rattle: False
         self.assertEqual(
             f"Defect {defect_name} not found in config file test_config.yml. "
             f"Will parse defect name from folders/files.",
-            str(w[0].message)
+            str(w[0].message),
         )  # Defect name not parsed from config
         self.assertEqual(w[1].category, UserWarning)
         self.assertEqual(
             f"No charge (range) set for defect {defect_name} in config file,"
             " assuming default range of +/-2",
-            str(w[1].message)
+            str(w[1].message),
         )
         # Only neutral charge state
         self.assertIn(
@@ -1003,7 +1024,8 @@ local_rattle: False
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
-            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}/POSCAR",
         )
         right_defect_name = "vac_1_Cd"
         test_yml = f"""
@@ -1026,7 +1048,7 @@ local_rattle: False
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 "-v",
                 "--config",
-                "test_config.yml"
+                "test_config.yml",
             ],
             catch_exceptions=True,
         )
@@ -1034,8 +1056,9 @@ local_rattle: False
         self.assertIsInstance(result.exception, ValueError)
         self.assertIn(
             "Error in defect name parsing; could not parse defect name",
-            str(result.exception)
+            str(result.exception),
         )
+
 
 if __name__ == "__main__":
     unittest.main()
