@@ -5,6 +5,7 @@ import shutil
 import pickle
 import json
 import warnings
+from click import exceptions
 import numpy as np
 
 from pymatgen.core.structure import Structure
@@ -40,6 +41,9 @@ class CLITestCase(unittest.TestCase):
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
+        self.V_Cd_0pt3_local_rattled = Structure.from_file(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_0_30%_local_rattle_POSCAR")
+        )
         with open(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
         ) as fp:
@@ -59,6 +63,8 @@ class CLITestCase(unittest.TestCase):
                 os.remove(i)
             elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i:
                 shutil.rmtree(i)
+
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/pesky_defects")
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -88,6 +94,7 @@ class CLITestCase(unittest.TestCase):
             result.output,
         )
         self.assertIn(
+            "Applying ShakeNBreak...",
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
             "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
@@ -102,15 +109,15 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
             result.output,
         )
         self.assertIn("--Distortion -40.0%", result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
             result.output,
         )
 
@@ -172,8 +179,8 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn("--Distortion -60.0%", result.output)
         self.assertNotIn(
             f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
             result.output,
         )
         current_datetime_wo_minutes = datetime.datetime.now().strftime(
@@ -305,8 +312,8 @@ class CLITestCase(unittest.TestCase):
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
                 result.output,
             )
 
@@ -337,8 +344,8 @@ class CLITestCase(unittest.TestCase):
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
                 result.output,
             )
 
@@ -362,14 +369,15 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
             self.assertEqual(result.exit_code, 0)
-            self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
-            # being caught, so just check no UserWarning
-            self.assertNotIn("Coordinates", str(w[0].message))
+            if w:
+                self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
+                # being caught, so just check no UserWarning
+                self.assertNotIn("Coordinates", str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-                + "        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "        Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
                 result.output,
             )
             self.assertNotIn(f"Auto site-matching", result.output)
@@ -522,10 +530,10 @@ oxidation_states:
 distortion_increment: 0.25
 name: Int_Cd_2
 dict_number_electrons_user:
-  Int_Cd_2: 
+  Int_Cd_2:
     3
 distorted_elements:
-  Int_Cd_2: 
+  Int_Cd_2:
     Cd
 local_rattle: False
 """
@@ -738,6 +746,296 @@ local_rattle: False
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
 
+
+    def test_snb_generate_all(self):
+        """Test generate_all function."""
+        # Test parsing defects from folders with non-standard names
+        # And default charge states
+        # Create a folder for defect files / directories
+        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
+        defect_name = "vac_1_Cd"
+        os.mkdir(defects_dir)
+        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+        )
+        # CONFIG file
+        test_yml = """bond_distortions: [0.3,]"""
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        with warnings.catch_warnings(record=True) as w:
+            runner = CliRunner()
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-v",
+                    "--config",
+                    "test_config.yml"
+                ],
+                catch_exceptions=False,
+            )
+        # Test outputs
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"No charge (range) set for defect {defect_name} in config file,"
+            " assuming default range of +/-2",
+            str(w[0].message)
+        )
+        self.assertIn(
+            "Applying ShakeNBreak... Will apply the following bond distortions: ['0.3']."
+            " Then, will rattle with a std dev of 0.25 Å",
+            result.output,
+        )
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        # Charge states
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -2. Number of distorted neighbours: 0",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -1. Number of distorted neighbours: 1",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te')]",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: +1. Number of distorted neighbours: 3",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), (2.83, 52, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te')]",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: +2. Number of distorted neighbours: 4",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), (2.83, 52, 'Te'), (2.83, 63, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te'), (3.68, 63, 'Te')]",
+            result.output,
+        )
+        for charge in range(-1,3):
+            for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
+                self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
+        for dist in ["Unperturbed", "Rattled"]:
+            # -2 has 0 electron change -> only Unperturbed & rattled folders
+            self.assertTrue(os.path.exists(f"{defect_name}_-2/{dist}/POSCAR"))
+        # check POSCAR
+        self.assertEqual(
+            Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
+            self.V_Cd_0pt3_local_rattled
+        )
+        if_present_rm(defects_dir)
+        for charge in range(-2,3):
+            if_present_rm(f"{defect_name}_{charge}")
+        self.tearDown()
+
+        # Test defects not organised in folders
+        # Test defect_settings (charges, defect index/coords)
+        defect_name = "V_1_Cd"
+        os.mkdir(defects_dir)
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}_POSCAR"
+        )
+        # CONFIG file
+        test_yml = f"""
+        defects:
+            {defect_name}:
+                charges: [0,]
+                defect_coords: [0.0, 0.0, 0.0]
+        bond_distortions: [0.3,]
+        """
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        with warnings.catch_warnings(record=True) as w:
+            runner = CliRunner()
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-v",
+                    "--config",
+                    "test_config.yml"
+                ],
+                catch_exceptions=False,
+            )
+        # Test outputs
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertFalse(w) # no warnings (charges set in config file)
+        # Only neutral charge state
+        self.assertNotIn(
+            f"Defect {defect_name} in charge state: -1. Number of distorted neighbours: 1",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            result.output,
+        )
+        for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-1/Unperturbed/POSCAR"))
+        # check POSCAR
+        self.assertEqual(
+            Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
+            self.V_Cd_0pt3_local_rattled
+        )
+        if_present_rm(f"{defect_name}_0")
+        self.tearDown()
+
+        # Test wrong names in config file (different from defect folders)
+        # Names of defect folders/files should be used as defect names
+        # CONFIG file
+        # Create a folder for defect files / directories
+        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
+        defect_name = "vac_1_Cd"
+        os.mkdir(defects_dir)
+        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+        )
+        wrong_defect_name = "Wally_McDoodle"
+        test_yml = f"""
+        defects:
+            {wrong_defect_name}:
+                charges: [0,]
+                defect_coords: [0.0, 0.0, 0.0]
+        bond_distortions: [0.3,]
+        """
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        with warnings.catch_warnings(record=True) as w:
+            runner = CliRunner()
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-v",
+                    "--config",
+                    "test_config.yml"
+                ],
+                catch_exceptions=False,
+            )
+        # Test outputs
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Defect {defect_name} not found in config file test_config.yml. "
+            f"Will parse defect name from folders/files.",
+            str(w[0].message)
+        )  # Defect name not parsed from config
+        self.assertEqual(w[1].category, UserWarning)
+        self.assertEqual(
+            f"No charge (range) set for defect {defect_name} in config file,"
+            " assuming default range of +/-2",
+            str(w[1].message)
+        )
+        # Only neutral charge state
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            result.output,
+        )
+        for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
+        if_present_rm(f"{defect_name}_0")
+        self.tearDown()
+
+        # Test wrong folder defect name
+        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
+        defect_name = "Wally_McDoodle"
+        os.mkdir(defects_dir)
+        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
+        )
+        right_defect_name = "vac_1_Cd"
+        test_yml = f"""
+        defects:
+            {right_defect_name}:
+                charges: [0,]
+                defect_coords: [0.0, 0.0, 0.0]
+        bond_distortions: [0.3,]
+        """
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml"
+            ],
+            catch_exceptions=True,
+        )
+        # Test outputs
+        self.assertIsInstance(result.exception, ValueError)
+        self.assertIn(
+            "Error in defect name parsing; could not parse defect name",
+            str(result.exception)
+        )
 
 if __name__ == "__main__":
     unittest.main()

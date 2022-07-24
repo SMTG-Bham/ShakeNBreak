@@ -499,23 +499,25 @@ def apply_rattle_bond_distortions(
         if "attempts" in str(ex):
             distorted_defect_struc = bond_distorted_defect["distorted_structure"]
             sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
-            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (2 * stdev)
+            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
             if local_rattle:
                 bond_distorted_defect["distorted_structure"] = local_mc_rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     frac_coords=frac_coords,
                     site_index=defect_site_index,
                     stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 2 stdevs
+                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
                     active_atoms=active_atoms,
+                    max_attempts=7000,  # default is 5000
                     **kwargs,
                 )
             else:
                 bond_distorted_defect["distorted_structure"] = rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 2 stdevs
+                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
                     active_atoms=active_atoms,
+                    max_attempts=7000,  # default is 5000
                     **kwargs,
                 )
             if verbose:
