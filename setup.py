@@ -28,9 +28,8 @@ setup(
     packages=find_packages(),
     license="MIT",
     install_requires=[
-        "doped>=0.0.5",
         "numpy",
-        "pymatgen<2022.7.8", # version 2022.7.8 crashes
+        "pymatgen",
         "matplotlib",
         "ase",
         "pandas",
@@ -57,4 +56,5 @@ setup(
             "shakenbreak-generate_all = shakenbreak.cli:generate_all",
         ],
     },
+    scripts=["shakenbreak/bash_scripts/*"],
 )
