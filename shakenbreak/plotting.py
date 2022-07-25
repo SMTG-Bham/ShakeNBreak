@@ -41,6 +41,47 @@ def _verify_data_directories_exist(
         )
 
 
+def _parse_distortion_metadata(distortion_metadata, defect, charge):
+    """
+    Parse the number abd type of distorted nearest neighbours for a
+    given defect from the distortion_metadata dictionary.
+    """
+    if defect in distortion_metadata["defects"].keys():
+        try:
+            # Get number and element symbol of the distorted site(s)
+            num_nearest_neighbours = distortion_metadata["defects"][
+                defect
+            ]["charges"][str(charge)][
+                "num_nearest_neighbours"
+            ]  # get number of distorted neighbours
+        except KeyError:
+            num_nearest_neighbours = None
+        try:
+            neighbour_atoms = list(
+                i[1]  # element symbol
+                for i in distortion_metadata["defects"][defect][
+                    "charges"
+                ][str(charge)]["distorted_atoms"]
+            )  # get element of the distorted site
+
+            if all(
+                element == neighbour_atoms[0] for element in neighbour_atoms
+            ):
+                neighbour_atom = neighbour_atoms[0]
+            else:
+                neighbour_atom = "NN"  # if different elements were
+                # distorted, just use nearest neighbours (NN) for label
+
+        except (KeyError, TypeError, ValueError):
+            neighbour_atom = (
+                "NN"  # if distorted_elements wasn't set, set label
+                # to "NN"
+            )
+    else:
+        num_nearest_neighbours, neighbour_atom = None, None
+    return num_nearest_neighbours, neighbour_atom
+
+
 def _format_defect_name(
     defect_species: str,
     include_site_num_in_name: bool,
@@ -403,6 +444,7 @@ def _save_plot(
     fig: plt.Figure,
     defect_name: str,
     save_format: str,
+    verbose: bool=True,
 ) -> None:
     """
     Save plot in directory ´distortion_plots´
@@ -418,7 +460,8 @@ def _save_plot(
     wd = os.getcwd()
     if not os.path.isdir(wd + "/distortion_plots/"):
         os.mkdir(wd + "/distortion_plots/")
-    print(f"Plot saved to {wd}/distortion_plots/")
+    if verbose:
+        print(f"Plot saved to {wd}/distortion_plots/")
     fig.savefig(
         wd + "/distortion_plots/" + defect_name + f".{save_format}",
         format=save_format,
@@ -723,37 +766,10 @@ def plot_all_defects(
             # If a significant energy lowering was found, then further analyse this defect
             if float(-1 * energy_diff) > abs(min_e_diff):
                 # energy_diff is negative if energy is lowered
-                if distortion_metadata and defect in distortion_metadata["defects"].keys():
-                    try:
-                        # Get number and element symbol of the distorted site(s)
-                        num_nearest_neighbours = distortion_metadata["defects"][
-                            defect
-                        ]["charges"][str(charge)][
-                            "num_nearest_neighbours"
-                        ]  # get number of distorted neighbours
-                    except KeyError:
-                        num_nearest_neighbours = None
-                    try:
-                        neighbour_atoms = list(
-                            i[1]  # element symbol
-                            for i in distortion_metadata["defects"][defect][
-                                "charges"
-                            ][str(charge)]["distorted_atoms"]
-                        )  # get element of the distorted site
-
-                        if all(
-                            element == neighbour_atoms[0] for element in neighbour_atoms
-                        ):
-                            neighbour_atom = neighbour_atoms[0]
-                        else:
-                            neighbour_atom = "NN"  # if different elements were
-                            # distorted, just use nearest neighbours (NN) for label
-
-                    except (KeyError, TypeError, ValueError):
-                        neighbour_atom = (
-                            "NN"  # if distorted_elements wasn't set, set label
-                            # to "NN"
-                        )
+                if distortion_metadata:
+                    num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
+                        distortion_metadata, defect, charge
+                    )
                 else:
                     num_nearest_neighbours = None
                     neighbour_atom = None
@@ -809,10 +825,12 @@ def plot_defect(
             calculate structure comparisons)
             (Default: current directory)
         neighbour_atom (:obj:`str`):
-            Name(s) of distorted neighbour atoms (e.g. 'Cd')
+            Name(s) of distorted neighbour atoms (e.g. 'Cd'). If not specified,
+            will be parsed from distortion_metadata.json file.
             (Default: None)
         num_nearest_neighbours (:obj:`int`):
-            Number of distorted neighbour atoms (e.g. 2)
+            Number of distorted neighbour atoms (e.g. 2). If not specified,
+            will be parsed from distortion_metadata.json file.
             (Default: None)
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between
@@ -820,8 +838,8 @@ def plot_defect(
             (Default: False)
         metric (:obj:`str`):
             If add_colorbar is True, determines the criteria used for the
-            structural comparison. Can choose between root-mean-squared
-            displacement for all sites ('disp') or the maximum distance between
+            structural comparison. Can choose between the summed of atomic
+            displacements ('disp') or the maximum distance between
             matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
@@ -854,7 +872,7 @@ def plot_defect(
     Returns:
         Energy vs distortion plot, as a mpl.figure.Figure object
     """
-    # Ensure necessary directories exist, and raised error if not
+    # Ensure necessary directories exist, and raise error if not
     _verify_data_directories_exist(
         output_path=output_path, defect_species=defect_species
     )
@@ -866,6 +884,23 @@ def plot_defect(
             f"Skipping plot."
         )
         return None
+
+    # If not specified, try to parse from distortion_metadata.json file
+    if not neighbour_atom and not num_nearest_neighbours:
+        try:
+            distortion_metadata = _read_distortion_metadata(output_path=output_path)
+            if distortion_metadata:
+                num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
+                    distortion_metadata=distortion_metadata,
+                    defect=defect_species.rsplit("_", 1)[0],
+                    charge=defect_species.rsplit("_", 1)[1],
+                )
+        except FileNotFoundError:
+            warnings.warn(
+                f"Path {output_path}/distortion_metadata.json does not exist. "
+                "Will not parse its contents."
+            )
+            pass
 
     energies_dict = _cast_energies_to_floats(
         energies_dict=energies_dict, defect_species=defect_species
@@ -902,9 +937,9 @@ def plot_defect(
             y_label=y_label,
         )  # convert energy units from eV to meV, and update y label
 
-    if num_nearest_neighbours is not None and neighbour_atom is not None:
+    if num_nearest_neighbours and neighbour_atom:
         legend_label = f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
-    elif neighbour_atom is not None:
+    elif neighbour_atom:
         legend_label = f"Distortions: {neighbour_atom}"
     else:
         legend_label = "Distortions"
