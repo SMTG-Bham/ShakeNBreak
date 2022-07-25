@@ -2,19 +2,21 @@
 ShakeNBreak command-line-interface (CLI)
 """
 import os
-import sys
 import warnings
 import pickle
+import datetime
 import click
 from copy import deepcopy
 import numpy as np
-from monty.serialization import loadfn
 
-from pymatgen.core.structure import Structure
+# Monty and pymatgen
+from monty.serialization import loadfn
 from monty.json import MontyDecoder
+from monty.re import regrep
+from pymatgen.core.structure import Structure
 
 from shakenbreak.input import Distortions
-
+from shakenbreak.analysis import get_energies, get_structures, compare_structures
 
 def identify_defect(defect_structure, bulk_structure,
                     defect_coords=None, defect_index=None):
@@ -193,6 +195,72 @@ def _generate_defect_dict(defect_object, charges, defect_name):
 
     return defects_dict
 
+
+# TODO: make this a cli command?
+def parse_energies(defect_dir: str, code: str="VASP"):
+    """
+    Parse final energy for all distortions present in the given defect
+    directory.
+    """
+    dirs = [
+        dir for dir in os.listdir(defect_dir)
+        if os.path.isdir(os.path.join(defect_dir, dir))
+        and any([substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]])
+    ]  # parse distortion directories
+
+    # File to write energies to
+    if "/" in defect_dir:
+        if not defect_dir.endswith("/"):
+            defect_name = defect_dir.split("/")[-1]
+        else:
+            defect_name = defect_dir.split("/")[-2]
+    filename = f"{defect_dir}/{defect_name}.txt"
+    if os.path.exists(filename):
+        current_datetime = datetime.datetime.now().strftime(
+            "%Y-%m-%d-%H-%M"
+        )
+        print(
+            f"Moving old {filename} to {filename}_{current_datetime}.txt to avoid overwriting"
+        )
+        os.rename(filename, f"{filename}_{current_datetime}.txt")  # Keep copy of old file
+
+    # Parse energies and write them to file
+    energies = ""
+    for dist in dirs:
+        if code == "VASP":
+            # regrep faster than using Outcar/vasprun class
+            outcar = os.path.join(defect_dir, dist, "OUTCAR")
+            if regrep(
+                filename=outcar,
+                patterns={"converged": "required accuracy"},
+                reverse=True,
+                terminate_on_match=True
+            ):  # check if ionic relaxation is converged
+                energy = regrep(
+                    filename=outcar,
+                    patterns={"energy": "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"},
+                    reverse=True,
+                    terminate_on_match=True
+                )["energy"][0][0][0] # Energy of first match
+                energies += f"{dist}\n{energy}\n"
+            else:
+                print(f"{dist} not fully relaxed")
+        # TODO: add support for other codes! Check string that accompanies final energy
+    with open(filename, "w") as f:
+        f.write(energies)
+
+# TODO: make this a cli command?
+def parse_all(defects_dir: str="."):
+    """
+    Parse final energies for all defects in the specified directory. For each,
+    a file with distortion and final energy is written in the corresponding
+    defect folder.
+    """
+    for dir in os.listdir(defects_dir):
+        if os.path.isdir(dir):
+            parse_energies(dir)
+
+
 def CommandWithConfigFile(config_file_param_name):  # can also set CLI options using config file
     class CustomCommandClass(click.Command):
         def invoke(self, ctx):
@@ -316,11 +384,8 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
 # save to pickle and run through Distortions
 # for this will need to use folders as filenames so we know which goes where
 # – this ok if folders aren't typical defect names?
-# TODO: if defect names specified as folders/filenames are non-standard,
-# this can raise issues when analysing the results (some of our functions expect standard defect names)
-# Maybe we should check for this, and replace with standard defect names
 @snb.command(name="generate_all", context_settings=CONTEXT_SETTINGS,
-             no_args_is_help=True,)
+             no_args_is_help=True)
 @click.option("--defects", "-d", help="Path root directory with defect folders/files",
             type=click.Path(exists=True, dir_okay=True))
 @click.option("--structure_file", "-f", help="File termination/name from which to"
@@ -338,7 +403,7 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
 #              default=None, type=list)  # Better to specify it in the config file
 @click.option("--config", help="Config file for advanced distortion settings", default=None)
 @click.option("--verbose", "-v", help ="Print information about identified defects and generated "
-              "distortions", default = False, is_flag = True)
+              "distortions", default=False, is_flag=True, show_default=True)
 def generate_all(defects, bulk, structure_file, code, config, verbose):
     """
     Generate the trial distortions for structure-searching for all defects
@@ -379,10 +444,11 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
                     f"Defect {defect} not found in config file {config}. "
                     f"Will parse defect name from folders/files."
                 )
-        if (not defect_name) and any([substring in defect.lower() for substring in ("as", "vac", "int")]):
-            # TODO: Include other typical defect abbreviations like "V", "I" etc
+        if (not defect_name
+            and any([substring in defect.lower() for substring in ("as", "vac", "int", "sub", "v", "i")])
+        ):
             # if user didnt specify defect names in config file,
-            # check if defect filename correspond to standard defect names
+            # check if defect filename correspond to standard defect abbreviations
             defect_name = defect
         if not defect_name:
             raise ValueError(
@@ -483,3 +549,70 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
         distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
+
+
+@snb.command(name="analyse", no_args_is_help=True)
+@click.option("--defect", "-d", help="Name of defect to analyse",
+            type=str, default=None)
+@click.option("--all", "-a", help="Analyse all defects present in specified directory",
+              default=False, is_flag=True, show_default=True)
+@click.option("--path", "-p", help="Path to the top-level directory containing the defect folder."
+              "Defaults to current directory.",
+            type=click.Path(exists=True, dir_okay=True), default=".")
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
+              type=str, default="VASP")
+@click.option("--ref_struct", help ="Structure to use as a reference for comparison"
+            "(to compute atomic displacements). Given as a key from"
+            "`defect_structures_dict`. Defaults to 'Unperturbed'",
+            type=str, default="Unperturbed")
+@click.option("--verbose", "-v", help ="Print information about identified energy lowering distortions.",
+              default=False, is_flag=True, show_default=True)
+def analyse(defect, all, path, code, ref_struct, verbose):
+    """
+    Generate csv file with energies vs distortions and root mean squared displacements.
+    """
+    def analyse_single_defect(defect, path, code, ref_struct, verbose):
+        parse_energies(f"{path}/{defect}", code)
+        defect_energies_dict = get_energies(
+            defect_species=defect,
+            output_path=path,
+            verbose=verbose
+        )
+        defect_structures_dict = get_structures(
+            defect_species=defect,
+            output_path=path,
+            code=code
+        )
+        dataframe = compare_structures(
+            defect_structures_dict=defect_structures_dict,
+            defect_energies_dict=defect_energies_dict,
+            ref_structure=ref_struct,
+        )
+        dataframe.to_csv(f"{path}/{defect}/{defect}.csv")  # change name to results.csv?
+        print(f"Saved results to {path}/{defect}/{defect}.csv")
+    if all:
+        defect_dirs = [
+            dir for dir in os.listdir(path)
+            if os.path.isdir(dir)
+            and any([
+                dist in os.listdir(dir) for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
+            ])  # avoid parsing directories that aren't defects
+        ]
+        for defect in defect_dirs:
+            print(f"\nAnalysing {defect}...")
+            analyse_single_defect(defect, path, code, ref_struct, verbose)
+    elif defect:
+        # Check if defect present in path, in case path not specified and user is
+        # analysing defect from inside the defect directory
+        if path == ".":
+            path = os.getcwd()
+        if defect in path:
+            path = path.replace(defect, "")
+        analyse_single_defect(defect, path, code, ref_struct, verbose)
+    elif not defect and not all:
+        warnings.warn(
+            "No defect specified. Please specify a defect to analyse (with the option --defect)"
+            " Alternatively, set the option --all to analyse all defects present in"
+            " the specified directory.")
