@@ -15,8 +15,10 @@ from monty.json import MontyDecoder
 from monty.re import regrep
 from pymatgen.core.structure import Structure
 
+# ShakeNBreak
 from shakenbreak.input import Distortions
 from shakenbreak.analysis import get_energies, get_structures, compare_structures
+from shakenbreak.plotting import plot_all_defects, plot_defect
 
 def identify_defect(defect_structure, bulk_structure,
                     defect_coords=None, defect_index=None):
@@ -196,12 +198,23 @@ def _generate_defect_dict(defect_object, charges, defect_name):
     return defects_dict
 
 
-# TODO: make this a cli command?
-def parse_energies(defect_dir: str, code: str="VASP"):
+def _parse_defect_dirs(path):
+    """Parse defect directories present in the specified path."""
+    return [
+        dir for dir in os.listdir(path)
+        if os.path.isdir(dir)
+        and any([
+            dist in os.listdir(dir) for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
+        ])  # avoid parsing directories that aren't defects
+    ]
+
+
+def parse_energies(defect: str, path: str=".", code: str="VASP"):
     """
     Parse final energy for all distortions present in the given defect
     directory.
     """
+    defect_dir = f"{path}/{defect}"
     dirs = [
         dir for dir in os.listdir(defect_dir)
         if os.path.isdir(os.path.join(defect_dir, dir))
@@ -220,9 +233,9 @@ def parse_energies(defect_dir: str, code: str="VASP"):
             "%Y-%m-%d-%H-%M"
         )
         print(
-            f"Moving old {filename} to {filename}_{current_datetime}.txt to avoid overwriting"
+            f"Moving old {filename} to {filename.replace('.txt', '')}_{current_datetime}.txt to avoid overwriting"
         )
-        os.rename(filename, f"{filename}_{current_datetime}.txt")  # Keep copy of old file
+        os.rename(filename, f"{filename.replace('.txt', '')}_{current_datetime}.txt")  # Keep copy of old file
 
     # Parse energies and write them to file
     energies = ""
@@ -248,17 +261,6 @@ def parse_energies(defect_dir: str, code: str="VASP"):
         # TODO: add support for other codes! Check string that accompanies final energy
     with open(filename, "w") as f:
         f.write(energies)
-
-# TODO: make this a cli command?
-def parse_all(defects_dir: str="."):
-    """
-    Parse final energies for all defects in the specified directory. For each,
-    a file with distortion and final energy is written in the corresponding
-    defect folder.
-    """
-    for dir in os.listdir(defects_dir):
-        if os.path.isdir(dir):
-            parse_energies(dir)
 
 
 def CommandWithConfigFile(config_file_param_name):  # can also set CLI options using config file
@@ -551,6 +553,26 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
         pickle.dump(defects_dict, fp)
 
 
+@snb.command(name="parse", no_args_is_help=True)
+@click.option("--defect", "-d", help="Name of defect (including charge state) to parse energies for",
+            type=str, default=None)
+@click.option("--all", "-a", help="Parse energies for all defects present in the specified/current directory",
+              default=False, is_flag=True, show_default=True)
+@click.option("--path", "-p", help="Path to the top-level directory containing the defect folder."
+              "Defaults to current directory.",
+            type=click.Path(exists=True, dir_okay=True), default=".")
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
+              type=str, default="VASP")
+def parse(defect, all, path, code):
+    if defect:
+        parse_energies(defect, path, code)
+    elif all:
+        defect_dirs = _parse_defect_dirs(path)
+        [parse_energies(defect, path, code) for defect in defect_dirs]
+
+
 @snb.command(name="analyse", no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect to analyse",
             type=str, default=None)
@@ -571,10 +593,11 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
               default=False, is_flag=True, show_default=True)
 def analyse(defect, all, path, code, ref_struct, verbose):
     """
-    Generate csv file with energies vs distortions and root mean squared displacements.
+    Generate csv file mapping each distortion to its final energy and its
+    mean displacement (relative to ref_struct).
     """
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
-        parse_energies(f"{path}/{defect}", code)
+        parse_energies(defect, path, code)
         defect_energies_dict = get_energies(
             defect_species=defect,
             output_path=path,
@@ -592,14 +615,9 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         )
         dataframe.to_csv(f"{path}/{defect}/{defect}.csv")  # change name to results.csv?
         print(f"Saved results to {path}/{defect}/{defect}.csv")
+
     if all:
-        defect_dirs = [
-            dir for dir in os.listdir(path)
-            if os.path.isdir(dir)
-            and any([
-                dist in os.listdir(dir) for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
-            ])  # avoid parsing directories that aren't defects
-        ]
+        defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             print(f"\nAnalysing {defect}...")
             analyse_single_defect(defect, path, code, ref_struct, verbose)
@@ -615,4 +633,86 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         warnings.warn(
             "No defect specified. Please specify a defect to analyse (with the option --defect)"
             " Alternatively, set the option --all to analyse all defects present in"
-            " the specified directory.")
+            " the specified directory."
+        )
+
+
+@snb.command(name="plot", no_args_is_help=True)
+@click.option("--defect", "-d", help="Name of defect (inncluding charge state) to analyse",
+            type=str, default=None)
+@click.option("--all", "-a", help="Analyse all defects present in specified directory",
+              default=False, is_flag=True, show_default=True)
+@click.option("--path", "-p", help="Path to the top-level directory containing the defect folder."
+              "Defaults to current directory.",
+            type=click.Path(exists=True, dir_okay=True), default=".")
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
+              type=str, default="VASP")
+@click.option("--colorbar", help ="Whether to add a colorbar indicating structural"
+              " similarity between each structure and the unperturbed one.",
+              type=bool, default=False)
+@click.option("--metric", "-m", help ="If add_colorbar is True, determines the criteria used for the"
+            " structural comparison. Can choose between the summed of atomic"
+            " displacements ('disp') or the maximum distance between"
+            " matched sites ('max_dist', default).",
+            type=str, default="svg")
+@click.option("--format", "-f", help ="Format to save the plot as. Defaults to svg.",
+              type=str, default="svg")
+@click.option("--units", "-u", help ="Units for energy, either 'eV' or 'meV' (Default: 'eV')",
+              type=str, default="eV")
+@click.option("--title", "-t", help ="Whether to add defect name as plot title. Defaults to True.",
+              type=bool, default=True, is_flag=True, show_default=True)
+@click.option("--verbose", "-v", help ="Print information about identified energy lowering distortions.",
+              default=False, is_flag=True, show_default=True)
+def plot(defect, all, path, code, colorbar, metric, format, units, title, verbose):
+    """
+    Generate energy vs distortion plots.
+    """
+    if all:
+        defect_dirs = _parse_defect_dirs(path)
+        for defect in defect_dirs:
+            if verbose:
+                print(f"Parsing {defect}...")
+            parse_energies(defect, path, code)
+        # Create defects_dict (matching defect name to charge states)
+        defects_wout_charge = [defect.rsplit("_", 1)[0] for defect in defect_dirs]
+        defects_dict = {
+            defect_wout_charge: [] for defect_wout_charge in defects_wout_charge
+        }
+        for defect in defect_dirs:
+            defects_dict[defect.rsplit("_", 1)[0]].append(defect.rsplit("_", 1)[1])
+        plot_all_defects(
+            defects_dict=defects_dict,
+            output_path=path,
+            add_colorbar=colorbar,
+            metric=metric,
+            units=units,
+            save_format=format,
+            add_title=title,
+        )
+    elif defect:
+        parse_energies(defect, path, code)
+        defect_energies_dict = get_energies(
+            defect_species=defect,
+            output_path=path,
+            verbose=verbose,
+        )
+        plot_defect(
+            defect_species=defect,
+            energies_dict=defect_energies_dict,
+            output_path=path,
+            add_colorbar=colorbar,
+            save_format=format,
+            units=units,
+            add_title=title,
+        )
+    elif not defect and not all:
+        warnings.warn(
+            "No defect specified. Please specify a defect to plot (with the option --defect)"
+            " Alternatively, set the option --all to generate distortion plots for"
+            " all defects present in the specified directory."
+        )
+# TODO:
+# - Add test for analyse & plot command
+# - Add support for all codes when parsing final energies from files
