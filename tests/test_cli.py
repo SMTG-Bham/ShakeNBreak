@@ -31,6 +31,8 @@ class CLITestCase(unittest.TestCase):
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
@@ -1038,6 +1040,80 @@ local_rattle: False
             str(result.exception)
         )
         self.tearDown()
+
+    def test_parse(self):
+        """Test parse function"""
+        # Specifying defect to parse
+        # All OUTCAR's present in distortion directories
+        # Energies file already present
+        defect = "vac_1_Ti_0"
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+            f.write("")
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertIn(
+            f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.txt to ",
+            result.output
+        )
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt") as f:
+            file = f.read()
+        energies = """Bond_Distortion_-40.0%\n-1176.28458753\nUnperturbed\n-1173.02056574\n"""
+        self.assertEqual(energies, file)
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+
+        # Test when OUTCAR not present in one of the distortion directories
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.VASP_DIR,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertIn(f"Bond_Distortion_10.0% not fully relaxed", result.output)
+        self.assertTrue(os.path.exists(f"{self.VASP_DIR}/{defect}/{defect}.txt"))
+        with open(f"{self.VASP_DIR}/{defect}/{defect}.txt") as f:
+            file = f.read()
+        energies = """Bond_Distortion_-40.0%\n-1176.28458753\nUnperturbed\n-1173.02056574\n"""
+        self.assertEqual(energies, file)
+        os.remove(f"{self.VASP_DIR}/{defect}/{defect}.txt")
+
+        # Test --all option
+        os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
+        defect_name = "vac_1_Ti_-1"
+        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0")
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "--all",
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/pesky_defects",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.txt"))
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.txt"))
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
+
 
 if __name__ == "__main__":
     unittest.main()

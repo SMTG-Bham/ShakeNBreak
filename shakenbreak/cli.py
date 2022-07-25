@@ -202,9 +202,9 @@ def _parse_defect_dirs(path):
     """Parse defect directories present in the specified path."""
     return [
         dir for dir in os.listdir(path)
-        if os.path.isdir(dir)
+        if os.path.isdir(f"{path}/{dir}")
         and any([
-            dist in os.listdir(dir) for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
+            dist in os.listdir(f"{path}/{dir}") for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
         ])  # avoid parsing directories that aren't defects
     ]
 
@@ -215,52 +215,50 @@ def parse_energies(defect: str, path: str=".", code: str="VASP"):
     directory.
     """
     defect_dir = f"{path}/{defect}"
-    dirs = [
-        dir for dir in os.listdir(defect_dir)
-        if os.path.isdir(os.path.join(defect_dir, dir))
-        and any([substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]])
-    ]  # parse distortion directories
+    if os.path.isdir(defect_dir):
+        dirs = [
+            dir for dir in os.listdir(defect_dir)
+            if os.path.isdir(os.path.join(defect_dir, dir))
+            and any([substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]])
+        ]  # parse distortion directories
 
-    # File to write energies to
-    if "/" in defect_dir:
-        if not defect_dir.endswith("/"):
-            defect_name = defect_dir.split("/")[-1]
-        else:
-            defect_name = defect_dir.split("/")[-2]
-    filename = f"{defect_dir}/{defect_name}.txt"
-    if os.path.exists(filename):
-        current_datetime = datetime.datetime.now().strftime(
-            "%Y-%m-%d-%H-%M"
-        )
-        print(
-            f"Moving old {filename} to {filename.replace('.txt', '')}_{current_datetime}.txt to avoid overwriting"
-        )
-        os.rename(filename, f"{filename.replace('.txt', '')}_{current_datetime}.txt")  # Keep copy of old file
+        # File to write energies to
+        filename = f"{path}/{defect}/{defect}.txt"
+        if os.path.exists(filename):
+            current_datetime = datetime.datetime.now().strftime(
+                "%Y-%m-%d-%H-%M"
+            )
+            print(
+                f"Moving old {filename} to {filename.replace('.txt', '')}_{current_datetime}.txt to avoid overwriting"
+            )
+            os.rename(filename, f"{filename.replace('.txt', '')}_{current_datetime}.txt")  # Keep copy of old file
 
-    # Parse energies and write them to file
-    energies = ""
-    for dist in dirs:
-        if code == "VASP":
-            # regrep faster than using Outcar/vasprun class
-            outcar = os.path.join(defect_dir, dist, "OUTCAR")
-            if regrep(
-                filename=outcar,
-                patterns={"converged": "required accuracy"},
-                reverse=True,
-                terminate_on_match=True
-            ):  # check if ionic relaxation is converged
-                energy = regrep(
-                    filename=outcar,
-                    patterns={"energy": "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"},
-                    reverse=True,
-                    terminate_on_match=True
-                )["energy"][0][0][0] # Energy of first match
-                energies += f"{dist}\n{energy}\n"
-            else:
-                print(f"{dist} not fully relaxed")
-        # TODO: add support for other codes! Check string that accompanies final energy
-    with open(filename, "w") as f:
-        f.write(energies)
+        # Parse energies and write them to file
+        energies = ""
+        for dist in dirs:
+            energy = None
+            if code == "VASP":
+                # regrep faster than using Outcar/vasprun class
+                outcar = os.path.join(defect_dir, dist, "OUTCAR")
+                if os.path.exists(outcar):
+                    if regrep(
+                        filename=outcar,
+                        patterns={"converged": "required accuracy"},
+                        reverse=True,
+                        terminate_on_match=True
+                    ):  # check if ionic relaxation is converged
+                        energy = regrep(
+                            filename=outcar,
+                            patterns={"energy": "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"},
+                            reverse=True,
+                            terminate_on_match=True
+                        )["energy"][0][0][0] # Energy of first match
+                        energies += f"{dist}\n{energy}\n"
+                if not energy:
+                    print(f"{dist} not fully relaxed")
+            # TODO: add support for other codes! Check string that accompanies final energy
+        with open(filename, "w") as f:
+            f.write(energies)
 
 
 def CommandWithConfigFile(config_file_param_name):  # can also set CLI options using config file
@@ -571,7 +569,23 @@ def parse(defect, all, path, code):
     elif all:
         defect_dirs = _parse_defect_dirs(path)
         [parse_energies(defect, path, code) for defect in defect_dirs]
-
+    else:
+        # assume current directory is the defect folder
+        try:
+            if path == ".":
+                path = os.getcwd()
+            if path.endswith("/"):
+                defect =  path.split("/")[-2]
+                path = path.rsplit("/", 2)[0]
+            else:
+                defect = path.split("/")[-1]
+                path = path.rsplit("/")[0]
+            parse_energies(defect, path, code)
+        except:
+            warnings.warn(
+                "Could not parse energies! Please specify a defect to parse "
+                "(with option --defect) or use the --all flag to parse all defects."
+            )
 
 @snb.command(name="analyse", no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect to analyse",
