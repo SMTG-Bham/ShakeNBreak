@@ -749,7 +749,6 @@ local_rattle: False
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
 
-
     def test_snb_generate_all(self):
         """Test generate_all function."""
         # Test parsing defects from folders with non-standard names
@@ -1114,6 +1113,78 @@ local_rattle: False
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.txt"))
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
+    def test_analyse(self):
+        defect = "vac_1_Ti_0"
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+            f.write("")
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "analyse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertIn(
+            f"Comparing structures to Unperturbed...",
+            result.output
+        )
+        self.assertIn(
+            f"Saved results to {self.EXAMPLE_RESULTS}/{defect}/{defect}.csv",
+            result.output
+        )
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.csv") as f:
+            file = f.read()
+        csv_content = ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n" \
+            +"0,-0.4,5.315,0.88,-3.26\n" \
+            +"1,Unperturbed,0.0,0.0,0.0\n"
+
+        self.assertEqual(csv_content, file)
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+        # Test --all flag
+        os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
+        defect_name = "vac_1_Ti_-1"
+        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0")
+        result = runner.invoke(
+            snb,
+            [
+                "analyse",
+                "--all",
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/pesky_defects",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.csv"))
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.csv"))
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
+        # Test non-existent defect
+        name =  "vac_1_Ti_-2"
+        result = runner.invoke(
+            snb,
+            [
+                "analyse",
+                "--defect",
+                name,
+                "-p",
+                f"{self.EXAMPLE_RESULTS}",
+            ],
+            catch_exceptions=True,
+        )
+        self.assertIsInstance(result.exception, FileNotFoundError)
+        self.assertIn(
+            f"Could not find {name} in the directory {self.EXAMPLE_RESULTS}.",
+            str(result.exception)
+        )
 
 if __name__ == "__main__":
     unittest.main()

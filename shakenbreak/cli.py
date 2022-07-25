@@ -551,7 +551,7 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
         pickle.dump(defects_dict, fp)
 
 
-@snb.command(name="parse", no_args_is_help=True)
+@snb.command(name="parse", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect (including charge state) to parse energies for",
             type=str, default=None)
 @click.option("--all", "-a", help="Parse energies for all defects present in the specified/current directory",
@@ -584,10 +584,11 @@ def parse(defect, all, path, code):
         except:
             warnings.warn(
                 "Could not parse energies! Please specify a defect to parse "
-                "(with option --defect) or use the --all flag to parse all defects."
+                "(with option --defect) or use the --all flag to parse all defects"
+                " present in the specified/current directory."
             )
 
-@snb.command(name="analyse", no_args_is_help=True)
+@snb.command(name="analyse", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect to analyse",
             type=str, default=None)
 @click.option("--all", "-a", help="Analyse all defects present in specified directory",
@@ -611,6 +612,10 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     mean displacement (relative to ref_struct).
     """
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
+        if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
+            raise FileNotFoundError(
+                f"Could not find {defect} in the directory {path}."
+            )
         parse_energies(defect, path, code)
         defect_energies_dict = get_energies(
             defect_species=defect,
@@ -651,7 +656,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         )
 
 
-@snb.command(name="plot", no_args_is_help=True)
+@snb.command(name="plot", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect (inncluding charge state) to analyse",
             type=str, default=None)
 @click.option("--all", "-a", help="Analyse all defects present in specified directory",
