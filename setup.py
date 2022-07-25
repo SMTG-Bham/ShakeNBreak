@@ -52,6 +52,7 @@ setup(
             "snb = shakenbreak.cli:snb",
             "snb-generate = shakenbreak.cli:generate",
             "snb-generate_all = shakenbreak.cli:generate_all",
+            "snb-analyse = shakenbreak.cli:analyse",
             "shakenbreak = shakenbreak.cli:snb",
             "shakenbreak-generate = shakenbreak.cli:generate",
             "shakenbreak-generate_all = shakenbreak.cli:generate_all",

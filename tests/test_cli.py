@@ -5,13 +5,16 @@ import shutil
 import pickle
 import json
 import warnings
-from click import exceptions
 import numpy as np
 
+# Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
 
+# Click
+from click import exceptions
 from click.testing import CliRunner
+
 from shakenbreak.cli import snb
 
 
@@ -61,10 +64,8 @@ class CLITestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
-            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i:
+            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
                 shutil.rmtree(i)
-
-        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/pesky_defects")
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -752,7 +753,7 @@ local_rattle: False
         # Test parsing defects from folders with non-standard names
         # And default charge states
         # Create a folder for defect files / directories
-        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
+        defects_dir = f"pesky_defects"
         defect_name = "vac_1_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
@@ -863,7 +864,7 @@ local_rattle: False
 
         # Test defects not organised in folders
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "V_1_Cd"
+        defect_name = "Vac_Cd"
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -931,8 +932,8 @@ local_rattle: False
         # Names of defect folders/files should be used as defect names
         # CONFIG file
         # Create a folder for defect files / directories
-        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
-        defect_name = "vac_1_Cd"
+        defects_dir = "pesky_defects"
+        defect_name = "Vac_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -994,18 +995,18 @@ local_rattle: False
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
-        if_present_rm(f"{defect_name}_0")
+        # if_present_rm(f"{defect_name}_0")
         self.tearDown()
 
         # Test wrong folder defect name
-        defects_dir = f"{self.VASP_CDTE_DATA_DIR}/pesky_defects"
+        defects_dir = "pesky_defects"
         defect_name = "Wally_McDoodle"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR", f"{defects_dir}/{defect_name}/POSCAR"
         )
-        right_defect_name = "vac_1_Cd"
+        right_defect_name = "Vac_Cd"
         test_yml = f"""
         defects:
             {right_defect_name}:
@@ -1036,6 +1037,7 @@ local_rattle: False
             "Error in defect name parsing; could not parse defect name",
             str(result.exception)
         )
+        self.tearDown()
 
 if __name__ == "__main__":
     unittest.main()
