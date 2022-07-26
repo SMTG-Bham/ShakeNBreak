@@ -43,7 +43,7 @@ Alternatively, the code can be used via the command line. The scripts provided i
 * `snb-parse`: Parse the results of the geometry relaxations and write them to a file.
 * `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations.
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colobar to quantify structural differences.
-
+* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect.
 
 ## License
 ShakeNBreak is made available under the MIT License.
