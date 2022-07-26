@@ -7,6 +7,8 @@ import json
 import warnings
 import numpy as np
 
+from matplotlib.testing.compare import compare_images
+
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
@@ -16,6 +18,9 @@ from click import exceptions
 from click.testing import CliRunner
 
 from shakenbreak.cli import snb
+
+
+file_path = os.path.dirname(__file__)
 
 
 def if_present_rm(path):
@@ -68,6 +73,8 @@ class CLITestCase(unittest.TestCase):
                 os.remove(i)
             elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
                 shutil.rmtree(i)
+        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
+            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -750,7 +757,7 @@ local_rattle: False
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
 
     def test_snb_generate_all(self):
-        """Test generate_all function."""
+        """Test generate_all() function."""
         # Test parsing defects from folders with non-standard names
         # And default charge states
         # Create a folder for defect files / directories
@@ -1041,7 +1048,7 @@ local_rattle: False
         self.tearDown()
 
     def test_parse(self):
-        """Test parse function"""
+        """Test parse() function"""
         # Specifying defect to parse
         # All OUTCAR's present in distortion directories
         # Energies file already present
@@ -1065,9 +1072,13 @@ local_rattle: False
             result.output
         )
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt") as f:
-            file = f.read()
-        energies = """Bond_Distortion_-40.0%\n-1176.28458753\nUnperturbed\n-1173.02056574\n"""
-        self.assertEqual(energies, file)
+            lines = [line.strip() for line in f.readlines()]
+        energies = {
+            "Bond_Distortion_-40.0%": "-1176.28458753",
+            "Unperturbed": "-1173.02056574",
+        }  # Using dictionary here (rather than file/string), because parsing order
+        # is difference on github actions
+        self.assertEqual(energies, {lines[0]: lines[1], lines[2]: lines[3]})
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -1089,9 +1100,12 @@ local_rattle: False
         self.assertIn(f"Bond_Distortion_10.0% not fully relaxed", result.output)
         self.assertTrue(os.path.exists(f"{self.VASP_DIR}/{defect}/{defect}.txt"))
         with open(f"{self.VASP_DIR}/{defect}/{defect}.txt") as f:
-            file = f.read()
-        energies = """Bond_Distortion_-40.0%\n-1176.28458753\nUnperturbed\n-1173.02056574\n"""
-        self.assertEqual(energies, file)
+            lines = [line.strip() for line in f.readlines()]
+        energies = {
+            "Bond_Distortion_-40.0%": "-1176.28458753",
+            "Unperturbed": "-1173.02056574",
+        }
+        self.assertEqual(energies, {lines[0]: lines[1], lines[2]: lines[3]})
         os.remove(f"{self.VASP_DIR}/{defect}/{defect}.txt")
 
         # Test --all option
@@ -1114,6 +1128,7 @@ local_rattle: False
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
     def test_analyse(self):
+        "Test analyse() function"
         defect = "vac_1_Ti_0"
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
             f.write("")
@@ -1149,6 +1164,7 @@ local_rattle: False
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
             if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
         ]
+
         # Test --all flag
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
         defect_name = "vac_1_Ti_-1"
@@ -1185,6 +1201,115 @@ local_rattle: False
             f"Could not find {name} in the directory {self.EXAMPLE_RESULTS}.",
             str(result.exception)
         )
+
+    def test_plot(self):
+        "Test plot() function"
+        # Test the following options:
+        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        defect = "vac_1_Ti_0"
+        wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+            f.write("")
+        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "--units",
+                    "meV",
+                    "--format",
+                    "png",
+                    "--colorbar",
+                    "--metric",
+                    "disp",
+                    "-t", # No title
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, and unperturbed: -3.26 eV.",
+            result.output
+        )  # verbose output
+        self.assertIn(
+            f"Plot saved to {wd}/distortion_plots/",
+            result.output
+        )
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
+            str(w[0].message)
+        )
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        compare_images(
+            wd + "/distortion_plots/V$_{Ti}^{0}$.png",
+            f"{file_path}/remote_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
+            tol=2.0,
+        )
+        self.tearDown()
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+
+        # Test --all option, with the distortion_metadata.json file present to parse number of
+        # distorted neighbours and their identities
+        defect = "vac_1_Ti_0"
+        fake_distortion_metadata = {
+            "defects": {
+                "vac_1_Cd": {
+                    "charges": {
+                        "0": {
+                            "num_nearest_neighbours": 2,
+                            "distorted_atoms": [[33, "Te"], [42, "Te"]]
+                        },
+                        "-1": {
+                            "num_nearest_neighbours": 1,
+                            "distorted_atoms": [[33, "Te"],]
+                        },
+                    }
+                },
+                "vac_1_Ti": {
+                    "charges": {
+                        "0": {
+                            "num_nearest_neighbours": 3,
+                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]]
+                        },
+                    }
+                },
+            }
+        }
+        with open(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json", "w") as f:
+            f.write(json.dumps(fake_distortion_metadata, indent=4))
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "--all",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-f",
+                    "png",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
+        if w:  # distortion_metadata file present, so no warnings
+            self.assertNotEqual(w[0].category, UserWarning)
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
+        # Compare figures
+        compare_images(
+            wd + "/distortion_plots/V$_{Cd}^{0}$.png",
+            f"{file_path}/remote_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
+            tol=2.0,
+        )
+        self.tearDown()
 
 if __name__ == "__main__":
     unittest.main()
