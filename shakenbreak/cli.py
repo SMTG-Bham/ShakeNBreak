@@ -19,6 +19,7 @@ from pymatgen.core.structure import Structure
 from shakenbreak.input import Distortions
 from shakenbreak.analysis import get_energies, get_structures, compare_structures
 from shakenbreak.plotting import plot_all_defects, plot_defect
+from shakenbreak.energy_lowering_distortions import read_defects_directories, get_energy_lowering_distortions
 
 def identify_defect(defect_structure, bulk_structure,
                     defect_coords=None, defect_index=None):
@@ -754,7 +755,46 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
             " Alternatively, set the option --all to generate distortion plots for"
             " all defects present in the specified directory."
         )
+
+
+# TODO: Nicer name for this function?
+@snb.command(name="regenerate", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
+@click.option("--path", "-p", help="Path to the top-level directory containing the defect folders."
+              "Defaults to current directory.",
+            type=click.Path(exists=True, dir_okay=True), default=".")
+@click.option("--code", help ="Code to generate relaxation input files for. "
+              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
+              "Defaults to 'VASP'",
+              type=str, default="VASP")
+@click.option("--filename", help ="Name of the file containing the structure. Defaults to 'CONTCAR'",
+              type=str, default="CONTCAR")
+@click.option("--min", help ="Minimum energy difference (in eV) between the ground-state"
+            " defect structure, relative to the `Unperturbed` structure,"
+            " to consider it as having found a new energy-lowering"
+            " distortion. Default is 0.05 eV.",
+              type=float, default=0.05)
+@click.option("--verbose", "-v", help ="Print information about identified energy lowering distortions.",
+              default=False, is_flag=True, show_default=True)
+def regenerate(path, code, filename, min, verbose):
+    """
+    Identify defect species undergoing energy-lowering distortions and
+    test these distortions for the other charge states of the defect.
+    Considers all identified energy-lowering distortions for each defect
+    in each charge state, and screens out duplicate distorted structures
+    found for multiple charge states.
+    """
+    defect_charges_dict = read_defects_directories()
+    _ = get_energy_lowering_distortions(
+        defect_charges_dict=defect_charges_dict,
+        output_path=path,
+        code=code,
+        structure_filename=filename,
+        write_input_files=True,
+        min_e_diff=min,
+        verbose=verbose,
+    )
+
 # TODO:
 # - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
 # - Add support for all codes when parsing final energies from files
-# - Add command for energy_lowering_distortions functionality
+# - Add test for regenerate
