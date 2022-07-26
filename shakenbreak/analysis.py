@@ -281,7 +281,6 @@ def _sort_data(energies_file: str, verbose: bool = True):
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
-
     Returns:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as

@@ -755,6 +755,6 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
             " all defects present in the specified directory."
         )
 # TODO:
-# - Add test for plot command
+# - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
 # - Add support for all codes when parsing final energies from files
 # - Add command for energy_lowering_distortions functionality

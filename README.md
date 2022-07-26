@@ -28,15 +28,21 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 ```
    This command tries to obtain the required packages and their dependencies and install them automatically.
 
+## Usage
+ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`.
 
-4. If using `VASP` (and not set), set the `VASP` pseudopotential directory in `$HOME/.pmgrc.yaml` as follows:
+Alternatively, the code can be used via the command line. The scripts provided include:
+* `snb-generate`: Generate distorted structures for a given defect.
+* `snb-generate_all`: Generates distorted structures for all defects present int the specified/current directory.
+* `snb-parse`: Parse the results of the geometry relaxations and write them to a file.
+* `snb-analyse`: Generate `cvs` files with energies and structural differences between the final configurations.
+* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colobar to quantify structural differences.
+
+1. If using `VASP` (and not set), set the `VASP` pseudopotential directory in `$HOME/.pmgrc.yaml` as follows:
 ```bash
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s).
-
-## Examples
-The notebook `ShakeNBreak_Example_Workflow.ipynb` demonstrates how to use `ShakeNBreak` from a python API.
 
 ## License
 ShakeNBreak is made available under the MIT License.
