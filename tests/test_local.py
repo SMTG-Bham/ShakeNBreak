@@ -7,16 +7,27 @@ and INCAR files from being written.
 import unittest
 import os
 import pickle
+import json
 import copy
 from unittest.mock import patch
 import shutil
+import warnings
 
 import numpy as np
+from matplotlib.testing.compare import compare_images
+
+# Click
+from click import exceptions
+from click.testing import CliRunner
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
 from doped import vasp_input
+
+from shakenbreak.cli import snb
 from shakenbreak import input, io
+
+file_path = os.path.dirname(__file__)
 
 
 def if_present_rm(path):
@@ -54,6 +65,7 @@ class DistortionLocalTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         with open(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
         ) as fp:
@@ -200,6 +212,8 @@ class DistortionLocalTestCase(unittest.TestCase):
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
+        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
+            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
@@ -395,6 +409,98 @@ class DistortionLocalTestCase(unittest.TestCase):
         # check if POTCARs have been written:
         self.assertTrue(os.path.isfile(Int_Cd_2_minus60_folder + "/POTCAR"))
 
+    def test_plot(self):
+        "Test plot() function"
+        # Test the following options:
+        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        defect = "vac_1_Ti_0"
+        wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+            f.write("")
+        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "--units",
+                    "meV",
+                    "--format",
+                    "png",
+                    "--colorbar",
+                    "--metric",
+                    "disp",
+                    "-t", # No title
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        compare_images(
+            wd + "/distortion_plots/V$_{Ti}^{0}$.png",
+            f"{file_path}/remote_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
+            tol=2.0,
+        )  # only locally (on Github Actions, saved image has a different size)
+        self.tearDown()
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+
+        # Test --all option, with the distortion_metadata.json file present to parse number of
+        # distorted neighbours and their identities
+        defect = "vac_1_Ti_0"
+        fake_distortion_metadata = {
+            "defects": {
+                "vac_1_Cd": {
+                    "charges": {
+                        "0": {
+                            "num_nearest_neighbours": 2,
+                            "distorted_atoms": [[33, "Te"], [42, "Te"]]
+                        },
+                        "-1": {
+                            "num_nearest_neighbours": 1,
+                            "distorted_atoms": [[33, "Te"],]
+                        },
+                    }
+                },
+                "vac_1_Ti": {
+                    "charges": {
+                        "0": {
+                            "num_nearest_neighbours": 3,
+                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]]
+                        },
+                    }
+                },
+            }
+        }
+        with open(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json", "w") as f:
+            f.write(json.dumps(fake_distortion_metadata, indent=4))
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "--all",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "png",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
+        # Compare figures
+        compare_images(
+            wd + "/distortion_plots/V$_{Cd}^{0}$.png",
+            f"{file_path}/remote_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
+            tol=2.0,
+        )  # only locally (on Github Actions, saved image has a different size)
+        self.tearDown()
 
 if __name__ == "__main__":
     unittest.main()

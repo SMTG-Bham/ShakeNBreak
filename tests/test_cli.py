@@ -7,8 +7,6 @@ import json
 import warnings
 import numpy as np
 
-from matplotlib.testing.compare import compare_images
-
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
@@ -18,9 +16,6 @@ from click import exceptions
 from click.testing import CliRunner
 
 from shakenbreak.cli import snb
-
-
-file_path = os.path.dirname(__file__)
 
 
 def if_present_rm(path):
@@ -1246,13 +1241,13 @@ local_rattle: False
             str(w[0].message)
         )
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
-        compare_images(
-            wd + "/distortion_plots/V$_{Ti}^{0}$.png",
-            f"{file_path}/remote_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
-            tol=2.0,
-        )
+        # Figures are compared in the local test since on Github Actions images are saved
+        # with a different size (raising error when comparing).
         self.tearDown()
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        [
+            os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file
+        ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
@@ -1301,14 +1296,14 @@ local_rattle: False
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
         if w:  # distortion_metadata file present, so no warnings
             self.assertNotEqual(w[0].category, UserWarning)
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        [
+            os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file
+        ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
-        # Compare figures
-        compare_images(
-            wd + "/distortion_plots/V$_{Cd}^{0}$.png",
-            f"{file_path}/remote_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
-            tol=2.0,
-        )
+        # Figures are compared in the local test since on Github Actions images are saved
+        # with a different size (raising error when comparing).
+
         self.tearDown()
 
 if __name__ == "__main__":
