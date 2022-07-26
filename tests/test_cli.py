@@ -71,6 +71,13 @@ class CLITestCase(unittest.TestCase):
         if os.path.exists(f"{os.getcwd()}/distortion_plots"):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
+        for defect in os.listdir(self.EXAMPLE_RESULTS):
+            [
+                shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
+                for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+                if "_from_" in dir
+            ]
+
     def test_snb_generate(self):
         runner = CliRunner()
         result = runner.invoke(
@@ -1304,6 +1311,76 @@ local_rattle: False
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
 
+        self.tearDown()
+
+    def test_regenerate(self):
+        """Test regenerate() function"""
+        with warnings.catch_warnings(record=True) as w:
+            runner = CliRunner()
+            result = runner.invoke(
+                snb,
+                [
+                    "regenerate",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertIn(
+            f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.txt does not exist",
+            result.output
+        )
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"No data parsed from {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.txt, returning None",
+            str(w[0].message)
+        )
+        self.assertIn(
+            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+            " in the low_energy_defects charge state lists (and so energy lowering distortions"
+            " found for other charge states will not be applied for this species).",
+            result.output
+        )
+        self.assertIn(
+            "Energy lowering distortion found for vac_1_Cd with charge -1."
+            " Adding to low_energy_defects dictionary.",
+            result.output
+        )
+        self.assertIn(
+            "Comparing structures to specified ref_structure (Cd31 Te32)...",
+            result.output
+        )
+        self.assertIn(
+            "New (according to structure matching) low-energy distorted  structure"
+            " found for vac_1_Cd_0, adding to low_energy_defects['vac_1_Cd'] list.",
+            result.output
+        )
+        self.assertIn(
+            "Comparing and pruning defect structures across charge states...",
+            result.output
+        )
+        self.assertIn(
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            result.output
+        )
+        self.assertIn(
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
+            result.output
+        )
+        self.assertIn(
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
+            result.output
+        )
+        self.assertIn(
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0\n",
+            result.output
+        )
+        self.assertIn(
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
+            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            result.output
+        )
         self.tearDown()
 
 if __name__ == "__main__":

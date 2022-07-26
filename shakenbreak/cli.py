@@ -760,7 +760,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
 # TODO: Nicer name for this function?
 @snb.command(name="regenerate", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 @click.option("--path", "-p", help="Path to the top-level directory containing the defect folders."
-              "Defaults to current directory.",
+              " Defaults to current directory.",
             type=click.Path(exists=True, dir_okay=True), default=".")
 @click.option("--code", help ="Code to generate relaxation input files for. "
               "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
