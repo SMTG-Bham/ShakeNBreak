@@ -797,4 +797,3 @@ def regenerate(path, code, filename, min, verbose):
 # TODO:
 # - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
 # - Add support for all codes when parsing final energies from files
-# - Add test for regenerate

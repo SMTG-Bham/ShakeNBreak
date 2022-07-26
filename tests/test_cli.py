@@ -1343,17 +1343,7 @@ local_rattle: False
             result.output
         )
         self.assertIn(
-            "Energy lowering distortion found for vac_1_Cd with charge -1."
-            " Adding to low_energy_defects dictionary.",
-            result.output
-        )
-        self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
-            result.output
-        )
-        self.assertIn(
-            "New (according to structure matching) low-energy distorted  structure"
-            " found for vac_1_Cd_0, adding to low_energy_defects['vac_1_Cd'] list.",
             result.output
         )
         self.assertIn(
