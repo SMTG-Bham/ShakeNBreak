@@ -158,7 +158,7 @@ def identify_defect(defect_structure, bulk_structure,
     return defect
 
 
-def _generate_defect_dict(defect_object, charges, defect_name):
+def _generate_defect_dict(defect_object, charges, defect_name) -> dict:
     """Create defect dictionary from a defect object"""
     single_defect_dict = {"name": defect_name,
                           "bulk_supercell_site": defect_object.site,
@@ -198,7 +198,7 @@ def _generate_defect_dict(defect_object, charges, defect_name):
     return defects_dict
 
 
-def _parse_defect_dirs(path):
+def _parse_defect_dirs(path) -> list:
     """Parse defect directories present in the specified path."""
     return [
         dir for dir in os.listdir(path)
@@ -209,33 +209,32 @@ def _parse_defect_dirs(path):
     ]
 
 
-def parse_energies(defect: str, path: str=".", code: str="VASP"):
+def parse_energies(defect: str, path: str=".", code: str="VASP") -> None:
     """
     Parse final energy for all distortions present in the given defect
-    directory.
+    directory and write them to a `txt` file in the defect directory.
+    Args:
+        defect (:obj: `str`):
+            Name of defect to parse, including charge state. Should match the
+            name of the defect folder.
+        path (:obj: `str`):
+            Path to the top-level directory containing the defect folder.
+            Defaults to current directory (".").
+        code (:obj: `str`):
+            Ab-initio code used to run the geometry optimisations.
+            Defaults to VASP.
     """
     defect_dir = f"{path}/{defect}"
     if os.path.isdir(defect_dir):
-        dirs = [
+        dist_dirs = [
             dir for dir in os.listdir(defect_dir)
             if os.path.isdir(os.path.join(defect_dir, dir))
             and any([substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]])
         ]  # parse distortion directories
 
-        # File to write energies to
-        filename = f"{path}/{defect}/{defect}.txt"
-        if os.path.exists(filename):
-            current_datetime = datetime.datetime.now().strftime(
-                "%Y-%m-%d-%H-%M"
-            )
-            print(
-                f"Moving old {filename} to {filename.replace('.txt', '')}_{current_datetime}.txt to avoid overwriting"
-            )
-            os.rename(filename, f"{filename.replace('.txt', '')}_{current_datetime}.txt")  # Keep copy of old file
-
         # Parse energies and write them to file
         energies = ""
-        for dist in dirs:
+        for dist in dist_dirs:
             energy = None
             if code == "VASP":
                 # regrep faster than using Outcar/vasprun class
@@ -257,8 +256,25 @@ def parse_energies(defect: str, path: str=".", code: str="VASP"):
                 if not energy:
                     print(f"{dist} not fully relaxed")
             # TODO: add support for other codes! Check string that accompanies final energy
-        with open(filename, "w") as f:
-            f.write(energies)
+
+        if energies:  # only write energy file if energies have been parsed
+            # File to write energies to
+            filename = f"{path}/{defect}/{defect}.txt"
+            # Check if previous version of file exists
+            if os.path.exists(filename):
+                with open(filename) as f:
+                    old_file = f.read()
+                if old_file != energies:
+                    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+                    print(
+                        f"Moving old {filename} to {filename.replace('.txt', '')}_{current_datetime}.txt to avoid overwriting"
+                    )
+                    os.rename(filename, f"{filename.replace('.txt', '')}_{current_datetime}.txt")  # Keep copy of old file
+                    with open(filename, "w") as f:
+                        f.write(energies)
+            else:
+                with open(filename, "w") as f:
+                    f.write(energies)
 
 
 def CommandWithConfigFile(config_file_param_name):  # can also set CLI options using config file
@@ -588,6 +604,7 @@ def parse(defect, all, path, code):
                 " present in the specified/current directory."
             )
 
+
 @snb.command(name="analyse", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 @click.option("--defect", "-d", help="Name of defect to analyse",
             type=str, default=None)
@@ -670,21 +687,23 @@ def analyse(defect, all, path, code, ref_struct, verbose):
               type=str, default="VASP")
 @click.option("--colorbar", help ="Whether to add a colorbar indicating structural"
               " similarity between each structure and the unperturbed one.",
-              type=bool, default=False)
+              type=bool, default=False, is_flag=True, show_default=True)
 @click.option("--metric", "-m", help ="If add_colorbar is True, determines the criteria used for the"
             " structural comparison. Can choose between the summed of atomic"
             " displacements ('disp') or the maximum distance between"
             " matched sites ('max_dist', default).",
-            type=str, default="svg")
+            type=str, default="max_dist")
 @click.option("--format", "-f", help ="Format to save the plot as. Defaults to svg.",
               type=str, default="svg")
 @click.option("--units", "-u", help ="Units for energy, either 'eV' or 'meV' (Default: 'eV')",
               type=str, default="eV")
+@click.option("--max_energy", "-max", help ="Maximum energy (in eV), relative to the unperturbed structure,"
+            " to show on the plot. Defaults to 0.5 eV)", type=float, default=0.5)
 @click.option("--title", "-t", help ="Whether to add defect name as plot title. Defaults to True.",
               type=bool, default=True, is_flag=True, show_default=True)
 @click.option("--verbose", "-v", help ="Print information about identified energy lowering distortions.",
               default=False, is_flag=True, show_default=True)
-def plot(defect, all, path, code, colorbar, metric, format, units, title, verbose):
+def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose):
     """
     Generate energy vs distortion plots.
     """
@@ -709,6 +728,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, title, verbos
             units=units,
             save_format=format,
             add_title=title,
+            max_energy_above_unperturbed=max_energy,
         )
     elif defect:
         parse_energies(defect, path, code)
@@ -722,9 +742,11 @@ def plot(defect, all, path, code, colorbar, metric, format, units, title, verbos
             energies_dict=defect_energies_dict,
             output_path=path,
             add_colorbar=colorbar,
+            metric=metric,
             save_format=format,
             units=units,
             add_title=title,
+            max_energy_above_unperturbed=max_energy,
         )
     elif not defect and not all:
         warnings.warn(
@@ -733,5 +755,6 @@ def plot(defect, all, path, code, colorbar, metric, format, units, title, verbos
             " all defects present in the specified directory."
         )
 # TODO:
-# - Add test for analyse & plot command
+# - Add test for plot command
 # - Add support for all codes when parsing final energies from files
+# - Add command for energy_lowering_distortions functionality
