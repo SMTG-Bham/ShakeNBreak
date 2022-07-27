@@ -298,8 +298,9 @@ def parse_energies(
                     )[0][0][0] # Energy of first match in Hartree
                     energy = float(Energy(energy_in_Ha, "Ha").to("eV"))
             elif code.lower() == "castep":
-                if os.path.exists([file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]):
-                    outcar = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]
+                output_files = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file]
+                if len(output_files) >= 1 and os.path.exists(f"{defect_dir}/{dist}/{output_files[0]}"):
+                    outcar = f"{defect_dir}/{dist}/{output_files[0]}"
                 elif os.path.exists(os.path.join(defect_dir, dist, filename)):
                     outcar = os.path.join(defect_dir, dist, filename)
                 if outcar and _match(outcar, "Geometry optimization completed successfully."):
