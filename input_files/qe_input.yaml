@@ -1,0 +1,15 @@
+CONTROL:
+  calculation: relax
+  nstep: 300 # Number of ionic optimization steps
+  title: espresso
+ELECTRONS:
+  ecutwfc: 33.0
+SYSTEM:
+  degauss: 0.0015 # Ry
+  ecutwfc: 30.0 # in Ry, 450 eV
+  exx_fraction: 0.25
+  ibrav: 0
+  input_dft: HSE
+  nosym: true
+  nspin: 2 # spin polarized
+  occupations: smearing # gaussian smearing
