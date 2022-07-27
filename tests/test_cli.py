@@ -6,6 +6,7 @@ import pickle
 import json
 import warnings
 import numpy as np
+import filecmp
 
 # Pymatgen
 from pymatgen.core.structure import Structure
@@ -1136,6 +1137,99 @@ local_rattle: False
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.txt"))
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.txt"))
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
+
+    def test_parse_codes(self):
+        """Test parse() function when using codes different from VASP."""
+        runner = CliRunner()
+        defect = "vac_1_Cd_0"
+
+        # CP2K
+        code = "cp2k"
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                f"{self.DATA_DIR}/{code}",
+                "-c",
+                code,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(filecmp.cmp(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+        ))
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+
+        # CASTEP
+        code = "castep"
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                f"{self.DATA_DIR}/{code}",
+                "-c",
+                code,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(filecmp.cmp(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+        ))
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+
+        # Espresso
+        code = "quantum_espresso"
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                f"{self.DATA_DIR}/{code}",
+                "-c",
+                "espresso",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(filecmp.cmp(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+        ))
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+
+        # FHI-aims
+        code = "fhi_aims"
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                f"{self.DATA_DIR}/{code}",
+                "-c",
+                "fhi-aims",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(filecmp.cmp(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+        ))
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
 
     def test_analyse(self):
         "Test analyse() function"
