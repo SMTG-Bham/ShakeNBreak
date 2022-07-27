@@ -1088,18 +1088,23 @@ local_rattle: False
         ]
 
         # Test when OUTCAR not present in one of the distortion directories
-        result = runner.invoke(
-            snb,
-            [
-                "parse",
-                "-d",
-                defect,
-                "-p",
-                self.VASP_DIR,
-            ],
-            catch_exceptions=False,
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.VASP_DIR,
+                ],
+                catch_exceptions=False,
+            )
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"No output file in Bond_Distortion_10.0% directory",
+            str(w[0].message)
         )
-        self.assertIn(f"Bond_Distortion_10.0% not fully relaxed", result.output)
         self.assertTrue(os.path.exists(f"{self.VASP_DIR}/{defect}/{defect}.txt"))
         with open(f"{self.VASP_DIR}/{defect}/{defect}.txt") as f:
             lines = [line.strip() for line in f.readlines()]

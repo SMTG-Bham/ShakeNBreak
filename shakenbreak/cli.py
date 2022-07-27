@@ -5,15 +5,18 @@ import os
 import warnings
 import pickle
 import datetime
-import click
 from copy import deepcopy
+from typing import Optional
 import numpy as np
+import click
+import warnings
 
 # Monty and pymatgen
 from monty.serialization import loadfn
 from monty.json import MontyDecoder
 from monty.re import regrep
 from pymatgen.core.structure import Structure
+from pymatgen.core.units import Energy
 
 # ShakeNBreak
 from shakenbreak.input import Distortions
@@ -210,7 +213,12 @@ def _parse_defect_dirs(path) -> list:
     ]
 
 
-def parse_energies(defect: str, path: str=".", code: str="VASP") -> None:
+def parse_energies(
+    defect: str,
+    path: Optional[str] = ".",
+    code: Optional[str] = "VASP",
+    filename: Optional[str] = "OUTCAR",
+) -> None:
     """
     Parse final energy for all distortions present in the given defect
     directory and write them to a `txt` file in the defect directory.
@@ -222,9 +230,30 @@ def parse_energies(defect: str, path: str=".", code: str="VASP") -> None:
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
         code (:obj: `str`):
-            Ab-initio code used to run the geometry optimisations.
+            Ab-initio code used to run the geometry optimisations. Options include:
+            "VASP", "CP2K", "espresso", "CASTEP" and "FHI-aims".
             Defaults to VASP.
+        filename (:obj: `str`):
+            Filename of the output file, if different from the ShakeNBreak defaults
+            that are defined in the default input files:
+            (i.e. CP2K: "relax.out", espresso: "espresso.out", CASTEP: "*.castep",
+            FHI-aims: "aims.out")
+            Default to the ShakeNBreak default filenames.
     """
+    def _match(filename, grep_string):
+        """
+        Helper function to grep for a string in a file.
+        """
+        try:
+            return regrep(
+                filename=filename,
+                patterns={"match": grep_string},
+                reverse=True,
+                terminate_on_match=True
+            )["match"]
+        except:
+            return None
+
     defect_dir = f"{path}/{defect}"
     if os.path.isdir(defect_dir):
         dist_dirs = [
@@ -236,11 +265,13 @@ def parse_energies(defect: str, path: str=".", code: str="VASP") -> None:
         # Parse energies and write them to file
         energies = ""
         for dist in dist_dirs:
+            outcar = None
             energy = None
             if code == "VASP":
                 # regrep faster than using Outcar/vasprun class
-                outcar = os.path.join(defect_dir, dist, "OUTCAR")
-                if os.path.exists(outcar):
+                if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
+                    outcar = os.path.join(defect_dir, dist, "OUTCAR")
+                if outcar:
                     if regrep(
                         filename=outcar,
                         patterns={"converged": "required accuracy"},
@@ -253,10 +284,59 @@ def parse_energies(defect: str, path: str=".", code: str="VASP") -> None:
                             reverse=True,
                             terminate_on_match=True
                         )["energy"][0][0][0] # Energy of first match
-                        energies += f"{dist}\n{energy}\n"
-                if not energy:
-                    print(f"{dist} not fully relaxed")
-            # TODO: add support for other codes! Check string that accompanies final energy
+            elif code == "espresso":
+                if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
+                    outcar = os.path.join(defect_dir, dist, "espresso.out")
+                elif os.path.exists(os.path.join(defect_dir, dist, filename)):
+                    outcar = os.path.join(defect_dir, dist, filename)
+                if outcar:
+                    energy_in_Ry = _match(
+                        outcar,
+                        "!    total energy\s+=\s+([\d\-\.]+)"
+                    )[0][0][0] # Energy of first match, in Rydberg
+                    energy = Energy(float(energy_in_Ry), "Ry").to("eV")
+            elif code == "CP2K":
+                if os.path.join(defect_dir, dist, "relax.out"):
+                    outcar = os.path.join(defect_dir, dist, "relax.out")
+                elif os.path.exists(os.path.join(defect_dir, dist, filename)):
+                    outcar = os.path.join(defect_dir, dist, filename)
+                if outcar and _match(outcar, "GEOMETRY OPTIMIZATION COMPLETED"):  # check if ionic relaxation is converged
+                    energy_in_Ha = _match(
+                        outcar, "Total energy:\s+([\d\-\.]+)"
+                    )[0][0][0] # Energy of first match in Hartree
+                    energy = Energy(energy_in_Ha, "Ha").to("eV")
+            elif code == "CASTEP":
+                if os.path.exists([file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]):
+                    outcar = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]
+                elif os.path.exists(os.path.join(defect_dir, dist, filename)):
+                    outcar = os.path.join(defect_dir, dist, filename)
+                if outcar and _match(outcar, "Geometry optimization completed successfully."):
+                        # check if ionic relaxation is converged
+                    # Convergence string deduced from:
+                    # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
+                    energy = _match(
+                        outcar, "Final Enthalpy\s+=\s+([\d\-\.]+)"
+                    )[0][0][0] # Energy of first match in eV
+            elif code == "FHI-aims":
+                if os.path.join(defect_dir, dist, "aims.out"):
+                    outcar = os.path.join(defect_dir, dist, "aims.out")
+                elif os.path.exists(os.path.join(defect_dir, dist, filename)):
+                    outcar = os.path.join(defect_dir, dist, filename)
+                if outcar and _match(outcar, "converged."): # check if ionic relaxation is converged
+                    # Convergence string deduced from:
+                    # https://fhi-aims-club.gitlab.io/tutorials/basics-of-running-fhi-aims/3-Periodic-Systems/
+                    # and https://gitlab.com/FHI-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
+                    energy = _match(
+                        outcar,
+                        "| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+=\s+([\d\-\.]+)"
+                    )[0][0][0] # Energy of first match in eV
+
+            if energy:
+                energies += f"{dist}\n{energy}\n"
+            elif not outcar:
+                warnings.warn(f"No output file in {dist} directory")
+            else:
+                print(f"{dist} not fully relaxed")
 
         if energies:  # only write energy file if energies have been parsed
             # File to write energies to
@@ -796,4 +876,4 @@ def regenerate(path, code, filename, min, verbose):
 
 # TODO:
 # - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
-# - Add support for all codes when parsing final energies from files
+# - Test parse_energies() with codes different from VASP!
