@@ -301,7 +301,7 @@ def _get_displacement_dict(
     metric: str,
     energies_dict: dict,
     add_colorbar: bool,
-    code: Optional[str] = "VASP",
+    code: Optional[str] = "vasp",
 ) -> Tuple[bool, dict, dict]:
     """
     Parses structures of `defect_species` to calculate displacements between each
@@ -331,8 +331,9 @@ def _get_displacement_dict(
             Whether to add a colorbar indicating structural similarity between
             each structure and the unperturbed one.
         code (:obj:`str`, optional):
-            Code used for the geometry relaxations.
-            (Default: VASP)
+            Code used for the geometry relaxations. Valid code names are:
+            "vasp", "espresso", "cp2k" and "fhi-aims" (case insensitive).
+            (Default: "vasp")
     Returns:
         Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and
         `disp_dict`

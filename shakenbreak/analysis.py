@@ -455,7 +455,7 @@ def get_structures(
     defect_species: str,
     output_path: str = ".",
     bond_distortions: Optional[list] = None,
-    code: Optional[str] = "VASP",
+    code: Optional[str] = "vasp",
     structure_filename: Optional[str] = "CONTCAR",
 ) -> dict:
     """
@@ -479,7 +479,7 @@ def get_structures(
             (Default: None)
         code (:obj:`str`, optional):
             Code used for the geometry relaxations.
-            (Default: VASP)
+            (Default: vasp)
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
@@ -978,7 +978,7 @@ def _site_magnetizations(
 ) -> pd.DataFrame :
     """
     Prints sites with magnetization above threshold.
-    Only implemented for VASP calculations.
+    Only implemented for vasp calculations.
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
             Outcar object

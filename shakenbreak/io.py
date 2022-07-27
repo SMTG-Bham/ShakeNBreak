@@ -48,7 +48,7 @@ def write_vasp_gam_files(
     potcar_settings: dict = None,
 ) -> None:
     """
-    Generates input files for VASP Gamma-point-only rough relaxation
+    Generates input files for vasp Gamma-point-only rough relaxation
     (before more expensive vasp_std relaxation)
     Args:
         single_defect_dict (:obj:`dict`):
@@ -284,12 +284,12 @@ def read_fhi_aims_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from FHI-aims output and returns it as a pymatgen
+    Reads a structure from fhi-aims output and returns it as a pymatgen
     Structure.
 
     Args:
         filename (:obj:`str`):
-            Path to the FHI-aims output file.
+            Path to the fhi-aims output file.
     Returns:
         `pymatgen` Structure object
     """
@@ -318,12 +318,12 @@ def read_cp2k_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from CP2K restart file and returns it as a pymatgen
+    Reads a structure from cp2k restart file and returns it as a pymatgen
     Structure.
 
     Args:
         filename (:obj:`str`):
-            Path to the CP2K restart file.
+            Path to the cp2k restart file.
     Returns:
         `pymatgen` Structure object
     """
@@ -352,12 +352,12 @@ def read_castep_structure(
     filename: str,
 ) -> Structure:
     """
-    Reads a structure from CASTEP output (`.castep`) file and returns it as a
+    Reads a structure from castep output (`.castep`) file and returns it as a
     pymatgen Structure.
 
     Args:
         filename (:obj:`str`):
-            Path to the CASTEP output file.
+            Path to the castep output file.
     Returns:
         `pymatgen` Structure object
     """
@@ -389,52 +389,51 @@ def parse_structure(
 )-> Structure:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
-    CASTEP, FHI-aims) and converts it to
-    a pymatgen Structure object.
+    CATSEP, FHI-aims) and converts it to a pymatgen Structure object.
 
     Args:
         code (:obj:`str`):
             Code used for geometry optimizations. Valid code names are:
-            "VASP", "espresso", "CP2K" and "FHI-aims".
+            "vasp", "espresso", "cp2k" and "fhi-aims" (case insensitive).
         structure_path (:obj:`str`):
             Path to directory containing the structure file.
         structure_filename (:obj:`str`):
             Name of the structure file or the output file containing the
             optimized structure. If not set, the following values will be used
             for each code:
-            VASP: "CONTCAR",
-            CP2K: "cp2k.restart" (The restart file is used),
+            vasp: "CONTCAR",
+            cp2k: "cp2k.restart" (The restart file is used),
             Quantum espresso: "espresso.out",
-            CASTEP: "castep.castep" (CASTEP output file is used)
-            FHI-aims: geometry.in.next_step
+            castep: "castep.castep" (castep output file is used)
+            fhi-aims: geometry.in.next_step
     Returns:
         `pymatgen` Structure object
     """
-    if code == "VASP":
+    if code.lower() == "vasp":
         if not structure_filename:
             structure_filename = "CONTCAR"
         structure = read_vasp_structure(
                 f"{structure_path}/{structure_filename}"
             )
-    elif code == "espresso":
+    elif code.lower() == "espresso":
         if not structure_filename:
             structure_filename = "espresso.out"
         structure = read_espresso_structure(
             f"{structure_path}/{structure_filename}"
         )
-    elif code == "CP2K":
+    elif code.lower() == "cp2k":
         if not structure_filename:
             structure_filename = "cp2k.restart"
         structure = read_cp2k_structure(
             filename=f"{structure_path}/{structure_filename}",
         )
-    elif code == "FHI-aims":
+    elif code.lower() == "fhi-aims":
         if not structure_filename:
             structure_filename = "geometry.in.next_step"
         structure = read_fhi_aims_structure(
             filename=f"{structure_path}/{structure_filename}",
         )
-    elif code == "CASTEP":
+    elif code.lower() == "castep":
         if not structure_filename:
             structure_filename = "castep.castep"
         structure = read_castep_structure(

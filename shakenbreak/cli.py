@@ -216,7 +216,7 @@ def _parse_defect_dirs(path) -> list:
 def parse_energies(
     defect: str,
     path: Optional[str] = ".",
-    code: Optional[str] = "VASP",
+    code: Optional[str] = "vasp",
     filename: Optional[str] = "OUTCAR",
 ) -> None:
     """
@@ -230,14 +230,14 @@ def parse_energies(
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
         code (:obj: `str`):
-            Ab-initio code used to run the geometry optimisations. Options include:
-            "VASP", "CP2K", "espresso", "CASTEP" and "FHI-aims".
-            Defaults to VASP.
+            Name of ab-initio code used to run the geometry optimisations, case
+            insensitive. Options include: "vasp", "cp2k", "espresso", "castep"
+            and "fhi-aims". Defaults to 'vasp'.
         filename (:obj: `str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
-            (i.e. CP2K: "relax.out", espresso: "espresso.out", CASTEP: "*.castep",
-            FHI-aims: "aims.out")
+            (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
+            castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
     """
     def _match(filename, grep_string):
@@ -267,7 +267,7 @@ def parse_energies(
         for dist in dist_dirs:
             outcar = None
             energy = None
-            if code == "VASP":
+            if code.lower() == "vasp":
                 # regrep faster than using Outcar/vasprun class
                 if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
                     outcar = os.path.join(defect_dir, dist, "OUTCAR")
@@ -276,7 +276,7 @@ def parse_energies(
                         energy = _match(
                             outcar, "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
                         )[0][0][0] # Energy of first match
-            elif code == "espresso":
+            elif code.lower() == "espresso":
                 if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
                     outcar = os.path.join(defect_dir, dist, "espresso.out")
                 elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -286,8 +286,8 @@ def parse_energies(
                         outcar,
                         "!    total energy\s+=\s+([\d\-\.]+)"
                     )[0][0][0] # Energy of first match, in Rydberg
-                    energy = Energy(float(energy_in_Ry), "Ry").to("eV")
-            elif code == "CP2K":
+                    energy = float(Energy(float(energy_in_Ry), "Ry").to("eV"))
+            elif code.lower() == "cp2k":
                 if os.path.join(defect_dir, dist, "relax.out"):
                     outcar = os.path.join(defect_dir, dist, "relax.out")
                 elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -296,8 +296,8 @@ def parse_energies(
                     energy_in_Ha = _match(
                         outcar, "Total energy:\s+([\d\-\.]+)"
                     )[0][0][0] # Energy of first match in Hartree
-                    energy = Energy(energy_in_Ha, "Ha").to("eV")
-            elif code == "CASTEP":
+                    energy = float(Energy(energy_in_Ha, "Ha").to("eV"))
+            elif code.lower() == "castep":
                 if os.path.exists([file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]):
                     outcar = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file][0]
                 elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -310,7 +310,7 @@ def parse_energies(
                     energy = _match(
                         outcar, "Final Total Energy\s+([\d\-\.]+)"
                     )[0][0][0] # Energy of first match in eV
-            elif code == "FHI-aims":
+            elif code.lower() == "fhi-aims":
                 if os.path.join(defect_dir, dist, "aims.out"):
                     outcar = os.path.join(defect_dir, dist, "aims.out")
                 elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -318,7 +318,7 @@ def parse_energies(
                 if outcar and _match(outcar, "converged."): # check if ionic relaxation is converged
                     # Convergence string deduced from:
                     # https://fhi-aims-club.gitlab.io/tutorials/basics-of-running-fhi-aims/3-Periodic-Systems/
-                    # and https://gitlab.com/FHI-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
+                    # and https://gitlab.com/fhi-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
                     energy = _match(
                         outcar,
                         "\| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+:\s+([\d\-\.]+)"
@@ -396,10 +396,10 @@ def snb():
               help="Fractional coordinates of defect site in defect structure, in case auto "
                    "site-matching fails. In the form 'x y z' (3 arguments)",
               type=click.Tuple([float, float, float]), default=None)
-@click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              default="VASP", type=str)
+@click.option("--code", help ="Code to generate relaxation input files for, case insentitive"
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              default="vasp", type=str)
 @click.option("--name", "-n", help="Defect name for folder and metadata generation. Defaults to "
                                    "pymatgen standard: '{Defect Type}_mult{Supercell Multiplicity}'",
               default=None, type=str)
@@ -456,15 +456,15 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
     defects_dict = _generate_defect_dict(defect_object, charges, name)
 
     Dist = Distortions(defects_dict, **user_settings)
-    if code == "VASP":
+    if code.lower() == "vasp":
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
-    elif code == "CP2K":
+    elif code.lower() == "cp2k":
         distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(verbose=verbose)
-    elif code == "espresso":
+    elif code.lower() == "espresso":
         distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(verbose=verbose)
-    elif code == "CASTEP":
+    elif code.lower() == "castep":
         distorted_defects_dict, distortion_metadata = Dist.write_castep_files(verbose=verbose)
-    elif code == "FHI-aims":
+    elif code.lower() == "fhi-aims":
         distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
@@ -485,9 +485,9 @@ def generate(defect, bulk, charge, min_charge, max_charge, defect_index, defect_
 @click.option("--bulk", "-b", help="Path to bulk structure",
               type=click.Path(exists=True, dir_okay=False))
 @click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              type=str, default="VASP")
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              type=str, default="vasp")
 # @click.option("--distortions", help=f"List of bond distortions to apply. "
 #               f"Defaults to {list(round(d, 1) for d in np.arange(-0.6, 0.61, 0.1))}",
 #              default=None, type=list)  # Better to specify it in the config file
@@ -627,15 +627,15 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
 
     # Apply distortions and write input files
     Dist = Distortions(defects_dict, **user_settings)
-    if code == "VASP":
+    if code.lower() == "vasp":
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(verbose=verbose)
-    elif code == "CP2K":
+    elif code.lower() == "cp2k":
         distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(verbose=verbose)
-    elif code == "espresso":
+    elif code.lower() == "espresso":
         distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(verbose=verbose)
-    elif code == "CASTEP":
+    elif code.lower() == "castep":
         distorted_defects_dict, distortion_metadata = Dist.write_castep_files(verbose=verbose)
-    elif code == "FHI-aims":
+    elif code.lower() == "fhi-aims":
         distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(verbose=verbose)
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
@@ -649,10 +649,10 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
 @click.option("--path", "-p", help="Path to the top-level directory containing the defect folder."
               "Defaults to current directory.",
             type=click.Path(exists=True, dir_okay=True), default=".")
-@click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              type=str, default="VASP")
+@click.option("--code", "-c", help ="Code to generate relaxation input files for. "
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              type=str, default="vasp")
 def parse(defect, all, path, code):
     if defect:
         parse_energies(defect, path, code)
@@ -687,10 +687,10 @@ def parse(defect, all, path, code):
 @click.option("--path", "-p", help="Path to the top-level directory containing the defect folder."
               "Defaults to current directory.",
             type=click.Path(exists=True, dir_okay=True), default=".")
-@click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              type=str, default="VASP")
+@click.option("--code", "-c", help ="Code to generate relaxation input files for. "
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              type=str, default="vasp")
 @click.option("--ref_struct", help ="Structure to use as a reference for comparison"
             "(to compute atomic displacements). Given as a key from"
             "`defect_structures_dict`. Defaults to 'Unperturbed'",
@@ -756,9 +756,9 @@ def analyse(defect, all, path, code, ref_struct, verbose):
               "Defaults to current directory.",
             type=click.Path(exists=True, dir_okay=True), default=".")
 @click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              type=str, default="VASP")
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              type=str, default="vasp")
 @click.option("--colorbar", help ="Whether to add a colorbar indicating structural"
               " similarity between each structure and the unperturbed one.",
               type=bool, default=False, is_flag=True, show_default=True)
@@ -835,11 +835,11 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
 @click.option("--path", "-p", help="Path to the top-level directory containing the defect folders."
               " Defaults to current directory.",
             type=click.Path(exists=True, dir_okay=True), default=".")
-@click.option("--code", help ="Code to generate relaxation input files for. "
-              "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-              "Defaults to 'VASP'",
-              type=str, default="VASP")
-@click.option("--filename", help ="Name of the file containing the structure. Defaults to 'CONTCAR'",
+@click.option("--code", "-c", help ="Code to generate relaxation input files for. "
+              "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
+              "Defaults to 'vasp'",
+              type=str, default="vasp")
+@click.option("--filename", "-f", help ="Name of the file containing the structure. Defaults to 'CONTCAR'",
               type=str, default="CONTCAR")
 @click.option("--min", help ="Minimum energy difference (in eV) between the ground-state"
             " defect structure, relative to the `Unperturbed` structure,"
@@ -869,4 +869,4 @@ def regenerate(path, code, filename, min, verbose):
 
 # TODO:
 # - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
-# - Test parse_energies() with codes different from VASP!
+# - Test parse_energies() with codes different from vasp!
