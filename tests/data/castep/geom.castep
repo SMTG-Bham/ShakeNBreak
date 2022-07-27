@@ -1,0 +1,2016 @@
+ +-------------------------------------------------+
+ |                                                 |
+ |      CCC   AA    SSS  TTTTT  EEEEE  PPPP        |
+ |     C     A  A  S       T    E      P   P       |
+ |     C     AAAA   SS     T    EEE    PPPP        |
+ |     C     A  A     S    T    E      P           |
+ |      CCC  A  A  SSS     T    EEEEE  P           |
+ |                                                 |
+ +-------------------------------------------------+
+ |                                                 |
+ | Welcome to Academic Release CASTEP version 16.1 |          
+ | Ab Initio Total Energy Program                  |
+ |                                                 |
+ | Authors:                                        |
+ | M. Segall, M. Probert, C. Pickard, P. Hasnip,   |
+ | S. Clark, K. Refson, J. R. Yates, M. Payne      |
+ |                                                 |
+ | Contributors:                                   |
+ | P. Lindan, P. Haynes, J. White, V. Milman,      |
+ | N. Govind, M. Gibson, P. Tulip, V. Cocula,      |
+ | B. Montanari, D. Quigley, M. Glover,            |
+ | L. Bernasconi, A. Perlov, M. Plummer,           |
+ | E. McNellis, J. Meyer, J. Gale, D. Jochym       |
+ | J. Aarons, B. Walker, R. Gillen, D. Jones       |
+ | T. Green, I. J. Bush, C. J. Armstrong,          |
+ | E. J. Higgins, E. L. Brown, M. S. McFly         |
+ |                                                 |
+ | Copyright (c) 2000 - 2015                       |
+ |                                                 |
+ |     Distributed under the terms of an           |
+ |     Agreement between the United Kingdom        |
+ |     Car-Parrinello (UKCP) Consortium,           |
+ |     Daresbury Laboratory and Accelrys, Inc.     |
+ |                                                 |
+ | Please cite                                     |
+ |                                                 |
+ |     "First principles methods using CASTEP"     |
+ |                                                 |
+ |         Zeitschrift fuer Kristallographie       |
+ |           220(5-6) pp. 567-570 (2005)           |
+ |                                                 |
+ | S. J. Clark, M. D. Segall, C. J. Pickard,       |
+ | P. J. Hasnip, M. J. Probert, K. Refson,         |
+ | M. C. Payne                                     |
+ |                                                 |
+ |       in all publications arising from          |
+ |              your use of CASTEP                 |
+ |                                                 |
+ +-------------------------------------------------+
+
+
+ Compiled for darwin_x86_64_gfortran5.0 on Fri, 19 Feb 2016 13:44:46 +0000
+ from code version Version unavailable
+ Compiler: GNU Fortran 5.3.0; Optimisation: intermediate
+ MATHLIBS: default (LAPACK version 3.2.1)
+ FFT Lib : default
+ Fundamental constants values: CODATA 2010
+
+ Run started: Tue, 07 Jun 2016 16:30:28 +0100
+
+ Pseudo atomic calculation performed for O 2s2 2p4
+
+ Converged in 39 iterations to a total energy of -428.2520 eV
+
+
+ Pseudo atomic calculation performed for Ti 3d2 4s2
+
+ Converged in 33 iterations to a total energy of -262.9646 eV
+
+ Calculation not parallelised.
+
+ ************************************ Title ************************************
+ 
+
+ ***************************** General Parameters ******************************
+  
+ output verbosity                               : normal  (1)
+ write checkpoint data to                       : TiO2-geom.check
+ type of calculation                            : geometry optimization
+ stress calculation                             : off
+ density difference calculation                 : off
+ electron localisation func (ELF) calculation   : off
+ Hirshfeld analysis                             : off
+ unlimited duration calculation
+ timing information                             : on
+ memory usage estimate                          : on
+ write final potential to formatted file        : off
+ write final density to formatted file          : off
+ write BibTeX reference list                    : on
+ write OTFG pseudopotential files               : on
+ checkpoint writing                             : both castep_bin and check files
+  
+ output         length unit                     : A
+ output           mass unit                     : amu
+ output           time unit                     : ps
+ output         charge unit                     : e
+ output           spin unit                     : hbar/2
+ output         energy unit                     : eV
+ output          force unit                     : eV/A
+ output       velocity unit                     : A/ps
+ output       pressure unit                     : GPa
+ output     inv_length unit                     : 1/A
+ output      frequency unit                     : cm-1
+ output force constant unit                     : eV/A**2
+ output         volume unit                     : A**3
+ output   IR intensity unit                     : (D/A)**2/amu
+ output         dipole unit                     : D
+ output         efield unit                     : eV/A/e
+ output        entropy unit                     : J/mol/K
+  
+ wavefunctions paging                           : none
+ random number generator seed                   :    1212121
+ data distribution                              : optimal for this architecture
+ optimization strategy                          : maximize speed(+++)
+
+ *********************** Exchange-Correlation Parameters ***********************
+  
+ using functional                               : Local Density Approximation
+ relativistic treatment                         : Koelling-Harmon
+ DFT+D: Semi-empirical dispersion correction    : off
+
+ ************************* Pseudopotential Parameters **************************
+  
+ pseudopotential representation                 : reciprocal space
+ <beta|phi> representation                      : reciprocal space
+ spin-orbit coupling                            : off
+
+ **************************** Basis Set Parameters *****************************
+  
+ plane wave basis set cut-off                   :   280.0000   eV
+ size of standard grid                          :     1.7500
+ size of   fine   gmax                          :    15.0022   1/A
+ finite basis set correction                    : none
+
+ **************************** Electronic Parameters ****************************
+  
+ number of  electrons                           :  32.00    
+ net charge of system                           :  0.000    
+ treating system as non-spin-polarized
+ number of bands                                :         16
+
+ ********************* Electronic Minimization Parameters **********************
+  
+ Method: Treating system as non-metallic,
+         and number of  SD  steps               :          1
+         and number of  CG  steps               :          4
+  
+ total energy / atom convergence tol.           : 0.1000E-08   eV
+ eigen-energy convergence tolerance             : 0.3750E-09   eV
+ max force / atom convergence tol.              : ignored
+ convergence tolerance window                   :          3   cycles
+ max. number of SCF cycles                      :         30
+ periodic dipole correction                     : NONE
+
+ ************************** Density Mixing Parameters **************************
+  
+ density-mixing scheme                          : Broyden
+ max. length of mixing history                  :         20
+ charge density mixing amplitude                : 0.8000    
+ cut-off energy for mixing                      :  280.0       eV
+
+ *********************** Population Analysis Parameters ************************
+  
+ Population analysis with cutoff                :  3.000       A
+
+ ********************** Geometry Optimization Parameters ***********************
+  
+ optimization method                            : damped MD
+ max. number of steps                           :         30
+ damping recalculate frequency                  :         30   steps
+ damping factors from                           : INDEPENDENT      algorithm
+ using best-fit first order extrapolation for wavefunctions and charge density
+  
+ MD SCF energy / atom convergence tol.          : 0.1000E-08   eV
+ MD SCF eigenenergies tolerance                 : 0.3750E-09   eV
+ MD SCF convergence tolerance window            :          3   cycles
+ total energy convergence tolerance             : 0.2500E-04   eV/atom
+        max ionic |force| tolerance             : 0.5000E-01   eV/A
+ max ionic |displacement| tolerance             : 0.1000E-02   A
+   max |stress component| tolerance             : 0.2500       GPa
+ convergence tolerance window                   :          2   steps
+ backup results every                           :          5   steps
+
+ *******************************************************************************
+  
+
+                           -------------------------------
+                                      Unit Cell
+                           -------------------------------
+        Real Lattice(A)                      Reciprocal Lattice(1/A)
+   4.6000000   0.0000000   0.0000000        1.3659098   0.0000000   0.0000000
+   0.0000000   4.6000000   0.0000000        0.0000000   1.3659098   0.0000000
+   0.0000000   0.0000000   2.9500000        0.0000000   0.0000000   2.1298933
+
+                       Lattice parameters(A)       Cell Angles
+                    a =    4.600000          alpha =   90.000000
+                    b =    4.600000          beta  =   90.000000
+                    c =    2.950000          gamma =   90.000000
+
+                       Current cell volume =   62.422000       A**3
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+                         Total number of ions in cell =    6
+                      Total number of species in cell =    2
+                        Max number of any one species =    4
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms  x
+            x            Number           u          v          w      x
+            x----------------------------------------------------------x
+            x  O            1         0.304059   0.304059   0.000000   x 
+            x  O            2         0.695941   0.695941   0.000000   x 
+            x  O            3         0.804059   0.195941   0.500000   x 
+            x  O            4         0.195941   0.804059   0.500000   x 
+            x  Ti           1         0.000000   0.000000   0.000000   x 
+            x  Ti           2         0.500000   0.500000   0.500000   x 
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+
+                         No user defined ionic velocities
+
+                           -------------------------------
+                                   Details of Species
+                           -------------------------------
+
+                               Mass of species in AMU
+                                    O   15.9994000
+                                    Ti   47.8670000
+
+                          Electric Quadrupole Moment (Barn)
+                                    O   -0.0255800 Isotope 17
+                                    Ti    0.3020000 Isotope 47
+
+                          Files used for pseudopotentials:
+                                    O O_00.usp
+                                    Ti Ti_00.uspcc
+
+                           -------------------------------
+                              k-Points For BZ Sampling
+                           -------------------------------
+                       MP grid size for SCF calculation is  2  2  3
+                            with an offset of   0.000  0.000  0.000
+                       Number of kpoints used =             2
+
+                           -------------------------------
+                               Symmetry and Constraints
+                           -------------------------------
+
+                      Maximum deviation from symmetry = 0.940008E-15     ANG
+
+                      Number of symmetry operations   =          16
+                      Number of ionic constraints     =           3
+                      Point group of crystal =    15: D4h, 4/mmm, 4/m 2/m 2/m
+                      Space group of crystal =   136: P4_2/mnm, -P 4n 2n
+
+             Set iprint > 1 for details on symmetry rotations/translations
+
+                         Centre of mass is constrained
+             Set iprint > 1 for details of linear ionic constraints
+
+                         Number of cell constraints= 4
+                         Cell constraints are:  1 1 3 0 0 0
+
+                         External pressure/stress (GPa)
+                          0.00000   0.00000   0.00000
+                                    0.00000   0.00000
+                                              0.00000
+  
++---------------- MEMORY AND SCRATCH DISK ESTIMATES PER PROCESS --------------+
+|                                                     Memory          Disk    |
+| Baseline code, static data and system overhead        0.0 MB         0.0 MB |
+| BLAS internal memory storage                          0.0 MB         0.0 MB |
+| Model and support data                               22.0 MB         0.0 MB |
+| Electronic energy minimisation requirements           2.3 MB         0.0 MB |
+| Force calculation requirements                        1.1 MB         0.0 MB |
+|                                               ----------------------------- |
+| Approx. total storage required per process           24.3 MB         0.0 MB |
+|                                                                             |
+| Requirements will fluctuate during execution and may exceed these estimates |
++-----------------------------------------------------------------------------+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.69605854E+003                                          0.54  <-- SCF
+      1  -2.15109837E+003                   -9.08266962E+001       0.62  <-- SCF
+      2  -2.29901415E+003                    2.46526306E+001       0.70  <-- SCF
+      3  -2.30332657E+003                    7.18737230E-001       0.76  <-- SCF
+      4  -2.32266091E+003                    3.22238953E+000       0.88  <-- SCF
+      5  -2.32715411E+003                    7.48867382E-001       0.96  <-- SCF
+      6  -2.28294290E+003                   -7.36853618E+000       1.08  <-- SCF
+      7  -2.29338356E+003                    1.74011140E+000       1.16  <-- SCF
+      8  -2.29253502E+003                   -1.41424467E-001       1.25  <-- SCF
+      9  -2.29323078E+003                    1.15960865E-001       1.35  <-- SCF
+     10  -2.29377330E+003                    9.04202076E-002       1.46  <-- SCF
+     11  -2.29375123E+003                   -3.67861561E-003       1.57  <-- SCF
+     12  -2.29372440E+003                   -4.47125548E-003       1.67  <-- SCF
+     13  -2.29372489E+003                    8.04386626E-005       1.76  <-- SCF
+     14  -2.29372466E+003                   -3.72067408E-005       1.87  <-- SCF
+     15  -2.29372447E+003                   -3.22205027E-005       1.97  <-- SCF
+     16  -2.29372447E+003                   -1.35414472E-007       2.08  <-- SCF
+     17  -2.29372447E+003                    5.23394444E-009       2.17  <-- SCF
+     18  -2.29372447E+003                   -2.36207442E-010       2.25  <-- SCF
+     19  -2.29372447E+003                    6.38050116E-012       2.31  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.724470282     eV
+(energy not corrected for finite basis set)
+ 
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+  
+ WARNING - user constraints and symmetry specified - may lead to a conflict?
+         - using            1 degrees of freedom - please check!
+  
+ Starting DMD
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.30170             -0.30170              0.00000         *
+ * O         2      0.30170              0.30170             -0.00000         *
+ * O         3     -0.30170              0.30170             -0.00000         *
+ * O         4      0.30170             -0.30170              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   0  with total energy= -2.29372447E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   0.000000E+000 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   4.266712E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   0.000000E+000 |   1.000000E-003 |          A | No  | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+================================================================================
+ Starting DMD iteration          1 ...
+================================================================================
+ 
++---------------- MEMORY AND SCRATCH DISK ESTIMATES PER PROCESS --------------+
+|                                                     Memory          Disk    |
+| Model and support data                               32.8 MB         0.0 MB |
+| Molecular Dynamics requirements                       3.3 MB         0.0 MB |
+|                                               ----------------------------- |
+| Approx. total storage required per process           36.1 MB         0.0 MB |
+|                                                                             |
+| Requirements will fluctuate during execution and may exceed these estimates |
++-----------------------------------------------------------------------------+
+ 
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.304039   0.304039   0.000000     x
+            x   O          2          0.695961   0.695961  -0.000000     x
+            x   O          3          0.804039   0.195961   0.500000     x
+            x   O          4          0.195961   0.804039   0.500000     x
+            x   Ti         1          0.000000   0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372480E+003                                          2.41  <-- SCF
+      1  -2.29372469E+003                   -1.77621645E-005       2.47  <-- SCF
+      2  -2.29372469E+003                    1.12779998E-007       2.58  <-- SCF
+      3  -2.29372469E+003                   -3.71245271E-008       2.66  <-- SCF
+      4  -2.29372469E+003                    5.46228904E-009       2.75  <-- SCF
+      5  -2.29372469E+003                    3.63867736E-008       2.85  <-- SCF
+      6  -2.29372469E+003                    9.07897365E-007       2.94  <-- SCF
+      7  -2.29372470E+003                    7.84016133E-007       3.03  <-- SCF
+      8  -2.29372469E+003                   -1.75703824E-006       3.13  <-- SCF
+      9  -2.29372469E+003                    2.42770335E-008       3.24  <-- SCF
+     10  -2.29372469E+003                   -2.36065653E-009       3.31  <-- SCF
+     11  -2.29372469E+003                    5.26939167E-010       3.37  <-- SCF
+     12  -2.29372469E+003                   -3.17736068E-011       3.42  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.724688940     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.29923             -0.29923             -0.00000         *
+ * O         2      0.29923              0.29923              0.00000         *
+ * O         3     -0.29923              0.29923              0.00000         *
+ * O         4      0.29923             -0.29923             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   1  with total energy= -2.29372469E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   3.644304E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   4.231756E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   1.286533E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          1
+
+================================================================================
+ Starting DMD iteration          2 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.304020   0.304020   0.000000     x
+            x   O          2          0.695980   0.695980  -0.000000     x
+            x   O          3          0.804020   0.195980   0.500000     x
+            x   O          4          0.195980   0.804020   0.500000     x
+            x   Ti         1          0.000000   0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372346E+003                                          3.53  <-- SCF
+      1  -2.29372490E+003                    2.39916836E-004       3.58  <-- SCF
+      2  -2.29372490E+003                    1.58169466E-007       3.69  <-- SCF
+      3  -2.29372490E+003                   -2.97121893E-008       3.78  <-- SCF
+      4  -2.29372490E+003                    1.14506536E-007       3.87  <-- SCF
+      5  -2.29372491E+003                    7.39198590E-007       3.97  <-- SCF
+      6  -2.29372496E+003                    8.01835841E-006       4.06  <-- SCF
+      7  -2.29372491E+003                   -8.64933687E-006       4.16  <-- SCF
+      8  -2.29372490E+003                   -1.55715422E-007       4.26  <-- SCF
+      9  -2.29372490E+003                   -7.83818144E-008       4.36  <-- SCF
+     10  -2.29372490E+003                    8.09485804E-010       4.42  <-- SCF
+     11  -2.29372490E+003                    2.01340259E-010       4.48  <-- SCF
+     12  -2.29372490E+003                    5.36219896E-011       4.54  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.724904022     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.29676             -0.29676              0.00000         *
+ * O         2      0.29676              0.29676             -0.00000         *
+ * O         3     -0.29676              0.29676              0.00000         *
+ * O         4      0.29676             -0.29676             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   2  with total energy= -2.29372490E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   3.584693E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   4.196869E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   1.275993E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          2
+
+================================================================================
+ Starting DMD iteration          3 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303968   0.303968   0.000000     x
+            x   O          2          0.696032   0.696032  -0.000000     x
+            x   O          3          0.803968   0.196032   0.500000     x
+            x   O          4          0.196032   0.803968   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372253E+003                                          4.64  <-- SCF
+      1  -2.29372546E+003                    4.88961245E-004       4.70  <-- SCF
+      2  -2.29372547E+003                    8.18248617E-007       4.81  <-- SCF
+      3  -2.29372547E+003                    9.89957313E-009       4.89  <-- SCF
+      4  -2.29372547E+003                    1.34718804E-009       4.96  <-- SCF
+      5  -2.29372547E+003                    1.79756119E-009       5.05  <-- SCF
+      6  -2.29372547E+003                    4.60832663E-008       5.14  <-- SCF
+      7  -2.29372547E+003                    1.99736046E-007       5.24  <-- SCF
+      8  -2.29372547E+003                   -2.50292946E-007       5.33  <-- SCF
+      9  -2.29372547E+003                    6.45622933E-009       5.41  <-- SCF
+     10  -2.29372547E+003                   -3.42091537E-009       5.51  <-- SCF
+     11  -2.29372547E+003                   -1.40158342E-009       5.57  <-- SCF
+     12  -2.29372547E+003                   -8.57178439E-011       5.62  <-- SCF
+     13  -2.29372547E+003                    1.78138437E-010       5.68  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.725465678     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.29025             -0.29025              0.00000         *
+ * O         2      0.29025              0.29025             -0.00000         *
+ * O         3     -0.29025              0.29025              0.00000         *
+ * O         4      0.29025             -0.29025             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   3  with total energy= -2.29372547E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   9.360935E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   4.104731E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   3.383034E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          3
+
+================================================================================
+ Starting DMD iteration          4 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303889   0.303889   0.000000     x
+            x   O          2          0.696111   0.696111  -0.000000     x
+            x   O          3          0.803889   0.196111   0.500000     x
+            x   O          4          0.196111   0.803889   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29374163E+003                                          5.78  <-- SCF
+      1  -2.29372627E+003                   -2.55908405E-003       5.84  <-- SCF
+      2  -2.29372629E+003                    2.10125913E-006       5.95  <-- SCF
+      3  -2.29372629E+003                    2.75535820E-008       6.04  <-- SCF
+      4  -2.29372629E+003                    4.06340605E-008       6.14  <-- SCF
+      5  -2.29372629E+003                    2.57078190E-007       6.23  <-- SCF
+      6  -2.29372632E+003                    4.71536689E-006       6.32  <-- SCF
+      7  -2.29372629E+003                   -5.15521254E-006       6.42  <-- SCF
+      8  -2.29372629E+003                    1.66050738E-007       6.51  <-- SCF
+      9  -2.29372629E+003                   -1.71473713E-008       6.61  <-- SCF
+     10  -2.29372629E+003                   -7.64867411E-009       6.68  <-- SCF
+     11  -2.29372629E+003                   -1.50882740E-009       6.76  <-- SCF
+     12  -2.29372629E+003                   -1.60479272E-011       6.81  <-- SCF
+     13  -2.29372629E+003                   -2.26217769E-011       6.87  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.726286869     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.28044             -0.28044              0.00000         *
+ * O         2      0.28044              0.28044             -0.00000         *
+ * O         3     -0.28044              0.28044             -0.00000         *
+ * O         4      0.28044             -0.28044              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   4  with total energy= -2.29372629E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.368651E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   3.966002E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   5.087700E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          4
+
+================================================================================
+ Starting DMD iteration          5 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303791   0.303791   0.000000     x
+            x   O          2          0.696209   0.696209  -0.000000     x
+            x   O          3          0.803791   0.196209   0.500000     x
+            x   O          4          0.196209   0.803791   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29371870E+003                                          6.97  <-- SCF
+      1  -2.29372722E+003                    1.42008696E-003       7.03  <-- SCF
+      2  -2.29372724E+003                    3.40958849E-006       7.15  <-- SCF
+      3  -2.29372724E+003                    4.02565798E-008       7.25  <-- SCF
+      4  -2.29372724E+003                    2.99587087E-009       7.33  <-- SCF
+      5  -2.29372724E+003                    1.84248250E-009       7.42  <-- SCF
+      6  -2.29372724E+003                    4.48499606E-008       7.52  <-- SCF
+      7  -2.29372725E+003                    1.99008734E-007       7.61  <-- SCF
+      8  -2.29372724E+003                   -2.47713677E-007       7.71  <-- SCF
+      9  -2.29372724E+003                    6.11277791E-009       7.79  <-- SCF
+     10  -2.29372724E+003                   -3.57688317E-009       7.88  <-- SCF
+     11  -2.29372724E+003                   -1.45178959E-009       7.94  <-- SCF
+     12  -2.29372724E+003                   -1.08081823E-010       8.00  <-- SCF
+     13  -2.29372724E+003                    1.90512742E-010       8.06  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.727244068     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.26805             -0.26805             -0.00000         *
+ * O         2      0.26805              0.26805              0.00000         *
+ * O         3     -0.26805              0.26805              0.00000         *
+ * O         4      0.26805             -0.26805             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   5  with total energy= -2.29372724E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.595331E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   3.790869E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   6.431351E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          5
+
+================================================================================
+ Starting DMD iteration          6 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303676   0.303676   0.000000     x
+            x   O          2          0.696324   0.696324  -0.000000     x
+            x   O          3          0.803676   0.196324   0.500000     x
+            x   O          4          0.196324   0.803676   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29374768E+003                                          8.16  <-- SCF
+      1  -2.29372832E+003                   -3.22826698E-003       8.22  <-- SCF
+      2  -2.29372834E+003                    4.74635073E-006       8.33  <-- SCF
+      3  -2.29372834E+003                    5.74023398E-008       8.43  <-- SCF
+      4  -2.29372834E+003                    6.93935573E-008       8.54  <-- SCF
+      5  -2.29372835E+003                    4.32011360E-007       8.64  <-- SCF
+      6  -2.29372839E+003                    6.47486775E-006       8.74  <-- SCF
+      7  -2.29372834E+003                   -7.20798353E-006       8.83  <-- SCF
+      8  -2.29372834E+003                    2.81974261E-007       8.94  <-- SCF
+      9  -2.29372834E+003                   -5.16109072E-008       9.05  <-- SCF
+     10  -2.29372834E+003                   -1.95120882E-009       9.13  <-- SCF
+     11  -2.29372834E+003                    2.21319606E-010       9.19  <-- SCF
+     12  -2.29372834E+003                   -1.03763706E-011       9.24  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.728344084     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.25373             -0.25373              0.00000         *
+ * O         2      0.25373              0.25373             -0.00000         *
+ * O         3     -0.25373              0.25373              0.00000         *
+ * O         4      0.25373             -0.25373             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   6  with total energy= -2.29372834E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.833361E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   3.588244E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   7.454080E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          6
+
+================================================================================
+ Starting DMD iteration          7 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303550   0.303550   0.000000     x
+            x   O          2          0.696450   0.696450  -0.000000     x
+            x   O          3          0.803550   0.196450   0.500000     x
+            x   O          4          0.196450   0.803550   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372136E+003                                          9.35  <-- SCF
+      1  -2.29372946E+003                    1.35008598E-003       9.41  <-- SCF
+      2  -2.29372948E+003                    4.51489979E-006       9.51  <-- SCF
+      3  -2.29372948E+003                    2.92829556E-008       9.60  <-- SCF
+      4  -2.29372948E+003                    1.61555578E-009       9.68  <-- SCF
+      5  -2.29372948E+003                    7.13456039E-011       9.73  <-- SCF
+      6  -2.29372948E+003                    3.03041581E-010       9.79  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.729483695     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.23797             -0.23797             -0.00000         *
+ * O         2      0.23797              0.23797              0.00000         *
+ * O         3     -0.23797              0.23797             -0.00000         *
+ * O         4      0.23797             -0.23797              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   7  with total energy= -2.29372948E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.899352E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   3.365385E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.194219E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          7
+
+================================================================================
+ Starting DMD iteration          8 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303416   0.303416   0.000000     x
+            x   O          2          0.696584   0.696584  -0.000000     x
+            x   O          3          0.803416   0.196584   0.500000     x
+            x   O          4          0.196584   0.803416   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29368520E+003                                          9.90  <-- SCF
+      1  -2.29373049E+003                    7.54857756E-003       9.96  <-- SCF
+      2  -2.29373053E+003                    6.22900364E-006      10.08  <-- SCF
+      3  -2.29373053E+003                    6.08915717E-008      10.18  <-- SCF
+      4  -2.29373053E+003                    1.62151736E-008      10.28  <-- SCF
+      5  -2.29373053E+003                    8.18789091E-008      10.37  <-- SCF
+      6  -2.29373054E+003                    1.89380119E-006      10.47  <-- SCF
+      7  -2.29373054E+003                   -6.66871420E-007      10.56  <-- SCF
+      8  -2.29373053E+003                   -1.33396816E-006      10.67  <-- SCF
+      9  -2.29373053E+003                    1.27084115E-008      10.79  <-- SCF
+     10  -2.29373053E+003                   -1.79536991E-009      10.87  <-- SCF
+     11  -2.29373053E+003                    5.27390313E-010      10.93  <-- SCF
+     12  -2.29373053E+003                    4.70481399E-012      11.00  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.730530563     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.22132             -0.22132             -0.00000         *
+ * O         2      0.22132              0.22132              0.00000         *
+ * O         3     -0.22132              0.22132             -0.00000         *
+ * O         4      0.22132             -0.22132              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   8  with total energy= -2.29373053E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.744779E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   3.129897E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.687717E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          8
+
+================================================================================
+ Starting DMD iteration          9 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303279   0.303279   0.000000     x
+            x   O          2          0.696721   0.696721  -0.000000     x
+            x   O          3          0.803279   0.196721   0.500000     x
+            x   O          4          0.196721   0.803279   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29373702E+003                                         11.10  <-- SCF
+      1  -2.29373157E+003                   -9.07405719E-004      11.16  <-- SCF
+      2  -2.29373161E+003                    6.14484502E-006      11.28  <-- SCF
+      3  -2.29373161E+003                    6.90120162E-008      11.38  <-- SCF
+      4  -2.29373161E+003                    2.03702333E-008      11.49  <-- SCF
+      5  -2.29373161E+003                    1.14161151E-007      11.59  <-- SCF
+      6  -2.29373163E+003                    2.59584599E-006      11.69  <-- SCF
+      7  -2.29373162E+003                   -1.78412031E-006      11.79  <-- SCF
+      8  -2.29373161E+003                   -9.48501199E-007      11.89  <-- SCF
+      9  -2.29373161E+003                    7.73381191E-009      12.01  <-- SCF
+     10  -2.29373161E+003                   -4.38566003E-009      12.10  <-- SCF
+     11  -2.29373161E+003                    3.22956478E-010      12.17  <-- SCF
+     12  -2.29373161E+003                   -1.83745544E-010      12.23  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.731609848     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.20415             -0.20415              0.00000         *
+ * O         2      0.20415              0.20415             -0.00000         *
+ * O         3     -0.20415              0.20415              0.00000         *
+ * O         4      0.20415             -0.20415             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration   9  with total energy= -2.29373161E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.798810E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   2.887172E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.968734E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration          9
+
+================================================================================
+ Starting DMD iteration         10 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303139   0.303139   0.000000     x
+            x   O          2          0.696861   0.696861  -0.000000     x
+            x   O          3          0.803139   0.196861   0.500000     x
+            x   O          4          0.196861   0.803139   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29374645E+003                                         12.34  <-- SCF
+      1  -2.29373257E+003                   -2.31357682E-003      12.41  <-- SCF
+      2  -2.29373261E+003                    6.81701116E-006      12.53  <-- SCF
+      3  -2.29373261E+003                    7.09850734E-008      12.63  <-- SCF
+      4  -2.29373261E+003                    1.25616600E-008      12.73  <-- SCF
+      5  -2.29373261E+003                    4.76077550E-008      12.83  <-- SCF
+      6  -2.29373262E+003                    1.15628106E-006      12.93  <-- SCF
+      7  -2.29373262E+003                    6.17566968E-007      13.03  <-- SCF
+      8  -2.29373261E+003                   -1.84732330E-006      13.14  <-- SCF
+      9  -2.29373261E+003                    1.79330752E-008      13.25  <-- SCF
+     10  -2.29373261E+003                   -4.77119698E-010      13.33  <-- SCF
+     11  -2.29373261E+003                    2.46454914E-010      13.39  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.732612712     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.18682             -0.18682             -0.00000         *
+ * O         2      0.18682              0.18682              0.00000         *
+ * O         3     -0.18682              0.18682              0.00000         *
+ * O         4      0.18682             -0.18682             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  10  with total energy= -2.29373261E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.671439E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   2.641968E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   9.068709E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         10
+
+================================================================================
+ Starting DMD iteration         11 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.303001   0.303001   0.000000     x
+            x   O          2          0.696999   0.696999  -0.000000     x
+            x   O          3          0.803001   0.196999   0.500000     x
+            x   O          4          0.196999   0.803001   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29367388E+003                                         13.51  <-- SCF
+      1  -2.29373357E+003                    9.94765875E-003      13.57  <-- SCF
+      2  -2.29373360E+003                    5.71691325E-006      13.69  <-- SCF
+      3  -2.29373360E+003                    6.24053617E-008      13.79  <-- SCF
+      4  -2.29373360E+003                    2.35892928E-008      13.89  <-- SCF
+      5  -2.29373360E+003                    1.29573413E-007      13.99  <-- SCF
+      6  -2.29373362E+003                    2.89539699E-006      14.09  <-- SCF
+      7  -2.29373361E+003                   -2.28235940E-006      14.20  <-- SCF
+      8  -2.29373360E+003                   -7.62396674E-007      14.30  <-- SCF
+      9  -2.29373360E+003                    4.64287801E-009      14.42  <-- SCF
+     10  -2.29373360E+003                   -6.56489120E-009      14.51  <-- SCF
+     11  -2.29373360E+003                    4.72479334E-010      14.58  <-- SCF
+     12  -2.29373360E+003                   -7.55992714E-011      14.64  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.733602007     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.16957             -0.16957              0.00000         *
+ * O         2      0.16957              0.16957             -0.00000         *
+ * O         3     -0.16957              0.16957              0.00000         *
+ * O         4      0.16957             -0.16957              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  11  with total energy= -2.29373360E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.648826E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   2.398072E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   9.016469E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         11
+
+================================================================================
+ Starting DMD iteration         12 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302865   0.302865   0.000000     x
+            x   O          2          0.697135   0.697135  -0.000000     x
+            x   O          3          0.802865   0.197135   0.500000     x
+            x   O          4          0.197135   0.802865   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372397E+003                                         14.75  <-- SCF
+      1  -2.29373438E+003                    1.73470756E-003      14.82  <-- SCF
+      2  -2.29373441E+003                    5.23234609E-006      14.93  <-- SCF
+      3  -2.29373441E+003                    6.11668355E-008      15.04  <-- SCF
+      4  -2.29373441E+003                    7.42168295E-009      15.14  <-- SCF
+      5  -2.29373441E+003                    1.68530949E-008      15.24  <-- SCF
+      6  -2.29373441E+003                    4.33460378E-007      15.34  <-- SCF
+      7  -2.29373442E+003                    1.05818955E-006      15.44  <-- SCF
+      8  -2.29373441E+003                   -1.55542736E-006      15.55  <-- SCF
+      9  -2.29373441E+003                    4.65112111E-008      15.66  <-- SCF
+     10  -2.29373441E+003                   -3.28170443E-009      15.74  <-- SCF
+     11  -2.29373441E+003                    4.30136008E-010      15.81  <-- SCF
+     12  -2.29373441E+003                    2.43619135E-010      15.87  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.734407601     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.15275             -0.15275              0.00000         *
+ * O         2      0.15275              0.15275             -0.00000         *
+ * O         3     -0.15275              0.15275              0.00000         *
+ * O         4      0.15275             -0.15275             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  12  with total energy= -2.29373441E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.342657E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   2.160258E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.838125E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         12
+
+================================================================================
+ Starting DMD iteration         13 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302733   0.302733   0.000000     x
+            x   O          2          0.697267   0.697267  -0.000000     x
+            x   O          3          0.802733   0.197267   0.500000     x
+            x   O          4          0.197267   0.802733   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29367527E+003                                         15.98  <-- SCF
+      1  -2.29373507E+003                    9.96774382E-003      16.05  <-- SCF
+      2  -2.29373511E+003                    5.44188504E-006      16.16  <-- SCF
+      3  -2.29373511E+003                    5.75638503E-008      16.26  <-- SCF
+      4  -2.29373511E+003                    7.48477257E-008      16.37  <-- SCF
+      5  -2.29373511E+003                    4.65263309E-007      16.47  <-- SCF
+      6  -2.29373515E+003                    7.06512604E-006      16.57  <-- SCF
+      7  -2.29373511E+003                   -7.85613095E-006      16.67  <-- SCF
+      8  -2.29373511E+003                    2.94515491E-007      16.79  <-- SCF
+      9  -2.29373511E+003                   -4.49300713E-008      16.90  <-- SCF
+     10  -2.29373511E+003                   -2.12651147E-009      16.99  <-- SCF
+     11  -2.29373511E+003                   -1.45011390E-010      17.06  <-- SCF
+     12  -2.29373511E+003                   -1.28576766E-010      17.12  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.735107455     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.13645             -0.13645              0.00000         *
+ * O         2      0.13645              0.13645             -0.00000         *
+ * O         3     -0.13645              0.13645             -0.00000         *
+ * O         4      0.13645             -0.13645              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  13  with total energy= -2.29373511E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.166423E-004 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   1.929754E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.558074E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         13
+
+================================================================================
+ Starting DMD iteration         14 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302607   0.302607   0.000000     x
+            x   O          2          0.697393   0.697393  -0.000000     x
+            x   O          3          0.802607   0.197393   0.500000     x
+            x   O          4          0.197393   0.802607   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29374041E+003                                         17.23  <-- SCF
+      1  -2.29373567E+003                   -7.90159003E-004      17.30  <-- SCF
+      2  -2.29373570E+003                    5.06123626E-006      17.41  <-- SCF
+      3  -2.29373570E+003                    5.56792178E-008      17.51  <-- SCF
+      4  -2.29373570E+003                    1.24595591E-007      17.62  <-- SCF
+      5  -2.29373571E+003                    7.94860729E-007      17.72  <-- SCF
+      6  -2.29373576E+003                    8.34392097E-006      17.82  <-- SCF
+      7  -2.29373571E+003                   -8.88899707E-006      17.93  <-- SCF
+      8  -2.29373570E+003                   -3.40741835E-007      18.04  <-- SCF
+      9  -2.29373570E+003                   -4.30971918E-008      18.15  <-- SCF
+     10  -2.29373570E+003                    4.84660290E-010      18.22  <-- SCF
+     11  -2.29373570E+003                   -4.51146547E-013      18.28  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.735703901     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.12086             -0.12086              0.00000         *
+ * O         2      0.12086              0.12086             -0.00000         *
+ * O         3     -0.12086              0.12086             -0.00000         *
+ * O         4      0.12086             -0.12086              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  14  with total energy= -2.29373570E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   9.940759E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   1.709154E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   8.197321E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         14
+
+================================================================================
+ Starting DMD iteration         15 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302488   0.302488   0.000000     x
+            x   O          2          0.697512   0.697512  -0.000000     x
+            x   O          3          0.802488   0.197512   0.500000     x
+            x   O          4          0.197512   0.802488   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29369359E+003                                         18.39  <-- SCF
+      1  -2.29373617E+003                    7.09754875E-003      18.46  <-- SCF
+      2  -2.29373620E+003                    4.82128269E-006      18.57  <-- SCF
+      3  -2.29373620E+003                    3.72903557E-008      18.67  <-- SCF
+      4  -2.29373620E+003                    2.50070531E-009      18.76  <-- SCF
+      5  -2.29373620E+003                    1.85144098E-009      18.86  <-- SCF
+      6  -2.29373620E+003                    4.01677039E-008      18.96  <-- SCF
+      7  -2.29373620E+003                    1.83085323E-007      19.06  <-- SCF
+      8  -2.29373620E+003                   -2.21857244E-007      19.17  <-- SCF
+      9  -2.29373620E+003                    1.54730376E-009      19.26  <-- SCF
+     10  -2.29373620E+003                   -3.09331852E-009      19.36  <-- SCF
+     11  -2.29373620E+003                   -2.65345064E-009      19.43  <-- SCF
+     12  -2.29373620E+003                    7.14100534E-010      19.51  <-- SCF
+     13  -2.29373620E+003                   -1.69953349E-010      19.57  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.736202857     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.10606             -0.10606             -0.00000         *
+ * O         2      0.10606              0.10606              0.00000         *
+ * O         3     -0.10606              0.10606              0.00000         *
+ * O         4      0.10606             -0.10606             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  15  with total energy= -2.29373620E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   8.315940E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   1.499845E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   7.774800E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         15
+
+================================================================================
+ Starting DMD iteration         16 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302375   0.302375   0.000000     x
+            x   O          2          0.697625   0.697625  -0.000000     x
+            x   O          3          0.802375   0.197625   0.500000     x
+            x   O          4          0.197625   0.802375   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29375419E+003                                         19.68  <-- SCF
+      1  -2.29373659E+003                   -2.93464461E-003      19.75  <-- SCF
+      2  -2.29373661E+003                    4.44822742E-006      19.86  <-- SCF
+      3  -2.29373661E+003                    5.00540649E-008      19.96  <-- SCF
+      4  -2.29373661E+003                    3.93219975E-008      20.07  <-- SCF
+      5  -2.29373661E+003                    2.34064883E-007      20.17  <-- SCF
+      6  -2.29373664E+003                    4.64073545E-006      20.27  <-- SCF
+      7  -2.29373661E+003                   -4.89874836E-006      20.37  <-- SCF
+      8  -2.29373661E+003                    4.07378887E-009      20.47  <-- SCF
+      9  -2.29373661E+003                    3.58384372E-009      20.58  <-- SCF
+     10  -2.29373661E+003                   -2.36329252E-008      20.69  <-- SCF
+     11  -2.29373661E+003                    2.02049204E-010      20.76  <-- SCF
+     12  -2.29373661E+003                    2.36529690E-010      20.82  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.736612622     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.09223             -0.09223              0.00000         *
+ * O         2      0.09223              0.09223             -0.00000         *
+ * O         3     -0.09223              0.09223              0.00000         *
+ * O         4      0.09223             -0.09223              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  16  with total energy= -2.29373661E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   6.829421E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   1.304270E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   7.307055E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         16
+
+================================================================================
+ Starting DMD iteration         17 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302271   0.302271   0.000000     x
+            x   O          2          0.697729   0.697729  -0.000000     x
+            x   O          3          0.802271   0.197729   0.500000     x
+            x   O          4          0.197729   0.802271   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372795E+003                                         20.93  <-- SCF
+      1  -2.29373692E+003                    1.49452040E-003      21.00  <-- SCF
+      2  -2.29373694E+003                    3.51023291E-006      21.11  <-- SCF
+      3  -2.29373694E+003                    4.82532168E-008      21.22  <-- SCF
+      4  -2.29373694E+003                    9.93502036E-008      21.32  <-- SCF
+      5  -2.29373695E+003                    6.34189527E-007      21.42  <-- SCF
+      6  -2.29373699E+003                    7.81968610E-006      21.52  <-- SCF
+      7  -2.29373694E+003                   -8.41528037E-006      21.62  <-- SCF
+      8  -2.29373694E+003                   -1.16614228E-007      21.74  <-- SCF
+      9  -2.29373694E+003                   -2.89786251E-008      21.85  <-- SCF
+     10  -2.29373694E+003                    4.55142416E-010      21.92  <-- SCF
+     11  -2.29373694E+003                    1.45720335E-010      21.98  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.736942912     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.07933             -0.07933              0.00000         *
+ * O         2      0.07933              0.07933             -0.00000         *
+ * O         3     -0.07933              0.07933              0.00000         *
+ * O         4      0.07933             -0.07933             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  17  with total energy= -2.29373694E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   5.504834E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   1.121829E-001 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   6.809222E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         17
+
+================================================================================
+ Starting DMD iteration         18 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302174   0.302174   0.000000     x
+            x   O          2          0.697826   0.697826  -0.000000     x
+            x   O          3          0.802174   0.197826   0.500000     x
+            x   O          4          0.197826   0.802174   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29372030E+003                                         22.09  <-- SCF
+      1  -2.29373718E+003                    2.81464779E-003      22.16  <-- SCF
+      2  -2.29373720E+003                    3.14861594E-006      22.27  <-- SCF
+      3  -2.29373720E+003                    3.70743209E-008      22.37  <-- SCF
+      4  -2.29373720E+003                    5.77873612E-009      22.47  <-- SCF
+      5  -2.29373720E+003                    2.13212503E-008      22.57  <-- SCF
+      6  -2.29373721E+003                    5.37422910E-007      22.67  <-- SCF
+      7  -2.29373721E+003                    1.10209198E-006      22.77  <-- SCF
+      8  -2.29373720E+003                   -1.69114777E-006      22.88  <-- SCF
+      9  -2.29373720E+003                    2.69589064E-008      22.99  <-- SCF
+     10  -2.29373720E+003                   -8.61689905E-010      23.07  <-- SCF
+     11  -2.29373720E+003                    3.68264481E-010      23.13  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.737203997     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.06739             -0.06739             -0.00000         *
+ * O         2      0.06739              0.06739              0.00000         *
+ * O         3     -0.06739              0.06739              0.00000         *
+ * O         4      0.06739             -0.06739             -0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  18  with total energy= -2.29373720E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   4.351417E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   9.530046E-002 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   6.293579E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         18
+
+================================================================================
+ Starting DMD iteration         19 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302085   0.302085   0.000000     x
+            x   O          2          0.697915   0.697915  -0.000000     x
+            x   O          3          0.802085   0.197915   0.500000     x
+            x   O          4          0.197915   0.802085   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29376236E+003                                         23.24  <-- SCF
+      1  -2.29373739E+003                   -4.16206023E-003      23.31  <-- SCF
+      2  -2.29373741E+003                    2.39268761E-006      23.42  <-- SCF
+      3  -2.29373741E+003                    3.04311236E-008      23.53  <-- SCF
+      4  -2.29373741E+003                    9.20388582E-008      23.62  <-- SCF
+      5  -2.29373741E+003                    5.72125941E-007      23.72  <-- SCF
+      6  -2.29373746E+003                    7.69844614E-006      23.82  <-- SCF
+      7  -2.29373741E+003                   -8.51136756E-006      23.93  <-- SCF
+      8  -2.29373741E+003                    1.96543089E-007      24.05  <-- SCF
+      9  -2.29373741E+003                   -5.36816054E-008      24.16  <-- SCF
+     10  -2.29373741E+003                   -8.87469707E-010      24.24  <-- SCF
+     11  -2.29373741E+003                    2.17452636E-010      24.30  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.737406109     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.05650             -0.05650             -0.00000         *
+ * O         2      0.05650              0.05650              0.00000         *
+ * O         3     -0.05650              0.05650             -0.00000         *
+ * O         4      0.05650             -0.05650              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  19  with total energy= -2.29373741E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   3.368522E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   7.990164E-002 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   5.770623E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         19
+
+================================================================================
+ Starting DMD iteration         20 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.302004   0.302004   0.000000     x
+            x   O          2          0.697996   0.697996  -0.000000     x
+            x   O          3          0.802004   0.197996   0.500000     x
+            x   O          4          0.197996   0.802004   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29369755E+003                                         24.41  <-- SCF
+      1  -2.29373754E+003                    6.66487006E-003      24.48  <-- SCF
+      2  -2.29373756E+003                    2.45930598E-006      24.60  <-- SCF
+      3  -2.29373756E+003                    2.55399216E-008      24.70  <-- SCF
+      4  -2.29373756E+003                    1.69830895E-009      24.77  <-- SCF
+      5  -2.29373756E+003                   -1.09499712E-010      24.84  <-- SCF
+      6  -2.29373756E+003                    3.08197541E-010      24.91  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.737559025     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.04651             -0.04651              0.00000         *
+ * O         2      0.04651              0.04651             -0.00000         *
+ * O         3     -0.04651              0.04651             -0.00000         *
+ * O         4      0.04651             -0.04651              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  20  with total energy= -2.29373756E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   2.548599E-005 |   2.500000E-005 |         eV | No  | <--  DMD
+ |  |F|max   |   6.576878E-002 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   5.249774E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         20
+
+================================================================================
+ Starting DMD iteration         21 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.301932   0.301932   0.000000     x
+            x   O          2          0.698068   0.698068  -0.000000     x
+            x   O          3          0.801932   0.198068   0.500000     x
+            x   O          4          0.198068   0.801932   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29371728E+003                                         25.03  <-- SCF
+      1  -2.29373766E+003                    3.39693641E-003      25.09  <-- SCF
+      2  -2.29373767E+003                    1.52891212E-006      25.21  <-- SCF
+      3  -2.29373767E+003                    1.65480553E-008      25.31  <-- SCF
+      4  -2.29373767E+003                    8.60826281E-009      25.41  <-- SCF
+      5  -2.29373767E+003                    4.70833938E-008      25.51  <-- SCF
+      6  -2.29373768E+003                    1.15490139E-006      25.61  <-- SCF
+      7  -2.29373768E+003                    6.03825044E-007      25.71  <-- SCF
+      8  -2.29373767E+003                   -1.83672323E-006      25.82  <-- SCF
+      9  -2.29373767E+003                    2.37330797E-008      25.93  <-- SCF
+     10  -2.29373767E+003                   -1.02938752E-009      26.01  <-- SCF
+     11  -2.29373767E+003                    2.45939318E-010      26.08  <-- SCF
+     12  -2.29373767E+003                   -2.02564800E-010      26.14  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.737671717     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.03760             -0.03760              0.00000         *
+ * O         2      0.03760              0.03760             -0.00000         *
+ * O         3     -0.03760              0.03760              0.00000         *
+ * O         4      0.03760             -0.03760              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  21  with total energy= -2.29373767E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.878216E-005 |   2.500000E-005 |         eV | Yes | <--  DMD
+ |  |F|max   |   5.317770E-002 |   5.000000E-002 |       eV/A | No  | <--  DMD
+ |  |dR|max  |   4.737680E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+
+--------------------------------------------------------------------------------
+ ... finished DMD iteration         21
+
+================================================================================
+ Starting DMD iteration         22 ...
+================================================================================
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.301866   0.301866   0.000000     x
+            x   O          2          0.698134   0.698134  -0.000000     x
+            x   O          3          0.801866   0.198134   0.500000     x
+            x   O          4          0.198134   0.801866   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+------------------------------------------------------------------------ <-- SCF
+SCF loop      Energy                           Energy gain       Timer   <-- SCF
+                                               per atom          (sec)   <-- SCF
+------------------------------------------------------------------------ <-- SCF
+Initial  -2.29373315E+003                                         26.26  <-- SCF
+      1  -2.29373774E+003                    7.65115223E-004      26.32  <-- SCF
+      2  -2.29373775E+003                    1.57637629E-006      26.43  <-- SCF
+      3  -2.29373775E+003                    1.63828068E-008      26.53  <-- SCF
+      4  -2.29373775E+003                    7.44346688E-009      26.63  <-- SCF
+      5  -2.29373775E+003                    4.28144518E-008      26.73  <-- SCF
+      6  -2.29373776E+003                    1.03682532E-006      26.83  <-- SCF
+      7  -2.29373776E+003                    7.89008134E-007      26.93  <-- SCF
+      8  -2.29373775E+003                   -1.89208632E-006      27.04  <-- SCF
+      9  -2.29373775E+003                    1.60617838E-008      27.15  <-- SCF
+     10  -2.29373775E+003                   -8.78446776E-011      27.22  <-- SCF
+     11  -2.29373775E+003                    1.69244405E-010      27.28  <-- SCF
+------------------------------------------------------------------------ <-- SCF
+ 
+Final energy =  -2293.737752256     eV
+(energy not corrected for finite basis set)
+ 
+
+ *********************************** Forces ***********************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.02958             -0.02958             -0.00000         *
+ * O         2      0.02958              0.02958              0.00000         *
+ * O         3     -0.02958              0.02958             -0.00000         *
+ * O         4      0.02958             -0.02958              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+ DMD: finished iteration  22  with total energy= -2.29373775E+003 eV
+  
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ | Parameter |      value      |    tolerance    |    units   | OK? | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+ |    dE     |   1.342309E-005 |   2.500000E-005 |         eV | Yes | <--  DMD
+ |  |F|max   |   4.183357E-002 |   5.000000E-002 |       eV/A | Yes | <--  DMD
+ |  |dR|max  |   4.241402E-004 |   1.000000E-003 |          A | Yes | <--  DMD
+ +-----------+-----------------+-----------------+------------+-----+ <--  DMD
+  
+ Finished DMD
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+ DMD: Geometry optimization completed successfully.
+ DMD: Final Configuration:
+
+                           -------------------------------
+                                     Cell Contents
+                           -------------------------------
+
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            x  Element    Atom        Fractional coordinates of atoms    x
+            x            Number           u          v          w        x
+            x------------------------------------------------------------x
+            x   O          1          0.301866   0.301866   0.000000     x
+            x   O          2          0.698134   0.698134  -0.000000     x
+            x   O          3          0.801866   0.198134   0.500000     x
+            x   O          4          0.198134   0.801866   0.500000     x
+            x   Ti         1          0.000000  -0.000000   0.000000     x
+            x   Ti         2          0.500000   0.500000   0.500000     x
+            xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+ DMD: Final Total Energy -2.29373722E+003 eV
+  
+  **********************************************************
+  *** There were at least     1 warnings during this run ***
+  *** => please check the whole of this file carefully!  ***
+  **********************************************************
+
+ ***************************** Symmetrised Forces *****************************
+ *                                                                            *
+ *                        Cartesian components (eV/A)                         *
+ * -------------------------------------------------------------------------- *
+ *                   x                    y                    z              *
+ *                                                                            *
+ * O         1     -0.02958             -0.02958             -0.00000         *
+ * O         2      0.02958              0.02958              0.00000         *
+ * O         3     -0.02958              0.02958             -0.00000         *
+ * O         4      0.02958             -0.02958              0.00000         *
+ * Ti        1      0.00000              0.00000              0.00000         *
+ * Ti        2      0.00000              0.00000              0.00000         *
+ *                                                                            *
+ ******************************************************************************
+
+ Pseudo atomic calculation performed for O 2s2 2p4
+
+ Converged in 39 iterations to a total energy of -428.2520 eV
+
+
+ Pseudo atomic calculation performed for Ti 3d2 4s2
+
+ Converged in 33 iterations to a total energy of -262.9646 eV
+
+Charge spilling parameter for spin component 1 = 0.14%
+
+     Atomic Populations (Mulliken)
+     -----------------------------
+Species   Ion     s      p      d      f     Total  Charge (e)
+==============================================================
+  O        1     1.86   4.75   0.00   0.00   6.61    -0.61
+  O        2     1.86   4.75   0.00   0.00   6.61    -0.61
+  O        3     1.86   4.75   0.00   0.00   6.61    -0.61
+  O        4     1.86   4.75   0.00   0.00   6.61    -0.61
+  Ti       1     0.16   0.24   2.38   0.00   2.78     1.22
+  Ti       2     0.16   0.24   2.38   0.00   2.78     1.22
+==============================================================
+
+            Bond              Population      Length (A)
+============================================================
+          O 1 -- Ti 2              0.79        1.95882
+          O 4 -- Ti 1              0.79        1.95882
+          O 3 -- Ti 1              0.79        1.95882
+          O 2 -- Ti 2              0.79        1.95882
+          O 2 -- Ti 1              0.32        1.96376
+          O 4 -- Ti 2              0.32        1.96376
+          O 3 -- Ti 2              0.32        1.96376
+          O 1 -- Ti 1              0.32        1.96376
+          O 3 -- O 4              -0.05        2.57787
+          O 1 -- O 2              -0.05        2.57787
+          O 2 -- O 4              -0.09        2.77368
+          O 2 -- O 3              -0.09        2.77368
+          O 1 -- O 4              -0.09        2.77368
+          O 1 -- O 3              -0.09        2.77368
+============================================================
+
+
+Writing analysis data to TiO2-geom.castep_bin
+
+Writing model to TiO2-geom.check
+ 
+ A BibTeX formatted list of references used in this run has been written to 
+ TiO2-geom.bib
+ 
+Initialisation time =      0.33 s
+Calculation time    =     27.27 s
+Finalisation time   =      0.01 s
+Total time          =     27.61 s

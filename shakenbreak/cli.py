@@ -272,18 +272,10 @@ def parse_energies(
                 if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
                     outcar = os.path.join(defect_dir, dist, "OUTCAR")
                 if outcar:
-                    if regrep(
-                        filename=outcar,
-                        patterns={"converged": "required accuracy"},
-                        reverse=True,
-                        terminate_on_match=True
-                    ):  # check if ionic relaxation is converged
-                        energy = regrep(
-                            filename=outcar,
-                            patterns={"energy": "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"},
-                            reverse=True,
-                            terminate_on_match=True
-                        )["energy"][0][0][0] # Energy of first match
+                    if _match(outcar, "required accuracy"):  # check if ionic relaxation is converged
+                        energy = _match(
+                            outcar, "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
+                        )[0][0][0] # Energy of first match
             elif code == "espresso":
                 if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
                     outcar = os.path.join(defect_dir, dist, "espresso.out")
@@ -314,8 +306,9 @@ def parse_energies(
                         # check if ionic relaxation is converged
                     # Convergence string deduced from:
                     # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
+                    # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/blob/master/test/examples/TiO2-geom.castep
                     energy = _match(
-                        outcar, "Final Enthalpy\s+=\s+([\d\-\.]+)"
+                        outcar, "Final Total Energy\s+([\d\-\.]+)"
                     )[0][0][0] # Energy of first match in eV
             elif code == "FHI-aims":
                 if os.path.join(defect_dir, dist, "aims.out"):
@@ -328,7 +321,7 @@ def parse_energies(
                     # and https://gitlab.com/FHI-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
                     energy = _match(
                         outcar,
-                        "| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+=\s+([\d\-\.]+)"
+                        "\| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+:\s+([\d\-\.]+)"
                     )[0][0][0] # Energy of first match in eV
 
             if energy:
