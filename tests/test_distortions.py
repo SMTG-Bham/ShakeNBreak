@@ -14,40 +14,53 @@ class DistortionTestCase(unittest.TestCase):
     """Test shakenbreak structure distortion functions"""
 
     def setUp(self):
-        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-        with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
 
         self.V_Cd_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
         self.V_Cd_minus0pt5_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Unrattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Unrattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+            )
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(
-                self.DATA_DIR, "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR",
             )
         )
         self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
         self.Int_Cd_2_struc = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
         self.Int_Cd_2_minus0pt6_struc = Structure.from_file(
             os.path.join(
-                self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_Int_Cd_2_-60%_Distortion_Unrattled_POSCAR",
             )
         )
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
+            )
         )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
-            os.path.join(self.DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
+            )
         )
         # Confirm correct structures and pickle dict:
         self.assertEqual(
@@ -79,9 +92,9 @@ class DistortionTestCase(unittest.TestCase):
             self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True
         )
         mock_print.assert_called_with(
-            f"""\tDefect Site Index / Frac Coords: {vac_coords}
-        Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]
-        Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"""
+            f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
+        +"            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+        +"            Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"
         )
 
         # Test if num_nearest_neighbours = 0 that nothing happens:
@@ -96,9 +109,9 @@ class DistortionTestCase(unittest.TestCase):
             self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords, verbose=True
         )
         mock_print.assert_called_with(
-            f"""\tDefect Site Index / Frac Coords: {vac_coords}
-        Original Neighbour Distances: []
-        Distorted Neighbour Distances:\n\t[]"""
+            f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
+            +"            Original Neighbour Distances: []\n"
+            +"            Distorted Neighbour Distances:\n\t[]"
         )
 
     @patch("builtins.print")
@@ -118,9 +131,9 @@ class DistortionTestCase(unittest.TestCase):
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True
         )
         mock_print.assert_called_with(
-            f"""\tDefect Site Index / Frac Coords: {site_index}
-        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]
-        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"""
+            f"\tDefect Site Index / Frac Coords: {site_index}\n"
+        + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+        + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"
         )
 
         # test correct behaviour with `num_nearest_neighbours` is greater than number of
@@ -164,10 +177,10 @@ class DistortionTestCase(unittest.TestCase):
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {site_index}\n"
-            + "        Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
             + "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
             + "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n"
-            + "        Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
             + "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
             + "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
         )

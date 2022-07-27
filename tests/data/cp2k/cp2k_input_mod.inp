@@ -1,0 +1,129 @@
+&GLOBAL 
+	PROJECT relax ! files generated will be named relax.out etc
+	RUN_TYPE GEO_OPT ! geometry optimization
+	IOLEVEL MEDIUM ! reduce amount of IO
+&END GLOBAL
+
+&FORCE_EVAL 
+	METHOD Quickstep
+
+	! the electronic structure part 
+	&DFT 
+		BASIS_SET_FILE_NAME HFX_BASIS
+		POTENTIAL_FILE_NAME GTH_POTENTIALS
+
+		CHARGE 0
+		SPIN_POLARIZED .FALSE.
+
+		&MGRID 
+			CUTOFF [eV] 800 ! PW cutoff 
+		&END MGRID
+
+		&QS 
+			METHOD GPW 
+			EPS_DEFAULT 1e-10
+			EXTRAPOLATION ASPC
+		&END QS
+		! use the GPW method (i.e. pseudopotential based
+		! calculations with the Gaussian and Plane Waves
+		! scheme)
+		
+		&DFT
+			&KPOINTS
+				SCHEME GAMMA 1 1 1 ! Gamma point only
+			&END KPOINTS
+		&END DFT
+
+		&POISSON 
+			PERIODIC XYZ ! the default
+		&END POISSON
+		
+		&PRINT 
+
+			! at the end of the SCF procedure generate cube
+			! files of the density
+			&E_DENSITY_CUBE OFF
+			&END E_DENSITY_CUBE
+
+		&END PRINT
+		
+		! use the OT METHOD for robust and efficient
+		! SCF, suitable for all non-metallic systems.
+		&SCF 
+			SCF_GUESS RESTART ! can be used to RESTART an interrupted calculation
+			MAX_SCF 30
+			EPS_SCF 1e-07 ! accuracy of the SCF procedure typically 1.0E-6 - 1.0E-7
+			&OT 
+				PRECONDITIONER FULL_SINGLE_INVERSE
+				MINIMIZER DIIS
+			&END OT
+			! an accurate preconditioner suitable also for
+			! larger systems, the most robust choice (DIIS
+			! might sometimes be faster, but not as
+			! stable).
+
+			&OUTER_SCF ! repeat the inner SCF cycle 10 times
+				MAX_SCF 10
+				EPS_SCF 1e-07 ! must match the above
+			&END OUTER_SCF
+
+			! do not store the wfn
+			&PRINT 
+				&RESTART 
+				&END RESTART
+			&END PRINT
+		&END SCF
+		
+		! specify the exchange and correlation treatment
+		&XC 
+			! use a PBE0 functional
+			&XC_FUNCTIONAL 
+				&PBE 
+					SCALE_X 0.75
+					SCALE_C 1.0
+				&END PBE
+			&END XC_FUNCTIONAL
+			! 75% GGA exchange 100% GGA correlation
+			&HF 
+				FRACTION 0.35
+				! 35 % HFX exchange
+				&SCREENING 
+					EPS_SCHWARZ 1e-06
+					SCREEN_ON_INITIAL_P True
+				&END SCREENING
+
+				! important parameter to get stable HFX
+				! calcsneeds a good (GGA) initial guess
+				&INTERACTION_POTENTIAL 
+					POTENTIAL_TYPE TRUNCATED
+					CUTOFF_RADIUS 6.0
+					T_C_G_DATA ./t_c_g.dat
+				&END INTERACTION_POTENTIAL
+
+				! for condensed phase systemsshould be less
+				! than halve the celldata file needed with the
+				! truncated operator
+				&MEMORY 
+					MAX_MEMORY 4000
+					EPS_STORAGE_SCALING 0.1
+				&END MEMORY
+			&END HF
+		&END XC
+
+	&END DFT
+
+	! Description of the system
+	! Structure will be read from external file
+	&SUBSYS 
+		&CELL 
+			CELL_FILE_FORMAT CIF
+			CELL_FILE_NAME structure.cif
+		&END CELL
+
+		&TOPOLOGY 
+			COORD_FILE_NAME structure.cif
+			COORD_FILE_FORMAT CIF
+		&END TOPOLOGY
+	&END SUBSYS
+
+&END FORCE_EVAL

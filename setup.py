@@ -20,7 +20,7 @@ data_files = package_files("data/")
 
 setup(
     name="shakenbreak",
-    version="0.2.3",
+    version="0.2.4",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     author="Irea Mosquera, Seán Kavanagh",
@@ -30,15 +30,39 @@ setup(
     install_requires=[
         "doped>=0.0.5",
         "numpy",
-        "pymatgen",
+        "pymatgen<2022.7.8", # version 2022.7.8 crashes
         "matplotlib",
         "ase",
         "pandas",
         "seaborn",
         "hiphive",
         "monty",
+        "click",
     ],
-    extras_require={"tests": ["pytest", "pytest-mpl"]},
+    extras_require={
+        "tests": [
+            "pytest",
+            "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
+        ]
+    },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
+    entry_points={
+        "console_scripts": [
+            "snb = shakenbreak.cli:snb",
+            "snb-generate = shakenbreak.cli:generate",
+            "snb-generate_all = shakenbreak.cli:generate_all",
+            "snb-parse = shakenbreak.cli:parse",
+            "snb-analyse = shakenbreak.cli:analyse",
+            "snb-plot = shakenbreak.cli:plot",
+            "snb-regenerate = shakenbreak.cli:regenerate",
+            "shakenbreak = shakenbreak.cli:snb",
+            "shakenbreak-generate = shakenbreak.cli:generate",
+            "shakenbreak-generate_all = shakenbreak.cli:generate_all",
+            "shakenbreak-parse = shakenbreak.cli:parse",
+            "shakenbreak-analyse = shakenbreak.cli:analyse",
+            "shakenbreak-plot = shakenbreak.cli:plot",
+            "shakenbreak-regenerate = shakenbreak.cli:regenerate",
+        ],
+    },
 )

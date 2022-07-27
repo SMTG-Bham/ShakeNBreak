@@ -13,7 +13,7 @@ from shakenbreak import (
 )
 
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+file_path = os.path.dirname(__file__)
 
 
 def if_present_rm(path):
@@ -23,12 +23,15 @@ def if_present_rm(path):
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def setUp(self):
-        self.DATA_DIR = DATA_DIR
-        with open(os.path.join(self.DATA_DIR, "CdTe_defects_dict.pickle"), "rb") as fp:
+        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
-            self.DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+            self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
 
         # create fake distortion folders for testing functionality:
@@ -52,7 +55,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             if_present_rm(f"vac_1_Cd_-1/{fake_dir}")
             os.mkdir(f"vac_1_Cd_-1/{fake_dir}")
             shutil.copyfile(
-                os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
                 f"vac_1_Cd_-1/{fake_dir}/CONTCAR",
             )
 
@@ -60,7 +63,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             if_present_rm(f"vac_1_Cd_-2/{fake_dir}")
             os.mkdir(f"vac_1_Cd_-2/{fake_dir}")
             shutil.copyfile(
-                os.path.join(self.DATA_DIR, "CdTe_V_Cd_POSCAR"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"),
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
@@ -72,31 +75,36 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "distortion_plots",
         ]:
             if_present_rm(f"{fake_dir}")
-        os.remove("distortion_metadata.json")
+        if os.path.exists("distortion_metadata.json"):
+            os.remove("distortion_metadata.json")
 
     def test_SnB_integration(self):
-        """Test full ShakeNBreak workflow, for the tricky case where at least 2 _different_
-        energy-lowering distortions are found for other charge states (y and z) that are then to be
-        tested for a different charge state (x), then reparsed and plotted successfully"""
+        """Test full ShakeNBreak workflow, for the tricky case where at least 2
+        _different_energy-lowering distortions are found for other charge states
+        (y and z) that are then to be tested for a different charge state (x),
+        then reparsed and plotted successfully
+        """
         oxidation_states = {"Cd": +2, "Te": -2}
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [-2, -1, 0]
 
-        distortion_defect_dict, structures_defect_dict = input.apply_shakenbreak(
+        dist = input.Distortions(
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
+        )
+        distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
         shutil.rmtree("vac_1_Cd_0")
         shutil.copytree(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
         )  # overwrite
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         if "vac_1_Ti" in defect_charges_dict:
-            del defect_charges_dict["vac_1_Ti"] # Used for magnetization tests
-            
+            del defect_charges_dict["vac_1_Ti"]  # Used for magnetization tests
+
         low_energy_defects = (
             energy_lowering_distortions.get_energy_lowering_distortions(
                 defect_charges_dict
@@ -145,7 +153,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
         self.assertEqual(
             Structure.from_file(
-                os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
             ),
             Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
         )
@@ -174,11 +182,13 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # Bond_Distortion_-7.5%_from_-1 folder is already present in this directory
 
         shutil.copyfile(
-            os.path.join(self.DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"),
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+            ),
             "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/CONTCAR",
         )
         shutil.copyfile(
-            os.path.join(self.DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
             "vac_1_Cd_-2/Bond_Distortion_-7.5%_from_-1/CONTCAR",
         )
 
@@ -239,7 +249,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-2}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m2():
@@ -255,7 +265,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{-1}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_m1():
@@ -271,7 +281,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         @pytest.mark.mpl_image_compare(
             baseline_dir="V_Cd_fake_test_distortion_plots",
             filename="V$_{Cd}^{0}$.png",
-            style="../shakenbreak/shakenbreak.mplstyle",
+            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
             savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
         )
         def test_plot_fake_vac_1_Cd_0():
