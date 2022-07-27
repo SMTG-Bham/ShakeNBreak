@@ -870,4 +870,3 @@ def regenerate(path, code, filename, min, verbose):
 
 # TODO:
 # - Combine cli.parse_energies() with input._sort_data to do parsing & proceesing of the energies in one go
-# - Test parse_energies() with codes different from vasp!

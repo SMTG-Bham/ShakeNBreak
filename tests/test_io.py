@@ -25,7 +25,7 @@ class IoTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "quantum_espresso/espresso_structure.cif")
         )
         structure_from_espresso_output = read_espresso_structure(
-            os.path.join(self.DATA_DIR, "quantum_espresso/espresso.out")
+            os.path.join(self.DATA_DIR, "quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.out")
         )
         self.assertTrue(
             _calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
