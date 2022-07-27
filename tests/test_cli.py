@@ -72,11 +72,14 @@ class CLITestCase(unittest.TestCase):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
         for defect in os.listdir(self.EXAMPLE_RESULTS):
-            [
-                shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
-                for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
-                if "_from_" in dir
-            ]
+            if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{defect}"):
+                [
+                    shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
+                    for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}") if "_from_" in dir
+                ]
+            elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
+                os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
+
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -1306,8 +1309,13 @@ local_rattle: False
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
-        if w:  # distortion_metadata file present, so no warnings
-            self.assertNotEqual(w[0].category, UserWarning)
+        if w:
+            [
+                self.assertNotEqual(
+                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
+                    str(warning.message)
+                ) for warning in w
+            ] # distortion_metadata file is present
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file
