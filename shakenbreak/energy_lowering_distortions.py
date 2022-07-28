@@ -183,7 +183,7 @@ def get_energy_lowering_distortions(
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
-            energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
+            energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             energies_dict, energy_diff, gs_distortion = _sort_data(
                 energies_file, verbose=verbose
             )
@@ -961,7 +961,7 @@ def write_groundstate_structure(
     defect_charges_dict = read_defects_directories(output_path=output_path)
     for defect in defect_charges_dict:
         for charge in defect_charges_dict[defect]:
-            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.txt"
+            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
             _, _, gs_distortion = _sort_data(
                 energies_file=energies_file,
                 verbose=False

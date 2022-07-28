@@ -684,7 +684,7 @@ def plot_all_defects(
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations and
-            distortion_metadata.txt
+            distortion_metadata.json file.
             (Default: current directory)
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between
@@ -747,7 +747,7 @@ def plot_all_defects(
                     f"Skipping {defect_species}."
                 )  # if defect directory doesn't exist, skip defect
                 continue
-            energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
+            energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             if not os.path.exists(energies_file):
                 warnings.warn(
                     f"Path {energies_file} does not exist. "
