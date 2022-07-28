@@ -6,12 +6,13 @@ from copy import deepcopy
 import pytest
 
 import numpy as np
-
-from shakenbreak import analysis
-from shakenbreak import plotting
+from monty.serialization import loadfn, dumpfn
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
+from shakenbreak import analysis
+from shakenbreak import plotting
 
 
 def if_present_rm(path):
@@ -26,19 +27,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.V_Cd_distortion_data = analysis._open_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+        self.organized_V_Cd_distortion_data = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
         )
-        self.organized_V_Cd_distortion_data = analysis._organize_data(
-            self.V_Cd_distortion_data
-        )
-        self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
+        self.organized_V_Cd_distortion_data_no_unperturbed = loadfn(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
             )
-        )
-        self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
-            self.V_Cd_distortion_data_no_unperturbed
         )
         self.V_Cd_energies_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0",
@@ -51,28 +46,28 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         )
         self.V_O_energies_dict_afm = analysis._sort_data(
-            energies_file=f"{self.DATA_DIR}/vasp/rTiO2_vac_2_O_0_nupdown_0.txt",
+            energies_file=f"{self.DATA_DIR}/vasp/rTiO2_vac_2_O_0_nupdown_0.yaml",
         )[0]
         self.V_O_energies_dict_fm = analysis._sort_data(
-            energies_file=f"{self.DATA_DIR}/vasp/rTiO2_vac_2_O_0_nupdown_2.txt",
+            energies_file=f"{self.DATA_DIR}/vasp/rTiO2_vac_2_O_0_nupdown_2.yaml",
         )[0]
         self.V_Cd_energies_dict_from_other_charge_states = analysis._sort_data(
-            energies_file=f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/fake_vac_1_Cd_0.txt"
+            energies_file=f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/fake_vac_1_Cd_0.yaml"
         )[0]
 
         self.V_Cd_m2_energies_dict = analysis._sort_data(
-            energies_file=f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2.txt"
+            energies_file=f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2.yaml"
         )[0]
 
         self.V_Cd_m2_energies_dict_from_other_charge_states = analysis._sort_data(
-            energies_file=f"{self.VASP_CDTE_DATA_DIR}/fake_V_Cd_-2_from_other_charge_states.txt"
+            energies_file=f"{self.VASP_CDTE_DATA_DIR}/fake_V_Cd_-2_from_other_charge_states.yaml"
         )[0]
 
         if not os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2"):
             os.mkdir(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2")
             shutil.copyfile(
-                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2.txt",
-                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/vac_1_Cd_-2.txt",
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2.yaml",
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/vac_1_Cd_-2.yaml",
             )
 
     def tearDown(self):

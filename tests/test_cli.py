@@ -5,6 +5,7 @@ import shutil
 import pickle
 import json
 import warnings
+from monty.serialization import loadfn
 import numpy as np
 import filecmp
 
@@ -1059,7 +1060,7 @@ local_rattle: False
         # All OUTCAR's present in distortion directories
         # Energies file already present
         defect = "vac_1_Ti_0"
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
         result = runner.invoke(
@@ -1074,17 +1075,16 @@ local_rattle: False
             catch_exceptions=False,
         )
         self.assertIn(
-            f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.txt to ",
+            f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml to ",
             result.output
         )
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt") as f:
-            lines = [line.strip() for line in f.readlines()]
-        energies = {
-            "Bond_Distortion_-40.0%": "-1176.28458753",
-            "Unperturbed": "-1173.02056574",
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        test_energies = {
+            "distortions": {-0.4: -1176.28458753,},
+            "Unperturbed": -1173.02056574,
         }  # Using dictionary here (rather than file/string), because parsing order
         # is difference on github actions
-        self.assertEqual(energies, {lines[0]: lines[1], lines[2]: lines[3]})
+        self.assertEqual(test_energies, energies)
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -1109,15 +1109,14 @@ local_rattle: False
             f"No output file in Bond_Distortion_10.0% directory",
             str(w[0].message)
         )
-        self.assertTrue(os.path.exists(f"{self.VASP_DIR}/{defect}/{defect}.txt"))
-        with open(f"{self.VASP_DIR}/{defect}/{defect}.txt") as f:
-            lines = [line.strip() for line in f.readlines()]
-        energies = {
-            "Bond_Distortion_-40.0%": "-1176.28458753",
-            "Unperturbed": "-1173.02056574",
+        self.assertTrue(os.path.exists(f"{self.VASP_DIR}/{defect}/{defect}.yaml"))
+        energies = loadfn(f"{self.VASP_DIR}/{defect}/{defect}.yaml")
+        test_energies = {
+            "distortions": {-0.4: -1176.28458753},
+            "Unperturbed": -1173.02056574,
         }
-        self.assertEqual(energies, {lines[0]: lines[1], lines[2]: lines[3]})
-        os.remove(f"{self.VASP_DIR}/{defect}/{defect}.txt")
+        self.assertEqual(test_energies, energies)
+        os.remove(f"{self.VASP_DIR}/{defect}/{defect}.yaml")
 
         # Test --all option
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
@@ -1134,8 +1133,8 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.txt"))
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.txt"))
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"))
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
     def test_parse_codes(self):
@@ -1158,12 +1157,12 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
         ))
-        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # CASTEP
         code = "castep"
@@ -1180,12 +1179,12 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
         ))
-        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # Espresso
         code = "quantum_espresso"
@@ -1202,12 +1201,12 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
         ))
-        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # FHI-aims
         code = "fhi_aims"
@@ -1224,17 +1223,17 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"))
+        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.txt",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt"
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
         ))
-        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.txt")
+        os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
     def test_analyse(self):
         "Test analyse() function"
         defect = "vac_1_Ti_0"
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
         result = runner.invoke(
@@ -1312,7 +1311,7 @@ local_rattle: False
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
         wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
@@ -1434,13 +1433,14 @@ local_rattle: False
                 ],
                 catch_exceptions=False,
             )
-        self.assertIn(
-            f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.txt does not exist",
-            result.output
-        )
+        # self.assertIn(
+        #     f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist",
+        #     result.output
+        # )
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"No data parsed from {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.txt, returning None",
+            # f"No data parsed from {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml, returning None",
+            f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist",
             str(w[0].message)
         )
         self.assertIn(
