@@ -1,15 +1,15 @@
 # `shakenbreak`
 `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
 
-Main feautures include:
+Main features include:
 1. Defect structure generation:
-   * Automatised generation of distorted structures for all input defects.
-   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders.
+   * Automatised generation of distorted structures for all input defects
+   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
 2. Analysis:
-   * Parsing of the geometry relaxation results.
-   * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified.
-   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion.
-   * Magnetisation analysis (currently only supported for `VASP`).
+   * Parsing of the geometry relaxation results
+   * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified
+   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion
+   * Magnetisation analysis (currently only supported for `VASP`)
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
@@ -38,12 +38,12 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`.
 
 Alternatively, the code can be used via the command line. The scripts provided include:
-* `snb-generate`: Generate distorted structures for a given defect.
-* `snb-generate_all`: Generates distorted structures for all defects present int the specified/current directory.
-* `snb-parse`: Parse the results of the geometry relaxations and write them to a file.
-* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations.
-* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colobar to quantify structural differences.
-* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect.
+* `snb-generate`: Generate distorted structures for a given defect
+* `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
+* `snb-parse`: Parse the results of the geometry relaxations and write them to a file
+* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
+* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
+* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
 
 ## License
 ShakeNBreak is made available under the MIT License.
