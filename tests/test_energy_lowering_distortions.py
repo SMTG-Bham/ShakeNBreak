@@ -3,6 +3,7 @@ import os
 from unittest.mock import patch, Mock
 import shutil
 import warnings
+from monty.serialization import dumpfn, loadfn
 import numpy as np
 
 from pymatgen.core.structure import Structure, Element
@@ -53,22 +54,22 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             if not os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_dir}"):
                 os.mkdir(self.VASP_CDTE_DATA_DIR + f"/{defect_dir}")
         # Int_Cd_2_1 without data, to test warnings
-        V_Cd_1_txt = f"""Bond_Distortion_-7.5%
-                -205.700
-                Unperturbed
-                -205.800"""
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.txt"), "w"
-        ) as fp:
-            fp.write(V_Cd_1_txt)
-        V_Cd_2_txt = f"""Bond_Distortion_-35.0%
-                -206.000
-                Unperturbed
-                -205.800"""
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-2/vac_1_Cd_-2.txt"), "w"
-        ) as fp:
-            fp.write(V_Cd_2_txt)
+        V_Cd_1_dict = {
+            "distortions": {-0.075: -205.700},
+            "Unperturbed": -205.800
+        }
+        dumpfn(
+            V_Cd_1_dict,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
+        )
+        V_Cd_2_dict = {
+            "distortions": {-0.35: -206.000},
+            "Unperturbed": -205.800
+        }
+        dumpfn(
+            V_Cd_2_dict,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
+        )
 
         self.defect_charges_dict = {
             "vac_1_Cd": [0, -1, -2],
@@ -170,9 +171,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
             mock_print.assert_any_call("\nInt_Cd_2")
             mock_print.assert_any_call(
-                f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.txt does not exist"
-            )
-            mock_print.assert_any_call(
                 "No data parsed for Int_Cd_2_1. This species will be skipped and will not be "
                 "included in the low_energy_defects charge state lists (and so energy lowering "
                 "distortions found for other charge states will not be applied for this species)."
@@ -193,11 +191,10 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.assertEqual(len(w), 1)  # 28  # No Int_Cd_2_1 data (1)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
-            warning_message = (
-                f"No data parsed from {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.txt, "
-                f"returning None"
+            self.assertIn(
+                f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
+                str(w[0].message)
             )
-            self.assertIn(warning_message, str(w[0].message))
 
             self.assertEqual(len(low_energy_defects_dict), 1)
             self.assertIn("vac_1_Cd", low_energy_defects_dict)
@@ -260,16 +257,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"with charge -1."
             )
             mock_print.assert_any_call("\nInt_Cd_2")
-            mock_print.assert_any_call(
-                f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.txt does not exist"
-            )
             self.assertEqual(len(w), 1)  # No Int_Cd_2_1 data (1)
             self.assertEqual(warning.category, UserWarning)
-            warning_message = (
-                f"No data parsed from {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.txt, "
-                f"returning None"
+            self.assertIn(
+                f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
+                str(w[0].message),
             )
-            self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(low_energy_defects_dict, {})
 
         # test behaviour with two _different_ energy lowering distortions for two
@@ -362,14 +355,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
         # test case where the _same_ non-spontaneous energy lowering distortion
         # was found for two different charge states
-        V_Cd_1_txt_w_distortion = f"""Bond_Distortion_-7.5%
-        -206.700
-        Unperturbed
-        -205.800"""
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.txt"), "w"
-        ) as fp:
-            fp.write(V_Cd_1_txt_w_distortion)
+        V_Cd_1_dict_w_distortion = {
+            "distortions": {-0.075: -206.700},
+            "Unperturbed": -205.800
+        }
+        dumpfn(
+            V_Cd_1_dict_w_distortion,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
+        )
         with patch("builtins.print") as mock_print:
             low_energy_defects_dict = (
                 energy_lowering_distortions.get_energy_lowering_distortions(
@@ -377,8 +370,10 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )  # same call as before
             mock_print.assert_any_call(
-                "Low-energy distorted structure for vac_1_Cd_-2 already "
-                "found with charge states [-1], storing together."
+                "Low-energy distorted structure for vac_1_Cd_-2 "
+                "already found with charge states "
+                "[-1], "
+                "storing together."
             )
             self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
             self.assertEqual(
@@ -518,14 +513,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         # test case where the _same_ non-spontaneous energy lowering distortion was found for two
         # different charge states
-        V_Cd_1_txt_w_distortion = f"""Bond_Distortion_-7.5%
-            -206.700
-            Unperturbed
-            -205.800"""
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.txt"), "w"
-        ) as fp:
-            fp.write(V_Cd_1_txt_w_distortion)
+        V_Cd_1_txt_w_distortion = {
+            "distortions": {-0.075: -206.700},
+            "Unperturbed": -205.800
+        }
+        dumpfn(
+            V_Cd_1_txt_w_distortion,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
+        )
 
         low_energy_defects_dict = (
             energy_lowering_distortions.get_energy_lowering_distortions(

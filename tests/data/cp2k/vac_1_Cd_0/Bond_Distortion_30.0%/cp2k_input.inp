@@ -1,5 +1,5 @@
 &GLOBAL 
-	PROJECT relax
+	PROJECT relax ! files generated will be named relax.out etc
 	RUN_TYPE GEO_OPT ! geometry optimization
 	IOLEVEL MEDIUM ! reduce amount of IO
 &END GLOBAL

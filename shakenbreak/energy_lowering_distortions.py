@@ -98,7 +98,7 @@ def read_defects_directories(output_path: str = "./") -> dict:
 def get_energy_lowering_distortions(
     defect_charges_dict: Optional[dict] = None,
     output_path: str = ".",
-    code: str = "VASP",
+    code: str = "vasp",
     structure_filename: str = "CONTCAR",
     min_e_diff: float = 0.05,
     stol: float = 0.5,
@@ -127,8 +127,9 @@ def get_energy_lowering_distortions(
             distortion_metadata.json.
             (Default is current directory = "./")
         code (:obj:`str`, optional):
-            Code used for the geometry relaxations.
-            (Default: VASP)
+            Code used for the geometry relaxations. Supported code names are:
+            "vasp", "espresso", "cp2k" and "fhi-aims" (case insensitive).
+            (Default: "vasp")
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
@@ -182,7 +183,7 @@ def get_energy_lowering_distortions(
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
-            energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
+            energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             energies_dict, energy_diff, gs_distortion = _sort_data(
                 energies_file, verbose=verbose
             )
@@ -382,7 +383,7 @@ def compare_struct_to_distortions(
     distorted_struct: Structure,
     defect_species: str,
     output_path: str = ".",
-    code: str="VASP",
+    code: str="vasp",
     structure_filename: str="CONTCAR",
     stol: float = 0.5,
     min_dist: float = 0.2,
@@ -403,8 +404,9 @@ def compare_struct_to_distortions(
             calculate structure comparisons – needs VASP CONTCAR files).
             (Default is current directory = "./")
         code (:obj:`str`, optional):
-            Code used for the geometry relaxations.
-            (Default: VASP)
+            Code used for the geometry relaxations. Options include:
+            "vasp", "cp2k", "espresso", "castep", "fhi-aims" (case insensitive).
+            (Default: "vasp")
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
@@ -539,7 +541,7 @@ def compare_struct_to_distortions(
 def write_distorted_inputs(
     low_energy_defects: dict,
     output_path: str = ".",
-    code: str = "VASP",
+    code: str = "vasp",
     input_filename: str = None,
 ) -> None:
     """
@@ -563,8 +565,9 @@ def write_distorted_inputs(
             test). (Default is current directory = "./")
         code (:obj:`str`):
             Code used for the geometry relaxations. The supported codes
-            include "VASP", "CP2K", "espresso", "CASTEP" and "FHI-aims".
-            (Default: "VASP")
+            include "vasp", "cp2k", "espresso", "castep" and "fhi-aims"
+            (case insensitive).
+            (Default: "vasp")
         input_filename (:obj:`str`):
             Name of the code input file if different from `ShakeNBreak`
             default. Only applies to CP2K, Quantum Espresso, CASTEP and
@@ -619,14 +622,14 @@ def write_distorted_inputs(
                 os.mkdir(distorted_dir)
 
                 # copy input files from Unperturbed directory
-                if code == "VASP":
+                if code.lower() == "vasp":
                     _copy_vasp_files(
                         distorted_structure,
                         distorted_dir,
                         output_path,
                         defect_species,
                     )
-                elif code == "espresso":
+                elif code.lower() == "espresso":
                     _copy_espresso_files(
                         distorted_structure,
                         distorted_dir,
@@ -634,7 +637,7 @@ def write_distorted_inputs(
                         defect_species,
                         input_filename,
                     )
-                elif code == "CP2K":
+                elif code.lower() == "cp2k":
                     _copy_cp2k_files(
                         distorted_structure,
                         distorted_dir,
@@ -642,7 +645,7 @@ def write_distorted_inputs(
                         defect_species,
                         input_filename,
                     )
-                elif code == "CASTEP":
+                elif code.lower() == "castep":
                     _copy_castep_files(
                         distorted_structure,
                         distorted_dir,
@@ -650,7 +653,7 @@ def write_distorted_inputs(
                         defect_species,
                         input_filename,
                     )
-                elif code == "FHI-aims":
+                elif code.lower() == "fhi-aims":
                     _copy_fhi_aims_files(
                         distorted_structure,
                         distorted_dir,
@@ -958,7 +961,7 @@ def write_groundstate_structure(
     defect_charges_dict = read_defects_directories(output_path=output_path)
     for defect in defect_charges_dict:
         for charge in defect_charges_dict[defect]:
-            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.txt"
+            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
             _, _, gs_distortion = _sort_data(
                 energies_file=energies_file,
                 verbose=False
