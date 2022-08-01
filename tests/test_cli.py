@@ -1433,13 +1433,8 @@ local_rattle: False
                 ],
                 catch_exceptions=False,
             )
-        # self.assertIn(
-        #     f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist",
-        #     result.output
-        # )
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            # f"No data parsed from {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml, returning None",
             f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist",
             str(w[0].message)
         )
