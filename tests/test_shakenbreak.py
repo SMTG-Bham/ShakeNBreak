@@ -6,6 +6,7 @@ import pickle
 import pytest
 
 from pymatgen.core.structure import Structure
+from monty.serialization import dumpfn
 from shakenbreak import (
     input,
     energy_lowering_distortions,
@@ -37,18 +38,10 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
             os.mkdir(f"{defect_dir}")
-        V_Cd_1_txt = """Bond_Distortion_-7.5%
-                         -206.700
-                         Unperturbed
-                         -205.800"""
-        with open("vac_1_Cd_-1/vac_1_Cd_-1.txt", "w") as fp:
-            fp.write(V_Cd_1_txt)
-        V_Cd_2_txt = """Bond_Distortion_-35.0%
-                         -205.700
-                         Unperturbed
-                         -205.800"""
-        with open("vac_1_Cd_-2/vac_1_Cd_-2.txt", "w") as fp:
-            fp.write(V_Cd_2_txt)
+        V_Cd_1_dict = {"distortions": {-0.075: -206.700}, "Unperturbed": -205.8}
+        dumpfn(V_Cd_1_dict, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
+        V_Cd_2_dict = {'distortions': {-0.35: -205.7}, 'Unperturbed': -205.8}
+        dumpfn(V_Cd_2_dict, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
 
         # create fake structures for testing functionality:
         for fake_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
@@ -158,27 +151,22 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
         )
 
-        V_Cd_m1_txt_w_distortion = """Bond_Distortion_-55.0%_from_0
-        -207.000
-        Bond_Distortion_-7.5%
-        -206.700
-        Unperturbed
-        -205.800"""
-        with open("vac_1_Cd_-1/vac_1_Cd_-1.txt", "w") as fp:
-            fp.write(V_Cd_m1_txt_w_distortion)
+        V_Cd_m1_dict_w_distortion = {
+            'distortions': {-0.075: -206.7, '-55.0%_from_0': -207.0},
+            'Unperturbed': -205.8
+        }
+        dumpfn(V_Cd_m1_dict_w_distortion, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
 
-        V_Cd_m2_txt_w_distortion = """Bond_Distortion_-55.0%_from_0
-        -207.000
-        Bond_Distortion_-7.5%_from_-1
-        -207.700
-        Bond_Distortion_-35.0%
-        -205.700
-        Unperturbed
-        -205.800"""
-        with open("vac_1_Cd_-2/vac_1_Cd_-2.txt", "w") as fp:
-            fp.write(V_Cd_m2_txt_w_distortion)
+        V_Cd_m2_dict_w_distortion = {
+            'distortions': {
+                -0.35: -205.7,
+                '-55.0%_from_0': -207.0,
+                '-7.5%_from_-1': -207.7},
+            'Unperturbed': -205.8
+        }
+        dumpfn(V_Cd_m2_dict_w_distortion, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
 
-        # note we're not updating vac_1_Cd_0.txt here, to test the info message that the
+        # note we're not updating vac_1_Cd_0.yaml here, to test the info message that the
         # Bond_Distortion_-7.5%_from_-1 folder is already present in this directory
 
         shutil.copyfile(

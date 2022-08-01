@@ -12,6 +12,7 @@ import warnings
 import pandas as pd
 import numpy as np
 
+from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -158,59 +159,6 @@ def _format_distortion_names(
     return distortion
 
 
-def _open_file(path: str) -> list:
-    """Open file and return list of file lines as strings"""
-    if os.path.isfile(path):
-        with open(path) as ff:
-            read_file = ff.read()
-            distortion_list = read_file.splitlines()
-        return distortion_list
-    else:
-        print(f"Path {path} does not exist")
-        return []
-
-
-# TODO: Update docstrings here when we implement CLI parsing functions to
-# generate this output file:
-def _organize_data(distortion_list: list) -> dict:
-    """
-    Create a dictionary mapping distortion factors to final energies.
-
-    Args:
-        distortion_list (:obj:`list`):
-            List of lines in bond distortion output summary file,
-            obtained using `parse_SnB` (which specifies bond distortions
-            and corresponding energies).
-
-    Returns:
-        Sorted dictionary of bond distortions and corresponding final
-        energies.
-    """
-    defect_energies_dict = {"distortions": {}}
-    for i in range(len(distortion_list) // 2):
-        i *= 2
-        key = _format_distortion_names(distortion_list[i])
-        if isinstance(key, str) and "Unperturbed" in key:
-            defect_energies_dict["Unperturbed"] = float(distortion_list[i + 1])
-        else:
-            defect_energies_dict["distortions"][key] = float(distortion_list[i + 1])
-
-    # Order dict items by key (e.g. from -0.6 to 0 to +0.6):
-    sorted_energies_dict = {
-        "distortions": dict(
-            sorted(
-                defect_energies_dict["distortions"].items(),
-                key=lambda k: (0, k[0]) if isinstance(k[0], float) else (1, k[0]),
-                # to deal with list of both floats and strings
-                # (https://www.geeksforgeeks.org/sort-mixed-list-in-python/)
-            )
-        )
-    }
-    if "Unperturbed" in defect_energies_dict:
-        sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
-    return sorted_energies_dict
-
-
 def get_gs_distortion(defect_energies_dict: dict):
     """
     Calculate energy difference between `Unperturbed` structure and
@@ -275,13 +223,13 @@ def _sort_data(energies_file: str, verbose: bool = True):
 
     Args:
         energies_file (:obj:`str`):
-            Path to txt file with bond distortions and final energies
-            (in eV), obtained using `parse_SnB`.
+            Path to `yaml` file with bond distortions and final energies
+            (in eV), obtained using the CLI command `snb-parse` or the
+            function `parse_energies()`.
         verbose (:obj:`bool`):
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
-
     Returns:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
@@ -293,11 +241,16 @@ def _sort_data(energies_file: str, verbose: bool = True):
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
-    defect_energies_dict = _organize_data(_open_file(energies_file))
+    # Parse dictionary from file
+    if os.path.exists(energies_file):
+        defect_energies_dict = loadfn(energies_file)
+    else:
+        warnings.warn(f"Path {energies_file} does not exist")
+        return None, None, None
     if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
-    elif len(defect_energies_dict["distortions"]) == 0 \
+    if len(defect_energies_dict["distortions"]) == 0 \
     and "Unperturbed" in defect_energies_dict:
         # no parsed distortion results but Unperturbed present
         warnings.warn(
@@ -306,7 +259,7 @@ def _sort_data(energies_file: str, verbose: bool = True):
         return None, None, None
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
-    defect_name = energies_file.split("/")[-1].split(".txt")[0]
+    defect_name = energies_file.split("/")[-1].split(".yaml")[0]
     if verbose:
         if energy_diff and energy_diff < -0.1:
             print(
@@ -456,7 +409,7 @@ def get_structures(
     defect_species: str,
     output_path: str = ".",
     bond_distortions: Optional[list] = None,
-    code: Optional[str] = "VASP",
+    code: Optional[str] = "vasp",
     structure_filename: Optional[str] = "CONTCAR",
 ) -> dict:
     """
@@ -480,7 +433,7 @@ def get_structures(
             (Default: None)
         code (:obj:`str`, optional):
             Code used for the geometry relaxations.
-            (Default: VASP)
+            (Default: vasp)
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
@@ -587,7 +540,7 @@ def get_energies(
     Returns:
         Dictionary matching bond distortions to final energies in eV.
     """
-    energy_file_path = f"{output_path}/{defect_species}/{defect_species}.txt"
+    energy_file_path = f"{output_path}/{defect_species}/{defect_species}.yaml"
     if not os.path.isfile(energy_file_path):
         raise FileNotFoundError(f"File {energy_file_path} not found!")
     defect_energies_dict, _e_diff, gs_distortion = _sort_data(
@@ -979,7 +932,7 @@ def _site_magnetizations(
 ) -> pd.DataFrame :
     """
     Prints sites with magnetization above threshold.
-    Only implemented for VASP calculations.
+    Only implemented for vasp calculations.
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
             Outcar object

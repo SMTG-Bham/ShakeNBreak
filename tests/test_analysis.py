@@ -9,6 +9,7 @@ import pandas as pd
 from pandas.core.frame import DataFrame
 
 from pymatgen.core.structure import Structure, Element
+from monty.serialization import loadfn, dumpfn
 from shakenbreak import analysis, io
 
 
@@ -24,31 +25,22 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.V_Cd_distortion_data = analysis._open_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+        self.organized_V_Cd_distortion_data = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
         )
-        self.organized_V_Cd_distortion_data = analysis._organize_data(
-            self.V_Cd_distortion_data
-        )
-        self.V_Cd_distortion_data_no_unperturbed = analysis._open_file(
+        self.organized_V_Cd_distortion_data_no_unperturbed = loadfn(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
             )
-        )
-        self.organized_V_Cd_distortion_data_no_unperturbed = analysis._organize_data(
-            self.V_Cd_distortion_data_no_unperturbed
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
             )
         )
-        self.In_Cd_1_distortion_data = analysis._open_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+        self.organized_In_Cd_1_distortion_data = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
         )  # note this was rattled with the old, non-Monte Carlo rattling (ASE's atoms.rattle())
-        self.organized_In_Cd_1_distortion_data = analysis._organize_data(
-            self.In_Cd_1_distortion_data
-        )
         self.Int_Cd_2_minus0pt6_NN_10_struc_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
@@ -66,87 +58,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def tearDown(self):
         # restore the original file (after 'no unperturbed' tests):
         shutil.copy(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.yaml"),
         )
-        for i in ["fake_file.txt", os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json")]:
+        for i in ["fake_file.yaml", os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json")]:
             if_present_rm(i)
-
-    @patch("builtins.print")
-    def test_open_file(self, mock_print):
-        """Test _open_file() function."""
-        returned_data = analysis._open_file("fake_file")
-        self.assertEqual(returned_data, [])
-        mock_print.assert_called_once_with("Path fake_file does not exist")
-
-        self.assertEqual(len(self.V_Cd_distortion_data), 52)
-        self.assertListEqual(
-            [
-                "Bond_Distortion_0.0%",
-                "-205.72650569",
-                "Bond_Distortion_-10.0%",
-            ],
-            self.V_Cd_distortion_data[:3],
-        )
-        self.assertEqual("-205.72311458", self.V_Cd_distortion_data[-1])
-
-        # test In_Cd_1 parsing:
-        self.assertListEqual(
-            self.In_Cd_1_distortion_data,
-            [
-                "Rattled",
-                "-214.88259023",
-                "Unperturbed",
-                "-214.87608986",
-            ],
-        )
-
-    def test_organize_data(self):
-        """Test _organize_data() function."""
-        empty_dict = {"distortions": [], "Unperturbed": []}
-        self.assertTrue(isinstance(self.organized_V_Cd_distortion_data, dict))
-        self.assertTrue(empty_dict.keys() == self.organized_V_Cd_distortion_data.keys())
-        self.assertEqual(len(self.organized_V_Cd_distortion_data), 2)
-        self.assertEqual(len(self.organized_V_Cd_distortion_data["distortions"]), 25)
-        self.assertEqual(
-            self.organized_V_Cd_distortion_data["Unperturbed"], -205.72311458
-        )
-        # test distortions subdict has (distortion) keys and (energy) values as floats:
-        self.assertSetEqual(
-            set(map(type, self.organized_V_Cd_distortion_data["distortions"].values())),
-            {float},
-        )
-        self.assertSetEqual(
-            set(map(type, self.organized_V_Cd_distortion_data["distortions"].keys())),
-            {float},
-        )
-        # test one entry:
-        self.assertEqual(
-            self.organized_V_Cd_distortion_data["distortions"][-0.35], -206.47790687
-        )
-
-        # test In_Cd_1:
-        self.assertDictEqual(
-            self.organized_In_Cd_1_distortion_data,
-            {"distortions": {"Rattled": -214.88259023}, "Unperturbed": -214.87608986},
-        )
-
-        # test with no 'Unperturbed':
-        self.assertTrue(
-            isinstance(self.organized_V_Cd_distortion_data_no_unperturbed, dict)
-        )
-        self.assertFalse(
-            "Unperturbed" in self.organized_V_Cd_distortion_data_no_unperturbed
-        )
-        self.assertEqual(len(self.organized_V_Cd_distortion_data_no_unperturbed), 1)
-        self.assertEqual(
-            len(self.organized_V_Cd_distortion_data_no_unperturbed["distortions"]), 25
-        )
-        # test one entry:
-        self.assertEqual(
-            self.organized_V_Cd_distortion_data_no_unperturbed["distortions"][-0.35],
-            -206.47790687,
-        )
 
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
@@ -171,7 +87,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test V_Cd_distortion_data:
         gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
         sorted_V_Cd_distortion_data = analysis._sort_data(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt")
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
         )
         self.assertEqual(
             sorted_V_Cd_distortion_data,
@@ -185,7 +101,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test verbose = False
         with patch("builtins.print") as mock_not_verbose_print:
             sorted_V_Cd_distortion_data = analysis._sort_data(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.txt"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml"),
                 verbose=False,
             )
             self.assertEqual(
@@ -200,7 +116,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_In_Cd_print:
             sorted_In_Cd_1_distortion_data = analysis._sort_data(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt"),
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml"),
             )
             mock_In_Cd_print.assert_not_called()
         self.assertEqual(
@@ -216,7 +132,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             organized_V_Cd_distortion_data_no_unperturbed = analysis._sort_data(
                 os.path.join(
                     self.VASP_CDTE_DATA_DIR,
-                    "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt",
+                    "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml",
                 )
             )
             self.assertEqual(
@@ -228,25 +144,24 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             mock_no_unperturbed_print.assert_called_once_with(
                 f"CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed: Unperturbed energy not found in "
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt')}. "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml')}. "
                 f"Lowest energy structure found with -0.55 bond distortion."
             )
 
         # test error catching:
         with warnings.catch_warnings(record=True) as w:
             output = analysis._sort_data("fake_file")
-            warning_message = "No data parsed from fake_file, returning None"
+            warning_message = f"Path fake_file does not exist"
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, (None, None, None))
 
         with warnings.catch_warnings(record=True) as w:
-            with open("fake_file.txt", "w") as fp:
-                fp.write("Unperturbed\n-378.66236832")  # only unperturbed data
-            output = analysis._sort_data("fake_file.txt")
+            dumpfn({"Unperturbed":-378.66236832, "distortions": {}},"fake_file.yaml")
+            output = analysis._sort_data("fake_file.yaml")
             warning_message = (
-                "No distortion results parsed from fake_file.txt, returning None"
+                "No distortion results parsed from fake_file.yaml, returning None"
             )
             self.assertEqual(len(w), 1)
             self.assertEqual(w[0].category, UserWarning)
@@ -268,11 +183,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as w:
             output = io.read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.txt")
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
             )
             warning_message = (
                 f"Problem obtaining structure from: "
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.txt')}, storing as 'Not "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
                 f"converged'. Check file & relaxation"
             )
             self.assertEqual(len(w), 1)
@@ -459,7 +374,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_energies(self):
         """Test get_energies() function."""
-        # V_Cd_0 with defaults (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
+        # V_Cd_0 with defaults (reading from `vac_1_Cd_0/vac_1_Cd_0.yaml`):
         defect_energies_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
@@ -500,7 +415,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_energies_dict["distortions"][-0.4], -0.7548057600000107
             )
 
-        # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.txt`):
+        # V_Cd_0 with meV (reading from `vac_1_Cd_0/vac_1_Cd_0.yaml`):
         defect_energies_meV_dict = analysis.get_energies(
             defect_species="vac_1_Cd_0",
             output_path=self.VASP_CDTE_DATA_DIR,
@@ -524,9 +439,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test if 'Unperturbed' is not present:
         shutil.copy(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.txt"
+                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
             ),
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.txt"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.yaml"),
         )
         # Note we copy back to original in self.tearDown()
         with warnings.catch_warnings(record=True) as w:
