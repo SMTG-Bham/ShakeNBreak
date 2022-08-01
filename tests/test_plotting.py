@@ -35,10 +35,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
             )
         )
-        self.V_Cd_energies_dict = analysis.get_energies(
+        self.V_Cd_energies_dict = dict(analysis.get_energies(
             defect_species="vac_1_Cd_0",
             output_path=self.VASP_CDTE_DATA_DIR,
-        )
+        ))
         self.V_Cd_displacement_dict = analysis.calculate_struct_comparison(
             defect_structures_dict=analysis.get_structures(
                 defect_species="vac_1_Cd_0",
@@ -94,8 +94,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         # Test standard behaviour: labels and ticks
         fig, ax = plt.subplots(1, 1)
         ax.plot(
-            self.V_Cd_energies_dict["distortions"].keys(),
-            self.V_Cd_energies_dict["distortions"].values(),
+            list(self.V_Cd_energies_dict["distortions"].keys()),
+            list(self.V_Cd_energies_dict["distortions"].values()),
         )
         formatted_ax = plotting._format_axis(
             ax=ax,
@@ -117,8 +117,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         print(formatted_ax.xaxis.get_ticklabels())
         # check x label if no nearest neighbour info
         ax.plot(
-            self.V_Cd_energies_dict["distortions"].keys(),
-            self.V_Cd_energies_dict["distortions"].values(),
+            list(self.V_Cd_energies_dict["distortions"].keys()),
+            list(self.V_Cd_energies_dict["distortions"].values()),
         )
         formatted_ax = plotting._format_axis(
             ax=ax,
@@ -133,8 +133,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         # check x label if no defect name
         ax.plot(
-            self.V_Cd_energies_dict["distortions"].keys(),
-            self.V_Cd_energies_dict["distortions"].values(),
+            list(self.V_Cd_energies_dict["distortions"].keys()),
+            list(self.V_Cd_energies_dict["distortions"].values()),
         )
         formatted_ax = plotting._format_axis(
             ax=ax,
