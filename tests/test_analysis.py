@@ -25,6 +25,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         self.organized_V_Cd_distortion_data = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
         )
@@ -477,7 +478,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
             max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict)
