@@ -23,7 +23,7 @@ setup(
     version="0.2.4",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
-    author="Irea Mosquera, Seán Kavanagh",
+    author="Irea Mosquera-Lois, Seán R. Kavanagh",
     author_email="irea.lois.20@ucl.ac.uk",
     packages=find_packages(),
     license="MIT",

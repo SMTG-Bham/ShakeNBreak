@@ -24,7 +24,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 
 from shakenbreak.distortions import distort, rattle, local_mc_rattle
-from shakenbreak.io import write_vasp_gam_files
+from shakenbreak.vasp import write_vasp_gam_files
 from shakenbreak.analysis import _get_distortion_filename
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
