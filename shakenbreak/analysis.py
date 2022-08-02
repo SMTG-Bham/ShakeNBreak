@@ -29,7 +29,7 @@ crystalNN = CrystalNN(
 )
 
 # format warnings output:
-def warning_on_one_line(
+def _warning_on_one_line(
     message,
     category,
     filename,
@@ -40,11 +40,11 @@ def warning_on_one_line(
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
-warnings.formatwarning = warning_on_one_line
+warnings.formatwarning = _warning_on_one_line
 
 # using stackoverflow.com/questions/15411967/
 # how-can-i-check-if-code-is-executed-in-the-ipython-notebook
-def isipython():
+def _isipython():
     try:
         get_ipython().__class__.__name__
         return True
@@ -52,11 +52,11 @@ def isipython():
         return False  # Probably standard Python interpreter
 
 
-if isipython():
+if _isipython():
     from IPython.display import display
 
 
-class HiddenPrints:
+class _HiddenPrints:
     # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -332,7 +332,7 @@ def analyse_defect_site(
             "Local order parameters (i.e. resemblance to given structural motif, "
             f"via CrystalNN):"
         )
-        if isipython():
+        if _isipython():
             display(pd.DataFrame(coord_list))  # display in Jupyter notebook
     # Bond Lengths:
     bond_lengths = []
@@ -345,7 +345,7 @@ def analyse_defect_site(
         )
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
-    if isipython():
+    if _isipython():
         display(bond_length_df)
         print()  # spacing
     if coordination is not None:
@@ -800,7 +800,7 @@ def compare_structures(
         stol=stol,
         min_dist=min_dist,
     )
-    with HiddenPrints():  # only print "Comparing to..." once
+    with _HiddenPrints():  # only print "Comparing to..." once
         max_dist_dict = calculate_struct_comparison(
             defect_structures_dict,
             metric="max_dist",
@@ -850,7 +850,7 @@ def compare_structures(
             f"\u0394 Energy ({units})",  # Delta
         ],
     )
-    if isipython() and display_df:
+    if _isipython() and display_df:
         display(struct_comparison_df)
     return struct_comparison_df
 
