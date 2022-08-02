@@ -1377,7 +1377,7 @@ local_rattle: False
         self.tearDown()
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
-            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
         ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
@@ -1434,7 +1434,7 @@ local_rattle: False
             ] # distortion_metadata file is present
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
-            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
         ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Figures are compared in the local test since on Github Actions images are saved
@@ -1457,13 +1457,7 @@ local_rattle: False
                 catch_exceptions=False,
             )
         if w:
-            self.assertTrue(
-                any(
-                    [
-                        war.category == UserWarning for war in w
-                    ]
-                )
-            )
+            self.assertTrue(any([war.category == UserWarning for war in w]))
             self.assertTrue(
                 any([
                     f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"

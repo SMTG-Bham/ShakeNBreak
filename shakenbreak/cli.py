@@ -539,7 +539,8 @@ def snb():
 )
 @click.option(
     "--config",
-    help="Config file for advanced distortion settings",
+    help="Config file for advanced distortion settings. See example in"
+        "/input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
 )
@@ -685,12 +686,10 @@ def generate(
     type=str,
     default="VASP",
 )
-# @click.option("--distortions", help=f"List of bond distortions to apply. "
-#               f"Defaults to {list(round(d, 1) for d in np.arange(-0.6, 0.61, 0.1))}",
-#              default=None, type=list)  # Better to specify it in the config file
 @click.option(
     "--config",
-    help="Config file for advanced distortion settings",
+    help="Config file for advanced distortion settings. See example in "
+        "/input_files/example_generate_all_config.yaml",
     default=None
 )
 @click.option(

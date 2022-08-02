@@ -17,7 +17,7 @@
 # stdev: 0.25
 # d_min: 2.25  # (Default = 80% of auto-determined bulk bond length)
 # n_iter: 1
-# active_atoms: = None  # (Default = all atoms)
+# active_atoms: None  # (Default = all atoms)
 # nbr_cutoff: 5
 # width: 0.1
 # max_attempts: 5000
