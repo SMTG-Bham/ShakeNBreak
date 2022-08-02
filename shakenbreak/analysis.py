@@ -690,9 +690,11 @@ def calculate_struct_comparison(
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
     for distortion in list(defect_structures_dict.keys()):
-        if defect_structures_dict[distortion] != "Not converged":
+        if defect_structures_dict[distortion] == "Not converged":
+            disp_dict[distortion] = "Not converged"  # Structure not converged
+        else:
             try:
-                norm_rms_disp, norm_dist = _calculate_atomic_disp(
+                _, norm_dist = _calculate_atomic_disp(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
                     stol=stol,
@@ -721,8 +723,7 @@ def calculate_struct_comparison(
                     f"pymatgen StructureMatcher could not match lattices between "
                     f"{ref_name} and {distortion} structures."
                 )
-        else:
-            disp_dict[distortion] = "Not converged"  # Structure not converged
+
 
     return disp_dict
 

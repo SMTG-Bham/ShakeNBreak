@@ -1497,6 +1497,7 @@ local_rattle: False
             f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
+        # Remove generated files
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)):
