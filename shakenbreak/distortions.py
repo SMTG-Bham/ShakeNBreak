@@ -17,11 +17,11 @@ from hiphive.structure_generation.rattle import *
 from hiphive.structure_generation.rattle import _probability_mc_rattle
 
 # format warnings output:
-def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
-warnings.formatwarning = warning_on_one_line
+warnings.formatwarning = _warning_on_one_line
 
 
 def distort(

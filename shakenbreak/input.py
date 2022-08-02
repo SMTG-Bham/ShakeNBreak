@@ -1,6 +1,7 @@
 """
 Module containing functions to generate rattled and bond-distorted structures,
-as well as input files to run Gamma point relaxations with VASP
+as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
+`Quantum-Espresso`, `FHI-aims` and `CASTEP`.
 """
 import os
 import copy
@@ -36,7 +37,7 @@ warnings.filterwarnings(
 warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
 
 # format warnings output:
-def warning_on_one_line(
+def _warning_on_one_line(
     message, category, filename, lineno, file=None, line=None
 ) -> str:
     """Output warning messages on one line."""
@@ -45,7 +46,7 @@ def warning_on_one_line(
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
-warnings.formatwarning = warning_on_one_line
+warnings.formatwarning = _warning_on_one_line
 
 
 # Helper functions

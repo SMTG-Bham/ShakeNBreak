@@ -124,9 +124,10 @@ class PotcarSingleMod(PotcarSingle):
             p = zpath(p)
             if os.path.exists(p):
                 return PotcarSingleMod.from_file(p)
-        raise IOError("You do not have the right POTCAR with functional " +
-                      "{} and label {} in your VASP_PSP_DIR".format(functional,
-                                                                    symbol))
+        raise IOError(
+            f"You do not have the right POTCAR with functional " +
+            f"{functional} and label {symbol} in your VASP_PSP_DIR"
+        )
 
 
 class PotcarMod(Potcar):
@@ -163,8 +164,9 @@ class DefectRelaxSet(MPRelaxSet):
     """
     Extension to MPRelaxSet which modifies some parameters appropriate
     for defect calculations
-    Additional Args:
-        charge: Charge of the defect structure
+    Args:
+        charge (:obj:`int`):
+            Charge of the defect structure
     """
 
     def __init__(self, structure, **kwargs):
