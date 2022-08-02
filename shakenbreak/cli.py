@@ -445,15 +445,14 @@ def CommandWithConfigFile(
         def invoke(self, ctx):
             config_file = ctx.params[config_file_param_name]
             if config_file is not None:
-                with open(config_file) as f:
-                    config_data = loadfn(config_file)
-                    for param, value in ctx.params.items():
-                        if (
-                            ctx.get_parameter_source(param)
-                            == click.core.ParameterSource.DEFAULT
-                            and param in config_data
-                        ):
-                            ctx.params[param] = config_data[param]
+                config_data = loadfn(config_file)
+                for param, value in ctx.params.items():
+                    if (
+                        ctx.get_parameter_source(param)
+                        == click.core.ParameterSource.DEFAULT
+                        and param in config_data
+                    ):
+                        ctx.params[param] = config_data[param]
             return super(CustomCommandClass, self).invoke(ctx)
 
     return CustomCommandClass
@@ -490,7 +489,13 @@ def snb():
     required=True,
     type=click.Path(exists=True, dir_okay=False),
 )
-@click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
+@click.option(
+    "--charge",
+    "-c",
+    help="Defect charge state",
+    default=None,
+    type=int
+)
 @click.option(
     "--min-charge",
     "--min",
@@ -632,7 +637,7 @@ def generate(
         distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
             verbose=verbose
         )
-    elif code.lower() == "espresso":
+    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
         distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
             verbose=verbose
         )
@@ -640,7 +645,7 @@ def generate(
         distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
             verbose=verbose
         )
-    elif code.lower() == "fhi-aims":
+    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
         distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
             verbose=verbose
         )
@@ -656,6 +661,7 @@ def generate(
     name="generate_all",
     context_settings=CONTEXT_SETTINGS,
     no_args_is_help=True,
+    cls=CommandWithConfigFile("config"),
 )
 @click.option(
     "--defects",
@@ -699,7 +705,14 @@ def generate(
     default=False,
     is_flag=True,
 )
-def generate_all(defects, bulk, structure_file, code, config, verbose):
+def generate_all(
+    defects,
+    bulk,
+    structure_file,
+    code,
+    config,
+    verbose
+):
     """
     Generate the trial distortions for structure-searching for all defects
     in a given directory.
@@ -718,6 +731,12 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
             defect_settings = {}
     else:
         defect_settings, user_settings = {}, {}
+
+    func_args = list(locals().keys())
+    if user_settings:
+        for key in func_args:
+            if key in user_settings:
+                user_settings.pop(key, None)
 
     def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
         """Parse defect name from file/folder name"""
@@ -849,7 +868,7 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
         distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
             verbose=verbose
         )
-    elif code.lower() == "espresso":
+    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
         distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
             verbose=verbose
         )
@@ -857,7 +876,7 @@ def generate_all(defects, bulk, structure_file, code, config, verbose):
         distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
             verbose=verbose
         )
-    elif code.lower() == "fhi-aims":
+    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
         distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
             verbose=verbose
         )
@@ -942,7 +961,7 @@ def parse(defect, all, path, code):
     help="Name of defect to analyse",
     type=str,
     default=None,
-    )
+)
 @click.option(
     "--all",
     "-a",
@@ -1047,7 +1066,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     default=None,
 )
 @click.option(
-    "--all", "-a",
+    "--all",
+    "-a",
     help="Analyse all defects present in specified directory",
     default=False,
     is_flag=True,
