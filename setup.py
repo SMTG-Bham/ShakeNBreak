@@ -64,5 +64,5 @@ setup(
             "shakenbreak-regenerate = shakenbreak.cli:regenerate",
         ],
     },
-    scripts=["shakenbreak/bash_scripts/*"],
+    # scripts=["shakenbreak/bash_scripts/*"],
 )
