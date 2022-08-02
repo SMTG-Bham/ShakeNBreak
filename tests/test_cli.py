@@ -1457,10 +1457,19 @@ local_rattle: False
                 catch_exceptions=False,
             )
         if w:
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertEqual(
-                f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist",
-                str(w[0].message),
+            self.assertTrue(
+                any(
+                    [
+                        war.category == UserWarning for war in w
+                    ]
+                )
+            )
+            self.assertTrue(
+                any([
+                    f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"
+                    == str(war.message)
+                    for war in w
+                ])
             )
         self.assertIn(
             f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
