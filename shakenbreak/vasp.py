@@ -1,10 +1,13 @@
 import os
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 from typing import TYPE_CHECKING
-from monty.io import zopen
-from monty.serialization import loadfn
 import warnings
 import functools
+import numpy as np
+
+from monty.io import zopen
+from monty.serialization import loadfn
+from monty.os.path import zpath
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -28,6 +31,7 @@ default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml"
 default_incar_settings = loadfn(
     os.path.join(MODULE_DIR, "../input_files/incar.yaml")
 )
+defect_config = loadfn(os.path.join(MODULE_DIR, "../input_files/DefectSet.yaml"))
 
 
 def _check_psp_dir(): # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
@@ -166,7 +170,7 @@ class DefectRelaxSet(MPRelaxSet):
     def __init__(self, structure, **kwargs):
         charge = kwargs.pop('charge', 0)
         user_incar_settings = kwargs.get('user_incar_settings', {})
-        defect_settings = deepcopy(CONFIG['defect'])
+        defect_settings = deepcopy(defect_config['defect'])
         defect_settings.update(user_incar_settings)
         kwargs['user_incar_settings'] = defect_settings
 
