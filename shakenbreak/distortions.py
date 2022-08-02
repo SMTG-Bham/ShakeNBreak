@@ -362,6 +362,7 @@ def _local_mc_rattle_displacements(
                     scale_stdev(rattle_std, dist_defect_to_nn, dist_defect_to_i),
                     3,
                 ) # displacement tails off with distance from defect
+                print("Index", i, "Distance", dist_defect_to_i, "Displ.", delta_disp)
                 atoms_rattle.positions[i] += delta_disp
                 disp_i = atoms_rattle.positions[i] - reference_positions[i]
 
