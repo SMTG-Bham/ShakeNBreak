@@ -4,7 +4,7 @@
 Main features include:
 1. Defect structure generation:
    * Automatised generation of distorted structures for all input defects
-   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
+   * Optionally, the input files to run geometry optimisations with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
 2. Analysis:
    * Parsing of the geometry relaxation results
    * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified
@@ -53,7 +53,6 @@ ShakeNBreak is made available under the MIT License.
 * [Pymatgen](https://pymatgen.org/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)
-* [Doped](https://github.com/SMTG-UCL/doped)
 * [Numpy](https://numpy.org/)
 * [Matplotlib](https://matplotlib.org/)
 * [Pandas](https://pandas.pydata.org/)

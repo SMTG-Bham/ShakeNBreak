@@ -24,9 +24,12 @@ setup(
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
-    author_email="irea.lois.20@ucl.ac.uk",
-    packages=find_packages(),
+    author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
+    maintainer_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    url="https://github.com/SMTG-UCL/ShakeNBreak",
     license="MIT",
+    packages=find_packages(),
     install_requires=[
         "numpy",
         "pymatgen",
