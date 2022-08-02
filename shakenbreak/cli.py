@@ -333,7 +333,7 @@ def parse_energies(
         if outcar:
             if _match(outcar, "required accuracy"):  # check if ionic relaxation is converged
                 energy = _match(
-                    outcar, "energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
+                    outcar, r"energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
                 )[0][0][0] # Energy of first match
         return energy, outcar
 
@@ -345,7 +345,7 @@ def parse_energies(
         if outcar:
             energy_in_Ry = _match(
                 outcar,
-                "!    total energy\s+=\s+([\d\-\.]+)"
+                r"!    total energy\s+=\s+([\d\-\.]+)"
             )
             if energy_in_Ry:
                 # Energy of first match, in Rydberg
@@ -359,7 +359,7 @@ def parse_energies(
             outcar = os.path.join(defect_dir, dist, filename)
         if outcar and _match(outcar, "GEOMETRY OPTIMIZATION COMPLETED"):  # check if ionic relaxation is converged
             energy_in_Ha = _match(
-                outcar, "Total energy:\s+([\d\-\.]+)"
+                outcar, r"Total energy:\s+([\d\-\.]+)"
             )
             if energy_in_Ha:
                 # Energy of first match in Hartree
@@ -378,7 +378,7 @@ def parse_energies(
             # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
             # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/blob/master/test/examples/TiO2-geom.castep
             energy = _match(
-                outcar, "Final Total Energy\s+([\d\-\.]+)"
+                outcar, r"Final Total Energy\s+([\d\-\.]+)"
             )[0][0][0] # Energy of first match in eV
         return energy, outcar
 
@@ -393,7 +393,7 @@ def parse_energies(
             # and https://gitlab.com/fhi-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
             energy = _match(
                 outcar,
-                "\| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+:\s+([\d\-\.]+)"
+                r"\| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+:\s+([\d\-\.]+)"
             )
             if energy:
                 energy = energy[0][0][0] # Energy of first match in eV
