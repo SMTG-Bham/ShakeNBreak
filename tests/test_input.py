@@ -12,10 +12,7 @@ from pymatgen.io.vasp.inputs import Poscar
 
 from ase.calculators.aims import Aims
 
-from doped import vasp_input
-
-from shakenbreak import input, io, distortions
-
+from shakenbreak import input, io, distortions, vasp
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -594,7 +591,7 @@ class InputTestCase(unittest.TestCase):
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
-        vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
+        vasp_defect_inputs = vasp.prepare_vasp_defect_inputs(
             copy.deepcopy(self.cdte_defect_dict)
         )
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
@@ -609,7 +606,7 @@ class InputTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=io.default_incar_settings,
+            incar_settings=vasp.default_incar_settings,
         )
         V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
@@ -628,7 +625,7 @@ class InputTestCase(unittest.TestCase):
             "LWAVE": True,
             "LCHARG": True,
         }
-        kwarged_incar_settings = io.default_incar_settings.copy()
+        kwarged_incar_settings = vasp.default_incar_settings.copy()
         kwarged_incar_settings.update(kwarg_incar_settings)
         input._create_vasp_input(
             "vac_1_Cd_0",
