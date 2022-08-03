@@ -691,6 +691,55 @@ class Distortions:
     """
     Class to apply rattle and bond distortion to all defects in `defects_dict`
     (in `doped` `ChargedDefectsStructures()` format).
+
+    Args:
+            defects_dict (:obj:`dict`):
+                Dictionary of defects as generated with `doped`
+                `ChargedDefectsStructures()`
+            oxidation_states (:obj:`dict`):
+                Dictionary of oxidation states for species in your material,
+                used to determine the number of defect neighbours to distort
+                (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
+                states will be guessed based on the bulk composition and most
+                common oxidation states of any extrinsic species.
+            dict_number_electrons_user (:obj:`dict`):
+                Optional argument to set the number of extra/missing charge
+                (negative of electron count change) for the input defects
+                in their neutral state, as a dictionary with format
+                {'defect_name': charge_change} where charge_change is the
+                negative of the number of extra/missing electrons.
+                (Default: None)
+            distortion_increment (:obj:`float`):
+                Bond distortion increment. Distortion factors will range from
+                0 to +/-0.6, in increments of `distortion_increment`.
+                Recommended values: 0.1-0.3
+                (Default: 0.1)
+            bond_distortions (:obj:`list`):
+                List of bond distortions to apply to nearest neighbours,
+                instead of the default set (e.g. [-0.5, 0.5]).
+                (Default: None)
+            local_rattle (:obj:`bool`):
+                Whether to apply random displacements that tail off as we move
+                away from the defect site. Recommended as it is often faster than
+                the full rattle (requires less ionic relaxation steps). If False,
+                all supercell sites are rattled with the same amplitude (full ratlle).
+                (Default: True)
+            stdev (:obj:`float`):
+                Standard deviation (in Angstroms) of the Gaussian distribution
+                from which random atomic displacement distances are drawn during
+                rattling. Recommended values: 0.25, or 0.15 for strongly-bound
+                /ionic materials.
+                (Default: 0.25)
+            distorted_elements (:obj:`dict`):
+                Optional argument to specify the neighbouring elements to
+                distort for each defect, in the form of a dictionary with
+                format {'defect_name': ['element1', 'element2', ...]}
+                (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
+                the defect are chosen.
+                (Default: None)
+            **kwargs:
+                Additional keyword arguments to pass to `hiphive`'s
+                `mc_rattle` function.
     """
 
     def __init__(
@@ -756,7 +805,6 @@ class Distortions:
                 Additional keyword arguments to pass to `hiphive`'s
                 `mc_rattle` function.
         """
-
         self.defects_dict = defects_dict
         self.oxidation_states = oxidation_states
         self.distorted_elements = distorted_elements

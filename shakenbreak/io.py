@@ -249,7 +249,7 @@ def parse_structure(
     Args:
         code (:obj:`str`):
             Code used for geometry optimizations. Valid code names are:
-            "vasp", "espresso", "cp2k" and "fhi-aims" (case insensitive).
+            "vasp", "espresso", "cp2k", "castep" and "fhi-aims" (case insensitive).
         structure_path (:obj:`str`):
             Path to directory containing the structure file.
         structure_filename (:obj:`str`):
