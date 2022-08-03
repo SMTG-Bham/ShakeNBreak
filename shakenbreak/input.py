@@ -756,6 +756,7 @@ class Distortions:
     ):
         """
         Setup the distortion parameters
+
         Args:
             defects_dict (:obj:`dict`):
                 Dictionary of defects as generated with `doped`
@@ -1094,9 +1095,11 @@ class Distortions:
         """
         Write metadata to file. If the file already exists, it will be
         renamed to distortion_metadata_datetime.json and updated with new metadata.
+
         Args:
             output_path (:obj:`str`):
                 Path to directory where the metadata file will be written.
+
         Returns:
             None
         """
@@ -1112,16 +1115,18 @@ class Distortions:
     ) -> Tuple[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in `defect_dict`
-        (in `doped` `ChargedDefectsStructures()` format).
+        (in `doped ChargedDefectsStructures()` format).
         Returns a dictionary with the distorted (and undistorted) structures
         for each charge state of each defect.
         If file generation is desired, instead use the methods
         `write_<code>_files()`.
+
         Args:
             verbose (:obj:`bool`):
-                Whether to print distortion information (bond atoms and
-                distances) for each charged defect.
+                Whether to print distortion information (bond atoms and distances)
+                for each charged defect.
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of:

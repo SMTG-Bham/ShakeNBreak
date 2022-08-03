@@ -174,7 +174,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
             produced by `get_energies()` or `_sort_data`.
 
     Returns:
-        (:obj:`tuple`):
+        :obj:`tuple`:
             (Energies dictionary, Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
@@ -366,7 +366,7 @@ def analyse_structure(
     Analyse the local distortion of the input defect structure. Requires
     access to the distortion_metadata.json file generated with
     ShakeNBreak to read info about defect site. If lacking this,
-    can alternatively use `analyse_defect_site`.
+    can alternatively use `analyse_defect_site()`.
 
     Args:
         defect_species (:obj:`str`):
@@ -441,6 +441,7 @@ def get_structures(
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
+
     Returns:
         :obj:`dict`:
             Dictionary of bond distortions and corresponding final structures.
@@ -881,6 +882,7 @@ def get_homoionic_bonds(
             Defaults to 3.3 A.
         verbose (:obj:`bool`, optional):
             Whether or not to print the list of homoionic bonds.
+
     Returns:
         :obj:`dict`:
             dictionary with homoionic bonds, matching site to the
@@ -942,6 +944,7 @@ def _site_magnetizations(
     """
     Prints sites with magnetization above threshold.
     Only implemented for vasp calculations.
+
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
             Outcar object
@@ -1007,6 +1010,7 @@ def get_site_magnetizations(
     """
     For given distortions, find sites with significant magnetization and
     return as dictionary. Only implemented for VASP calculations.
+
     Args:
         defect_species (:obj:`str`):
             Name of defect including charge state (e.g. 'vac_1_Cd_0')
@@ -1032,6 +1036,7 @@ def get_site_magnetizations(
             (Default: False)
         verbose (bool, optional):
             Whether to print verbose output.
+
     Returns:
         :obj:`dict`:
             Dictionary matching distortion to DataFrame containing
