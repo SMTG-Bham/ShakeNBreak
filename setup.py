@@ -47,6 +47,8 @@ setup(
             "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
         ],
         "docs": [
+            "sphinx",
+            "sphinx_rtd_theme",
             "sphinx_mdinclude",
         ],
     },
