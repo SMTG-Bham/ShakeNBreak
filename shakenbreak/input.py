@@ -265,7 +265,7 @@ def _most_common_oxi(element) -> int:
     return most_common.oxi_state
 
 
-def calc_number_electrons(
+def _calc_number_electrons(
     defect_dict: dict,
     oxidation_states: dict,
     verbose: bool = False,
@@ -329,7 +329,7 @@ def calc_number_electrons(
     return int(-num_electrons)
 
 
-def calc_number_neighbours(num_electrons: int) -> int:
+def _calc_number_neighbours(num_electrons: int) -> int:
     """
     Calculate the number of neighbours to distort based off the number of
     extra/missing electrons. An octet rule approach is used; if the electron
@@ -352,7 +352,9 @@ def calc_number_neighbours(num_electrons: int) -> int:
     return abs(num_neighbours)
 
 
-def apply_rattle_bond_distortions(
+# Main functions
+
+def _apply_rattle_bond_distortions(
     defect_dict: dict,
     num_nearest_neighbours: int,
     distortion_factor: float,
@@ -600,7 +602,7 @@ def apply_snb_distortions(
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
-            bond_distorted_defect = apply_rattle_bond_distortions(
+            bond_distorted_defect = _apply_rattle_bond_distortions(
                 defect_dict=defect_dict,
                 num_nearest_neighbours=num_nearest_neighbours,
                 distortion_factor=distortion_factor,
@@ -893,7 +895,7 @@ class Distortions:
         if dict_number_electrons_user:
             number_electrons = dict_number_electrons_user[defect_name]
         else:
-            number_electrons = calc_number_electrons(defect, oxidation_states)
+            number_electrons = _calc_number_electrons(defect, oxidation_states)
 
         _bold_print(f"\nDefect: {defect_name}")
         if number_electrons < 0:
@@ -921,7 +923,7 @@ class Distortions:
         num_electrons_charged_defect = (
             number_electrons + charge
         )  # negative if extra e-, positive if missing e-
-        num_nearest_neighbours = calc_number_neighbours(
+        num_nearest_neighbours = _calc_number_neighbours(
             num_electrons_charged_defect
         )  # Number of distorted neighbours for each charge state
         print(
