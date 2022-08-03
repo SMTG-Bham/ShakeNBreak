@@ -1,3 +1,14 @@
 sphinx
 sphinx_rtd_theme
 sphinx-mdinclude
+sphinx_autodoc
+sphinx.ext.autodoc
+numpy
+pymatgen
+ase
+matplotlib
+pandas
+seaborn
+hiphive
+monty
+click
