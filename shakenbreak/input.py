@@ -1049,6 +1049,8 @@ class Distortions:
         Args:
             output_path (:obj:`str`):
                 Path to directory where the metadata file will be written.
+        Returns:
+            None
         """
         _write_distortion_metadata(
             new_metadata=self.distortion_metadata,

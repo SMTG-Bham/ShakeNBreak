@@ -362,9 +362,10 @@ def prepare_vasp_defect_inputs(defects: dict) -> dict:
             Dictionary of defect-object-dictionaries from PyCDT's
             ChargedDefectsStructures class (see example notebook)
     Returns:
-        Dictionary mapping each defect to a dictionary with defect
-        information ("Defect Structure", "Poscar Comment",
-        "Transformation Dict")
+        :obj:`dict`:
+            Dictionary mapping each defect to a dictionary with defect
+            information ("Defect Structure", "Poscar Comment",
+            "Transformation Dict")
     """
     defect_input_dict = {}
     comb_defs = functools.reduce(

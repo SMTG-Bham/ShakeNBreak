@@ -22,3 +22,4 @@ Submodules
   shakenbreak.plotting
   shakenbreak.energy_lowering_distortions
   shakenbreak.vasp
+  shakenbreak.cli

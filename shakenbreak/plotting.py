@@ -721,7 +721,7 @@ def plot_all_defects(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        (:obj:`dict`):
+        :obj:`dict`:
             Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
 
     """
@@ -872,7 +872,7 @@ def plot_defect(
             Format to save the plot as.
             (Default: "svg")
     Returns:
-        (:obj:`mpl.figure.Figure`):
+        :obj:`mpl.figure.Figure`:
             Energy vs distortion plot, as a mpl.figure.Figure object
     """
     # Ensure necessary directories exist, and raise error if not
@@ -1044,7 +1044,7 @@ def plot_colorbar(
             (Default: 'svg')
 
     Returns:
-        (:obj:`mpl.figure.Figure`):
+        :obj:`mpl.figure.Figure`:
             Energy vs distortion plot with colorbar for structural similarity,
             as a mpl.figure.Figure object
     """
@@ -1243,7 +1243,7 @@ def plot_datasets(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        (:obj:`mpl.figure.Figure`):
+        :obj:`mpl.figure.Figure`:
             Energy vs distortion plot for multiple datasets,
             as a mpl.figure.Figure object
     """
