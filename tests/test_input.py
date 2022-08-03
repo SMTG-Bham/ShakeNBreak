@@ -228,7 +228,7 @@ class InputTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
-        """Test calc_number_electrons function"""
+        """Test _calc_number_electrons function"""
         oxidation_states = {"Cd": +2, "Te": -2}
         for defect, electron_change in [
             ("vac_1_Cd", -2),
@@ -247,14 +247,14 @@ class InputTestCase(unittest.TestCase):
                     for i in defect_list:
                         if i["name"] == defect:
                             self.assertEqual(
-                                input.calc_number_electrons(
+                                input._calc_number_electrons(
                                     i,
                                     oxidation_states,
                                     verbose=False,  # test non-verbose
                                 ),
                                 -electron_change,  # returns negative of electron change
                             )
-                            input.calc_number_electrons(
+                            input._calc_number_electrons(
                                 i, oxidation_states, verbose=True
                             )
                             mock_print.assert_called_with(
@@ -264,20 +264,20 @@ class InputTestCase(unittest.TestCase):
                             )
 
     def test_calc_number_neighbours(self):
-        """Test calc_number_neighbours function"""
-        self.assertEqual(input.calc_number_neighbours(0), 0)
-        self.assertEqual(input.calc_number_neighbours(-2), 2)
-        self.assertEqual(input.calc_number_neighbours(2), 2)
-        self.assertEqual(input.calc_number_neighbours(6), 2)
-        self.assertEqual(input.calc_number_neighbours(-6), 2)
-        self.assertEqual(input.calc_number_neighbours(8), 0)
-        self.assertEqual(input.calc_number_neighbours(-8), 0)
-        self.assertEqual(input.calc_number_neighbours(4), 4)
-        self.assertEqual(input.calc_number_neighbours(-4), 4)
+        """Test _calc_number_neighbours function"""
+        self.assertEqual(input._calc_number_neighbours(0), 0)
+        self.assertEqual(input._calc_number_neighbours(-2), 2)
+        self.assertEqual(input._calc_number_neighbours(2), 2)
+        self.assertEqual(input._calc_number_neighbours(6), 2)
+        self.assertEqual(input._calc_number_neighbours(-6), 2)
+        self.assertEqual(input._calc_number_neighbours(8), 0)
+        self.assertEqual(input._calc_number_neighbours(-8), 0)
+        self.assertEqual(input._calc_number_neighbours(4), 4)
+        self.assertEqual(input._calc_number_neighbours(-4), 4)
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
-        """Test apply_rattle_bond_distortions function for V_Cd"""
-        V_Cd_distorted_dict = input.apply_rattle_bond_distortions(
+        """Test _apply_rattle_bond_distortions function for V_Cd"""
+        V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
@@ -309,8 +309,8 @@ class InputTestCase(unittest.TestCase):
         )
 
     def test_apply_rattle_bond_distortions_Int_Cd_2(self):
-        """Test apply_rattle_bond_distortions function for Int_Cd_2"""
-        Int_Cd_2_distorted_dict = input.apply_rattle_bond_distortions(
+        """Test _apply_rattle_bond_distortions function for Int_Cd_2"""
+        Int_Cd_2_distorted_dict = input._apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
@@ -348,9 +348,9 @@ class InputTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_apply_rattle_bond_distortions_kwargs(self, mock_print):
-        """Test apply_rattle_bond_distortions function with all possible kwargs"""
+        """Test _apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
-        Int_Cd_2_distorted_dict = input.apply_rattle_bond_distortions(
+        Int_Cd_2_distorted_dict = input._apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=10,
             distortion_factor=0.4,
@@ -397,7 +397,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
 
-        V_Cd_kwarg_distorted_dict = input.apply_rattle_bond_distortions(
+        V_Cd_kwarg_distorted_dict = input._apply_rattle_bond_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
@@ -526,7 +526,7 @@ class InputTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_apply_snb_distortions_kwargs(self, mock_print):
-        """Test apply_rattle_bond_distortions function with all possible kwargs"""
+        """Test _apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
             self.Int_Cd_2_dict,
