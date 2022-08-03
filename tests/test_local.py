@@ -22,6 +22,7 @@ from click.testing import CliRunner
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
+from monty.serialization import dumpfn
 from doped import vasp_input
 
 from shakenbreak.cli import snb
@@ -415,8 +416,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
         wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.txt", "w") as f:
-            f.write("")
+        dumpfn({}, f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -446,7 +446,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         self.tearDown()
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
@@ -492,7 +492,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "txt" in file]
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Compare figures
         compare_images(

@@ -17,11 +17,11 @@ from hiphive.structure_generation.rattle import *
 from hiphive.structure_generation.rattle import _probability_mc_rattle
 
 # format warnings output:
-def warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
-warnings.formatwarning = warning_on_one_line
+warnings.formatwarning = _warning_on_one_line
 
 
 def distort(
@@ -60,8 +60,8 @@ def distort(
             Whether to print distortion information. (Default: False)
 
     Returns:
-        Dictionary with distorted defect structure and the distortion parameters.
-        :rtype: object
+        :obj:`dict`:
+            Dictionary with distorted defect structure and the distortion parameters.
     """
     aaa = AseAtomsAdaptor()
     input_structure_ase = aaa.get_atoms(structure)
@@ -232,7 +232,8 @@ def rattle(
             (Default: 42)
 
     Returns:
-        Rattled pymatgen Structure object
+        :obj:`Structure`:
+            Rattled pymatgen Structure object
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
@@ -533,7 +534,8 @@ def local_mc_rattle(
             (Default: 42)
 
     Returns:
-        Rattled pymatgen Structure object
+        :obj:`Structure`:
+            Rattled pymatgen Structure object
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)

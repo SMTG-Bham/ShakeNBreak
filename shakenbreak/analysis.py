@@ -12,6 +12,8 @@ import warnings
 import pandas as pd
 import numpy as np
 
+from monty.serialization import loadfn
+
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -28,7 +30,7 @@ crystalNN = CrystalNN(
 )
 
 # format warnings output:
-def warning_on_one_line(
+def _warning_on_one_line(
     message,
     category,
     filename,
@@ -39,11 +41,11 @@ def warning_on_one_line(
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
-warnings.formatwarning = warning_on_one_line
+warnings.formatwarning = _warning_on_one_line
 
 # using stackoverflow.com/questions/15411967/
 # how-can-i-check-if-code-is-executed-in-the-ipython-notebook
-def isipython():
+def _isipython():
     try:
         get_ipython().__class__.__name__
         return True
@@ -51,11 +53,11 @@ def isipython():
         return False  # Probably standard Python interpreter
 
 
-if isipython():
+if _isipython():
     from IPython.display import display
 
 
-class HiddenPrints:
+class _HiddenPrints:
     # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -158,60 +160,7 @@ def _format_distortion_names(
     return distortion
 
 
-def _open_file(path: str) -> list:
-    """Open file and return list of file lines as strings"""
-    if os.path.isfile(path):
-        with open(path) as ff:
-            read_file = ff.read()
-            distortion_list = read_file.splitlines()
-        return distortion_list
-    else:
-        print(f"Path {path} does not exist")
-        return []
-
-
-# TODO: Update docstrings here when we implement CLI parsing functions to
-# generate this output file:
-def _organize_data(distortion_list: list) -> dict:
-    """
-    Create a dictionary mapping distortion factors to final energies.
-
-    Args:
-        distortion_list (:obj:`list`):
-            List of lines in bond distortion output summary file,
-            obtained using `parse_SnB` (which specifies bond distortions
-            and corresponding energies).
-
-    Returns:
-        Sorted dictionary of bond distortions and corresponding final
-        energies.
-    """
-    defect_energies_dict = {"distortions": {}}
-    for i in range(len(distortion_list) // 2):
-        i *= 2
-        key = _format_distortion_names(distortion_list[i])
-        if isinstance(key, str) and "Unperturbed" in key:
-            defect_energies_dict["Unperturbed"] = float(distortion_list[i + 1])
-        else:
-            defect_energies_dict["distortions"][key] = float(distortion_list[i + 1])
-
-    # Order dict items by key (e.g. from -0.6 to 0 to +0.6):
-    sorted_energies_dict = {
-        "distortions": dict(
-            sorted(
-                defect_energies_dict["distortions"].items(),
-                key=lambda k: (0, k[0]) if isinstance(k[0], float) else (1, k[0]),
-                # to deal with list of both floats and strings
-                # (https://www.geeksforgeeks.org/sort-mixed-list-in-python/)
-            )
-        )
-    }
-    if "Unperturbed" in defect_energies_dict:
-        sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
-    return sorted_energies_dict
-
-
-def get_gs_distortion(defect_energies_dict: dict):
+def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     """
     Calculate energy difference between `Unperturbed` structure and
     lowest energy distortion. Returns the energy (in eV) and bond
@@ -222,10 +171,11 @@ def get_gs_distortion(defect_energies_dict: dict):
     Args:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by `_organize_data()`.
+            produced by `get_energies()` or `_sort_data`.
 
     Returns:
-        (Energy difference, ground state bond distortion)
+        (:obj:`tuple`):
+            (Energies dictionary, Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
@@ -275,8 +225,9 @@ def _sort_data(energies_file: str, verbose: bool = True):
 
     Args:
         energies_file (:obj:`str`):
-            Path to txt file with bond distortions and final energies
-            (in eV), obtained using `parse_SnB`.
+            Path to `yaml` file with bond distortions and final energies
+            (in eV), obtained using the CLI command `snb-parse` or the
+            function `parse_energies()`.
         verbose (:obj:`bool`):
             Whether to print information about energy lowering
             distortions, if found.
@@ -292,11 +243,16 @@ def _sort_data(energies_file: str, verbose: bool = True):
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
-    defect_energies_dict = _organize_data(_open_file(energies_file))
+    # Parse dictionary from file
+    if os.path.exists(energies_file):
+        defect_energies_dict = loadfn(energies_file)
+    else:
+        warnings.warn(f"Path {energies_file} does not exist")
+        return None, None, None
     if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
-    elif len(defect_energies_dict["distortions"]) == 0 \
+    if len(defect_energies_dict["distortions"]) == 0 \
     and "Unperturbed" in defect_energies_dict:
         # no parsed distortion results but Unperturbed present
         warnings.warn(
@@ -305,7 +261,7 @@ def _sort_data(energies_file: str, verbose: bool = True):
         return None, None, None
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
-    defect_name = energies_file.split("/")[-1].split(".txt")[0]
+    defect_name = energies_file.split("/")[-1].split(".yaml")[0]
     if verbose:
         if energy_diff and energy_diff < -0.1:
             print(
@@ -348,8 +304,9 @@ def analyse_defect_site(
             (Default: None)
 
     Returns:
-        Tuple of coordination analysis and bond length DataFrames,
-        respectively.
+        :obj:`tuple`:
+            Tuple of coordination analysis and bond length DataFrames,
+            respectively.
     """
     # get defect site
     struct = deepcopy(structure)
@@ -378,7 +335,7 @@ def analyse_defect_site(
             "Local order parameters (i.e. resemblance to given structural motif, "
             f"via CrystalNN):"
         )
-        if isipython():
+        if _isipython():
             display(pd.DataFrame(coord_list))  # display in Jupyter notebook
     # Bond Lengths:
     bond_lengths = []
@@ -391,7 +348,7 @@ def analyse_defect_site(
         )
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
-    if isipython():
+    if _isipython():
         display(bond_length_df)
         print()  # spacing
     if coordination is not None:
@@ -421,8 +378,9 @@ def analyse_structure(
             (Default: '.', current directory)
 
     Returns:
-        Tuple of coordination analysis and bond length DataFrames,
-        respectively.
+        :obj:`tuple`:
+            Tuple of coordination analysis and bond length DataFrames,
+            respectively.
     """
     defect_name_without_charge = defect_species.rsplit("_", 1)[0]
 
@@ -484,7 +442,8 @@ def get_structures(
             Name of the file containing the structure.
             (Default: CONTCAR)
     Returns:
-        Dictionary of bond distortions and corresponding final structures.
+        :obj:`dict`:
+            Dictionary of bond distortions and corresponding final structures.
     """
     defect_structures_dict = {}
     if (
@@ -584,9 +543,10 @@ def get_energies(
             (Default: True)
 
     Returns:
-        Dictionary matching bond distortions to final energies in eV.
+        :obj:`dict`:
+            Dictionary matching bond distortions to final energies in eV.
     """
-    energy_file_path = f"{output_path}/{defect_species}/{defect_species}.txt"
+    energy_file_path = f"{output_path}/{defect_species}/{defect_species}.yaml"
     if not os.path.isfile(energy_file_path):
         raise FileNotFoundError(f"File {energy_file_path} not found!")
     defect_energies_dict, _e_diff, gs_distortion = _sort_data(
@@ -640,7 +600,7 @@ def _calculate_atomic_disp(
             (Default: 0.5)
 
     Returns:
-        tuple(:obj:`tuple`):
+        :obj:`tuple`:
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
@@ -702,7 +662,7 @@ def calculate_struct_comparison(
             displacements sum (in Å, default 0.1 Å).
 
     Returns:
-        disp_dict (:obj:`dict`, optional):
+        :obj:`dict`, optional:
             Dictionary matching bond distortions to structure
             comparison metric (disp or max_dist).
     """
@@ -736,9 +696,11 @@ def calculate_struct_comparison(
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
     for distortion in list(defect_structures_dict.keys()):
-        if defect_structures_dict[distortion] != "Not converged":
+        if defect_structures_dict[distortion] == "Not converged":
+            disp_dict[distortion] = "Not converged"  # Structure not converged
+        else:
             try:
-                norm_rms_disp, norm_dist = _calculate_atomic_disp(
+                _, norm_dist = _calculate_atomic_disp(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
                     stol=stol,
@@ -767,8 +729,7 @@ def calculate_struct_comparison(
                     f"pymatgen StructureMatcher could not match lattices between "
                     f"{ref_name} and {distortion} structures."
                 )
-        else:
-            disp_dict[distortion] = "Not converged"  # Structure not converged
+
 
     return disp_dict
 
@@ -821,9 +782,10 @@ def compare_structures(
             interactively in Jupyter/Ipython (Default: True).
 
     Returns:
-        DataFrame containing structural comparison results (summed
-        normalised atomic displacement and maximum distance between
-        matched atomic sites), and relative energies.
+        :obj:`pd.DataFrame`:
+            DataFrame containing structural comparison results (summed
+            normalised atomic displacement and maximum distance between
+            matched atomic sites), and relative energies.
     """
     if all(
         [
@@ -845,7 +807,7 @@ def compare_structures(
         stol=stol,
         min_dist=min_dist,
     )
-    with HiddenPrints():  # only print "Comparing to..." once
+    with _HiddenPrints():  # only print "Comparing to..." once
         max_dist_dict = calculate_struct_comparison(
             defect_structures_dict,
             metric="max_dist",
@@ -895,7 +857,7 @@ def compare_structures(
             f"\u0394 Energy ({units})",  # Delta
         ],
     )
-    if isipython() and display_df:
+    if _isipython() and display_df:
         display(struct_comparison_df)
     return struct_comparison_df
 
@@ -920,9 +882,10 @@ def get_homoionic_bonds(
         verbose (:obj:`bool`, optional):
             Whether or not to print the list of homoionic bonds.
     Returns:
-        dict: dictionary with homoionic bonds, matching site to the
-        homoionic neighbours and distances (A) (e.g.
-        {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
+        :obj:`dict`:
+            dictionary with homoionic bonds, matching site to the
+            homoionic neighbours and distances (A) (e.g.
+            {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
     """
     structure = structure.copy()
     if Element(element) not in structure.composition.elements:
@@ -993,7 +956,7 @@ def _site_magnetizations(
             to False (faster).
             (Default: False)
     Returns:
-        df (:obj:`pandas.DataFrame`):
+        :obj:`pandas.DataFrame`:
             pandas.Dataframe with sites with magnetization above threshold.
     """
     # Site magnetizations
@@ -1070,7 +1033,7 @@ def get_site_magnetizations(
         verbose (bool, optional):
             Whether to print verbose output.
     Returns:
-        magnetizations (:obj:`dict`):
+        :obj:`dict`:
             Dictionary matching distortion to DataFrame containing
             magnetization info.
     """

@@ -1,0 +1,12 @@
+sphinx
+sphinx_rtd_theme
+sphinx-mdinclude
+numpy
+pymatgen
+ase
+matplotlib
+pandas
+seaborn
+hiphive
+monty
+click
