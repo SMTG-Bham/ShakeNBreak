@@ -139,3 +139,6 @@ dmypy.json
 Affinity/
 .vscode/settings.json
 shakenbreak/.vscode/settings.json
+
+# Sourcery
+.sourcery.yaml

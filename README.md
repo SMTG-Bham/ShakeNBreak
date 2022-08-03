@@ -1,19 +1,25 @@
 # `shakenbreak`
 `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
 
-Main feautures include:
+Main features include:
 1. Defect structure generation:
-   * Automatised generation of distorted structures for all input defects.
-   * Optionally, the input files for several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders.
+   * Automatised generation of distorted structures for all input defects
+   * Optionally, the input files to run geometry optimisations with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
 2. Analysis:
-   * Parsing of the geometry relaxation results.
-   * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified.
-   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion.
-   * Magnetisation analysis (currently only supported for `VASP`).
+   * Parsing of the geometry relaxation results
+   * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified
+   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion
+   * Magnetisation analysis (currently only supported for `VASP`)
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
 ## Installation
+ShakeNBreak can be installed using `pip`:
+```bash
+  pip install --user shakenbreak
+```
+### Developer installation
+For development work, ShakeNBreak can also be installed from a copy of the source directory:
 1. Download `ShakeNBreak` source code using the command:
 ```bash
   git clone https://github.com/SMTG-UCL/ShakeNBreak
@@ -35,15 +41,18 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s).
 
 ## Usage
-ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`.
 
+### Python API
+ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2FShakeNBreak_Example_Workflow.ipynb).
+
+### Command line interface
 Alternatively, the code can be used via the command line. The scripts provided include:
-* `snb-generate`: Generate distorted structures for a given defect.
-* `snb-generate_all`: Generates distorted structures for all defects present int the specified/current directory.
-* `snb-parse`: Parse the results of the geometry relaxations and write them to a file.
-* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations.
-* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colobar to quantify structural differences.
-* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect.
+* `snb-generate`: Generate distorted structures for a given defect
+* `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
+* `snb-parse`: Parse the results of the geometry relaxations and write them to a file
+* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
+* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
+* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
 
 ## License
 ShakeNBreak is made available under the MIT License.
@@ -53,7 +62,6 @@ ShakeNBreak is made available under the MIT License.
 * [Pymatgen](https://pymatgen.org/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)
-* [Doped](https://github.com/SMTG-UCL/doped)
 * [Numpy](https://numpy.org/)
 * [Matplotlib](https://matplotlib.org/)
 * [Pandas](https://pandas.pydata.org/)
@@ -65,7 +73,7 @@ ShakeNBreak is made available under the MIT License.
 
 ### Bugs reports, feature requests and questions
 Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
-Contributions to extend this package are welcome! Please use the ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow to do so and follow the [`PEP8`](https://peps.python.org/pep-0008/) style guidelines.
+Contributions to extend this package are welcome! Please use the ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
 
 ### Tests
 Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).

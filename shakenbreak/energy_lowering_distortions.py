@@ -1,5 +1,5 @@
 """
-Functions to apply energy lowering distortions found for a certain defect
+Module to apply energy lowering distortions found for a certain defect
 species (charge state) to other charge states of that defect.
 """
 import copy
@@ -69,7 +69,8 @@ def read_defects_directories(output_path: str = "./") -> dict:
             (Default is current directory = "./")
 
     Returns:
-        Dictionary with defect names and charge states.
+        :obj:`dict`:
+            Dictionary with defect names and charge states.
     """
     list_subdirectories = [  # Get only subdirectories in the current directory
         i
@@ -154,7 +155,7 @@ def get_energy_lowering_distortions(
             Whether to write input files for the identified distortions
             (Default: False)
     Returns:
-        low_energy_defects (:obj:`dict`):
+        :obj:`dict`:
             Dictionary of defects for which bond distortion found an
             energy-lowering distortion (which is missed with normal
             unperturbed relaxation), of the form {defect: [list of
@@ -183,7 +184,7 @@ def get_energy_lowering_distortions(
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
-            energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
+            energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             energies_dict, energy_diff, gs_distortion = _sort_data(
                 energies_file, verbose=verbose
             )
@@ -420,12 +421,13 @@ def compare_struct_to_distortions(
             orderto consider them not matching (in Å, default = 0.2 Å).
 
     Returns:
-        (True/False/None, matching structure, energy difference of the
-        matching structure compared to its unperturbed reference, bond
-        distortion of the matching structure). True if a match is found
-        between the input structure and the relaxed bond-distorted
-        structures for `defect_species`, False if no match, None if no
-        converged structures found for defect_species.
+        :obj:`tuple`:
+            (True/False/None, matching structure, energy difference of the
+            matching structure compared to its unperturbed reference, bond
+            distortion of the matching structure). True if a match is found
+            between the input structure and the relaxed bond-distorted
+            structures for `defect_species`, False if no match, None if no
+            converged structures found for defect_species.
     """
     try:
         defect_structures_dict = get_structures(
@@ -961,7 +963,7 @@ def write_groundstate_structure(
     defect_charges_dict = read_defects_directories(output_path=output_path)
     for defect in defect_charges_dict:
         for charge in defect_charges_dict[defect]:
-            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.txt"
+            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
             _, _, gs_distortion = _sort_data(
                 energies_file=energies_file,
                 verbose=False

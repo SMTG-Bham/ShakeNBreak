@@ -684,7 +684,7 @@ def plot_all_defects(
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations and
-            distortion_metadata.txt
+            distortion_metadata.json file.
             (Default: current directory)
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between
@@ -721,7 +721,8 @@ def plot_all_defects(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
+        :obj:`dict`:
+            Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
 
     """
     if not os.path.isdir(output_path):  # check if output_path exists
@@ -747,7 +748,7 @@ def plot_all_defects(
                     f"Skipping {defect_species}."
                 )  # if defect directory doesn't exist, skip defect
                 continue
-            energies_file = f"{output_path}/{defect_species}/{defect_species}.txt"
+            energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             if not os.path.exists(energies_file):
                 warnings.warn(
                     f"Path {energies_file} does not exist. "
@@ -871,7 +872,8 @@ def plot_defect(
             Format to save the plot as.
             (Default: "svg")
     Returns:
-        Energy vs distortion plot, as a mpl.figure.Figure object
+        :obj:`mpl.figure.Figure`:
+            Energy vs distortion plot, as a mpl.figure.Figure object
     """
     # Ensure necessary directories exist, and raise error if not
     _verify_data_directories_exist(
@@ -1042,8 +1044,9 @@ def plot_colorbar(
             (Default: 'svg')
 
     Returns:
-        Energy vs distortion plot with colorbar for structural similarity,
-        as a mpl.figure.Figure object
+        :obj:`mpl.figure.Figure`:
+            Energy vs distortion plot with colorbar for structural similarity,
+            as a mpl.figure.Figure object
     """
     fig, ax = plt.subplots(1,1)
 
@@ -1240,8 +1243,9 @@ def plot_datasets(
             Format to save the plot as.
             (Default: 'svg')
     Returns:
-        Energy vs distortion plot for multiple datasets,
-        as a mpl.figure.Figure object
+        :obj:`mpl.figure.Figure`:
+            Energy vs distortion plot for multiple datasets,
+            as a mpl.figure.Figure object
     """
     # Validate input
     if len(datasets) != len(dataset_labels):

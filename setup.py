@@ -23,14 +23,16 @@ setup(
     version="0.2.4",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
-    author="Irea Mosquera, Seán Kavanagh",
-    author_email="irea.lois.20@ucl.ac.uk",
-    packages=find_packages(),
+    author="Irea Mosquera-Lois, Seán R. Kavanagh",
+    author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
+    maintainer_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    url="https://github.com/SMTG-UCL/ShakeNBreak",
     license="MIT",
+    packages=find_packages(),
     install_requires=[
-        "doped>=0.0.5",
         "numpy",
-        "pymatgen<2022.7.8", # version 2022.7.8 crashes
+        "pymatgen",
         "matplotlib",
         "ase",
         "pandas",
@@ -43,7 +45,12 @@ setup(
         "tests": [
             "pytest",
             "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
-        ]
+        ],
+        "docs": [
+            "sphinx",
+            "sphinx_rtd_theme",
+            "sphinx_mdinclude",
+        ],
     },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
@@ -65,4 +72,5 @@ setup(
             "shakenbreak-regenerate = shakenbreak.cli:regenerate",
         ],
     },
+    # scripts=["shakenbreak/bash_scripts/*"],
 )
