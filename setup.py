@@ -45,7 +45,10 @@ setup(
         "tests": [
             "pytest",
             "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
-        ]
+        ],
+        "docs": [
+            "sphinx_mdinclude",
+        ],
     },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
     include_package_data=True,
