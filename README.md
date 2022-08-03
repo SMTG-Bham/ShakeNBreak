@@ -14,6 +14,12 @@ Main features include:
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
 ## Installation
+ShakeNBreak can be installed using `pip`:
+```bash
+  pip install --user shakenbreak
+```
+### Developer installation
+For development work, ShakeNBreak can also be installed from a copy of the source directory:
 1. Download `ShakeNBreak` source code using the command:
 ```bash
   git clone https://github.com/SMTG-UCL/ShakeNBreak
@@ -35,8 +41,11 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s).
 
 ## Usage
-ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`.
 
+### Python API
+ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using `Binder`: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?labpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fmain%2FShakeNBreak_Example_Workflow.ipynb).
+
+### Command line interface
 Alternatively, the code can be used via the command line. The scripts provided include:
 * `snb-generate`: Generate distorted structures for a given defect
 * `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory

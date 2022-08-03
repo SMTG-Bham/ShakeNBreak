@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 
 from monty.serialization import loadfn
+
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Structure
@@ -170,10 +171,10 @@ def get_gs_distortion(defect_energies_dict: dict):
     Args:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by `_organize_data()`.
+            produced by `get_energies()` or `_sort_data`.
 
     Returns:
-        (Energy difference, ground state bond distortion)
+        (Energies dictionary, Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()

@@ -9,9 +9,7 @@ from monty.io import zopen
 from monty.serialization import loadfn
 from monty.os.path import zpath
 
-from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.io.vasp import Incar, Kpoints, Poscar
+from pymatgen.io.vasp import Incar, Kpoints
 from pymatgen.io.vasp.inputs import (
     PotcarSingle,
     Potcar,
@@ -61,7 +59,7 @@ def _check_psp_dir(): # Provided by Katarina Brlec, from github.com/SMTG-UCL/sur
 
 # Duplicated code from doped (from github.com/SMTG-UCL/doped)
 def _import_psp():
-    """import pmg settings for PotcarSingleMod"""
+    """import pmg settings for _PotcarSingleMod"""
     pmg_settings = None
     try:
         import pymatgen.settings
@@ -80,7 +78,7 @@ def _import_psp():
         return pmg_settings
 
 
-class PotcarSingleMod(PotcarSingle):
+class _PotcarSingleMod(PotcarSingle):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -123,15 +121,15 @@ class PotcarSingleMod(PotcarSingle):
             p = os.path.expanduser(p)
             p = zpath(p)
             if os.path.exists(p):
-                return PotcarSingleMod.from_file(p)
+                return _PotcarSingleMod.from_file(p)
         raise IOError(
             f"You do not have the right POTCAR with functional " +
             f"{functional} and label {symbol} in your VASP_PSP_DIR"
         )
 
 
-class PotcarMod(Potcar):
-
+class _PotcarMod(Potcar):
+    """"Modified Potcar class"""
     def __init__(self, **kwargs):
         super(self.__class__, self).__init__(**kwargs)
 
@@ -153,10 +151,10 @@ class PotcarMod(Potcar):
         del self[:]
         if sym_potcar_map:
             for el in symbols:
-                self.append(PotcarSingleMod(sym_potcar_map[el]))
+                self.append(_PotcarSingleMod(sym_potcar_map[el]))
         else:
             for el in symbols:
-                p = PotcarSingleMod.from_symbol_and_functional(el, functional)
+                p = _PotcarSingleMod.from_symbol_and_functional(el, functional)
                 self.append(p)
 
 
@@ -195,7 +193,7 @@ class DefectRelaxSet(MPRelaxSet):
         """
         Potcar object.
         """
-        return PotcarMod(symbols=self.potcar_symbols, functional=self.potcar_functional)
+        return _PotcarMod(symbols=self.potcar_symbols, functional=self.potcar_functional)
 
     @property
     def all_input(self):
