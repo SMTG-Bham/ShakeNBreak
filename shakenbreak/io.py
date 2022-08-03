@@ -1,5 +1,5 @@
 """
-Submodule to read/write structure files for VASP, Quantum Espresso,
+Module to read/write structure files for VASP, Quantum Espresso,
 FHI-aims, CASTEP and CP2K.
 """
 import os
@@ -33,7 +33,8 @@ def read_vasp_structure(
             Path to VASP `CONTCAR` file
 
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
@@ -65,7 +66,8 @@ def read_espresso_structure(
         filename (:obj:`str`):
             Path to the Quantum Espresso output file.
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
@@ -141,7 +143,8 @@ def read_fhi_aims_structure(
         filename (:obj:`str`):
             Path to the fhi-aims output file.
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     if os.path.exists(filename):
         try:
@@ -175,7 +178,8 @@ def read_cp2k_structure(
         filename (:obj:`str`):
             Path to the cp2k restart file.
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     if os.path.exists(filename):
         try:
@@ -209,7 +213,8 @@ def read_castep_structure(
         filename (:obj:`str`):
             Path to the castep output file.
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     if os.path.exists(filename):
         try:
@@ -257,7 +262,8 @@ def parse_structure(
             castep: "castep.castep" (castep output file is used)
             fhi-aims: geometry.in.next_step
     Returns:
-        `pymatgen` Structure object
+        (:obj:`Structure`):
+            `pymatgen` Structure object
     """
     if code.lower() == "vasp":
         if not structure_filename:

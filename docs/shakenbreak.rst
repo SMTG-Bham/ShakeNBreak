@@ -3,6 +3,8 @@
 ShakeNBreak Package
 ===================
 
+Module contents
+---------------
  .. automodule:: shakenbreak
      :members:
      :undoc-members:
