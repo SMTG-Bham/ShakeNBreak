@@ -1,8 +1,6 @@
 sphinx
 sphinx_rtd_theme
 sphinx-mdinclude
-sphinx_autodoc
-sphinx.ext.autodoc
 numpy
 pymatgen
 ase
