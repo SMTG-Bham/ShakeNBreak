@@ -261,6 +261,7 @@ def parse_structure(
             Quantum espresso: "espresso.out",
             castep: "castep.castep" (castep output file is used)
             fhi-aims: geometry.in.next_step
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object

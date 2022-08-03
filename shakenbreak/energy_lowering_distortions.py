@@ -154,6 +154,7 @@ def get_energy_lowering_distortions(
         write_input_files (:obj:`bool`):
             Whether to write input files for the identified distortions
             (Default: False)
+
     Returns:
         :obj:`dict`:
             Dictionary of defects for which bond distortion found an
@@ -945,6 +946,7 @@ def write_groundstate_structure(
     Writes the groundstate structure of each defect to the corresponding
     defect folder, with an optional name (default "groundstate_POSCAR"),
     to then run continuation calculations.
+
     Args:
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations
@@ -957,6 +959,7 @@ def write_groundstate_structure(
         structure_filename (:obj:`str`):
             Name of the file to read the structure from.
             (Default: "CONTCAR")
+
     Returns:
         None
     """
