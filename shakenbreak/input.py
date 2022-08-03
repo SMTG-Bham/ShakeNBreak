@@ -413,8 +413,9 @@ def _apply_rattle_bond_distortions(
             `mc_rattle` function.
 
     Returns:
-        Dictionary with distorted defect structure and the distortion
-        parameters.
+        (:obj:`dict`):
+            Dictionary with distorted defect structure and the distortion
+            parameters.
     """
     # Apply bond distortions to defect neighbours:
     if (
@@ -584,7 +585,8 @@ def apply_snb_distortions(
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function.
 
-        Returns:
+    Returns:
+        :obj:`dict`:
             Dictionary with distorted defect structure and the distortion
             parameters.
     """
@@ -981,19 +983,27 @@ class Distortions:
         )
         return distortion_metadata
 
-    def write_distortion_metadata(
+    def _generate_structure_comment(
         self,
-        output_path=".",
-    ) -> None:
-        """
-        Write metadata to file. If the file already exists, it will be
-        renamed to distortion_metadata_datetime.json and updated with new metadata.
-        """
-        _write_distortion_metadata(
-            new_metadata=self.distortion_metadata,
-            filename="distortion_metadata.json",
-            output_path=output_path,
+        key_distortion: str,
+        charge: int,
+        defect_name: str,
+    ) -> str:
+        """Generate comment for structure files"""
+        poscar_comment = (
+            str(
+                key_distortion.split("_")[-1]
+            )  # Get distortion factor (-60.%) or 'Rattled'
+            + "__num_neighbours="
+            + str(
+                self.distortion_metadata["defects"][defect_name]["charges"][charge][
+                    "num_nearest_neighbours"
+                ]
+            )
+            + "_"
+            + defect_name
         )
+        return poscar_comment
 
     def _setup_distorted_defect_dict(
         self,
@@ -1001,7 +1011,18 @@ class Distortions:
         defect: dict,
         distorted_defects_dict: dict,
     ) -> dict:
-        """Add defect information to distorted_defects_dict"""
+        """
+        Add defect information to `distorted_defects_dict`.
+        Args:
+            defect_name (:obj:`str`):
+                Name of the defect to use as key in the `distorted_defects_dict`.
+            defect (:obj:`dict`):
+                Defect dictionary to add to `distorted_defects_dict`.
+            distorted_defects_dict (:obj:`dict`):
+                Full dictionary of distorted defects.
+        Returns:
+            (:obj:`dict`)
+        """
         distorted_defects_dict[defect_name] = {
             "defect_type": defect["name"],
             "defect_site": defect["unique_site"],
@@ -1017,6 +1038,23 @@ class Distortions:
             if key in defect:
                 distorted_defects_dict[defect_name][key] = defect[key]
         return distorted_defects_dict
+
+    def write_distortion_metadata(
+        self,
+        output_path=".",
+    ) -> None:
+        """
+        Write metadata to file. If the file already exists, it will be
+        renamed to distortion_metadata_datetime.json and updated with new metadata.
+        Args:
+            output_path (:obj:`str`):
+                Path to directory where the metadata file will be written.
+        """
+        _write_distortion_metadata(
+            new_metadata=self.distortion_metadata,
+            filename="distortion_metadata.json",
+            output_path=output_path,
+        )
 
     def apply_distortions(
         self,
@@ -1035,17 +1073,18 @@ class Distortions:
                 distances) for each charged defect.
                 (Default: False)
         Returns:
-            Tuple of:
-            Dictionary with the distorted and undistorted structures for each
-            charge state of each defect, in the format:
-            {'defect_name': {
-                'charges': {
-                    'charge_state': {
-                        'structures': {...}
-                    }
+            :obj:`tuple`:
+                Tuple of:
+                Dictionary with the distorted and undistorted structures
+                for each charge state of each defect, in the format:
+                {'defect_name': {
+                    'charges': {
+                        'charge_state': {
+                            'structures': {...},
+                        },
+                    },
                 }
-            }
-            and dictionary with distortion parameters for each defect.
+                and dictionary with distortion parameters for each defect.
         """
         self._print_distortion_info(
             bond_distortions=self.bond_distortions, stdev=self.stdev
@@ -1134,28 +1173,6 @@ class Distortions:
 
         return distorted_defects_dict, self.distortion_metadata
 
-    def _generate_structure_comment(
-        self,
-        key_distortion: str,
-        charge: int,
-        defect_name: str,
-    ) -> str:
-        """Generate comment for structure files"""
-        poscar_comment = (
-            str(
-                key_distortion.split("_")[-1]
-            )  # Get distortion factor (-60.%) or 'Rattled'
-            + "__num_neighbours="
-            + str(
-                self.distortion_metadata["defects"][defect_name]["charges"][charge][
-                    "num_nearest_neighbours"
-                ]
-            )
-            + "_"
-            + defect_name
-        )
-        return poscar_comment
-
     def write_vasp_files(
         self,
         incar_settings: Optional[dict] = None,
@@ -1196,8 +1213,9 @@ class Distortions:
                 (Default: False)
 
         Returns:
-            tuple of dictionaries with new defects_dict (containing the
-            distorted structures) and defect distortion parameters.
+            :obj:`tuple`:
+                tuple of dictionaries with new defects_dict (containing the
+                distorted structures) and defect distortion parameters.
         """
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -1294,6 +1312,10 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+        Returns:
+            :obj:`tuple`:
+                Tuple of dictionaries with new defects_dict (containing the
+                distorted structures) and defect distortion parameters.
         """
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -1401,6 +1423,10 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+        Returns:
+            :obj:`tuple`:
+                Tuple of dictionaries with new defects_dict (containing the
+                distorted structures) and defect distortion parameters.
         """
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
@@ -1487,6 +1513,10 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+        Returns:
+            :obj:`tuple`:
+                Tuple of dictionaries with new defects_dict (containing the
+                distorted structures) and defect distortion parameters.
         """
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -1582,6 +1612,10 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+        Returns:
+            :obj:`tuple`:
+                Tuple of dictionaries with new defects_dict (containing the
+                distorted structures) and defect distortion parameters.
         """
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,

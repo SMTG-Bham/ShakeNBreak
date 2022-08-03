@@ -1,3 +1,6 @@
+"""
+Module to generate VASP input files for defect calculations
+"""
 import os
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 from typing import TYPE_CHECKING
@@ -79,7 +82,6 @@ def _import_psp():
 
 
 class _PotcarSingleMod(PotcarSingle):
-
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -250,6 +252,8 @@ def write_vasp_gam_files(
             doped.vasp_input to see what the (Pymatgen) syntax and doped
             default settings are.
             (default: None)
+    Returns:
+        None
     """
     supercell = single_defect_dict["Defect Structure"]
     num_elements = len(supercell.composition.elements)  # for ROPT setting in INCAR
@@ -357,6 +361,10 @@ def prepare_vasp_defect_inputs(defects: dict) -> dict:
         defects (dict):
             Dictionary of defect-object-dictionaries from PyCDT's
             ChargedDefectsStructures class (see example notebook)
+    Returns:
+        Dictionary mapping each defect to a dictionary with defect
+        information ("Defect Structure", "Poscar Comment",
+        "Transformation Dict")
     """
     defect_input_dict = {}
     comb_defs = functools.reduce(

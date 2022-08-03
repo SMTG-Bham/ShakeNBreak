@@ -160,7 +160,7 @@ def _format_distortion_names(
     return distortion
 
 
-def get_gs_distortion(defect_energies_dict: dict):
+def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     """
     Calculate energy difference between `Unperturbed` structure and
     lowest energy distortion. Returns the energy (in eV) and bond
@@ -174,7 +174,8 @@ def get_gs_distortion(defect_energies_dict: dict):
             produced by `get_energies()` or `_sort_data`.
 
     Returns:
-        (Energies dictionary, Energy difference, ground state bond distortion)
+        (:obj:`tuple`):
+            (Energies dictionary, Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
@@ -303,8 +304,9 @@ def analyse_defect_site(
             (Default: None)
 
     Returns:
-        Tuple of coordination analysis and bond length DataFrames,
-        respectively.
+        :obj:`tuple`:
+            Tuple of coordination analysis and bond length DataFrames,
+            respectively.
     """
     # get defect site
     struct = deepcopy(structure)
@@ -376,8 +378,9 @@ def analyse_structure(
             (Default: '.', current directory)
 
     Returns:
-        Tuple of coordination analysis and bond length DataFrames,
-        respectively.
+        :obj:`tuple`:
+            Tuple of coordination analysis and bond length DataFrames,
+            respectively.
     """
     defect_name_without_charge = defect_species.rsplit("_", 1)[0]
 
@@ -439,7 +442,8 @@ def get_structures(
             Name of the file containing the structure.
             (Default: CONTCAR)
     Returns:
-        Dictionary of bond distortions and corresponding final structures.
+        :obj:`dict`:
+            Dictionary of bond distortions and corresponding final structures.
     """
     defect_structures_dict = {}
     if (
@@ -539,7 +543,8 @@ def get_energies(
             (Default: True)
 
     Returns:
-        Dictionary matching bond distortions to final energies in eV.
+        :obj:`dict`:
+            Dictionary matching bond distortions to final energies in eV.
     """
     energy_file_path = f"{output_path}/{defect_species}/{defect_species}.yaml"
     if not os.path.isfile(energy_file_path):
@@ -595,7 +600,7 @@ def _calculate_atomic_disp(
             (Default: 0.5)
 
     Returns:
-        tuple(:obj:`tuple`):
+        :obj:`tuple`:
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
@@ -657,7 +662,7 @@ def calculate_struct_comparison(
             displacements sum (in Å, default 0.1 Å).
 
     Returns:
-        disp_dict (:obj:`dict`, optional):
+        :obj:`dict`, optional:
             Dictionary matching bond distortions to structure
             comparison metric (disp or max_dist).
     """
@@ -777,9 +782,10 @@ def compare_structures(
             interactively in Jupyter/Ipython (Default: True).
 
     Returns:
-        DataFrame containing structural comparison results (summed
-        normalised atomic displacement and maximum distance between
-        matched atomic sites), and relative energies.
+        :obj:`pd.DataFrame`:
+            DataFrame containing structural comparison results (summed
+            normalised atomic displacement and maximum distance between
+            matched atomic sites), and relative energies.
     """
     if all(
         [
@@ -876,9 +882,10 @@ def get_homoionic_bonds(
         verbose (:obj:`bool`, optional):
             Whether or not to print the list of homoionic bonds.
     Returns:
-        dict: dictionary with homoionic bonds, matching site to the
-        homoionic neighbours and distances (A) (e.g.
-        {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
+        :obj:`dict`:
+            dictionary with homoionic bonds, matching site to the
+            homoionic neighbours and distances (A) (e.g.
+            {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
     """
     structure = structure.copy()
     if Element(element) not in structure.composition.elements:
@@ -949,7 +956,7 @@ def _site_magnetizations(
             to False (faster).
             (Default: False)
     Returns:
-        df (:obj:`pandas.DataFrame`):
+        :obj:`pandas.DataFrame`:
             pandas.Dataframe with sites with magnetization above threshold.
     """
     # Site magnetizations
@@ -1026,7 +1033,7 @@ def get_site_magnetizations(
         verbose (bool, optional):
             Whether to print verbose output.
     Returns:
-        magnetizations (:obj:`dict`):
+        :obj:`dict`:
             Dictionary matching distortion to DataFrame containing
             magnetization info.
     """
