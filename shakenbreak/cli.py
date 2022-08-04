@@ -32,6 +32,15 @@ def identify_defect(
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
     the supercell, and generate a pymatgen defect object from this.
+
+    Args:
+        defect_structure (:obj:`Structure`):
+            defect structure
+        defect_coords (:obj:`list`):
+            Fractional coordinates of the defect site in the supercell.
+        defect_index (:obj:`int`):
+            Index of the defect site in the supercell.
+
     """
     natoms_defect = len(defect_structure)
     natoms_bulk = len(bulk_structure)
@@ -261,23 +270,26 @@ def parse_energies(
     """
     Parse final energy for all distortions present in the given defect
     directory and write them to a `yaml` file in the defect directory.
+
     Args:
-        defect (:obj: `str`):
+        defect (:obj:`str`):
             Name of defect to parse, including charge state. Should match the
             name of the defect folder.
         path (:obj: `str`):
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
-        code (:obj: `str`):
+        code (:obj:`str`):
             Name of ab-initio code used to run the geometry optimisations, case
             insensitive. Options include: "vasp", "cp2k", "espresso", "castep"
             and "fhi-aims". Defaults to 'vasp'.
-        filename (:obj: `str`):
+        filename (:obj:`str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
             (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
+
+    Returns: None
     """
     def _match(filename, grep_string):
         """
