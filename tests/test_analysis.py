@@ -213,7 +213,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             output = analysis.analyse_defect_site(
                 self.V_Cd_minus0pt5_struc_rattled, name="Test pop", vac_site=[0, 0, 0]
             )
-            mock_print.assert_any_call("==> ", "Test pop structural analysis ", " <==")
+            # mock_print.assert_any_call("==> ", "Test pop structural analysis ", " <==")
+            mock_print.assert_any_call("\033[1m" + "Test pop structural analysis " + "\033[0m")
             self.assertEqual(
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("V"))
             )
@@ -264,7 +265,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 name="Int_Cd_2",
                 site_num=65,
             )
-            mock_print.assert_any_call("==> ", "Int_Cd_2 structural analysis ", " <==")
+            # mock_print.assert_any_call("==> ", "Int_Cd_2 structural analysis ", " <==")
+            mock_print.assert_any_call("\033[1m" + "Int_Cd_2 structural analysis " + "\033[0m")
             self.assertEqual(
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("Cd"))
             )
