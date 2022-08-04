@@ -666,10 +666,7 @@ def generate(
         pickle.dump(defects_dict, fp)
 
 
-# generate-all command where we loop over each directory and create our full defect_dict,
-# save to pickle and run through Distortions
-# for this will need to use folders as filenames so we know which goes where
-# – this ok if folders aren't typical defect names?
+# TODO: add option in config file with incar/potcar settings - an analogous for the other codes
 @snb.command(
     name="generate_all",
     context_settings=CONTEXT_SETTINGS,
@@ -994,7 +991,7 @@ def parse(defect, all, path, code):
 @click.option(
     "--code",
     "-c",
-    help ="Code to generate relaxation input files for. "
+    help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
     type=str,
@@ -1096,7 +1093,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
-    help ="Code to generate relaxation input files for. "
+    help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
     type=str,
