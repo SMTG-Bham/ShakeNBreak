@@ -43,21 +43,48 @@ of all the parameters is available in the Python API section (`shakenbreak.input
     max_disp: 2.0
     local_rattle: True # If True, rattle displacements will tail-off as we more away from the defect site
 
+To display additional information about the generated distortions we can set the ``--verbose`` flag.
 
 For many defects
 -------------------
 
 If instead of a single defect, we are interested in studying many of them,
 we can use the ``snb-generate-all`` command. Here we need to specify the path to the directory containing the defect
-structures/folders with the ``--defects`` flag:
+structures/folders with the ``--defects`` flag.
 
 .. code::
 
     $ snb-generate-all --bulk bulk_structure.cif --defects defects_folder --code VASP
 
+By default, the code will look for the structure files
+(in ``cif`` or ``POSCAR`` format) present in the specified defects directory or in the immediate subdirectories. For example,
+the following directory structures will be parsed correctly:
+
+.. code::
+
+    defects_folder/
+        |--- defect_1_POSCAR
+        |
+        |--- defect_2_POSCAR
+        |
+        |--- defect_n_Cd_POSCAR
+
+.. code::
+
+    defects_folder/
+        |--- defect_1/
+        |       |--- vac_1_Cd.cif
+        |
+        |--- defect_2/
+        |       |--- POSCAR
+        |
+        |--- defect_n/
+                |---structure.cif
+
 To specify the charge state range for each defect, as well as other optional arguments, we can use a
 `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_all_config.yaml>`_ file
-like the one below:
+like the one below. A detailed description of all the parameters is available in the
+Python API section (`shakenbreak.input subsection <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.input.html>`_).
 
 .. code::
 
@@ -85,3 +112,26 @@ like the one below:
     max_attempts: 5000
     max_disp: 2.0
     local_rattle: True # If True, rattle displacements will tail-off as we more away from the defect site
+
+The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
+distortion folders with the distorted structures and relaxation input files. If using ``VASP``:
+
+.. code::
+
+    ./
+    |--- vac_1_Cd_0/
+    |       |--- Unperturbed
+    |       |        |--- POSCAR
+    |       |        |--- KPOINTS
+    |       |        |--- INCAR
+    |       |        |--- POTCAR
+    |       |
+    |       |---Bond_Distortion_-30.0%
+    |       |      |--- POSCAR
+    |       |      | ...
+    |       | ...
+    |
+    |
+    |--- vac_1_Cd_-1/
+            |--- Unperturbed
+            | ...
