@@ -24,9 +24,7 @@ from pymatgen.io.vasp.sets import BadInputSetWarning
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 
-from shakenbreak.distortions import distort, rattle, local_mc_rattle
-from shakenbreak.vasp import write_vasp_gam_files
-from shakenbreak.analysis import _get_distortion_filename
+from shakenbreak import analysis, distortions, vasp
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -203,7 +201,7 @@ def _create_vasp_input(
             potcar_settings
         )  # files empties `potcar_settings dict` (via pop()), so make a
         # deepcopy each time
-        write_vasp_gam_files(
+        vasp.write_vasp_gam_files(
             single_defect_dict=single_defect_dict,
             input_dir=f"{output_path}/{defect_name}/{distortion}",
             incar_settings=incar_settings,
@@ -424,7 +422,7 @@ def _apply_rattle_bond_distortions(
         # (no atom site in structure!)
         frac_coords = defect_dict["bulk_supercell_site"].frac_coords
         defect_site_index = None
-        bond_distorted_defect = distort(
+        bond_distorted_defect = distortions.distort(
             structure=defect_dict["supercell"]["structure"],
             num_nearest_neighbours=num_nearest_neighbours,
             distortion_factor=distortion_factor,
@@ -437,7 +435,7 @@ def _apply_rattle_bond_distortions(
             defect_dict["supercell"]["structure"]
         )  # defect atom comes last in structure, using doped or pymatgen
         frac_coords = None  # only for vacancies
-        bond_distorted_defect = distort(
+        bond_distorted_defect = distortions.distort(
             structure=defect_dict["supercell"]["structure"],
             num_nearest_neighbours=num_nearest_neighbours,
             distortion_factor=distortion_factor,
@@ -482,7 +480,7 @@ def _apply_rattle_bond_distortions(
 
     try:
         if local_rattle:
-            bond_distorted_defect["distorted_structure"] = local_mc_rattle(
+            bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
                 structure=bond_distorted_defect["distorted_structure"],
                 frac_coords=frac_coords,
                 site_index=defect_site_index,
@@ -492,7 +490,7 @@ def _apply_rattle_bond_distortions(
                 **kwargs,
             )
         else:
-            bond_distorted_defect["distorted_structure"] = rattle(
+            bond_distorted_defect["distorted_structure"] = distortions.rattle(
                 structure=bond_distorted_defect["distorted_structure"],
                 stdev=stdev,
                 d_min=d_min,
@@ -505,7 +503,7 @@ def _apply_rattle_bond_distortions(
             sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
             reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
             if local_rattle:
-                bond_distorted_defect["distorted_structure"] = local_mc_rattle(
+                bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     frac_coords=frac_coords,
                     site_index=defect_site_index,
@@ -516,7 +514,7 @@ def _apply_rattle_bond_distortions(
                     **kwargs,
                 )
             else:
-                bond_distorted_defect["distorted_structure"] = rattle(
+                bond_distorted_defect["distorted_structure"] = distortions.rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     stdev=stdev,
                     d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
@@ -616,7 +614,7 @@ def apply_snb_distortions(
                 **kwargs,
             )
             distorted_defect_dict["distortions"][
-                _get_distortion_filename(distortion)
+                analysis._get_distortion_filename(distortion)
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
                 "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
@@ -659,7 +657,7 @@ def apply_snb_distortions(
                 )
                 d_min = 2.25
         if local_rattle:
-            perturbed_structure = local_mc_rattle(
+            perturbed_structure = distortions.local_mc_rattle(
                 defect_dict["supercell"]["structure"],
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
@@ -668,7 +666,7 @@ def apply_snb_distortions(
                 **kwargs,
             )
         else:
-            perturbed_structure = rattle(
+            perturbed_structure = distortions.rattle(
                 defect_dict["supercell"]["structure"],
                 stdev=stdev,
                 d_min=d_min,

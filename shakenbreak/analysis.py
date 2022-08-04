@@ -20,7 +20,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.outputs import Outcar
 from pymatgen.core.periodic_table import Element
 
-from shakenbreak import io
+from shakenbreak import io, input
 
 crystalNN = CrystalNN(
     distance_cutoffs=None,
@@ -323,7 +323,8 @@ def analyse_defect_site(
         raise ValueError("Either site_num or vac_site must be specified")
 
     if name is not None:
-        print("==> ", name + " structural analysis ", " <==")
+        # print("==> ", name + " structural analysis ", " <==")
+        input._bold_print(name + " structural analysis ")
     print("Analysing site", struct[isite].specie, struct[isite].frac_coords)
     coordination = crystalNN.get_local_order_parameters(struct, isite)
     if coordination is not None:
