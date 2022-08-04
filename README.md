@@ -43,7 +43,7 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ## Usage
 
 ### Python API
-ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2FShakeNBreak_Example_Workflow.ipynb).
+ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?labpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fmain%2Ftutorials%2FShakeNBreak_Example_Workflow.ipynb).
 
 ### Command line interface
 Alternatively, the code can be used via the command line. The scripts provided include:
