@@ -141,6 +141,7 @@ class _PotcarMod(Potcar):
         Initialize the POTCAR from a set of symbols. Currently, the POTCARs can
         be fetched from a location specified in .pmgrc.yaml. Use pmg config
         to add this setting.
+
         Args:
             symbols ([str]): A list of element symbols
             functional (str): The functional to use. If None, the setting
@@ -164,6 +165,7 @@ class DefectRelaxSet(MPRelaxSet):
     """
     Extension to MPRelaxSet which modifies some parameters appropriate
     for defect calculations
+
     Args:
         charge (:obj:`int`):
             Charge of the defect structure
@@ -231,6 +233,7 @@ def write_vasp_gam_files(
     """
     Generates input files for vasp Gamma-point-only rough relaxation
     (before more expensive vasp_std relaxation)
+
     Args:
         single_defect_dict (:obj:`dict`):
             Single defect-dictionary from prepare_vasp_defect_inputs()
@@ -252,6 +255,7 @@ def write_vasp_gam_files(
             doped.vasp_input to see what the (Pymatgen) syntax and doped
             default settings are.
             (default: None)
+
     Returns:
         None
     """
@@ -357,10 +361,12 @@ def write_vasp_gam_files(
 def prepare_vasp_defect_inputs(defects: dict) -> dict:
     """
     Generates a dictionary of folders for VASP defect calculations
+
     Args:
         defects (dict):
             Dictionary of defect-object-dictionaries from PyCDT's
             ChargedDefectsStructures class (see example notebook)
+
     Returns:
         :obj:`dict`:
             Dictionary mapping each defect to a dictionary with defect

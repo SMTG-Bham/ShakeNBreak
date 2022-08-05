@@ -32,6 +32,15 @@ def identify_defect(
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
     the supercell, and generate a pymatgen defect object from this.
+
+    Args:
+        defect_structure (:obj:`Structure`):
+            defect structure
+        defect_coords (:obj:`list`):
+            Fractional coordinates of the defect site in the supercell.
+        defect_index (:obj:`int`):
+            Index of the defect site in the supercell.
+
     """
     natoms_defect = len(defect_structure)
     natoms_bulk = len(bulk_structure)
@@ -261,23 +270,26 @@ def parse_energies(
     """
     Parse final energy for all distortions present in the given defect
     directory and write them to a `yaml` file in the defect directory.
+
     Args:
-        defect (:obj: `str`):
+        defect (:obj:`str`):
             Name of defect to parse, including charge state. Should match the
             name of the defect folder.
         path (:obj: `str`):
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
-        code (:obj: `str`):
+        code (:obj:`str`):
             Name of ab-initio code used to run the geometry optimisations, case
             insensitive. Options include: "vasp", "cp2k", "espresso", "castep"
             and "fhi-aims". Defaults to 'vasp'.
-        filename (:obj: `str`):
+        filename (:obj:`str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
             (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
+
+    Returns: None
     """
     def _match(filename, grep_string):
         """
@@ -553,7 +565,8 @@ def snb():
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified defects and generated " "distortions",
+    help="Print information about identified defects and generated "
+        "distortions",
     default=False,
     is_flag=True,
     show_default=True,
@@ -654,10 +667,7 @@ def generate(
         pickle.dump(defects_dict, fp)
 
 
-# generate-all command where we loop over each directory and create our full defect_dict,
-# save to pickle and run through Distortions
-# for this will need to use folders as filenames so we know which goes where
-# – this ok if folders aren't typical defect names?
+# TODO: add option in config file with incar/potcar settings - and analogous for the other codes
 @snb.command(
     name="generate_all",
     context_settings=CONTEXT_SETTINGS,
@@ -667,8 +677,10 @@ def generate(
 @click.option(
     "--defects",
     "-d",
-    help="Path root directory with defect folders/files",
+    help="Path root directory with defect folders/files. "
+        "Defaults to current directory ('./')",
     type=click.Path(exists=True, dir_okay=True),
+    default="."
 )
 @click.option(
     "--structure_file",
@@ -909,7 +921,7 @@ def generate_all(
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder."
-        "Defaults to current directory.",
+        "Defaults to current directory ('./').",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
@@ -982,7 +994,7 @@ def parse(defect, all, path, code):
 @click.option(
     "--code",
     "-c",
-    help ="Code to generate relaxation input files for. "
+    help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
     type=str,
@@ -1084,7 +1096,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
-    help ="Code to generate relaxation input files for. "
+    help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
     type=str,
