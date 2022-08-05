@@ -12,3 +12,4 @@ Welcome to ShakeNBreak!
    :maxdepth: 4
 
    Python API <modules>
+   Tutorials
