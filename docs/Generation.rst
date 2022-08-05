@@ -49,8 +49,9 @@ For many defects
 -------------------
 
 If instead of a single defect, we are interested in studying many of them,
-we can use the ``snb-generate-all`` command. Here we need to specify the path to the directory containing the defect
-structures/folders with the ``--defects`` flag.
+we can use the ``snb-generate_all`` command. This requires us to specify the path
+to the top-level directory containing the defect structures/folders with the ``--defects`` flag
+(if not set, it will assume that our defects are located in the current directory).
 
 .. code::
 
@@ -63,11 +64,11 @@ the following directory structures will be parsed correctly:
 .. code::
 
     defects_folder/
-        |--- defect_1_POSCAR
+        |--- defect_1_POSCAR <-- The code expects the format of the structure files to be CIF's or POSCARS's
         |
         |--- defect_2_POSCAR
         |
-        |--- defect_n_Cd_POSCAR
+        |--- defect_n_POSCAR
 
 .. code::
 
@@ -126,9 +127,9 @@ distortion folders with the distorted structures and relaxation input files. If 
     |       |        |--- INCAR
     |       |        |--- POTCAR
     |       |
-    |       |---Bond_Distortion_-30.0%
-    |       |      |--- POSCAR
-    |       |      | ...
+    |       |--- Bond_Distortion_-30.0%
+    |       |        |--- POSCAR
+    |       |        | ...
     |       | ...
     |
     |

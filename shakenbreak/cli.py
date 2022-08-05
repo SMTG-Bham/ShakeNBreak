@@ -565,7 +565,8 @@ def snb():
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified defects and generated " "distortions",
+    help="Print information about identified defects and generated "
+        "distortions",
     default=False,
     is_flag=True,
     show_default=True,
@@ -666,7 +667,7 @@ def generate(
         pickle.dump(defects_dict, fp)
 
 
-# TODO: add option in config file with incar/potcar settings - an analogous for the other codes
+# TODO: add option in config file with incar/potcar settings - and analogous for the other codes
 @snb.command(
     name="generate_all",
     context_settings=CONTEXT_SETTINGS,
@@ -676,8 +677,10 @@ def generate(
 @click.option(
     "--defects",
     "-d",
-    help="Path root directory with defect folders/files",
+    help="Path root directory with defect folders/files. "
+        "Defaults to current directory ('./')",
     type=click.Path(exists=True, dir_okay=True),
+    default="."
 )
 @click.option(
     "--structure_file",
@@ -918,7 +921,7 @@ def generate_all(
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder."
-        "Defaults to current directory.",
+        "Defaults to current directory ('./').",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
