@@ -11,7 +11,7 @@ Additionally, the core functionality of the code can be accessed through the com
 
 1. Generation of distorted structures and/or their relaxation input files:
     * for a specific defect: ``snb-generate``
-    * for all defects present in a directory: ``snb-generate-all``
+    * for all defects present in a directory: ``snb-generate_all``
 2. Parsing of the geometry optimisation results:
     ``snb-parse``
 3. Analysis of the energies and structural differences between the relaxed configurations:
