@@ -11,5 +11,7 @@ Welcome to ShakeNBreak!
    :hidden:
    :maxdepth: 4
 
+   Installation
    Python API <modules>
    Tutorials
+   Contributing
