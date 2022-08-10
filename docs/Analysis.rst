@@ -18,10 +18,11 @@ in a given/current directory using:
 
 .. code::
 
-    snb-parse --code vasp --path defects_folder
+    snb-parse --all --code vasp --path defects_folder
 
-This generates a ``yaml`` file mapping each distortion to the final energy (in eV)
-of the relaxed structure:
+This generates a ``yaml`` file for each defect, mapping each distortion to the
+final energy of the relaxed structures (in eV). These files are saved to the
+corresponding defect directory (e.g. ``defects_folder/vac_1_Cd_0/vac_1_Cd_0.yaml``).
 
 .. code::
 
@@ -34,11 +35,11 @@ of the relaxed structure:
 Analysis
 ----------
 To analyse the structures obtained from the relaxations, we can use ``snb-analyse``.
-It will generate ``csv`` files with the final energies and structural similarities
-for a given/all defects. Structural similarity is measured as the sum
-of atomic displacements and the maximum distance between matched sites.
-For instance, to analyse the results obtained with ``VASP``
-for the defect ``vac_1_Cd_0``, we can use:
+It will generate ``csv`` files for a given/all defects with the final energies
+and structural similarities between the final configurations and a default one
+(by default the undistorted one). Structural similarity is measured as the sum
+of atomic displacements and the maximum distance between matched sites. For instance,
+to analyse the results obtained with ``VASP`` for the defect ``vac_1_Cd_0``, we can use:
 
 .. code::
 
@@ -103,7 +104,7 @@ For example, if we have the following directory structure
             | ...
             |--- Bond_Distortion_50% <-- Favourable distortion
 
-and two different energy lowering distortion has been identified for the neutral
+and two different energy lowering distortion have been identified for the neutral
 (with a distortion of -0.3) and for the negatively charged vacancy
 (with a distortion of 0.5), the code below will ensure that these configurations are
 indeed different and, if so, generate the input files for both of them.

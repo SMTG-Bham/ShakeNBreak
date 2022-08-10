@@ -61,7 +61,7 @@ By default, the code will look for the structure files
 (in ``cif`` or ``POSCAR`` format) present in the specified defects directory or in the immediate subdirectories. For example,
 the following directory structures will be parsed correctly:
 
-.. code::
+.. code:: bash
 
     defects_folder/
         |--- defect_1_POSCAR <-- The code expects the format of the structure files to be CIF's or POSCARS's
@@ -70,7 +70,7 @@ the following directory structures will be parsed correctly:
         |
         |--- defect_n_POSCAR
 
-.. code::
+.. code:: bash
 
     defects_folder/
         |--- defect_1/

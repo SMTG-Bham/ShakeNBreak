@@ -56,10 +56,30 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 #
 html_theme = 'sphinx_rtd_theme'
 
+# The name of an image file (relative to this directory) to place at the top
+# of the sidebar.
+html_logo = "toc.png"
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+# If true, SmartyPants will be used to convert quotes and dashes to
+# typographically correct entities.
+html_use_smartypants = True
+
+# If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
+# html_show_sphinx = True
+
+# Adding “Edit Source” links on your Sphinx theme
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "SMTG-UCL", # Username
+    "github_repo": "ShakeNBreak", # Repo name
+    "github_version": "master", # Version
+    "conf_py_path": "/docs/", # Path in the checkout to the docs root
+}
 
 # -- Options for intersphinx extension ---------------------------------------
 
