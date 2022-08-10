@@ -677,33 +677,41 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # test kwargs:
-        struct_comparison_df = analysis.compare_structures(
-            defect_structures_dict,
-            defect_energies_dict,
-            stol=0.01,
-            units="meV",
-            min_dist=0.01,
-        )
-        # spot check:
-        self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.121, 0.025, 0.0]
-        )
-        self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[1]))  # no RMS
-        self.assertTrue(
-            np.isnan(struct_comparison_df.iloc[8].to_list()[2])
-        )  # no max dist
-        self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
-        )
-        self.assertEqual(
-            struct_comparison_df.columns.to_list(),
-            [
-                "Bond Distortion",
-                "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
-                "Max Distance (\u212B)",  # Angstrom
-                f"\u0394 Energy (meV)",  # Delta
-            ],
-        )
+        with warnings.catch_warnings(record=True) as w:
+            struct_comparison_df = analysis.compare_structures(
+                defect_structures_dict,
+                defect_energies_dict,
+                stol=0.01,
+                units="meV",
+                min_dist=0.01,
+            )
+            # spot check:
+            self.assertEqual(
+                struct_comparison_df.iloc[16].to_list(), [-0.2, 0.121, 0.025, 0.0]
+            )
+            # When a too tight stol is used, check the code retries with larger stol
+            warning_message = (
+                f"The specified tolerance {0.01} seems to be too tight as"
+                " too many lattices could not be matched. Will retry with"
+                f" larger tolerance ({0.01+0.4})."
+            )
+            self.assertEqual(w[-1].category, UserWarning)
+            self.assertIn(warning_message, str(w[-1].message))
+            self.assertEqual(
+                struct_comparison_df.iloc[8].to_list(), [-0.4, 8.31, 0.808, -0.75]
+            )
+            self.assertEqual(
+                struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
+            )
+            self.assertEqual(
+                struct_comparison_df.columns.to_list(),
+                [
+                    "Bond Distortion",
+                    "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
+                    "Max Distance (\u212B)",  # Angstrom
+                    f"\u0394 Energy (meV)",  # Delta
+                ],
+            )
 
         # test comparing structures with specified ref_structure and no unperturbed:
         defect_structures_dict_no_unperturbed = defect_structures_dict.copy()
