@@ -736,7 +736,6 @@ def calculate_struct_comparison(
     return disp_dict
 
 
-# TODO: Add check if too many 'NaN' values in disp_dict, if so, try with higher stol
 def compare_structures(
     defect_structures_dict: dict,
     defect_energies_dict: dict,
@@ -816,6 +815,27 @@ def compare_structures(
             ref_structure=ref_structure,
             stol=stol,
         )
+        #Check if too many 'NaN' values in disp_dict, if so, try with higher stol
+        number_of_nan = len([value for value in disp_dict.values() if value == None])
+        if number_of_nan >  len(disp_dict.values()) // 3:
+            warnings.warn(
+                f"The specified tolerance {stol} seems to be too tight as"
+                " too many lattices could not be matched. Will retry with"
+                f" larger tolerance ({stol+0.4})."
+            )
+            max_dist_dict = calculate_struct_comparison(
+                defect_structures_dict,
+                metric="max_dist",
+                ref_structure=ref_structure,
+                stol=stol+0.4,
+            )
+            disp_dict = calculate_struct_comparison(
+                defect_structures_dict,
+                metric="disp",
+                ref_structure=ref_structure,
+                stol=stol+0.4,
+                min_dist=min_dist,
+            )
 
     for distortion in defect_energies_dict["distortions"]:
         try:
