@@ -1051,18 +1051,19 @@ def plot_colorbar(
             Energy vs distortion plot with colorbar for structural similarity,
             as a mpl.figure.Figure object
     """
-    fig, ax = plt.subplots(1,1)
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        fig, ax = plt.subplots(1,1)
 
-    # Title and format axis labels and locators
-    if title:
-        ax.set_title(title)
-    ax = _format_axis(
-        ax=ax,
-        y_label=y_label,
-        defect_name=defect_name,
-        num_nearest_neighbours=num_nearest_neighbours,
-        neighbour_atom=neighbour_atom,
-    )
+        # Title and format axis labels and locators
+        if title:
+            ax.set_title(title)
+        ax = _format_axis(
+            ax=ax,
+            y_label=y_label,
+            defect_name=defect_name,
+            num_nearest_neighbours=num_nearest_neighbours,
+            neighbour_atom=neighbour_atom,
+        )
 
     # all energies relative to unperturbed one
     for key, i in energies_dict["distortions"].items():
@@ -1088,86 +1089,94 @@ def plot_colorbar(
     )
 
     # Plotting
-    if "Rattled" in energies_dict["distortions"].keys() and "Rattled" in disp_dict.keys():
-        # plot Rattled energy
-        im = ax.scatter(
-            0.0,
-            energies_dict["distortions"]["Rattled"],
-            c=disp_dict["Rattled"],
-            label="Rattled",
-            s=50,
-            marker="o",
-            cmap=colormap,
-            norm=norm,
-            alpha=1,
-        )
-    else:
-        im = ax.scatter(  # Points for each distortion
-            sorted_distortions,
-            sorted_energies,
-            c=sorted_disp,
-            ls="-",
-            s=50,
-            marker="o",
-            cmap=colormap,
-            norm=norm,
-            alpha=1,
-        )
-        ax.plot(  # Line connecting points
-            sorted_distortions,
-            sorted_energies,
-            ls="-",
-            markersize=1,
-            marker="o",
-            color=line_color,
-            label=legend_label,
-        )
-    for i in imported_indices:  # datapoints from other charge states
-        other_charge_state = int(
-            list(energies_dict['distortions'].keys())[i].split('_')[-1]
-        )
-        ax.scatter(
-            np.array(keys)[i],
-            list(energies_dict["distortions"].values())[i],
-            c=sorted_disp[i],
-            edgecolors="k",
-            ls="-",
-            s=50,
-            marker="s",
-            zorder=10,  # make sure it's on top of the other points
-            cmap=colormap,
-            norm=norm,
-            alpha=1,
-            label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
-        )
-    unperturbed_color = colormap(
-        0
-    )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
-    # to this structure)
-    ax.scatter( # plot reference energy
-        0,
-        energies_dict["Unperturbed"],
-        color=unperturbed_color,
-        ls="None",
-        s=120,
-        marker="d",
-        label="Unperturbed",
-    )
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        if "Rattled" in energies_dict["distortions"].keys() and "Rattled" in disp_dict.keys():
+            # plot Rattled energy
+            im = ax.scatter(
+                0.0,
+                energies_dict["distortions"]["Rattled"],
+                c=disp_dict["Rattled"],
+                label="Rattled",
+                s=50,
+                marker="o",
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+            )
+        else:
+            im = ax.scatter(  # Points for each distortion
+                sorted_distortions,
+                sorted_energies,
+                c=sorted_disp,
+                ls="-",
+                s=50,
+                marker="o",
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+            )
+            ax.plot(  # Line connecting points
+                sorted_distortions,
+                sorted_energies,
+                ls="-",
+                markersize=1,
+                marker="o",
+                color=line_color,
+                label=legend_label,
+            )
 
-    # Formatting of tick labels.
-    # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
-    # 2 if deltaE > 0.1 eV, otherwise 3.
-    ax = _format_tick_labels(
-        ax=ax,
-        energy_range=list(energies_dict["distortions"].values()) \
-        + [energies_dict["Unperturbed"],]
-    )
+        # Datapoints from other charge states
+        if imported_indices:
+            other_charges = len(set(
+                list(energies_dict['distortions'].keys())[i].split('_')[-1]
+                for i in imported_indices
+            ))  # number of other charge states whose distortions have been imported
+        for i, j in zip(imported_indices, range(other_charges)):
+            other_charge_state = int(
+                list(energies_dict['distortions'].keys())[i].split('_')[-1]
+            )
+            ax.scatter(
+                np.array(keys)[i],
+                list(energies_dict["distortions"].values())[i],
+                c=sorted_disp[i],
+                edgecolors="k",
+                ls="-",
+                s=50,
+                marker=["s","v","<",">","^","p","X"][j],
+                zorder=10,  # make sure it's on top of the other points
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+                label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
+            )
+        unperturbed_color = colormap(
+            0
+        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
+        # to this structure)
+        ax.scatter( # plot reference energy
+            0,
+            energies_dict["Unperturbed"],
+            color=unperturbed_color,
+            ls="None",
+            s=120,
+            marker="d",
+            label="Unperturbed",
+        )
 
-    plt.legend(frameon=True)
+        # Formatting of tick labels.
+        # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
+        # 2 if deltaE > 0.1 eV, otherwise 3.
+        ax = _format_tick_labels(
+            ax=ax,
+            energy_range=list(energies_dict["distortions"].values()) \
+            + [energies_dict["Unperturbed"],]
+        )
 
-    cbar = _format_colorbar(
-        fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
-    ) # Colorbar formatting
+        plt.legend(frameon=True)
+
+        cbar = _format_colorbar(
+            fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
+        ) # Colorbar formatting
 
     # Save plot?
     if save_plot:
@@ -1330,12 +1339,12 @@ def plot_datasets(
         # Format distortion keys of the distortions imported from other charge states
         imported_indices, keys, sorted_distortions, sorted_energies = \
             _format_datapoints_from_other_chargestates(
-            energies_dict=dataset,
-            disp_dict=None
-        )
+                energies_dict=dataset,
+                disp_dict=None
+            )
         with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
             if "Rattled" in dataset["distortions"].keys():
-                ax.scatter( # Scatter plot for Rattled (1 datapoint)
+                ax.scatter(  # Scatter plot for Rattled (1 datapoint)
                     0.0,
                     dataset["distortions"]["Rattled"],
                     c=colors[dataset_number],
@@ -1344,7 +1353,7 @@ def plot_datasets(
                     label="Rattled"
                 )
             else:
-                ax.plot( # plot bond distortions
+                ax.plot(  # plot bond distortions
                     sorted_distortions,
                     sorted_energies,
                     c=colors[dataset_number],
@@ -1354,11 +1363,16 @@ def plot_datasets(
                     label=dataset_labels[dataset_number],
                     linewidth=default_style_settings["linewidth"],
                 )
-            for i in imported_indices:
+            if imported_indices:
+                other_charges = len(set(
+                    list(dataset['distortions'].keys())[i].split('_')[-1]
+                    for i in imported_indices
+                ))  # number of other charge states whose distortions have been imported
+            for i, j in zip(imported_indices, range(other_charges)):
                 other_charge_state = int(
                     list(dataset['distortions'].keys())[i].split('_')[-1]
                 )
-                ax.scatter( # distortions from other charge states
+                ax.scatter(  # distortions from other charge states
                     np.array(keys)[i],
                     list(dataset["distortions"].values())[i],
                     c=colors[dataset_number],
@@ -1366,7 +1380,7 @@ def plot_datasets(
                     ls="-",
                     s=50,
                     zorder=10,  # make sure it's on top of the other lines
-                    marker="s", # TODO: different markers for different charge states
+                    marker=["s","v","<",">","^","p","X"][j],  # different markers for different charge states
                     alpha=1,
                     label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
                         f"state"
