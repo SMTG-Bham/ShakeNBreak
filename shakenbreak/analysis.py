@@ -1107,7 +1107,7 @@ def get_site_magnetizations(
             structure.append(
                 species="V", coords = defect_site, coords_are_cartesian = False
             )
-            defect_site = -1 # index of the added fake atom
+            defect_site = -1  # index of the added fake atom
         if not os.path.exists(
             f"{output_path}/{defect_species}/{dist_label}/OUTCAR"
         ):

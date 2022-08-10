@@ -1213,7 +1213,6 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
         )
 
 
-# TODO: Nicer name for this function?
 @snb.command(
     name="regenerate",
     context_settings=CONTEXT_SETTINGS,
