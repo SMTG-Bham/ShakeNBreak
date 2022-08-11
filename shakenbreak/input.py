@@ -1354,7 +1354,7 @@ class Distortions:
                 overwrite/update `shakenbreak` default ones (see
                 `input_files/qe_input.yaml`).
                 (Default: None)
-            input_file  (:obj:`str`, optional):
+            input_file (:obj:`str`, optional):
                 Path to Quantum Espresso input file, to overwrite/update
                 `shakenbreak` default ones (see `input_files/qe_input.yaml`).
                 If both `input_parameters` and `input_file` are provided,
@@ -1470,7 +1470,7 @@ class Distortions:
         Generates input files for CP2K relaxations of all output structures.
 
         Args:
-            input_file  (:obj:`str`, optional):
+            input_file (:obj:`str`, optional):
                 Path to CP2K input file. If not set, default input file will be
                 used (see `shakenbreak/input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):

@@ -558,8 +558,7 @@ def generate_all(
         defect_settings, user_settings = {}, {}
 
     func_args = list(locals().keys())
-    # Specified options take precedence over the ones
-    # in the config file
+    # Specified options take precedence over the ones in the config file
     if user_settings:
         for key in func_args:
             if key in user_settings:
@@ -685,10 +684,12 @@ def generate_all(
                     defect_type: deepcopy(defect_dict[defect_type]),
                 }
             )
+
     # Apply distortions and write input files
     # Parse pseduopotentials from config file, if specified
+    pseudopotentials = None
     if "POTCAR" in user_settings.keys():
-        potcar_settings = {"POTCAR": deepcopy(user_settings["potcar"])}
+        pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
         user_settings.pop("POTCAR", None)
     if "pseudopotentials" in user_settings.keys():
         pseudopotentials = deepcopy(user_settings["pseudopotentials"])
@@ -698,35 +699,62 @@ def generate_all(
         if input_file:
             incar = Incar.from_file(input_file)
             incar_settings = incar.as_dict()
+            [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+        else:
+            incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
             verbose=verbose,
-            potcar_settings=potcar_settings if potcar_settings else None,
-            incar_settings=incar_settings if incar_settings else None,
+            potcar_settings=pseudopotentials,
+            incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
-        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-            verbose=verbose,
-            input_file=input_file,
-        )
-    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-            verbose=verbose,
-            pseudopotentials=pseudopotentials if pseudopotentials else None,
-            input_file=input_file,
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+        print("Code is espresso")
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                pseudopotentials=pseudopotentials,
+                input_file=input_file,
+            )
+        else:
+            print("Writting espresso input files")
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                pseudopotentials=pseudopotentials,
+            )
     elif code.lower() == "castep":
-        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-            verbose=verbose,
-            input_file=input_file,
-        )
-    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-            verbose=verbose,
-            input_file=input_file,
-        )
-    # Dump dict with distorted structures to pickle
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+            )
+
+    # Dump dict with parsed defects to pickle
     with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(distorted_defects_dict, fp)
+        pickle.dump(defects_dict, fp)
 
 
 @snb.command(

@@ -525,7 +525,17 @@ def parse_qe_input(path) -> dict:
             continue
         elif "=" in line:
             key, value = line.split("=")
-            params[section][key.strip()] = value.strip()
+            # Convent numeric values to float
+            try:
+                value = float(value.strip())
+            except:
+                # string keywords in QE input file are enclosed in quotes
+                # so we remove them to avoid too many quotes when generating
+                # the input file with ase
+                value = value.strip()
+                value.replace("'", "")
+                value.replace('"', '')
+            params[section][key.strip()] = value
         elif len(line.split()) > 1:
             key, value = line.split()[0], " ".join([str(val) for val in line.split()[1:]])
             params[section][key.strip()] = value
