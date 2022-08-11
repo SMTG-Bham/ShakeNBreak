@@ -40,17 +40,17 @@ class IoTestCase(unittest.TestCase):
         params = parse_qe_input(path)
         test_params = {
             'CONTROL': {
-                'title': "'Si bulk'",
-                'calculation': "'relax' ,",
-                'restart_mode': "'from_scratch' ,",
-                'outdir': "'Si_example/' ,",
-                'pseudo_dir': "'/home/ireaml/pw/pseudo/' ,"
+                'title': "Si bulk",
+                'calculation': "relax",
+                'restart_mode': "from_scratch",
+                'outdir': "Si_example/",
+                'pseudo_dir': "/home/ireaml/pw/pseudo/"
             },
             'SYSTEM': {
-                'ecutwfc': '18.0,',
-                'ecutrho': '72.0,'
+                'ecutwfc': 18.0,
+                'ecutrho': 72.0
             },
-            'ELECTRONS': {'conv_thr': '1d-7,'},
+            'ELECTRONS': {'conv_thr': '1d-7'},
             'ATOMIC_SPECIES': {'Si': '1.00 Si.vbc'},
         }
         self.assertEqual(

@@ -2,13 +2,13 @@
 # All keywords and values are case sensitive
 
 # Physical model
-xc hse
+xc pbe
 charge 0.0
 spin collinear # polarized
 default_initial_moment 0
 
 # SCF
-sc_iter_limit 50
+sc_iter_limit 100
 
 # Relaxation
 relax_geometry bfgs 0.001
