@@ -775,9 +775,83 @@ local_rattle: False
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
         self.assertNotIn("Defect Vac_Cd_mult32 in charge state: +1", result.output)
-
-        # TODO:
         # test parsed defects pickle
+        with open("./parsed_defects_dict.pickle", "rb") as fp:
+            self.cdte_defect_dict = pickle.load(fp)
+        self.assertEqual(
+            self.cdte_defect_dict,
+            self.cdte_defect_dict["vacancies"][0],
+        )
+
+        # Test non-sense key in config - should be ignored
+        test_yml = f"""
+        charges: [0,]
+defect_coords: [0,0,0]
+bond_distortions: [0.3,]
+name: vac_1_Cd
+
+nonsense_key: nonsense_value
+        """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
+        self.assertEqual(
+            self.cdte_defect_dict,
+            self.cdte_defect_dict["vacancies"][0],
+        )
+        # Test invalid value for charge
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c a",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertFalse(result.exit_code, 0)
+        self.assertIn("Invalid value for '--charge' / '-c': 'a' is not a valid integer.")
+        # Test non-existent defect path
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                "invalid_path",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c a",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertFalse(result.exit_code, 0)
+        self.assertIn("Invalid value for '--defect' / '-d': File 'invalid_path' does not exist.")
+        # TODO:
         # test error handling and all print messages
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!

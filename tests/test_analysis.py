@@ -240,11 +240,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         4: "trigonal pyramidal",
                     },
                     "Factor": {
-                        0: 0.21944138045080427,
-                        1: 0.8789337233604618,
-                        2: 0.11173135591518825,
-                        3: 0.3876174560001795,
-                        4: 0.3965691083975486,
+                        0: round(0.21944138045080427, 3),
+                        1: round(0.8789337233604618, 3),
+                        2: round(0.11173135591518825, 3),
+                        3: round(0.3876174560001795, 3),
+                        4: round(0.3965691083975486, 3),
                     },
                 }
             )
@@ -252,7 +252,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_V_Cd_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Te", 1: "Te", 2: "Te", 3: "Te"},
-                    "Distance": {0: "1.417", 1: "1.417", 2: "2.620", 3: "3.008"},
+                    "Distance (\u212B)": {0: "1.417", 1: "1.417", 2: "2.620", 3: "3.008"},
                 }
             )
             pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_bonding_df, output[1])
@@ -283,9 +283,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         2: "pentagonal pyramidal",
                     },
                     "Factor": {
-                        0: 0.778391113850372,
-                        1: 0.014891251252011014,
-                        2: 0.058350214482398306,
+                        0: round(0.778391113850372, 3),
+                        1: round(0.014891251252011014, 3),
+                        2: round(0.058350214482398306, 3),
                     },
                 }
             )
@@ -295,7 +295,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_Int_Cd_2_NN_10_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
-                    "Distance": {
+                    "Distance (\u212B)": {
                         0: "1.085",
                         1: "1.085",
                         2: "1.085",
@@ -860,7 +860,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": "O(62)",
                             "O(68)": "O(68)",
                         },
-                        "Coords": {
+                        "Frac coords": {
                             "O(35)": [0.0, 0.167, 0.014],
                             "O(53)": [-0.0, 0.167, 0.486],
                             "O(62)": [0.165, 0.167, 0.292],
@@ -872,7 +872,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": 1.522,
                             "O(68)": 1.521,
                         },
-                        "Dist. (A)": {
+                        "Dist. (\u212B)": {
                             "O(35)": 2.3,
                             "O(53)": 2.3,
                             "O(62)": 1.9,
