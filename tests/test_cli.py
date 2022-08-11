@@ -784,6 +784,7 @@ local_rattle: False
         )
 
         # Test non-sense key in config - should be ignored
+        # and not feed into Distortions()
         test_yml = f"""
         charges: [0,]
 defect_coords: [0,0,0]
@@ -1332,7 +1333,8 @@ nonsense_key: nonsense_value
         self.tearDown()
 
     def test_parse(self):
-        """Test parse() function"""
+        """Test parse() function.
+        Implicitly, this also tests the io.parse_energies() function"""
         # Specifying defect to parse
         # All OUTCAR's present in distortion directories
         # Energies file already present
