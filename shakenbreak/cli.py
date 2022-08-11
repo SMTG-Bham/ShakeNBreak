@@ -361,10 +361,19 @@ def snb():
 )
 @click.option(
     "--config",
+    "-conf",
     help="Config file for advanced distortion settings. See example in"
         "/input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "--input_file",
+    "-f",
+    help="Input file for the code specified with `--code`, "
+    "with relaxation parameters to override defaults.",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 @click.option(
     "--verbose",
@@ -386,6 +395,7 @@ def generate(
     code,
     name,
     config,
+    input_file,
     verbose,
 ):
     """
@@ -398,9 +408,21 @@ def generate(
 
     func_args = list(locals().keys())
     if user_settings:
+        valid_args = [
+            "defect", "bulk", "charge", "min_charge", "max_charge",
+            "defect_index", "defect_coords", "code", "name", "config",
+            "input_file", "verbose", "oxidation_states", "dict_number_electrons_user",
+            "distortion_increment", "bond_distortions", "local_rattle",
+            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
+            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+        ]
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
+        for key in list(user_settings.keys()):
+            # remove non-sense keys from user_settings
+            if key not in valid_args:
+                user_settings.pop(key)
 
     defect_struc = Structure.from_file(defect)
     bulk_struc = Structure.from_file(bulk)
@@ -448,25 +470,58 @@ def generate(
 
     Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
+        if input_file:
+            incar = Incar.from_file(input_file)
+            incar_settings = incar.as_dict()
+            [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+        else:
+            incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
-            verbose=verbose
+            verbose=verbose,
+            incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
-        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+        print("Code is espresso")
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            print("Writting espresso input files")
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+            )
     elif code.lower() == "castep":
-        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+            )
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
@@ -510,6 +565,7 @@ def generate(
 )
 @click.option(
     "--config",
+    "-conf",
     help="Config file for advanced distortion settings. See example in "
         "/input_files/example_generate_all_config.yaml",
     default=None,
@@ -517,6 +573,7 @@ def generate(
 )
 @click.option(
     "--input_file",
+    "-if",
     help="Input file for the code specified with `--code`, "
     "with relaxation parameters to override defaults.",
     default=None,
@@ -559,10 +616,29 @@ def generate_all(
 
     func_args = list(locals().keys())
     # Specified options take precedence over the ones in the config file
+    pseudopotentials = None
     if user_settings:
+        valid_args = [
+            "defects", "bulk", "structure_file", "code", "config", "input_file",
+            "verbose", "oxidation_states", "dict_number_electrons_user",
+            "distortion_increment", "bond_distortions", "local_rattle",
+            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
+            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+        ]
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
+        # Parse pseduopotentials from config file, if specified
+        if "POTCAR" in user_settings.keys():
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
+            user_settings.pop("POTCAR", None)
+        if "pseudopotentials" in user_settings.keys():
+            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
+            user_settings.pop("pseudopotentials", None)
+        for key in list(user_settings.keys()):
+            # remove non-sense keys from user_settings
+            if key not in valid_args:
+                user_settings.pop(key)
 
     def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
         """Parse defect name from file/folder name"""
@@ -686,14 +762,6 @@ def generate_all(
             )
 
     # Apply distortions and write input files
-    # Parse pseduopotentials from config file, if specified
-    pseudopotentials = None
-    if "POTCAR" in user_settings.keys():
-        pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
-        user_settings.pop("POTCAR", None)
-    if "pseudopotentials" in user_settings.keys():
-        pseudopotentials = deepcopy(user_settings["pseudopotentials"])
-        user_settings.pop("pseudopotentials", None)
     Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
         if input_file:

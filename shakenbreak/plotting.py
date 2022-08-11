@@ -1047,7 +1047,7 @@ def plot_colorbar(
             as a mpl.figure.Figure object
     """
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
-        fig, ax = plt.subplots(1,1)
+        fig, ax = plt.subplots(1,1, figsize=(6.5, 5))
 
         # Title and format axis labels and locators
         if title:
