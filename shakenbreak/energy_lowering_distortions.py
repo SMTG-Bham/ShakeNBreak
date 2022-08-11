@@ -15,15 +15,7 @@ aaa = AseAtomsAdaptor()
 
 from ase.io import write as ase_write
 
-from shakenbreak.analysis import (
-    _sort_data,
-    _get_distortion_filename,
-    get_structures,
-    get_energies,
-    calculate_struct_comparison,
-    compare_structures,
-)
-from shakenbreak.io import read_vasp_structure
+from shakenbreak import io, analysis
 
 
 def _format_distortion_directory_name(
@@ -186,7 +178,7 @@ def get_energy_lowering_distortions(
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
-            energies_dict, energy_diff, gs_distortion = _sort_data(
+            energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
 
@@ -203,18 +195,18 @@ def get_energy_lowering_distortions(
             elif (
                 energy_diff and float(energy_diff) < -min_e_diff
             ):  # if a significant energy drop occurred, then store this distorted defect
-                bond_distortion = _get_distortion_filename(gs_distortion)
+                bond_distortion = analysis._get_distortion_filename(gs_distortion)
                 # format distortion label to the one used in file name
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 file_path = f"{output_path}/{defect_species}/{bond_distortion}/CONTCAR"
                 with warnings.catch_warnings(record=True) as w:
-                    gs_struct = read_vasp_structure(
+                    gs_struct = io.read_vasp_structure(
                         file_path
                     )  # get the final structure of the
                     # energy lowering distortion
                     if any(warning.category == UserWarning for warning in w):
                         # problem parsing structure, user will have received appropriate
-                        # warning from read_vasp_structure()
+                        # warning from io.read_vasp_structure()
                         print(
                             f"Problem parsing final, low-energy structure for "
                             f"{gs_distortion} bond distortion of {defect_species} "
@@ -237,7 +229,7 @@ def get_energy_lowering_distortions(
                         # rather than iterating directly over list, as this will
                         # result in unwanted repetition because we append to
                         # this list if new structure found
-                        struct_comparison_dict = calculate_struct_comparison(
+                        struct_comparison_dict = analysis.calculate_struct_comparison(
                             {"Ground State": gs_struct},
                             metric="disp",
                             ref_structure=low_energy_defects[defect][i][
@@ -431,24 +423,24 @@ def compare_struct_to_distortions(
             converged structures found for defect_species.
     """
     try:
-        defect_structures_dict = get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species=defect_species,
             output_path=output_path,
             code=code,
             structure_filename=structure_filename,
         )
-    except FileNotFoundError:  # catch exception raised by `get_structures``
+    except FileNotFoundError:  # catch exception raised by `analysis.get_structures``
         # if `defect_species` folder does not exist
         # print(
         #     f"No structures found for {defect_species}. Returning None. Check that the "
         #     f"relaxation folders for {defect_species} are present in {output_path}."
         # )
         return None, None, None, None
-    defect_energies_dict = get_energies(
+    defect_energies_dict = analysis.get_energies(
         defect_species=defect_species, output_path=output_path, verbose=False
     )
 
-    struct_comparison_df = compare_structures(
+    struct_comparison_df = analysis.compare_structures(
         defect_structures_dict=defect_structures_dict,
         defect_energies_dict=defect_energies_dict,
         ref_structure=distorted_struct,
@@ -967,11 +959,11 @@ def write_groundstate_structure(
     for defect in defect_charges_dict:
         for charge in defect_charges_dict[defect]:
             energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
-            _, _, gs_distortion = _sort_data(
+            _, _, gs_distortion = analysis._sort_data(
                 energies_file=energies_file,
                 verbose=False
             )
-            bond_distortion = _get_distortion_filename(gs_distortion)
+            bond_distortion = analysis._get_distortion_filename(gs_distortion)
             shutil.copyfile(
                 f"{output_path}/{defect}_{charge}/{bond_distortion}/{structure_filename}",
                 f"{output_path}/{defect}_{charge}/{groundstate_filename}",
