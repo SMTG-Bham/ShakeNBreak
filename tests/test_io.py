@@ -7,12 +7,15 @@ import json
 
 from pymatgen.core.structure import Structure
 
-from shakenbreak.io import read_espresso_structure, parse_qe_input, parse_fhi_aims_input
+from shakenbreak.io import (
+    read_espresso_structure,
+    read_castep_structure,
+    read_cp2k_structure,
+    read_fhi_aims_structure,
+    parse_qe_input,
+    parse_fhi_aims_input
+)
 from shakenbreak.analysis import _calculate_atomic_disp
-
-# TODO: Add tests for structure parsing functions (castep, cp2k & fhi-aims)
-# For cp2k, castep & fhi-aims, this relies on ase.io so should work fine,
-# but sanity check
 
 
 class IoTestCase(unittest.TestCase):
@@ -29,6 +32,48 @@ class IoTestCase(unittest.TestCase):
         )
         self.assertTrue(
             _calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
+                0
+            ]
+            < 0.01
+        )
+
+    def test_read_cp2k_structure(self):
+        "Test read_cp2k_structure() function."
+        path = os.path.join(self.DATA_DIR, "cp2k/cp2k.restart")
+        structure = read_cp2k_structure(path)
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "cp2k/POSCAR"))
+        self.assertEqual(test_structure, structure)
+
+    def test_read_castep_structure(self):
+        "Test read_castep_structure() function."
+        path = os.path.join(self.DATA_DIR, "castep/Si2-cellopt-aniso.castep")
+        structure = read_castep_structure(path)
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "castep/POSCAR"))
+        self.assertTrue(
+            _calculate_atomic_disp(test_structure, structure)[
+                0
+            ]
+            < 0.01
+        )
+
+    def test_read_fhi_aims_structure(self):
+        "Test read_cp2k_structure() function."
+        # Test parsing from output file
+        path = os.path.join(self.DATA_DIR, "fhi_aims/Si_opt.out")
+        structure = read_fhi_aims_structure(path, format="aims-output")
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "fhi_aims/POSCAR"))
+        self.assertTrue(
+            _calculate_atomic_disp(test_structure, structure)[
+                0
+            ]
+            < 0.01
+        )
+        # Test parsing geometry.in file
+        path = os.path.join(self.DATA_DIR, "fhi_aims/geometry.in")
+        structure = read_fhi_aims_structure(path, format="aims")
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "fhi_aims/POSCAR_geom"))
+        self.assertTrue(
+            _calculate_atomic_disp(test_structure, structure)[
                 0
             ]
             < 0.01

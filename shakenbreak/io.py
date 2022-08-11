@@ -331,6 +331,7 @@ def read_espresso_structure(
 
 def read_fhi_aims_structure(
     filename: str,
+    format="aims"
 ) -> Structure:
     """
     Reads a structure from fhi-aims output and returns it as a pymatgen
@@ -339,6 +340,8 @@ def read_fhi_aims_structure(
     Args:
         filename (:obj:`str`):
             Path to the fhi-aims output file.
+        format (:obj:`str`):
+            either aims-output (output file) aims (geometry file)
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -348,7 +351,7 @@ def read_fhi_aims_structure(
             aaa = AseAtomsAdaptor()
             atoms = ase.io.read(
                 filename = filename,
-                format="aims"
+                format=format
             )
             structure = aaa.get_structure(atoms)
             structure = structure.get_sorted_structure() # Sort sites by
