@@ -12,12 +12,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import seaborn as sns
 
-from shakenbreak.analysis import (
-    _sort_data,
-    _read_distortion_metadata,
-    get_structures,
-    calculate_struct_comparison,
-)
+from shakenbreak import analysis
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -339,10 +334,10 @@ def _get_displacement_dict(
         `disp_dict`
     """
     try:
-        defect_structs = get_structures(
+        defect_structs = analysis.get_structures(
             defect_species=defect_species, output_path=output_path, code=code,
         )
-        disp_dict = calculate_struct_comparison(
+        disp_dict = analysis.calculate_struct_comparison(
             defect_structs, metric=metric
         )  # calculate sum of atomic displacements and maximum displacement
         # between paired sites
@@ -730,7 +725,7 @@ def plot_all_defects(
         raise FileNotFoundError(f"Path {output_path} does not exist!")
 
     try:
-        distortion_metadata = _read_distortion_metadata(output_path=output_path)
+        distortion_metadata = analysis._read_distortion_metadata(output_path=output_path)
     except FileNotFoundError:
         warnings.warn(f"Path {output_path}/distortion_metadata.json does not exist. "
                       "Will not parse its contents.")
@@ -756,7 +751,7 @@ def plot_all_defects(
                     f"Skipping {defect_species}."
                 )  # skip defect
                 continue
-            energies_dict, energy_diff, gs_distortion = _sort_data(
+            energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=False
             )
 
@@ -893,7 +888,7 @@ def plot_defect(
     # If not specified, try to parse from distortion_metadata.json file
     if not neighbour_atom and not num_nearest_neighbours:
         try:
-            distortion_metadata = _read_distortion_metadata(output_path=output_path)
+            distortion_metadata = analysis._read_distortion_metadata(output_path=output_path)
             if distortion_metadata:
                 num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                     distortion_metadata=distortion_metadata,
@@ -1131,24 +1126,24 @@ def plot_colorbar(
                 list(energies_dict['distortions'].keys())[i].split('_')[-1]
                 for i in imported_indices
             ))  # number of other charge states whose distortions have been imported
-        for i, j in zip(imported_indices, range(other_charges)):
-            other_charge_state = int(
-                list(energies_dict['distortions'].keys())[i].split('_')[-1]
-            )
-            ax.scatter(
-                np.array(keys)[i],
-                list(energies_dict["distortions"].values())[i],
-                c=sorted_disp[i],
-                edgecolors="k",
-                ls="-",
-                s=50,
-                marker=["s","v","<",">","^","p","X"][j],
-                zorder=10,  # make sure it's on top of the other points
-                cmap=colormap,
-                norm=norm,
-                alpha=1,
-                label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
-            )
+            for i, j in zip(imported_indices, range(other_charges)):
+                other_charge_state = int(
+                    list(energies_dict['distortions'].keys())[i].split('_')[-1]
+                )
+                ax.scatter(
+                    np.array(keys)[i],
+                    list(energies_dict["distortions"].values())[i],
+                    c=sorted_disp[i],
+                    edgecolors="k",
+                    ls="-",
+                    s=50,
+                    marker=["s","v","<",">","^","p","X"][j],
+                    zorder=10,  # make sure it's on top of the other points
+                    cmap=colormap,
+                    norm=norm,
+                    alpha=1,
+                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
+                )
         unperturbed_color = colormap(
             0
         )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
@@ -1368,23 +1363,23 @@ def plot_datasets(
                     list(dataset['distortions'].keys())[i].split('_')[-1]
                     for i in imported_indices
                 ))  # number of other charge states whose distortions have been imported
-            for i, j in zip(imported_indices, range(other_charges)):
-                other_charge_state = int(
-                    list(dataset['distortions'].keys())[i].split('_')[-1]
-                )
-                ax.scatter(  # distortions from other charge states
-                    np.array(keys)[i],
-                    list(dataset["distortions"].values())[i],
-                    c=colors[dataset_number],
-                    edgecolors="k",
-                    ls="-",
-                    s=50,
-                    zorder=10,  # make sure it's on top of the other lines
-                    marker=["s","v","<",">","^","p","X"][j],  # different markers for different charge states
-                    alpha=1,
-                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
-                        f"state"
-                )
+                for i, j in zip(imported_indices, range(other_charges)):
+                    other_charge_state = int(
+                        list(dataset['distortions'].keys())[i].split('_')[-1]
+                    )
+                    ax.scatter(  # distortions from other charge states
+                        np.array(keys)[i],
+                        list(dataset["distortions"].values())[i],
+                        c=colors[dataset_number],
+                        edgecolors="k",
+                        ls="-",
+                        s=50,
+                        zorder=10,  # make sure it's on top of the other lines
+                        marker=["s","v","<",">","^","p","X"][j],  # different markers for different charge states
+                        alpha=1,
+                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
+                            f"state"
+                    )
 
     datasets[0][
         "Unperturbed"
