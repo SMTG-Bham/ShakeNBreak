@@ -83,7 +83,6 @@ class CLITestCase(unittest.TestCase):
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
 
-
     def test_snb_generate(self):
         runner = CliRunner()
         result = runner.invoke(
@@ -1257,7 +1256,6 @@ local_rattle: False
         )
         shutil.rmtree(f"{defect_name}_0")
         self.tearDown()
-
 
     def test_parse(self):
         """Test parse() function"""
