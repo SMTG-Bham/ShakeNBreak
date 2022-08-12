@@ -1,13 +1,11 @@
 import unittest
 import os
-from unittest.mock import patch
-import shutil
-import numpy as np
-import json
+import warnings
 
 from pymatgen.core.structure import Structure
 
 from shakenbreak.io import (
+    read_vasp_structure,
     read_espresso_structure,
     read_castep_structure,
     read_cp2k_structure,
@@ -17,10 +15,47 @@ from shakenbreak.io import (
 )
 from shakenbreak.analysis import _calculate_atomic_disp
 
-
 class IoTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+
+    def test_read_vasp_structure(self):
+        """Test read_vasp_structure() function."""
+        with warnings.catch_warnings(record=True) as w:
+            output = read_vasp_structure("fake_file")
+            warning_message = (
+                "fake_file file doesn't exist, storing as 'Not converged'. Check "
+                "path & relaxation"
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, "Not converged")
+
+        with warnings.catch_warnings(record=True) as w:
+            output = read_vasp_structure(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
+            )
+            warning_message = (
+                f"Problem obtaining structure from: "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
+                f"converged'. Check file & relaxation"
+            )
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertIn(warning_message, str(w[0].message))
+            self.assertEqual(output, "Not converged")
+
+        with warnings.catch_warnings(record=True) as w:
+            output = read_vasp_structure(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
+            )
+            V_Cd_struc = Structure.from_file(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
+            )
+            self.assertEqual(len(w), 0)
+            self.assertEqual(output, V_Cd_struc)
 
     def test_read_espresso_structure(self):
         """Test `read_espresso_structure` function."""
@@ -108,11 +143,11 @@ class IoTestCase(unittest.TestCase):
         path = os.path.join(self.DATA_DIR, "fhi_aims/control.in")
         params = parse_fhi_aims_input(path)
         test_params = {
-            'xc': 'hse',
+            'xc': 'pbe',
             'charge': 0.0,
             'spin': 'collinear',
             'default_initial_moment': 0.0,
-            'sc_iter_limit': 50.0,
+            'sc_iter_limit': 100.0,
             'relax_geometry': ['bfgs', 0.001]
         }
         self.assertEqual(
