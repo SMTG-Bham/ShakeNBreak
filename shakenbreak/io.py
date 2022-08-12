@@ -47,7 +47,7 @@ def parse_energies(
         code (:obj:`str`):
             Name of ab-initio code used to run the geometry optimisations, case
             insensitive. Options include: "vasp", "cp2k", "espresso", "castep"
-            and "fhi-aims". Defaults to 'vasp'.
+            and "fhi-aims". Defaults to "vasp".
         filename (:obj:`str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
@@ -212,7 +212,8 @@ def parse_energies(
             else:
                 print(f"{dist} not fully relaxed")
 
-        if energies != {"distortions": {}}:  # only write energy file if energies have been parsed
+        # only write energy file if energies have been parsed
+        if energies != {"distortions": {}}:
             energies = sort_energies(energies)
             save_file(energies, defect, path)
 
@@ -412,6 +413,7 @@ def read_castep_structure(
     Args:
         filename (:obj:`str`):
             Path to the castep output file.
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -461,7 +463,6 @@ def parse_structure(
             Quantum espresso: "espresso.out",
             castep: "castep.castep" (castep output file is used)
             fhi-aims: geometry.in.next_step
-
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -504,10 +505,11 @@ def parse_qe_input(path) -> dict:
     """
     Parse the input file of Quantum Espresso and return it as a dictionary
     of the parameters.
+
     Args:
         path (:obj:`str`):
             Path to the Quantum Espresso input file.
-    Returns: dict
+    Returns: :obj:`dict`
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {path} does not exist!")
@@ -555,10 +557,11 @@ def parse_fhi_aims_input(path):
     """
     Parse the input file of FHI-aims and return it as a dictionary
     of the parameters.
+
     Args:
         path (:obj:`str`):
             Path to the Quantum Espresso input file.
-    Returns: dict
+    Returns: :obj:`dict`
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {path} does not exist!")

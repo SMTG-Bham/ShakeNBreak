@@ -1,6 +1,7 @@
 sphinx
 sphinx_rtd_theme
 sphinx-mdinclude
+sphinx_click
 numpy
 pymatgen
 ase

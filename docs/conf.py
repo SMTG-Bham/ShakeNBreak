@@ -37,6 +37,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_mdinclude',
+    'sphinx_click',
     #'myst_parser',
 ]
 

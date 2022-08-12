@@ -15,6 +15,7 @@ from monty.json import MontyDecoder
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
+from pymatgen.analysis.defects.core import Defect
 
 # ShakeNBreak
 from shakenbreak import io, input, analysis, plotting, energy_lowering_distortions
@@ -22,10 +23,11 @@ from shakenbreak import io, input, analysis, plotting, energy_lowering_distortio
 
 def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
-):
+) -> Defect:
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
-    the supercell, and generate a pymatgen defect object from this.
+    the supercell, and generate a pymatgen defect object
+    (pymatgen.analysis.defects.core.Defect) from this.
 
     Args:
         defect_structure (:obj:`Structure`):
@@ -34,7 +36,7 @@ def identify_defect(
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
             Index of the defect site in the supercell.
-
+    Returns: :obj:`Defect`
     """
     natoms_defect = len(defect_structure)
     natoms_bulk = len(bulk_structure)
@@ -182,8 +184,20 @@ def identify_defect(
     return defect
 
 
-def _generate_defect_dict(defect_object, charges, defect_name) -> dict:
-    """Create defect dictionary from a defect object"""
+def generate_defect_dict(defect_object, charges, defect_name) -> dict:
+    """
+    Create defect dictionary from a pymatgen Defect object.
+
+    Args:
+        defect_object (:obj:`Defect`):
+            `pymatgen.analysis.defects.core.Defect` object.
+        charges (:obj:`list`):
+            List of charge states for the defect.
+        defect_name(:obj:`str`):
+            Name of the defect, to use as key in the defect dict.
+
+    Returns: :obj:`dict`
+    """
     single_defect_dict = {
         "name": defect_name,
         "bulk_supercell_site": defect_object.site,
@@ -369,7 +383,7 @@ def snb():
 )
 @click.option(
     "--input_file",
-    "-f",
+    "-inp",
     help="Input file for the code specified with `--code`, "
     "with relaxation parameters to override defaults.",
     default=None,
@@ -399,7 +413,7 @@ def generate(
     verbose,
 ):
     """
-    Generate the trial distortions for structure-searching for a given defect.
+    Generate the trial distortions and input files for structure-searching for a given defect.
     """
     if config is not None:
         user_settings = loadfn(config)
@@ -466,7 +480,7 @@ def generate(
     if name is None:
         name = defect_object.name
 
-    defects_dict = _generate_defect_dict(defect_object, charges, name)
+    defects_dict = generate_defect_dict(defect_object, charges, name)
 
     Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
@@ -542,7 +556,7 @@ def generate(
 )
 @click.option(
     "--structure_file",
-    "-f",
+    "-s",
     help="File termination/name from which to"
     "parse defect structure from. Only required if defects are stored "
     "in individual directories. Defaults to POSCAR",
@@ -573,7 +587,7 @@ def generate(
 )
 @click.option(
     "--input_file",
-    "-if",
+    "-inp",
     help="Input file for the code specified with `--code`, "
     "with relaxation parameters to override defaults.",
     default=None,
@@ -596,7 +610,7 @@ def generate_all(
     verbose,
 ):
     """
-    Generate the trial distortions for structure-searching for all defects
+    Generate the trial distortions and input files for structure-searching for all defects
     in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
@@ -748,7 +762,7 @@ def generate_all(
                 f"with site {defect_object.site}"
             )
 
-        defect_dict = _generate_defect_dict(defect_object, charges, defect_name)
+        defect_dict = generate_defect_dict(defect_object, charges, defect_name)
 
         # Add defect entry to full defect_dict
         defect_type = str(list(defect_dict.keys())[0])
@@ -863,7 +877,8 @@ def generate_all(
     default="vasp",
 )
 def parse(defect, all, path, code):
-    """Parse final energies of defect structures from relaxation output files.
+    """
+    Parse final energies of defect structures from relaxation output files.
     Parsed energies are written to a `yaml` file in the corresponding defect directory.
     """
     if defect:
@@ -930,6 +945,7 @@ def parse(defect, all, path, code):
 )
 @click.option(
     "--ref_struct",
+    "-ref",
     help ="Structure to use as a reference for comparison"
         "(to compute atomic displacements). Given as a key from"
         "`defect_structures_dict`. Defaults to 'Unperturbed'",
@@ -946,8 +962,8 @@ def parse(defect, all, path, code):
 )
 def analyse(defect, all, path, code, ref_struct, verbose):
     """
-    Generate csv file mapping each distortion to its final energy and its
-    mean displacement (relative to ref_struct).
+    Generate `csv` file mapping each distortion to its final energy (in eV) and its
+    mean displacement (in angstrom and relative to `ref_struct`).
     """
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
         if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
@@ -1009,7 +1025,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--all",
     "-a",
-    help="Analyse all defects present in specified directory",
+    help="Analyse all defects present/current in specified directory",
     default=False,
     is_flag=True,
     show_default=True,
@@ -1024,6 +1040,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
+    "c",
     help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
@@ -1032,6 +1049,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--colorbar",
+    "-cb",
     help ="Whether to add a colorbar indicating structural"
         " similarity between each structure and the unperturbed one.",
     type=bool,
@@ -1042,7 +1060,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help ="If add_colorbar is True, determines the criteria used for the"
+    help ="If the option `--colorbar` is specified, determines the criteria used for the"
         " structural comparison. Can choose between the summed of atomic"
         " displacements ('disp') or the maximum distance between"
         " matched sites ('max_dist', default).",
@@ -1052,7 +1070,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--format",
     "-f",
-    help ="Format to save the plot as. Defaults to svg.",
+    help ="Format to save the plot as. Defaults to `svg`.",
     type=str,
     default="svg",
 )
@@ -1074,7 +1092,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--title",
     "-t",
-    help ="Whether to add defect name as plot title. Defaults to True.",
+    help ="Whether to add defect name as plot title. Defaults to `True`.",
     type=bool,
     default=True,
     is_flag=True,
@@ -1090,7 +1108,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose):
     """
-    Generate energy vs distortion plots.
+    Generate energy vs distortion plots. Optionally, the structural
+    similarity between configurations can be illustrated with a colorbar.
     """
     if all:
         defect_dirs = _parse_defect_dirs(path)
@@ -1166,7 +1185,8 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
 @click.option(
     "--filename",
     "-f",
-    help ="Name of the file containing the structure. Defaults to 'CONTCAR'",
+    help ="Name of the file containing the defect structures. "
+    "Defaults to 'CONTCAR'",
     type=str,
     default="CONTCAR",
 )
