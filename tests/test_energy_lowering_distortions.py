@@ -165,7 +165,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             mock_print.assert_any_call(
                 f"Problem parsing final, low-energy structure for "
                 f"-0.35 bond distortion of vac_1_Cd_-2 "
-                f"at {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-35.0%/CONTCAR. This species will be skipped and "
+                f"at {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-35.0%/CONTCAR. "
+                "This species will be skipped and "
                 f"will not be included in low_energy_defects (check"
                 f"relaxation calculation and folder)."
             )
@@ -294,7 +295,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             mock_print.assert_not_called_with(
                 f"Problem parsing final, low-energy structure for -35.0% bond distortion of "
                 f"vac_1_Cd_-2 at {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-35.0%/CONTCAR. "
-                f"This species will be skipped and will not be included in low_energy_defects ("
+                f"This species will be skipped and "
+                "will not be included in low_energy_defects ("
                 f"check relaxation calculation and folder)."
             )
             mock_print.assert_any_call(
