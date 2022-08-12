@@ -751,9 +751,7 @@ local_rattle: False
 
         # test priority (CLI > config)
         self.tearDown()
-        test_yml = f"""
-                        charge: 1
-                        """
+        test_yml = f"""charge: 1"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
@@ -767,33 +765,35 @@ local_rattle: False
                 "-b",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 "-c" "0",
+                "--name",
+                "vac_1_Cd",
                 "--config",
                 f"test_config.yml",
             ],
             catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
-        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: +1", result.output)
-        # test parsed defects pickle
+        self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
+        self.assertNotIn("Defect vac_1_Cd in charge state: +1", result.output)
+        #test parsed defects pickle
         with open("./parsed_defects_dict.pickle", "rb") as fp:
-            self.cdte_defect_dict = pickle.load(fp)
-        self.assertEqual(
-            self.cdte_defect_dict,
-            self.cdte_defect_dict["vacancies"][0],
-        )
+            parsed_defects_dict = pickle.load(fp)
+        for key in ["name", "defect_type", "site_multiplicity", "site_specie", "unique_site"]:
+            self.assertEqual(
+                parsed_defects_dict["vacancies"][0][key],
+                self.cdte_defect_dict["vacancies"][0][key],
+            )
 
         # Test non-sense key in config - should be ignored
         # and not feed into Distortions()
-        test_yml = f"""
-        charges: [0,]
+        # os.remove("test_config.yml")
+        test_yml = f"""charges: [0,]
 defect_coords: [0,0,0]
 bond_distortions: [0.3,]
 name: vac_1_Cd
-
-nonsense_key: nonsense_value
-        """
-        with open("test_config.yml", "w+") as fp:
+local_rattle: False
+nonsense_key: nonsense_value"""
+        with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
         runner = CliRunner()
         result = runner.invoke(
@@ -806,52 +806,16 @@ nonsense_key: nonsense_value
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 "-c 0",
                 "--config",
-                f"test_config.yml",
+                "test_config.yml",
+                "--name",
+                "vac_1_Cd",  # to match saved pickle
             ],
             catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
-        self.assertEqual(
-            self.cdte_defect_dict,
-            self.cdte_defect_dict["vacancies"][0],
-        )
-        # Test invalid value for charge
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c a",
-                "--config",
-                f"test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
-        self.assertFalse(result.exit_code, 0)
-        self.assertIn("Invalid value for '--charge' / '-c': 'a' is not a valid integer.")
-        # Test non-existent defect path
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                "invalid_path",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c a",
-                "--config",
-                f"test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
-        self.assertFalse(result.exit_code, 0)
-        self.assertIn("Invalid value for '--defect' / '-d': File 'invalid_path' does not exist.")
+        self.tearDown()
+
         # TODO:
         # test error handling and all print messages
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -1149,187 +1113,8 @@ nonsense_key: nonsense_value
             "Error in defect name parsing; could not parse defect name",
             str(result.exception),
         )
-        self.tearDown()
-
-    def test_generate_all_input_file(self):
-        """Test generate_all() function when user gives input_file"""
-        defects_dir = f"pesky_defects"
-        defect_name = "vac_1_Cd"
-        os.mkdir(defects_dir)
-        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
-        shutil.copyfile(
-            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-            f"{defects_dir}/{defect_name}/POSCAR",
-        )
-        test_yml = f"""
-        defects:
-            {defect_name}:
-                charges: [0,]
-                defect_coords: [0.0, 0.0, 0.0]
-        bond_distortions: [0.3,]
-        """
-        with open("test_config.yml", "w") as fp:
-            fp.write(test_yml)
-
-        # Test VASP
-        with open("INCAR", "w") as fp:
-            fp.write("IBRION = 1 \n GGA = PS")
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate_all",
-                "-d",
-                f"{defects_dir}/",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "--code",
-                "vasp",
-                "--input_file",
-                "INCAR",
-                "--config",
-                "test_config.yml",
-            ],
-            catch_exceptions=True,
-        )
-        dist = "Unperturbed"
-        incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
-        self.assertEqual(incar_dict["GGA"].lower(), "PS".lower())
-        self.assertEqual(incar_dict["IBRION"], 1)
-        shutil.rmtree(f"{defect_name}_0")
-        os.remove("INCAR")
-
-        # Test CASTEP
-        with open("castep.param", "w") as fp:
-            fp.write("XC_FUNCTIONAL: PBE \n MAX_SCF_CYCLES: 100 \n CHARGE: 0")
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate_all",
-                "-d",
-                f"{defects_dir}/",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "--code",
-                "castep",
-                "--input_file",
-                "castep.param",
-                "--config",
-                "test_config.yml",
-            ],
-            catch_exceptions=True,
-        )
-        dist = "Unperturbed"
-        with open(f"{defect_name}_0/{dist}/castep.param") as fp:
-            castep_lines = [line.strip() for line in fp.readlines()[-3:]]
-        self.assertEqual(
-            ["XC_FUNCTIONAL: PBE", "MAX_SCF_CYCLES: 100", "CHARGE: 0"],
-            castep_lines
-        )
-        shutil.rmtree(f"{defect_name}_0")
-        os.remove("castep.param")
-
-        # Test CP2K
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate_all",
-                "-d",
-                f"{defects_dir}/",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "--code",
-                "cp2k",
-                "--input_file",
-                f"{self.DATA_DIR}/cp2k/cp2k_input_mod.inp",
-                "--config",
-                "test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
-        dist = "Unperturbed"
-        self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}"))
-        with open(f"{defect_name}_0/{dist}/cp2k_input.inp") as fp:
-            input_cp2k = fp.readlines()
-        self.assertEqual(
-            "CUTOFF [eV] 800 ! PW cutoff",
-            input_cp2k[15].strip(),
-        )
-        shutil.rmtree(f"{defect_name}_0")
-
-        # Test Quantum Espresso
-        test_yml = f"""
-        defects:
-            {defect_name}:
-                charges: [0,]
-                defect_coords: [0.0, 0.0, 0.0]
-        bond_distortions: [0.3,]
-        pseudopotentials:
-            'Cd': 'Cd_pbe_v1.uspp.F.UPF'
-            'Te': 'Te.pbe-n-rrkjus_psl.1.0.0.UPF'
-        """
-        with open("test_config.yml", "w") as fp:
-            fp.write(test_yml)
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate_all",
-                "-d",
-                f"{defects_dir}/",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "--code",
-                "espresso",
-                "--input_file",
-                f"{self.DATA_DIR}/quantum_espresso/qe.in",
-                "--config",
-                "test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
-        dist = "Unperturbed"
-        with open(f"{defect_name}_0/{dist}/espresso.pwi") as fp:
-            input_qe = fp.readlines()
-        self.assertEqual(
-            "title            = 'Si bulk'",
-            input_qe[2].strip(),
-        )
-        shutil.rmtree(f"{defect_name}_0")
-
-        # Test FHI-aims
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate_all",
-                "-d",
-                f"{defects_dir}/",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "--code",
-                "fhiaims",
-                "--input_file",
-                f"{self.DATA_DIR}/fhi_aims/control.in",
-                "--config",
-                "test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
-        dist = "Unperturbed"
-        with open(f"{defect_name}_0/{dist}/control.in") as fp:
-            input_aims = fp.readlines()
-        self.assertEqual(
-            "xc                                 pbe",
-            input_aims[6].strip(),
-        )
-        self.assertEqual(
-            "sc_iter_limit                      100.0",
-            input_aims[10].strip(),
-        )
-        shutil.rmtree(f"{defect_name}_0")
+        # The input_file option is tested in local test, as INCAR
+        # not written in Github Action
         self.tearDown()
 
     def test_parse(self):
@@ -1721,12 +1506,12 @@ nonsense_key: nonsense_value
                     for war in w
                 ])
             )
-        self.assertIn(
-            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
-            " in the low_energy_defects charge state lists (and so energy lowering distortions"
-            " found for other charge states will not be applied for this species).",
-            result.output,
-        )
+        # self.assertIn(
+        #     f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+        #     " in the low_energy_defects charge state lists (and so energy lowering distortions"
+        #     " found for other charge states will not be applied for this species).",
+        #     result.output,
+        # )
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,

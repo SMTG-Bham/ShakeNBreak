@@ -1005,13 +1005,13 @@ def _site_magnetizations(
                 ].update({
                     'Dist. (\u212B)': round(
                         structure.get_distance(i = defect_site, j = index), 1
-                    ) # TODO: substitute AA
+                    )
                 })
             if orbital_projections:
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
                 ].update(
-                    {k: round(v,4) for k,v in element.items() if k != 'tot'}
+                    {k: round(v,3) for k,v in element.items() if k != 'tot'}
                     # include site magnetization of each orbital
                     # but dont include total site magnetization again
                 )
@@ -1089,7 +1089,7 @@ def get_site_magnetizations(
                         f"magnetization."
                     )
                     defect_site = None
-    # TODO: This could be sped up by parallelising
+
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename
         # (e.g. Bond_Distortion_50.0%)
@@ -1121,7 +1121,7 @@ def get_site_magnetizations(
         if verbose:
             print(
                 f"Analysing distortion {distortion}. "
-                f"Total magnetization: {round(outcar.total_mag, 3)}"
+                f"Total magnetization: {round(outcar.total_mag, 2)}"
             )
         df = _site_magnetizations(
             outcar=outcar,
@@ -1129,7 +1129,7 @@ def get_site_magnetizations(
             threshold=threshold,
             defect_site=defect_site,
             orbital_projections=orbital_projections,
-            )
+        )
         if not df.empty:
             magnetizations[distortion] = df
         elif verbose:

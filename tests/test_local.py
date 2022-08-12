@@ -26,14 +26,17 @@ from monty.serialization import dumpfn
 from doped import vasp_input
 
 from shakenbreak.cli import snb
-from shakenbreak import input, io
+from shakenbreak import input, vasp
 
 file_path = os.path.dirname(__file__)
 
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 def _update_struct_defect_dict(
@@ -202,17 +205,37 @@ class DistortionLocalTestCase(unittest.TestCase):
         ]
 
         self.parsed_default_incar_settings = {
-            k: v for k, v in io.default_incar_settings.items() if "#" not in k
+            k: v for k, v in vasp.default_incar_settings.items() if "#" not in k
         }  # pymatgen doesn't parsed commented lines
         self.parsed_incar_settings_wo_comments = {
             k: v for k, v in self.parsed_default_incar_settings.items() if "#" not in str(v)
         }  # pymatgen ignores comments after values
+
+        with open(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
+        ) as fp:
+            self.cdte_defect_dict = pickle.load(fp)
 
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
+        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
+            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
+
+        for i in [
+            "parsed_defects_dict.pickle",
+            "distortion_metadata.json",
+            "test_config.yml",
+        ]:
+            if_present_rm(i)
+
+        for i in os.listdir("."):
+            if "distortion_metadata" in i:
+                os.remove(i)
+            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
+                shutil.rmtree(i)
         if os.path.exists(f"{os.getcwd()}/distortion_plots"):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
@@ -234,7 +257,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=io.default_incar_settings,
+            incar_settings=vasp.default_incar_settings,
         )
         V_Cd_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_minus50_folder))
@@ -500,6 +523,187 @@ class DistortionLocalTestCase(unittest.TestCase):
             f"{file_path}/remote_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
+        self.tearDown()
+
+    def test_generate_all_input_file(self):
+        """Test generate_all() function when user gives input_file"""
+        defects_dir = f"pesky_defects"
+        defect_name = "vac_1_Cd"
+        os.mkdir(defects_dir)
+        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}/POSCAR",
+        )
+        test_yml = f"""
+        defects:
+            {defect_name}:
+                charges: [0,]
+                defect_coords: [0.0, 0.0, 0.0]
+        bond_distortions: [0.3,]
+        """
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+
+        # Test VASP
+        with open("INCAR", "w") as fp:
+            fp.write("IBRION = 1 \n GGA = PS")
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--code",
+                "vasp",
+                "--input_file",
+                "INCAR",
+                "--config",
+                "test_config.yml",
+            ],
+            catch_exceptions=True,
+        )
+        dist = "Unperturbed"
+        incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
+        self.assertEqual(incar_dict["GGA"].lower(), "PS".lower())
+        self.assertEqual(incar_dict["IBRION"], 1)
+        shutil.rmtree(f"{defect_name}_0")
+        os.remove("INCAR")
+
+        # Test CASTEP
+        with open("castep.param", "w") as fp:
+            fp.write("XC_FUNCTIONAL: PBE \n MAX_SCF_CYCLES: 100 \n CHARGE: 0")
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--code",
+                "castep",
+                "--input_file",
+                "castep.param",
+                "--config",
+                "test_config.yml",
+            ],
+            catch_exceptions=True,
+        )
+        dist = "Unperturbed"
+        with open(f"{defect_name}_0/{dist}/castep.param") as fp:
+            castep_lines = [line.strip() for line in fp.readlines()[-3:]]
+        self.assertEqual(
+            ["XC_FUNCTIONAL: PBE", "MAX_SCF_CYCLES: 100", "CHARGE: 0"],
+            castep_lines
+        )
+        shutil.rmtree(f"{defect_name}_0")
+        os.remove("castep.param")
+
+        # Test CP2K
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--code",
+                "cp2k",
+                "--input_file",
+                f"{self.DATA_DIR}/cp2k/cp2k_input_mod.inp",
+                "--config",
+                "test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        dist = "Unperturbed"
+        self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}"))
+        with open(f"{defect_name}_0/{dist}/cp2k_input.inp") as fp:
+            input_cp2k = fp.readlines()
+        self.assertEqual(
+            "CUTOFF [eV] 800 ! PW cutoff",
+            input_cp2k[15].strip(),
+        )
+        shutil.rmtree(f"{defect_name}_0")
+
+        # Test Quantum Espresso
+        test_yml = f"""
+        defects:
+            {defect_name}:
+                charges: [0,]
+                defect_coords: [0.0, 0.0, 0.0]
+        bond_distortions: [0.3,]
+        pseudopotentials:
+            'Cd': 'Cd_pbe_v1.uspp.F.UPF'
+            'Te': 'Te.pbe-n-rrkjus_psl.1.0.0.UPF'
+        """
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--code",
+                "espresso",
+                "--input_file",
+                f"{self.DATA_DIR}/quantum_espresso/qe.in",
+                "--config",
+                "test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        dist = "Unperturbed"
+        with open(f"{defect_name}_0/{dist}/espresso.pwi") as fp:
+            input_qe = fp.readlines()
+        self.assertEqual(
+            "title            = 'Si bulk'",
+            input_qe[2].strip(),
+        )
+        shutil.rmtree(f"{defect_name}_0")
+
+        # Test FHI-aims
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "--code",
+                "fhiaims",
+                "--input_file",
+                f"{self.DATA_DIR}/fhi_aims/control.in",
+                "--config",
+                "test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        dist = "Unperturbed"
+        with open(f"{defect_name}_0/{dist}/control.in") as fp:
+            input_aims = fp.readlines()
+        self.assertEqual(
+            "xc                                 pbe",
+            input_aims[6].strip(),
+        )
+        self.assertEqual(
+            "sc_iter_limit                      100.0",
+            input_aims[10].strip(),
+        )
+        shutil.rmtree(f"{defect_name}_0")
         self.tearDown()
 
 if __name__ == "__main__":

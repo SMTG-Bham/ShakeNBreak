@@ -289,9 +289,6 @@ def _prune_dict_across_charges(
     return low_energy_defects
 
 
-# TODO: Update get_energy_lowering_distortions() to optionally also store non-spontaneous
-#  _metastable_ energy-lowering distortions, as these can become ground-state distortions for
-#  other charge states - Done -> Write test!
 def get_energy_lowering_distortions(
     defect_charges_dict: Optional[dict] = None,
     output_path: str = ".",
