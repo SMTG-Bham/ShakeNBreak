@@ -1040,7 +1040,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
-    "c",
+    "-c",
     help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
