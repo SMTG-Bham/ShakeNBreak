@@ -175,8 +175,8 @@ def _compare_distortion(
             ["charges", "structures", "energy_diffs", "bond_distortions"],
             [charge, gs_struct, energy_diff, gs_distortion],
         ):
-            low_energy_defects[defect][index][property.copy()].append(
-                value.copy()
+            low_energy_defects[defect][index][property].append(
+                value
             )
 
     else:  # only add to list if it doesn't match _any_ of the
@@ -274,7 +274,7 @@ def _prune_dict_across_charges(
                         ["charges", "structures", "energy_diffs", "bond_distortions"],
                         [charge, comparison_results[1], comparison_results[2], comparison_results[3]]
                     ):
-                        distortion_dict[property.copy()].append(
+                        distortion_dict[property].append(
                             copy.deepcopy(value)
                         )
                 elif comparison_results[0] is False:
@@ -417,7 +417,7 @@ def get_energy_lowering_distortions(
 
             # Parse only ground state distortion for each charge state
             elif (
-                energy_diff and float(energy_diff) < -min_e_diff
+                energy_diff and float(energy_diff) < -min_e_diff and not metastable
             ):  # if a significant energy drop occurred, then store this distorted defect
                 bond_distortion = analysis._get_distortion_filename(gs_distortion)
                 # format distortion label to the one used in file name

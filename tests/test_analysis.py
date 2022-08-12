@@ -10,7 +10,7 @@ from pandas.core.frame import DataFrame
 
 from pymatgen.core.structure import Structure, Element
 from monty.serialization import loadfn, dumpfn
-from shakenbreak import analysis, io
+from shakenbreak import analysis
 
 
 def if_present_rm(path):
@@ -169,43 +169,6 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, (None, None, None))
 
-    def test_read_vasp_structure(self):
-        """Test read_vasp_structure() function."""
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure("fake_file")
-            warning_message = (
-                "fake_file file doesn't exist, storing as 'Not converged'. Check "
-                "path & relaxation"
-            )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
-            self.assertEqual(output, "Not converged")
-
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
-            )
-            warning_message = (
-                f"Problem obtaining structure from: "
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
-            self.assertEqual(output, "Not converged")
-
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            V_Cd_struc = Structure.from_file(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            self.assertEqual(len(w), 0)
-            self.assertEqual(output, V_Cd_struc)
-
     def test_analyse_defect_site(self):
         """Test analyse_defect_site() function."""
         # test V_Cd:
@@ -240,11 +203,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         4: "trigonal pyramidal",
                     },
                     "Factor": {
-                        0: round(0.21944138045080427, 3),
-                        1: round(0.8789337233604618, 3),
-                        2: round(0.11173135591518825, 3),
-                        3: round(0.3876174560001795, 3),
-                        4: round(0.3965691083975486, 3),
+                        0: round(0.21944138045080427, 2),
+                        1: round(0.8789337233604618, 2),
+                        2: round(0.11173135591518825, 2),
+                        3: round(0.3876174560001795, 2),
+                        4: round(0.3965691083975486, 2),
                     },
                 }
             )
@@ -252,7 +215,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_V_Cd_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Te", 1: "Te", 2: "Te", 3: "Te"},
-                    "Distance (\u212B)": {0: "1.417", 1: "1.417", 2: "2.620", 3: "3.008"},
+                    "Distance (\u212B)": {0: "1.42", 1: "1.42", 2: "2.62", 3: "3.01"},
                 }
             )
             pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_bonding_df, output[1])
@@ -283,9 +246,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         2: "pentagonal pyramidal",
                     },
                     "Factor": {
-                        0: round(0.778391113850372, 3),
-                        1: round(0.014891251252011014, 3),
-                        2: round(0.058350214482398306, 3),
+                        0: round(0.778391113850372, 2),
+                        1: round(0.014891251252011014, 2),
+                        2: round(0.058350214482398306, 2),
                     },
                 }
             )
@@ -296,12 +259,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 {
                     "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
                     "Distance (\u212B)": {
-                        0: "1.085",
-                        1: "1.085",
-                        2: "1.085",
-                        3: "1.085",
-                        4: "1.085",
-                        5: "1.085",
+                        0: "1.09",
+                        1: "1.09",
+                        2: "1.09",
+                        3: "1.09",
+                        4: "1.09",
+                        5: "1.09",
                     },
                 }
             )
@@ -909,7 +872,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": "O(62)",
                             "O(68)": "O(68)",
                         },
-                        "Coords": {
+                        "Frac coords": {
                             "O(35)": [0.0, 0.167, 0.014],
                             "O(53)": [-0.0, 0.167, 0.486],
                             "O(62)": [0.165, 0.167, 0.292],

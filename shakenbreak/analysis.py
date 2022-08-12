@@ -330,7 +330,7 @@ def analyse_defect_site(
     if coordination is not None:
         coord_list = []
         for coord, value in coordination.items():
-            coordination_dict = {"Coordination": coord, "Factor": round(value, 3)}
+            coordination_dict = {"Coordination": coord, "Factor": round(value, 2)}
             coord_list.append(coordination_dict)
         print(
             "Local order parameters (i.e. resemblance to given structural motif, "
@@ -344,7 +344,7 @@ def analyse_defect_site(
         bond_lengths.append(
             {
                 "Element": i["site"].specie.as_dict()["element"],
-                "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.3f}",
+                "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
             }
         )
     bond_length_df = pd.DataFrame(bond_lengths)
@@ -1003,7 +1003,7 @@ def _site_magnetizations(
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
                 ].update({
-                    'Dist. ($\\AA$)': round(
+                    'Dist. (\u212B)': round(
                         structure.get_distance(i = defect_site, j = index), 1
                     ) # TODO: substitute AA
                 })
