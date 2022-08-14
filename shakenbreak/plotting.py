@@ -386,46 +386,58 @@ def _format_datapoints_from_other_chargestates(
         tuple: imported_indices, sorted_distortions, sorted_energies,
         sorted_disp (if disp_dict is not None)
     """
-    # store indices of imported structures ("X%_from_Y") to plot differently later
+    # Store indices of imported structures ("X%_from_Y") to plot differently later
     # comparison
     imported_indices = []
     for i, entry in enumerate(energies_dict["distortions"].keys()):
         if isinstance(entry, str) and "_from_" in entry:
             imported_indices.append(i)
 
-    # reformat any "X%_from_Y" or "Rattled_from_Y" distortions to corresponding
+    # Reformat any "X%_from_Y" or "Rattled_from_Y" distortions to corresponding
     # (X) distortion factor or 0.0 for "Rattled"
     keys = []
     for entry in energies_dict["distortions"].keys():
         if isinstance(entry, str) and "%_from_" in entry:
             keys.append(float(entry.split("%")[0]) / 100)
         elif isinstance(entry, str) and "Rattled_from_" in entry:
-            keys.append(0.0) # Rattled will be plotted at x = 0.0
-        elif entry == "Rattled": # add 0.0 for Rattled
+            keys.append(0.0)  # Rattled will be plotted at x = 0.0
+        elif entry == "Rattled":  # add 0.0 for Rattled
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
             keys.append(entry)
 
     if disp_dict:
-        # sort displacements in same order as distortions and energies,
+        # Sort displacements in same order as distortions and energies,
         # for proper color mapping
         sorted_disp = [
             disp_dict[k] for k in energies_dict["distortions"].keys()
             if k in disp_dict.keys()
         ]
+        # Save the values of the displ. from *other charge states*
+        # As the displacements will be re-sorted -> we'll need to
+        # find the index of t
+        disps_from_other_charges = (sorted_disp[i] for i in imported_indices)
         try:
             # sort keys and values
-            sorted_distortions, sorted_energies, sorted_disp = zip(
+            sorted_distortions, sorted_energies, resorted_disp = zip(
                 *sorted(
                     zip(keys, energies_dict["distortions"].values(), sorted_disp)
                 )
             )
-            return imported_indices, keys, sorted_distortions, sorted_energies, sorted_disp
+            # Indexes of the displacements values for other charge states
+            # We need both the indexes for the unsorted dicts
+            # and for the sorted ones
+            imported_indices = {
+                old_index: resorted_disp.index(d) for d, old_index in zip(
+                    disps_from_other_charges, imported_indices
+                )
+            }
+            return imported_indices, keys, sorted_distortions, sorted_energies, resorted_disp
         except ValueError: # if keys and energies_dict["distortions"] are empty
             # (i.e. the only distortion is Rattled)
             return [], [], None, None, None
-    # sort keys and values
+    # Sort keys and values
     try:
         sorted_distortions, sorted_energies = zip(
             *sorted(zip(keys, energies_dict["distortions"].values()))
@@ -1047,7 +1059,7 @@ def plot_colorbar(
             as a mpl.figure.Figure object
     """
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
-        fig, ax = plt.subplots(1,1, figsize=(6.5, 5))
+        fig, ax = plt.subplots(1, 1, figsize=(6.5, 5))
 
         # Title and format axis labels and locators
         if title:
@@ -1060,7 +1072,7 @@ def plot_colorbar(
             neighbour_atom=neighbour_atom,
         )
 
-    # all energies relative to unperturbed one
+    # All energies relative to unperturbed one
     for key, i in energies_dict["distortions"].items():
         energies_dict["distortions"][key] = i - energies_dict["Unperturbed"]
     energies_dict["Unperturbed"] = 0.0
@@ -1070,6 +1082,7 @@ def plot_colorbar(
         disp_dict=disp_dict,
         max_energy_above_unperturbed=max_energy_above_unperturbed,
     ) # Remove high energy points
+    print("Energies dict", energies_dict)
 
     # Setting line color and colorbar
     if not line_color:
@@ -1086,7 +1099,7 @@ def plot_colorbar(
     # Plotting
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         if "Rattled" in energies_dict["distortions"].keys() and "Rattled" in disp_dict.keys():
-            # plot Rattled energy
+            # Plot Rattled energy
             im = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Rattled"],
@@ -1124,16 +1137,17 @@ def plot_colorbar(
         if imported_indices:
             other_charges = len(set(
                 list(energies_dict['distortions'].keys())[i].split('_')[-1]
-                for i in imported_indices
+                for i in imported_indices.keys()
             ))  # number of other charge states whose distortions have been imported
-            for i, j in zip(imported_indices, range(other_charges)):
+            for i, j in zip(imported_indices.keys(), range(other_charges)):
                 other_charge_state = int(
                     list(energies_dict['distortions'].keys())[i].split('_')[-1]
                 )
+                sorted_i = imported_indices[i]  # index for the sorted dicts
                 ax.scatter(
                     np.array(keys)[i],
-                    list(energies_dict["distortions"].values())[i],
-                    c=sorted_disp[i],
+                    sorted_energies[sorted_i],
+                    c=sorted_disp[sorted_i],
                     edgecolors="k",
                     ls="-",
                     s=50,
@@ -1144,11 +1158,13 @@ def plot_colorbar(
                     alpha=1,
                     label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
                 )
+
+        # Plot reference energy
         unperturbed_color = colormap(
             0
         )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
         # to this structure)
-        ax.scatter( # plot reference energy
+        ax.scatter(
             0,
             energies_dict["Unperturbed"],
             color=unperturbed_color,
