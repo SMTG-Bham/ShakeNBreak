@@ -134,7 +134,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.assertCountEqual(defect_charges_dict[i], expected_dict[i])
 
     def test_get_energy_lowering_distortions(self):
-        """Test get_energy_lowering_distortions() function"""
+        """
+        Test get_energy_lowering_distortions() function, as well
+        as write_distorted_inputs and the internal functions called
+        by get_energy_lowering_distortions()
+        """
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
         ) as w:
@@ -567,10 +571,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR_original",
             f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR",
         )
-
-    # functionality of compare_struct_to_distortions() and the
-    # internal functions essentially tested through
-    # above tests for `get_energy_lowering_distortions`
 
     def test_write_distorted_inputs(self):
         """Test write_distorted_inputs()."""

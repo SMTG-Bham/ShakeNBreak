@@ -318,7 +318,7 @@ def get_energy_lowering_distortions(
             (Default: None)
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations
-            (need CONTCAR files for structure matching) and
+            (need code output/structure files for structure matching) and
             distortion_metadata.json.
             (Default is current directory = "./")
         code (:obj:`str`, optional):
@@ -368,7 +368,7 @@ def get_energy_lowering_distortions(
 
     low_energy_defects = (
         {}
-    )  # dict of defects undergoing energy-lowering distortions,
+    )  # Dict of defects undergoing energy-lowering distortions,
     # relative to unperturbed structure
     # Maps each defect_name to a tuple of favourable distortions:
     # low_energy_defects[defect] = (
@@ -584,8 +584,8 @@ def compare_struct_to_distortions(
     distorted_struct: Structure,
     defect_species: str,
     output_path: str = ".",
-    code: str="vasp",
-    structure_filename: str="CONTCAR",
+    code: str = "vasp",
+    structure_filename: str = "CONTCAR",
     stol: float = 0.5,
     min_dist: float = 0.2,
 ) -> tuple:
@@ -602,7 +602,8 @@ def compare_struct_to_distortions(
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to
-            calculate structure comparisons – needs VASP CONTCAR files).
+            calculate structure comparisons – needs code output/structure
+            files to parse the structures).
             (Default is current directory = "./")
         code (:obj:`str`, optional):
             Code used for the geometry relaxations. Options include:
@@ -636,17 +637,13 @@ def compare_struct_to_distortions(
             code=code,
             structure_filename=structure_filename,
         )
-    except FileNotFoundError:  # catch exception raised by `analysis.get_structures``
-        # if `defect_species` folder does not exist
-        # print(
-        #     f"No structures found for {defect_species}. Returning None. Check that the "
-        #     f"relaxation folders for {defect_species} are present in {output_path}."
-        # )
+    except FileNotFoundError:  # catch exception raised by `analysis.get_structures()`
         return None, None, None, None
     defect_energies_dict = analysis.get_energies(
         defect_species=defect_species, output_path=output_path, verbose=False
     )
 
+    # Compare distorted_struct to all structures of defect_species
     struct_comparison_df = analysis.compare_structures(
         defect_structures_dict=defect_structures_dict,
         defect_energies_dict=defect_energies_dict,
@@ -661,7 +658,7 @@ def compare_struct_to_distortions(
 
     matching_sub_df = struct_comparison_df[
         struct_comparison_df["Σ{Displacements} (Å)"] == 0
-    ]
+    ]  # Get matches (sum of atomic disp between structures would be 0)
 
     if not matching_sub_df.empty:  # if there are any matches
         unperturbed_df = matching_sub_df[
@@ -675,8 +672,8 @@ def compare_struct_to_distortions(
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(
                 lambda x: isinstance(x, float)
-            )
-        ].sort_values(by="Bond Distortion", key=abs)  # if present, otherwise empty
+            )  # if present, otherwise empty
+        ].sort_values(by="Bond Distortion", key=abs)  # sort values by distortion magnitude
 
         string_vals_sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(
@@ -696,7 +693,8 @@ def compare_struct_to_distortions(
             s = imported_sorted_distorted_df['Bond Distortion'].str.slice(0, 3)
             s = s.astype(float)
             imported_sorted_distorted_df = imported_sorted_distorted_df.loc[
-                s.sort_values(key=lambda x: abs(x)).index]
+                s.sort_values(key=lambda x: abs(x)).index
+            ]
 
         # first unperturbed, then rattled, then distortions sorted by
         # initial distortion magnitude from low to high (if present)
@@ -708,10 +706,6 @@ def compare_struct_to_distortions(
                 imported_sorted_distorted_df
             ]
         )
-
-        if sorted_matching_df.empty:  # TODO: Add test for this
-            raise KeyError(f"Unrecognized label in parsed structures:"
-                           f" {matching_sub_df['Bond Distortion'].values}")
 
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0
@@ -731,7 +725,7 @@ def compare_struct_to_distortions(
                 struc_key,
             )
 
-    else:
+    else:  # no matches
         return (
             False,
             None,
