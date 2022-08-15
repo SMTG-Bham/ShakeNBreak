@@ -115,8 +115,14 @@ def _get_distortion_filename(distortion) -> str:
         if "_from_" in distortion:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        else:
+        elif "Unperturbed" in distortion or "Rattled" in distortion:
             distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
+        else:
+            try:  # try converting to float, in case user entered '0.5'
+                distortion = float(distortion)
+                distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+            except:
+                distortion_label = "Distortion_not_recognized"
     else:
         distortion_label = "Distortion_not_recognized"
     return distortion_label
@@ -496,7 +502,7 @@ def get_structures(
         for distortion in bond_distortions:
             distortion_label = _get_distortion_filename(distortion)  # get filename
             if (
-                distortion_label != "Label_not_recognized"
+                distortion_label != "Distortion_not_recognized"
             ):  # If the distortion label is recognised
                 try:
                     defect_structures_dict[distortion] = io.parse_structure(
@@ -668,6 +674,7 @@ def calculate_struct_comparison(
             Dictionary matching bond distortions to structure
             comparison metric (disp or max_dist).
     """
+    # Check reference structure
     if isinstance(ref_structure, str) or isinstance(ref_structure, float):
         if isinstance(ref_structure, str):
             ref_name = ref_structure
@@ -799,7 +806,6 @@ def compare_structures(
             f"Returning None."
         )
         return None
-        # TODO: Use generator and add unit test for this
     df_list = []
     disp_dict = calculate_struct_comparison(
         defect_structures_dict,
@@ -1025,7 +1031,7 @@ def _site_magnetizations(
 
 def get_site_magnetizations(
     defect_species: str,
-    distortions: str,
+    distortions: list,
     output_path: str = ".",
     threshold: float = 0.1,
     defect_site: Optional[int or list] = None,
@@ -1097,6 +1103,14 @@ def get_site_magnetizations(
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename
         # (e.g. Bond_Distortion_50.0%)
+        if dist_label == "Distortion_not_recognized":
+            warnings.warn(
+                f"Problem parsing the distortion label {distortion}. "
+                "The distortions specified in the `distortions` list "
+                "should be the distortion factor (e.g. 0.2) or the "
+                "Unperturbed/Rattled name."
+            )
+            return None
         structure = io.read_vasp_structure(
             f"{output_path}/{defect_species}/{dist_label}/CONTCAR"
         )
