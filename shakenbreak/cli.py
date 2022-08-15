@@ -1200,6 +1200,15 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     default=0.05,
 )
 @click.option(
+    "--metastable",
+    "-meta",
+    help ="Whether to also consider non-spontaneous metastable "
+        "energy-lowering distortions, as these can become ground-state "
+        "distortions for other charge states.",
+    type=bool,
+    default=False,
+)
+@click.option(
     "--verbose",
     "-v",
     help ="Print information about identified energy lowering distortions.",
@@ -1207,7 +1216,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     is_flag=True,
     show_default=True,
 )
-def regenerate(path, code, filename, min, verbose):
+def regenerate(path, code, filename, min, metastable, verbose):
     """
     Identify defect species undergoing energy-lowering distortions and
     test these distortions for the other charge states of the defect.
@@ -1223,5 +1232,6 @@ def regenerate(path, code, filename, min, verbose):
         structure_filename=filename,
         write_input_files=True,
         min_e_diff=min,
+        metastable=metastable,
         verbose=verbose,
     )
