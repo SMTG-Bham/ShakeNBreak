@@ -831,7 +831,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": [0.165, 0.167, 0.292],
                             "O(68)": [0.835, 0.167, 0.292],
                         },
-                        "Total mag": {
+                        "Site mag": {
                             "O(35)": 1.458,
                             "O(53)": 1.478,
                             "O(62)": 1.522,
@@ -880,7 +880,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": [0.165, 0.167, 0.292],
                             "O(68)": [0.835, 0.167, 0.292],
                         },
-                        "Total mag": {
+                        "Site mag": {
                             "O(35)": 1.458,
                             "O(53)": 1.478,
                             "O(62)": 1.522,

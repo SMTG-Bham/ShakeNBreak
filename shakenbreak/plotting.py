@@ -426,17 +426,17 @@ def _format_datapoints_from_other_chargestates(
                 )
             )
             # Indexes of the displacements values for other charge states
-            # We need both the indexes for the unsorted dicts
+            # We need both the indexes for the unsorted lists
             # and for the sorted ones
-            imported_indices = {
-                old_index: resorted_disp.index(d) for d, old_index in zip(
-                    disps_from_other_charges, imported_indices
+            imported_indices = { # unsorted_index: sorted_index
+                unsorted_index: resorted_disp.index(d) for unsorted_index, d in zip(
+                    imported_indices, disps_from_other_charges
                 )
             }
             return imported_indices, keys, sorted_distortions, sorted_energies, resorted_disp
         except ValueError: # if keys and energies_dict["distortions"] are empty
             # (i.e. the only distortion is Rattled)
-            return [], [], None, None, None
+            return {}, [], None, None, None
     # Sort keys and values
     try:
         sorted_distortions, sorted_energies = zip(

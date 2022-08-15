@@ -36,7 +36,7 @@ def _warning_on_one_line(
     filename,
     lineno,
     file=None,
-    line=None
+    line=None,
 ):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
@@ -815,7 +815,7 @@ def compare_structures(
             ref_structure=ref_structure,
             stol=stol,
         )
-        #Check if too many 'NaN' values in disp_dict, if so, try with higher stol
+        # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
         number_of_nan = len([value for value in disp_dict.values() if value == None])
         if number_of_nan >  len(disp_dict.values()) // 3:
             warnings.warn(
@@ -916,11 +916,12 @@ def get_homoionic_bonds(
             f"Your structure does not contain element {element}!"
         )
         return {}
+    # Search for homoionic bonds in the whole structure
     sites = [
         (site_index, site)
         for site_index, site in enumerate(structure)
         if site.species_string == element
-    ]  # we search for homoionic bonds in the whole structure.
+    ]
     homoionic_bonds = {}
     for (site_index, site) in sites:
         neighbours = structure.get_neighbors(site, r=radius)
@@ -997,16 +998,19 @@ def _site_magnetizations(
                 "Frac coords": [
                     round(coord, 3) for coord in structure[index].frac_coords
                 ],
-                "Total mag": round(total_mag, 3),
+                "Site mag": round(total_mag, 3),
             }
             if isinstance(defect_site, int):
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
-                ].update({
-                    'Dist. (\u212B)': round(
-                        structure.get_distance(i = defect_site, j = index), 1
-                    )
-                })
+                ].update(
+                    {
+                        'Dist. (\u212B)': round(
+                            structure.get_distance(i = defect_site, j = index),
+                            1
+                        )
+                    }
+                )
             if orbital_projections:
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
