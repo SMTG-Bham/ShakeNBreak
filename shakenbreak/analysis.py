@@ -108,14 +108,19 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, float):
-        distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-        # as percentage with 1 decimal place (e.g. 50.0%)
+    if isinstance(distortion, float) or isinstance(distortion, int):
+        if distortion != 0:
+            distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+            # as percentage with 1 decimal place (e.g. 50.0%)
+        else:
+            distortion_label = f"Bond_Distortion_{distortion:.1f}%"
     elif isinstance(distortion, str):
-        if "_from_" in distortion:
+        if "_from_" in distortion and "Rattled" not in distortion:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        elif "Unperturbed" in distortion or "Rattled" in distortion:
+        elif "Rattled_from_" in distortion:
+            distortion_label = distortion
+        elif distortion == "Unperturbed" or distortion == "Rattled":
             distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
         else:
             try:  # try converting to float, in case user entered '0.5'

@@ -304,7 +304,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0",
             output_path=self.VASP_CDTE_DATA_DIR,
-            bond_distortions=[-0.5, -0.25, 0],
+            bond_distortions=[-0.50, -0.25, 0],
         )
         self.assertEqual(
             len(defect_structures_dict), 4
