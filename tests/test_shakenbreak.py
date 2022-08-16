@@ -34,10 +34,6 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
-        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories(
-            output_path=self.VASP_CDTE_DATA_DIR
-        )
-        self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
@@ -63,6 +59,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"),
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
+
+        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+            output_path=self.VASP_CDTE_DATA_DIR
+        )
+        self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
     def tearDown(self):
         for fake_dir in [
@@ -277,8 +278,14 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     )
     def test_plot_fake_vac_1_Cd_0(self):
         with patch("builtins.print") as mock_print:
+            shutil.copytree(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
+            )  # overwrite
+            defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+            defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+
             fig_dict = plotting.plot_all_defects(
-                self.defect_charges_dict, save_format="png"
+                defect_charges_dict, save_format="png"
             )
 
             wd = os.getcwd()
