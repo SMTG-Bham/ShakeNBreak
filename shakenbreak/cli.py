@@ -842,7 +842,7 @@ def generate_all(
 @snb.command(
     name="parse",
     context_settings=CONTEXT_SETTINGS,
-    no_args_is_help=True,
+    no_args_is_help=False,  # to allow convenient parsing
 )
 @click.option(
     "--defect",
@@ -889,14 +889,14 @@ def parse(defect, all, path, code):
     else:
         # assume current directory is the defect folder
         try:
-            if path == ".":
+            if path == "." or path == "./":
                 path = os.getcwd()
             if path.endswith("/"):
                 defect =  path.split("/")[-2]
                 path = path.rsplit("/", 2)[0]
             else:
                 defect = path.split("/")[-1]
-                path = path.rsplit("/")[0]
+                path = path.rsplit("/", 1)[0]
             io.parse_energies(defect, path, code)
         except:
             warnings.warn(

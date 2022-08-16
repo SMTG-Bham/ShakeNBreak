@@ -20,6 +20,7 @@ from click.testing import CliRunner
 
 from shakenbreak.cli import snb
 
+file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -1192,6 +1193,20 @@ nonsense_key: nonsense_value"""
         )
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"))
+
+        # Test parsing from inside the defect folder
+        defect_name = "vac_1_Ti_-1"
+        os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml")
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
+        os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
     def test_parse_codes(self):

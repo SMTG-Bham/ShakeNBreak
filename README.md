@@ -45,12 +45,11 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ### Python API
 ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipynb).
 
-Copy markdown link to clipboard
 ### Command line interface
 Alternatively, the code can be used via the command line. The scripts provided include:
 * `snb-generate`: Generate distorted structures for a given defect
 * `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
-* `snb-parse`: Parse the results of the geometry relaxations and write them to a file
+* `snb-parse`: Parse the results of the geometry relaxations and write them to a `yaml` file
 * `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
 * `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect

@@ -16,7 +16,7 @@ Additionally, the core functionality of the code can be accessed through the com
     ``snb-parse``
 3. Analysis of the energies and structural differences between the relaxed configurations:
     ``snb-analyse``
-4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been identified:
+4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
     ``snb-plot``
 5. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
     ``snb-regenerate``

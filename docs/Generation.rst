@@ -135,4 +135,6 @@ distortion folders with the distorted structures and relaxation input files. If 
     |
     |--- vac_1_Cd_-1/
             |--- Unperturbed
+            |        |--- POSCAR
+            |        | ...
             | ...

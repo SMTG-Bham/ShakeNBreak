@@ -1018,7 +1018,7 @@ def _site_magnetizations(
                     {
                         'Dist. (\u212B)': round(
                             structure.get_distance(i = defect_site, j = index),
-                            1
+                            2,
                         )
                     }
                 )

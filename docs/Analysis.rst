@@ -36,7 +36,7 @@ Analysis
 ----------
 To analyse the structures obtained from the relaxations, we can use ``snb-analyse``.
 It will generate ``csv`` files for a given/all defects with the final energies
-and structural similarities between the final configurations and a default one
+and structural similarities between the final configurations and a reference one
 (by default the undistorted one). Structural similarity is measured as the sum
 of atomic displacements and the maximum distance between matched sites. For instance,
 to analyse the results obtained with ``VASP`` for the defect ``vac_1_Cd_0``, we can use:

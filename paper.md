@@ -73,7 +73,7 @@ the package has been employed to identify the defect structures reported in seve
 <!-- previous studies that employed the package to identify low energy defect structures found them -->
 <!-- to significantly impact predicted behaviour [@Kavanagh:2021; @Kavanagh:2022]. -->
 
-![Example analysis: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](figures/Figure_joss.png)
+![Example analysis for a cadmium vacancy defect in CdTe: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations for the Unperturbed configuration, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](figures/Figure_joss.png)
 
 <!-- # Author contributions
 
