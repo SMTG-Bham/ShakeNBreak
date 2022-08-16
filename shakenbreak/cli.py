@@ -8,6 +8,7 @@ from copy import deepcopy
 import numpy as np
 import click
 import warnings
+from subprocess import call
 
 # Monty and pymatgen
 from monty.serialization import loadfn
@@ -905,6 +906,67 @@ def parse(defect, all, path, code):
                 " present in the specified/current directory."
             )
 
+
+@snb.command(
+    name="run",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=False,  # here we often would run with no options/arguments set
+)
+@click.option(
+    "--submit-command",
+    "-s",
+    help="Job submission command for the HPC scheduler (qsub, sbatch etc). Default = 'qsub'",
+    type=str,
+    default="qsub",
+)
+@click.option(
+    "--job-script",
+    "-j",
+    help="Filename of the job script file to submit to HPC scheduler. Default = 'job'",
+    type=str,
+    default="job",
+)
+@click.option(
+    "--job-name-option",
+    "-n",
+    help="Flag for specifying the job name option for the HPC scheduler (e.g. '-N' for 'qsub -N "
+         "JOBNAME job'). Default = "
+         "'-N'",
+    type=str,
+    default="-N",
+)
+@click.option(
+    "--all",
+    "-a",
+    help="Loop through all defect folders (then through their distortion subfolders) in the "
+         "current directory",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about calculations which have fully converged",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+def run(submit_command, job_script, job_name_option, all, verbose):
+    """
+    Loop through distortion subfolders for a defect (or for all defect folders in the current
+    directory, if the --all (-a) flag is set) and submit calculations to the HPC scheduler.
+    """
+    optional_flags = "-"
+    if all:
+        optional_flags += "a"
+    if verbose:
+        optional_flags += "v"
+    if optional_flags == "-":
+        optional_flags = ""
+
+    call(f"{os.path.dirname(__file__)}/bash_scripts/SnB_run.sh {optional_flags} {submit_command}"
+         f" {job_script} {job_name_option}", shell=True)
 
 @snb.command(
     name="analyse",
