@@ -1,0 +1,30 @@
+&CONTROL
+        title = Si bulk
+  calculation = relax 
+ restart_mode = from_scratch 
+       outdir = Si_example/ 
+   pseudo_dir = /home/ireaml/pw/pseudo/ 
+ /
+
+ &SYSTEM
+        ibrav = 2
+    celldm(1) = 10.2
+          nat = 2
+         ntyp = 1
+      ecutwfc = 18.0
+      ecutrho = 72.0
+ /
+
+ &ELECTRONS
+     conv_thr = 1d-7
+/
+
+ATOMIC_SPECIES
+   Si  1.00  Si.vbc 
+
+ATOMIC_POSITIONS alat 
+   Si    0.00  0.00  0.00    
+   Si    0.25  0.25  0.25    
+
+K_POINTS automatic 
+   4 4 4   1 1 1

@@ -1,4 +1,4 @@
-### Example config file for snb-generate_all
+## Example config file for snb-generate_all
 
 # General/distortion options
 oxidation_states:
@@ -33,3 +33,13 @@ defects:
   Int_Cd_2:
     charges: [0, +1, +2]
     defect_index: -1
+
+# Code specific section
+# For VASP, we can specify POTCARs like this:
+POTCAR:
+  Sn: Sn_d  # Element matching its POTCAR symbol
+  Te: Te
+# For Quantum Espresso, we can specify the pseudopotentials like:
+pseudopotentials:
+  Cd: Cd_pbe_v1.uspp.F.UPF
+  Te: Te.pbe-n-rrkjus_psl.1.0.0.UPF

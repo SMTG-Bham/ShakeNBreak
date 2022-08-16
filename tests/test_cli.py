@@ -12,7 +12,7 @@ import filecmp
 
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar
+from pymatgen.io.vasp.inputs import Poscar, Incar
 
 # Click
 from click import exceptions
@@ -20,6 +20,7 @@ from click.testing import CliRunner
 
 from shakenbreak.cli import snb
 
+file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -82,7 +83,6 @@ class CLITestCase(unittest.TestCase):
                 ]
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
-
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -403,8 +403,7 @@ class CLITestCase(unittest.TestCase):
             )
             self.assertEqual(result.exit_code, 0)
             if w:
-                # self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
-                # being caught, so just check no UserWarning # TODO: this runs ok locally but not on github actions?
+                # Check no problems in identifying the defect site
                 self.assertNotIn("Coordinates", str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
@@ -752,9 +751,7 @@ local_rattle: False
 
         # test priority (CLI > config)
         self.tearDown()
-        test_yml = f"""
-                        charge: 1
-                        """
+        test_yml = f"""charge: 1"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
@@ -768,20 +765,56 @@ local_rattle: False
                 "-b",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 "-c" "0",
+                "--name",
+                "vac_1_Cd",
                 "--config",
                 f"test_config.yml",
             ],
             catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
-        self.assertIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
-        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: +1", result.output)
+        self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
+        self.assertNotIn("Defect vac_1_Cd in charge state: +1", result.output)
+        #test parsed defects pickle
+        with open("./parsed_defects_dict.pickle", "rb") as fp:
+            parsed_defects_dict = pickle.load(fp)
+        for key in ["name", "defect_type", "site_multiplicity", "site_specie", "unique_site"]:
+            self.assertEqual(
+                parsed_defects_dict["vacancies"][0][key],
+                self.cdte_defect_dict["vacancies"][0][key],
+            )
 
-        # TODO:
-        # test parsed defects pickle
-        # test error handling and all print messages
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
+        # Test non-sense key in config - should be ignored
+        # and not feed into Distortions()
+        # os.remove("test_config.yml")
+        test_yml = f"""charges: [0,]
+defect_coords: [0,0,0]
+bond_distortions: [0.3,]
+name: vac_1_Cd
+local_rattle: False
+nonsense_key: nonsense_value"""
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--config",
+                "test_config.yml",
+                "--name",
+                "vac_1_Cd",  # to match saved pickle
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
+        self.tearDown()
 
     def test_snb_generate_all(self):
         """Test generate_all() function."""
@@ -1032,7 +1065,6 @@ local_rattle: False
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
-        # if_present_rm(f"{defect_name}_0")
         self.tearDown()
 
         # Test wrong folder defect name
@@ -1075,10 +1107,13 @@ local_rattle: False
             "Error in defect name parsing; could not parse defect name",
             str(result.exception),
         )
+        # The input_file option is tested in local test, as INCAR
+        # not written in Github Action
         self.tearDown()
 
     def test_parse(self):
-        """Test parse() function"""
+        """Test parse() function.
+        Implicitly, this also tests the io.parse_energies() function"""
         # Specifying defect to parse
         # All OUTCAR's present in distortion directories
         # Energies file already present
@@ -1158,6 +1193,20 @@ local_rattle: False
         )
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"))
+
+        # Test parsing from inside the defect folder
+        defect_name = "vac_1_Ti_-1"
+        os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml")
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
+        os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
     def test_parse_codes(self):
@@ -1437,8 +1486,7 @@ local_rattle: False
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
         ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
-        # Figures are compared in the local test since on Github Actions images are saved
-        # with a different size (raising error when comparing).
+        # Figures are compared in the local test.
 
         self.tearDown()
 
@@ -1465,12 +1513,12 @@ local_rattle: False
                     for war in w
                 ])
             )
-        self.assertIn(
-            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
-            " in the low_energy_defects charge state lists (and so energy lowering distortions"
-            " found for other charge states will not be applied for this species).",
-            result.output,
-        )
+        # self.assertIn(
+        #     f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+        #     " in the low_energy_defects charge state lists (and so energy lowering distortions"
+        #     " found for other charge states will not be applied for this species).",
+        #     result.output,
+        # )
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,

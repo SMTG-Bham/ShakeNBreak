@@ -16,12 +16,13 @@ Additionally, the core functionality of the code can be accessed through the com
     ``snb-parse``
 3. Analysis of the energies and structural differences between the relaxed configurations:
     ``snb-analyse``
-4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been identified:
+4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
     ``snb-plot``
 5. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
     ``snb-regenerate``
 
-An in-depth description of each command is provided in the following pages:
+All commands are documented in the `Python API section <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
+and their use is exemplified in the following pages:
 
 .. toctree::
    :maxdepth: 2
@@ -31,8 +32,8 @@ An in-depth description of each command is provided in the following pages:
 
 Getting help
 ~~~~~~~~~~~~~~~~~~~~~~
-For all commands, we can get a full list of accepted flags and their description using
-the :mod:`--help` or :mod:`-h` flag, e.g.:
+Beyond the `documentation <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
+we can get a full list of accepted flags and their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
 
 .. code-block::
 

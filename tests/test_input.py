@@ -1081,6 +1081,8 @@ class InputTestCase(unittest.TestCase):
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi") as f:
             generated_input = f.read()
         self.assertEqual(test_input, generated_input)
+        # The input_file option is tested through the test for `generate_all()`
+        # (in `test_cli.py`)
 
     @patch("builtins.print")
     def test_write_cp2k_files(self, mock_print):
@@ -1155,6 +1157,8 @@ class InputTestCase(unittest.TestCase):
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
             generated_input = f.read()
         self.assertEqual(test_input, generated_input)
+        # The input_file option is tested through the test for `generate_all()`
+        # (in `test_cli.py`)
 
     @patch("builtins.print")
     def test_write_castep_files(self, mock_print):
@@ -1229,6 +1233,8 @@ class InputTestCase(unittest.TestCase):
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/castep.param") as f:
             generated_input = f.readlines()[28:]  # avoid comment with file path etc
         self.assertEqual(test_input, generated_input)
+        # The input_file option is tested through the test for `generate_all()`
+        # (in `test_cli.py`)
 
     @patch("builtins.print")
     def test_write_fhi_aims_files(self, mock_print):
@@ -1307,6 +1313,8 @@ class InputTestCase(unittest.TestCase):
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/control.in") as f:
             generated_input = f.readlines()[6:]
         self.assertEqual(test_input, generated_input)
+        # The input_file option is tested through the test for `generate_all()`
+        # (in `test_cli.py`)
 
     @patch("builtins.print")
     def test_apply_distortions(self, mock_print):

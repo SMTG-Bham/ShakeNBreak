@@ -24,7 +24,7 @@ from pymatgen.io.vasp.sets import BadInputSetWarning
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 
-from shakenbreak import analysis, distortions, vasp
+from shakenbreak import analysis, distortions, vasp, io
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1336,6 +1336,7 @@ class Distortions:
         self,
         pseudopotentials: Optional[dict] = None,
         input_parameters: Optional[str] = None,
+        input_file: Optional[str] = None,
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
@@ -1353,6 +1354,11 @@ class Distortions:
                 overwrite/update `shakenbreak` default ones (see
                 `input_files/qe_input.yaml`).
                 (Default: None)
+            input_file (:obj:`str`, optional):
+                Path to Quantum Espresso input file, to overwrite/update
+                `shakenbreak` default ones (see `input_files/qe_input.yaml`).
+                If both `input_parameters` and `input_file` are provided,
+                the input_parameters will be used.
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
                 (without calculation inputs).
@@ -1379,6 +1385,8 @@ class Distortions:
             default_input_parameters = loadfn(
                 os.path.join(MODULE_DIR, "../input_files/qe_input.yaml")
             )
+            if input_file and not input_parameters:
+                input_parameters = io.parse_qe_input(input_file)
             if input_parameters:
                 for section in input_parameters:
                     for key in input_parameters[section]:
@@ -1390,6 +1398,7 @@ class Distortions:
                             default_input_parameters.update(
                                 {section: {key: input_parameters[section][key]}}
                             )
+
 
         aaa = AseAtomsAdaptor()
 
@@ -1461,7 +1470,7 @@ class Distortions:
         Generates input files for CP2K relaxations of all output structures.
 
         Args:
-            input_file  (:obj:`str`, optional):
+            input_file (:obj:`str`, optional):
                 Path to CP2K input file. If not set, default input file will be
                 used (see `shakenbreak/input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):
@@ -1639,6 +1648,7 @@ class Distortions:
 
     def write_fhi_aims_files(
         self,
+        input_file: Optional[str] = None,
         ase_calculator: Optional[Aims] = None,
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
@@ -1649,6 +1659,11 @@ class Distortions:
         output structures.
 
         Args:
+            input_file (:obj:`str`, optional):
+                Path to FHI-aims input file, to overwrite/update
+                `shakenbreak` default ones.
+                If both `input_file` and `ase_calculator` are provided,
+                the ase_calculator will be used.
             ase_calculator (:obj:`ase.calculators.aims.Aims`, optional):
                 ASE calculator object to use for FHI-aims calculations.
                 If not set, `shakenbreak` default values will be used.
@@ -1674,6 +1689,14 @@ class Distortions:
             verbose=verbose,
         )
         aaa = AseAtomsAdaptor()
+
+        if input_file and not ase_calculator:
+            params = io.parse_fhi_aims_input(input_file)
+            ase_calculator = Aims(
+                k_grid=(1, 1, 1),
+                **params,
+            )
+            # params is in the format key: (value, value)
 
         if not ase_calculator and not write_structures_only:
             ase_calculator = Aims(
