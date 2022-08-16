@@ -10,7 +10,7 @@ from pandas.core.frame import DataFrame
 
 from pymatgen.core.structure import Structure, Element
 from monty.serialization import loadfn, dumpfn
-from shakenbreak import analysis, io
+from shakenbreak import analysis
 
 
 def if_present_rm(path):
@@ -169,43 +169,6 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertIn(warning_message, str(w[0].message))
             self.assertEqual(output, (None, None, None))
 
-    def test_read_vasp_structure(self):
-        """Test read_vasp_structure() function."""
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure("fake_file")
-            warning_message = (
-                "fake_file file doesn't exist, storing as 'Not converged'. Check "
-                "path & relaxation"
-            )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
-            self.assertEqual(output, "Not converged")
-
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
-            )
-            warning_message = (
-                f"Problem obtaining structure from: "
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
-            self.assertEqual(output, "Not converged")
-
-        with warnings.catch_warnings(record=True) as w:
-            output = io.read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            V_Cd_struc = Structure.from_file(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            self.assertEqual(len(w), 0)
-            self.assertEqual(output, V_Cd_struc)
-
     def test_analyse_defect_site(self):
         """Test analyse_defect_site() function."""
         # test V_Cd:
@@ -240,11 +203,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         4: "trigonal pyramidal",
                     },
                     "Factor": {
-                        0: 0.21944138045080427,
-                        1: 0.8789337233604618,
-                        2: 0.11173135591518825,
-                        3: 0.3876174560001795,
-                        4: 0.3965691083975486,
+                        0: round(0.21944138045080427, 2),
+                        1: round(0.8789337233604618, 2),
+                        2: round(0.11173135591518825, 2),
+                        3: round(0.3876174560001795, 2),
+                        4: round(0.3965691083975486, 2),
                     },
                 }
             )
@@ -252,7 +215,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_V_Cd_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Te", 1: "Te", 2: "Te", 3: "Te"},
-                    "Distance": {0: "1.417", 1: "1.417", 2: "2.620", 3: "3.008"},
+                    "Distance (\u212B)": {0: "1.42", 1: "1.42", 2: "2.62", 3: "3.01"},
                 }
             )
             pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_bonding_df, output[1])
@@ -283,9 +246,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         2: "pentagonal pyramidal",
                     },
                     "Factor": {
-                        0: 0.778391113850372,
-                        1: 0.014891251252011014,
-                        2: 0.058350214482398306,
+                        0: round(0.778391113850372, 2),
+                        1: round(0.014891251252011014, 2),
+                        2: round(0.058350214482398306, 2),
                     },
                 }
             )
@@ -295,13 +258,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_Int_Cd_2_NN_10_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
-                    "Distance": {
-                        0: "1.085",
-                        1: "1.085",
-                        2: "1.085",
-                        3: "1.085",
-                        4: "1.085",
-                        5: "1.085",
+                    "Distance (\u212B)": {
+                        0: "1.09",
+                        1: "1.09",
+                        2: "1.09",
+                        3: "1.09",
+                        4: "1.09",
+                        5: "1.09",
                     },
                 }
             )
@@ -341,7 +304,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0",
             output_path=self.VASP_CDTE_DATA_DIR,
-            bond_distortions=[-0.5, -0.25, 0],
+            bond_distortions=[-0.50, -0.25, 0],
         )
         self.assertEqual(
             len(defect_structures_dict), 4
@@ -677,33 +640,43 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         # test kwargs:
-        struct_comparison_df = analysis.compare_structures(
-            defect_structures_dict,
-            defect_energies_dict,
-            stol=0.01,
-            units="meV",
-            min_dist=0.01,
-        )
-        # spot check:
-        self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.121, 0.025, 0.0]
-        )
-        self.assertTrue(np.isnan(struct_comparison_df.iloc[8].to_list()[1]))  # no RMS
-        self.assertTrue(
-            np.isnan(struct_comparison_df.iloc[8].to_list()[2])
-        )  # no max dist
-        self.assertEqual(
-            struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
-        )
-        self.assertEqual(
-            struct_comparison_df.columns.to_list(),
-            [
-                "Bond Distortion",
-                "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
-                "Max Distance (\u212B)",  # Angstrom
-                f"\u0394 Energy (meV)",  # Delta
-            ],
-        )
+        with warnings.catch_warnings(record=True) as w:
+            struct_comparison_df = analysis.compare_structures(
+                defect_structures_dict,
+                defect_energies_dict,
+                stol=0.01,
+                units="meV",
+                min_dist=0.01,
+            )
+            # spot check:
+            self.assertEqual(
+                struct_comparison_df.iloc[16].to_list(), [-0.2, 0.121, 0.025, 0.0]
+            )
+            # When a too tight stol is used, check the code retries with larger stol
+            warning_message = (
+                f"The specified tolerance {0.01} seems to be too tight as"
+                " too many lattices could not be matched. Will retry with"
+                f" larger tolerance ({0.01+0.4})."
+            )
+            # self.assertEqual(w[-1].category, UserWarning)
+            self.assertTrue(
+                any([warning_message in str(warning.message) for warning in w])
+            )
+            self.assertEqual(
+                struct_comparison_df.iloc[8].to_list(), [-0.4, 8.31, 0.808, -0.75]
+            )
+            self.assertEqual(
+                struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
+            )
+            self.assertEqual(
+                struct_comparison_df.columns.to_list(),
+                [
+                    "Bond Distortion",
+                    "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
+                    "Max Distance (\u212B)",  # Angstrom
+                    f"\u0394 Energy (meV)",  # Delta
+                ],
+            )
 
         # test comparing structures with specified ref_structure and no unperturbed:
         defect_structures_dict_no_unperturbed = defect_structures_dict.copy()
@@ -852,23 +825,23 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": "O(62)",
                             "O(68)": "O(68)",
                         },
-                        "Coords": {
+                        "Frac coords": {
                             "O(35)": [0.0, 0.167, 0.014],
                             "O(53)": [-0.0, 0.167, 0.486],
                             "O(62)": [0.165, 0.167, 0.292],
                             "O(68)": [0.835, 0.167, 0.292],
                         },
-                        "Total mag": {
+                        "Site mag": {
                             "O(35)": 1.458,
                             "O(53)": 1.478,
                             "O(62)": 1.522,
                             "O(68)": 1.521,
                         },
-                        "Dist. (A)": {
-                            "O(35)": 2.3,
-                            "O(53)": 2.3,
-                            "O(62)": 1.9,
-                            "O(68)": 1.9,
+                        "Dist. (\u212B)": {
+                            "O(35)": 2.26,
+                            "O(53)": 2.26,
+                            "O(62)": 1.91,
+                            "O(68)": 1.91,
                         },
                     }
                 ),
@@ -901,13 +874,13 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                             "O(62)": "O(62)",
                             "O(68)": "O(68)",
                         },
-                        "Coords": {
+                        "Frac coords": {
                             "O(35)": [0.0, 0.167, 0.014],
                             "O(53)": [-0.0, 0.167, 0.486],
                             "O(62)": [0.165, 0.167, 0.292],
                             "O(68)": [0.835, 0.167, 0.292],
                         },
-                        "Total mag": {
+                        "Site mag": {
                             "O(35)": 1.458,
                             "O(53)": 1.478,
                             "O(62)": 1.522,

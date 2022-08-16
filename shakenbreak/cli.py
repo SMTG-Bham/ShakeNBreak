@@ -4,34 +4,30 @@ ShakeNBreak command-line-interface (CLI)
 import os
 import warnings
 import pickle
-import datetime
 from copy import deepcopy
-from typing import Optional
 import numpy as np
 import click
 import warnings
 
 # Monty and pymatgen
-from monty.serialization import loadfn, dumpfn
+from monty.serialization import loadfn
 from monty.json import MontyDecoder
-from monty.re import regrep
 
 from pymatgen.core.structure import Structure
-from pymatgen.core.units import Energy
+from pymatgen.io.vasp.inputs import Incar
+from pymatgen.analysis.defects.core import Defect
 
 # ShakeNBreak
-from shakenbreak.input import Distortions
-from shakenbreak.analysis import _format_distortion_names, get_energies, get_structures, compare_structures
-from shakenbreak.plotting import plot_all_defects, plot_defect
-from shakenbreak.energy_lowering_distortions import read_defects_directories, get_energy_lowering_distortions
+from shakenbreak import io, input, analysis, plotting, energy_lowering_distortions
 
 
 def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
-):
+) -> Defect:
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
-    the supercell, and generate a pymatgen defect object from this.
+    the supercell, and generate a pymatgen defect object
+    (pymatgen.analysis.defects.core.Defect) from this.
 
     Args:
         defect_structure (:obj:`Structure`):
@@ -40,7 +36,7 @@ def identify_defect(
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
             Index of the defect site in the supercell.
-
+    Returns: :obj:`Defect`
     """
     natoms_defect = len(defect_structure)
     natoms_bulk = len(bulk_structure)
@@ -188,8 +184,20 @@ def identify_defect(
     return defect
 
 
-def _generate_defect_dict(defect_object, charges, defect_name) -> dict:
-    """Create defect dictionary from a defect object"""
+def generate_defect_dict(defect_object, charges, defect_name) -> dict:
+    """
+    Create defect dictionary from a pymatgen Defect object.
+
+    Args:
+        defect_object (:obj:`Defect`):
+            `pymatgen.analysis.defects.core.Defect` object.
+        charges (:obj:`list`):
+            List of charge states for the defect.
+        defect_name(:obj:`str`):
+            Name of the defect, to use as key in the defect dict.
+
+    Returns: :obj:`dict`
+    """
     single_defect_dict = {
         "name": defect_name,
         "bulk_supercell_site": defect_object.site,
@@ -259,196 +267,6 @@ def _parse_defect_dirs(path) -> list:
             dist in os.listdir(f"{path}/{dir}") for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
         ])  # avoid parsing directories that aren't defects
     ]
-
-
-def parse_energies(
-    defect: str,
-    path: Optional[str] = ".",
-    code: Optional[str] = "vasp",
-    filename: Optional[str] = "OUTCAR",
-) -> None:
-    """
-    Parse final energy for all distortions present in the given defect
-    directory and write them to a `yaml` file in the defect directory.
-
-    Args:
-        defect (:obj:`str`):
-            Name of defect to parse, including charge state. Should match the
-            name of the defect folder.
-        path (:obj: `str`):
-            Path to the top-level directory containing the defect folder.
-            Defaults to current directory (".").
-        code (:obj:`str`):
-            Name of ab-initio code used to run the geometry optimisations, case
-            insensitive. Options include: "vasp", "cp2k", "espresso", "castep"
-            and "fhi-aims". Defaults to 'vasp'.
-        filename (:obj:`str`):
-            Filename of the output file, if different from the ShakeNBreak defaults
-            that are defined in the default input files:
-            (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
-            castep: "*.castep", fhi-aims: "aims.out")
-            Default to the ShakeNBreak default filenames.
-
-    Returns: None
-    """
-    def _match(filename, grep_string):
-        """
-        Helper function to grep for a string in a file.
-        """
-        try:
-            return regrep(
-                filename=filename,
-                patterns={"match": grep_string},
-                reverse=True,
-                terminate_on_match=True
-            )["match"]
-        except:
-            return None
-
-    def sort_energies(defect_energies_dict):
-        """Order dict items by key (e.g. from -0.6 to 0 to +0.6)"""
-        # sort distortions
-        sorted_energies_dict = {
-            "distortions": dict(
-                sorted(
-                    defect_energies_dict["distortions"].items(),
-                    key=lambda k: (0, k[0]) if isinstance(k[0], float) else (1, k[0]),
-                    # to deal with list of both floats and strings
-                    # (https://www.geeksforgeeks.org/sort-mixed-list-in-python/)
-                )
-            )
-        }
-        if "Unperturbed" in defect_energies_dict:
-            sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
-        return sorted_energies_dict
-
-    def save_file(energies, defect, path):
-        """Save yaml file with final energies for each distortion."""
-        # File to write energies to
-        filename = f"{path}/{defect}/{defect}.yaml"
-        # Check if previous version of file exists
-        if os.path.exists(filename):
-            old_file = loadfn(filename)
-            if old_file != energies:
-                current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-                print(
-                    f"Moving old {filename} to {filename.replace('.yaml', '')}_{current_datetime}.yaml to avoid overwriting"
-                )
-                os.rename(filename, f"{filename.replace('.yaml', '')}_{current_datetime}.yaml")  # Keep copy of old file
-                dumpfn(energies, filename)
-        else:
-            dumpfn(energies, filename)
-
-    def parse_vasp_energy(defect_dir, dist, energy, outcar):
-        # regrep faster than using Outcar/vasprun class
-        if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
-            outcar = os.path.join(defect_dir, dist, "OUTCAR")
-        if outcar:
-            if _match(outcar, "required accuracy"):  # check if ionic relaxation is converged
-                energy = _match(
-                    outcar, r"energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
-                )[0][0][0] # Energy of first match
-        return energy, outcar
-
-    def parse_espresso_energy(defect_dir, dist, energy, outcar):
-        if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
-            outcar = os.path.join(defect_dir, dist, "espresso.out")
-        elif os.path.exists(os.path.join(defect_dir, dist, filename)):
-            outcar = os.path.join(defect_dir, dist, filename)
-        if outcar:
-            energy_in_Ry = _match(
-                outcar,
-                r"!    total energy\s+=\s+([\d\-\.]+)"
-            )
-            if energy_in_Ry:
-                # Energy of first match, in Rydberg
-                energy = float(Energy(float(energy_in_Ry[0][0][0]), "Ry").to("eV"))
-        return energy, outcar
-
-    def parse_cp2k_energy(defect_dir, dist, energy, outcar):
-        if os.path.join(defect_dir, dist, "relax.out"):
-            outcar = os.path.join(defect_dir, dist, "relax.out")
-        elif os.path.exists(os.path.join(defect_dir, dist, filename)):
-            outcar = os.path.join(defect_dir, dist, filename)
-        if outcar and _match(outcar, "GEOMETRY OPTIMIZATION COMPLETED"):  # check if ionic relaxation is converged
-            energy_in_Ha = _match(
-                outcar, r"Total energy:\s+([\d\-\.]+)"
-            )
-            if energy_in_Ha:
-                # Energy of first match in Hartree
-                energy = float(Energy(energy_in_Ha[0][0][0], "Ha").to("eV"))
-        return energy, outcar
-
-    def parse_castep_energy(defect_dir, dist, energy, outcar):
-        output_files = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file]
-        if len(output_files) >= 1 and os.path.exists(f"{defect_dir}/{dist}/{output_files[0]}"):
-            outcar = f"{defect_dir}/{dist}/{output_files[0]}"
-        elif os.path.exists(os.path.join(defect_dir, dist, filename)):
-            outcar = os.path.join(defect_dir, dist, filename)
-        if outcar and _match(outcar, "Geometry optimization completed successfully."):
-                # check if ionic relaxation is converged
-            # Convergence string deduced from:
-            # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
-            # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/blob/master/test/examples/TiO2-geom.castep
-            energy = _match(
-                outcar, r"Final Total Energy\s+([\d\-\.]+)"
-            )[0][0][0] # Energy of first match in eV
-        return energy, outcar
-
-    def parse_fhi_aims_energy(defect_dir, dist, energy, outcar):
-        if os.path.join(defect_dir, dist, "aims.out"):
-            outcar = os.path.join(defect_dir, dist, "aims.out")
-        elif os.path.exists(os.path.join(defect_dir, dist, filename)):
-            outcar = os.path.join(defect_dir, dist, filename)
-        if outcar and _match(outcar, "converged."): # check if ionic relaxation is converged
-            # Convergence string deduced from:
-            # https://fhi-aims-club.gitlab.io/tutorials/basics-of-running-fhi-aims/3-Periodic-Systems/
-            # and https://gitlab.com/fhi-aims-club/tutorials/basics-of-running-fhi-aims/-/blob/master/Tutorial/3-Periodic-Systems/solutions/Si/PBE_relaxation/aims.out
-            energy = _match(
-                outcar,
-                r"\| Total energy of the DFT / Hartree-Fock s.c.f. calculation\s+:\s+([\d\-\.]+)"
-            )
-            if energy:
-                energy = energy[0][0][0] # Energy of first match in eV
-        return energy, outcar
-
-    defect_dir = f"{path}/{defect}"
-    if os.path.isdir(defect_dir):
-        dist_dirs = [
-            dir for dir in os.listdir(defect_dir)
-            if os.path.isdir(os.path.join(defect_dir, dir))
-            and any([substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]])
-        ]  # parse distortion directories
-
-        # Parse energies and write them to file
-        energies = {"distortions": {}}
-        for dist in dist_dirs:
-            outcar = None
-            energy = None
-            if code.lower() == "vasp":
-                energy, outcar = parse_vasp_energy(defect_dir, dist, energy, outcar)
-            elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
-                energy, outcar = parse_espresso_energy(defect_dir, dist, energy, outcar)
-            elif code.lower() == "cp2k":
-                energy, outcar = parse_cp2k_energy(defect_dir, dist, energy, outcar)
-            elif code.lower() == "castep":
-                energy, outcar = parse_castep_energy(defect_dir, dist, energy, outcar)
-            elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
-                energy, outcar = parse_fhi_aims_energy(defect_dir, dist, energy, outcar)
-
-            if energy:
-                if "Unperturbed" in dist:
-                    energies[_format_distortion_names(dist)] = float(energy)
-                else:
-                    energies["distortions"][_format_distortion_names(dist)] = float(energy)
-            elif not outcar:
-                warnings.warn(f"No output file in {dist} directory")
-            else:
-                print(f"{dist} not fully relaxed")
-
-        if energies != {"distortions": {}}:  # only write energy file if energies have been parsed
-            energies = sort_energies(energies)
-            save_file(energies, defect, path)
 
 
 def CommandWithConfigFile(
@@ -557,10 +375,19 @@ def snb():
 )
 @click.option(
     "--config",
+    "-conf",
     help="Config file for advanced distortion settings. See example in"
         "/input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "--input_file",
+    "-inp",
+    help="Input file for the code specified with `--code`, "
+    "with relaxation parameters to override defaults.",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 @click.option(
     "--verbose",
@@ -582,10 +409,11 @@ def generate(
     code,
     name,
     config,
+    input_file,
     verbose,
 ):
     """
-    Generate the trial distortions for structure-searching for a given defect.
+    Generate the trial distortions and input files for structure-searching for a given defect.
     """
     if config is not None:
         user_settings = loadfn(config)
@@ -594,9 +422,21 @@ def generate(
 
     func_args = list(locals().keys())
     if user_settings:
+        valid_args = [
+            "defect", "bulk", "charge", "min_charge", "max_charge",
+            "defect_index", "defect_coords", "code", "name", "config",
+            "input_file", "verbose", "oxidation_states", "dict_number_electrons_user",
+            "distortion_increment", "bond_distortions", "local_rattle",
+            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
+            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+        ]
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
+        for key in list(user_settings.keys()):
+            # remove non-sense keys from user_settings
+            if key not in valid_args:
+                user_settings.pop(key)
 
     defect_struc = Structure.from_file(defect)
     bulk_struc = Structure.from_file(bulk)
@@ -640,34 +480,66 @@ def generate(
     if name is None:
         name = defect_object.name
 
-    defects_dict = _generate_defect_dict(defect_object, charges, name)
+    defects_dict = generate_defect_dict(defect_object, charges, name)
 
-    Dist = Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
+        if input_file:
+            incar = Incar.from_file(input_file)
+            incar_settings = incar.as_dict()
+            [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+        else:
+            incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
-            verbose=verbose
+            verbose=verbose,
+            incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
-        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+        print("Code is espresso")
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            print("Writting espresso input files")
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+            )
     elif code.lower() == "castep":
-        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+            )
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
 
-# TODO: add option in config file with incar/potcar settings - and analogous for the other codes
 @snb.command(
     name="generate_all",
     context_settings=CONTEXT_SETTINGS,
@@ -684,7 +556,7 @@ def generate(
 )
 @click.option(
     "--structure_file",
-    "-f",
+    "-s",
     help="File termination/name from which to"
     "parse defect structure from. Only required if defects are stored "
     "in individual directories. Defaults to POSCAR",
@@ -707,9 +579,19 @@ def generate(
 )
 @click.option(
     "--config",
+    "-conf",
     help="Config file for advanced distortion settings. See example in "
         "/input_files/example_generate_all_config.yaml",
-    default=None
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
+)
+@click.option(
+    "--input_file",
+    "-inp",
+    help="Input file for the code specified with `--code`, "
+    "with relaxation parameters to override defaults.",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
 @click.option(
     "--verbose",
@@ -724,10 +606,11 @@ def generate_all(
     structure_file,
     code,
     config,
-    verbose
+    input_file,
+    verbose,
 ):
     """
-    Generate the trial distortions for structure-searching for all defects
+    Generate the trial distortions and input files for structure-searching for all defects
     in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
@@ -746,10 +629,30 @@ def generate_all(
         defect_settings, user_settings = {}, {}
 
     func_args = list(locals().keys())
+    # Specified options take precedence over the ones in the config file
+    pseudopotentials = None
     if user_settings:
+        valid_args = [
+            "defects", "bulk", "structure_file", "code", "config", "input_file",
+            "verbose", "oxidation_states", "dict_number_electrons_user",
+            "distortion_increment", "bond_distortions", "local_rattle",
+            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
+            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+        ]
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
+        # Parse pseduopotentials from config file, if specified
+        if "POTCAR" in user_settings.keys():
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
+            user_settings.pop("POTCAR", None)
+        if "pseudopotentials" in user_settings.keys():
+            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
+            user_settings.pop("pseudopotentials", None)
+        for key in list(user_settings.keys()):
+            # remove non-sense keys from user_settings
+            if key not in valid_args:
+                user_settings.pop(key)
 
     def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
         """Parse defect name from file/folder name"""
@@ -859,7 +762,7 @@ def generate_all(
                 f"with site {defect_object.site}"
             )
 
-        defect_dict = _generate_defect_dict(defect_object, charges, defect_name)
+        defect_dict = generate_defect_dict(defect_object, charges, defect_name)
 
         # Add defect entry to full defect_dict
         defect_type = str(list(defect_dict.keys())[0])
@@ -871,28 +774,67 @@ def generate_all(
                     defect_type: deepcopy(defect_dict[defect_type]),
                 }
             )
+
     # Apply distortions and write input files
-    Dist = Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
+        if input_file:
+            incar = Incar.from_file(input_file)
+            incar_settings = incar.as_dict()
+            [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+        else:
+            incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
-            verbose=verbose
+            verbose=verbose,
+            potcar_settings=pseudopotentials,
+            incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
-        distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+        print("Code is espresso")
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                pseudopotentials=pseudopotentials,
+                input_file=input_file,
+            )
+        else:
+            print("Writting espresso input files")
+            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
+                verbose=verbose,
+                pseudopotentials=pseudopotentials,
+            )
     elif code.lower() == "castep":
-        distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-            verbose=verbose
-        )
-    elif code.lower() == ["fhi-aims", "fhi_aims", "fhiaims"]:
-        distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-            verbose=verbose
-        )
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
+                verbose=verbose,
+            )
+    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
+        if input_file:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+                input_file=input_file,
+            )
+        else:
+            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
+                verbose=verbose,
+            )
+
+    # Dump dict with parsed defects to pickle
     with open("./parsed_defects_dict.pickle", "wb") as fp:
         pickle.dump(defects_dict, fp)
 
@@ -900,7 +842,7 @@ def generate_all(
 @snb.command(
     name="parse",
     context_settings=CONTEXT_SETTINGS,
-    no_args_is_help=True,
+    no_args_is_help=False,  # to allow convenient parsing
 )
 @click.option(
     "--defect",
@@ -935,26 +877,27 @@ def generate_all(
     default="vasp",
 )
 def parse(defect, all, path, code):
-    """Parse final energies of defect structures from relaxation output files.
+    """
+    Parse final energies of defect structures from relaxation output files.
     Parsed energies are written to a `yaml` file in the corresponding defect directory.
     """
     if defect:
-        parse_energies(defect, path, code)
+        io.parse_energies(defect, path, code)
     elif all:
         defect_dirs = _parse_defect_dirs(path)
-        [parse_energies(defect, path, code) for defect in defect_dirs]
+        [io.parse_energies(defect, path, code) for defect in defect_dirs]
     else:
         # assume current directory is the defect folder
         try:
-            if path == ".":
+            if path == "." or path == "./":
                 path = os.getcwd()
             if path.endswith("/"):
                 defect =  path.split("/")[-2]
                 path = path.rsplit("/", 2)[0]
             else:
                 defect = path.split("/")[-1]
-                path = path.rsplit("/")[0]
-            parse_energies(defect, path, code)
+                path = path.rsplit("/", 1)[0]
+            io.parse_energies(defect, path, code)
         except:
             warnings.warn(
                 "Could not parse energies! Please specify a defect to parse "
@@ -1002,6 +945,7 @@ def parse(defect, all, path, code):
 )
 @click.option(
     "--ref_struct",
+    "-ref",
     help ="Structure to use as a reference for comparison"
         "(to compute atomic displacements). Given as a key from"
         "`defect_structures_dict`. Defaults to 'Unperturbed'",
@@ -1018,26 +962,26 @@ def parse(defect, all, path, code):
 )
 def analyse(defect, all, path, code, ref_struct, verbose):
     """
-    Generate csv file mapping each distortion to its final energy and its
-    mean displacement (relative to ref_struct).
+    Generate `csv` file mapping each distortion to its final energy (in eV) and its
+    mean displacement (in angstrom and relative to `ref_struct`).
     """
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
         if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
             raise FileNotFoundError(
                 f"Could not find {defect} in the directory {path}."
             )
-        parse_energies(defect, path, code)
-        defect_energies_dict = get_energies(
+        io.parse_energies(defect, path, code)
+        defect_energies_dict = analysis.get_energies(
             defect_species=defect,
             output_path=path,
             verbose=verbose
         )
-        defect_structures_dict = get_structures(
+        defect_structures_dict = analysis.get_structures(
             defect_species=defect,
             output_path=path,
             code=code
         )
-        dataframe = compare_structures(
+        dataframe = analysis.compare_structures(
             defect_structures_dict=defect_structures_dict,
             defect_energies_dict=defect_energies_dict,
             ref_structure=ref_struct,
@@ -1081,7 +1025,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--all",
     "-a",
-    help="Analyse all defects present in specified directory",
+    help="Analyse all defects present/current in specified directory",
     default=False,
     is_flag=True,
     show_default=True,
@@ -1096,6 +1040,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
+    "-c",
     help ="Code used to run the geometry optimisations. "
         "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
         "Defaults to 'vasp'",
@@ -1104,6 +1049,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--colorbar",
+    "-cb",
     help ="Whether to add a colorbar indicating structural"
         " similarity between each structure and the unperturbed one.",
     type=bool,
@@ -1114,7 +1060,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help ="If add_colorbar is True, determines the criteria used for the"
+    help ="If the option `--colorbar` is specified, determines the criteria used for the"
         " structural comparison. Can choose between the summed of atomic"
         " displacements ('disp') or the maximum distance between"
         " matched sites ('max_dist', default).",
@@ -1124,7 +1070,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--format",
     "-f",
-    help ="Format to save the plot as. Defaults to svg.",
+    help ="Format to save the plot as. Defaults to `svg`.",
     type=str,
     default="svg",
 )
@@ -1146,7 +1092,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--title",
     "-t",
-    help ="Whether to add defect name as plot title. Defaults to True.",
+    help ="Whether to add defect name as plot title. Defaults to `True`.",
     type=bool,
     default=True,
     is_flag=True,
@@ -1162,14 +1108,15 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose):
     """
-    Generate energy vs distortion plots.
+    Generate energy vs distortion plots. Optionally, the structural
+    similarity between configurations can be illustrated with a colorbar.
     """
     if all:
         defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             if verbose:
                 print(f"Parsing {defect}...")
-            parse_energies(defect, path, code)
+            io.parse_energies(defect, path, code)
         # Create defects_dict (matching defect name to charge states)
         defects_wout_charge = [defect.rsplit("_", 1)[0] for defect in defect_dirs]
         defects_dict = {
@@ -1177,7 +1124,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
         }
         for defect in defect_dirs:
             defects_dict[defect.rsplit("_", 1)[0]].append(defect.rsplit("_", 1)[1])
-        plot_all_defects(
+        plotting.plot_all_defects(
             defects_dict=defects_dict,
             output_path=path,
             add_colorbar=colorbar,
@@ -1188,13 +1135,13 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
             max_energy_above_unperturbed=max_energy,
         )
     elif defect:
-        parse_energies(defect, path, code)
-        defect_energies_dict = get_energies(
+        io.parse_energies(defect, path, code)
+        defect_energies_dict = analysis.get_energies(
             defect_species=defect,
             output_path=path,
             verbose=verbose,
         )
-        plot_defect(
+        plotting.plot_defect(
             defect_species=defect,
             energies_dict=defect_energies_dict,
             output_path=path,
@@ -1213,7 +1160,6 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
         )
 
 
-# TODO: Nicer name for this function?
 @snb.command(
     name="regenerate",
     context_settings=CONTEXT_SETTINGS,
@@ -1239,7 +1185,8 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
 @click.option(
     "--filename",
     "-f",
-    help ="Name of the file containing the structure. Defaults to 'CONTCAR'",
+    help ="Name of the file containing the defect structures. "
+    "Defaults to 'CONTCAR'",
     type=str,
     default="CONTCAR",
 )
@@ -1253,6 +1200,15 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     default=0.05,
 )
 @click.option(
+    "--metastable",
+    "-meta",
+    help ="Whether to also consider non-spontaneous metastable "
+        "energy-lowering distortions, as these can become ground-state "
+        "distortions for other charge states.",
+    type=bool,
+    default=False,
+)
+@click.option(
     "--verbose",
     "-v",
     help ="Print information about identified energy lowering distortions.",
@@ -1260,7 +1216,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     is_flag=True,
     show_default=True,
 )
-def regenerate(path, code, filename, min, verbose):
+def regenerate(path, code, filename, min, metastable, verbose):
     """
     Identify defect species undergoing energy-lowering distortions and
     test these distortions for the other charge states of the defect.
@@ -1268,13 +1224,14 @@ def regenerate(path, code, filename, min, verbose):
     in each charge state, and screens out duplicate distorted structures
     found for multiple charge states.
     """
-    defect_charges_dict = read_defects_directories()
-    _ = get_energy_lowering_distortions(
+    defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+    _ = energy_lowering_distortions.get_energy_lowering_distortions(
         defect_charges_dict=defect_charges_dict,
         output_path=path,
         code=code,
         structure_filename=filename,
         write_input_files=True,
         min_e_diff=min,
+        metastable=metastable,
         verbose=verbose,
     )

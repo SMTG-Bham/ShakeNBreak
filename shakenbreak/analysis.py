@@ -36,7 +36,7 @@ def _warning_on_one_line(
     filename,
     lineno,
     file=None,
-    line=None
+    line=None,
 ):
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
@@ -108,15 +108,26 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, float):
-        distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-        # as percentage with 1 decimal place (e.g. 50.0%)
+    if isinstance(distortion, float) or isinstance(distortion, int):
+        if distortion != 0:
+            distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+            # as percentage with 1 decimal place (e.g. 50.0%)
+        else:
+            distortion_label = f"Bond_Distortion_{distortion:.1f}%"
     elif isinstance(distortion, str):
-        if "_from_" in distortion:
+        if "_from_" in distortion and "Rattled" not in distortion:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        else:
+        elif "Rattled_from_" in distortion:
+            distortion_label = distortion
+        elif distortion == "Unperturbed" or distortion == "Rattled":
             distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
+        else:
+            try:  # try converting to float, in case user entered '0.5'
+                distortion = float(distortion)
+                distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+            except:
+                distortion_label = "Distortion_not_recognized"
     else:
         distortion_label = "Distortion_not_recognized"
     return distortion_label
@@ -330,7 +341,7 @@ def analyse_defect_site(
     if coordination is not None:
         coord_list = []
         for coord, value in coordination.items():
-            coordination_dict = {"Coordination": coord, "Factor": value}
+            coordination_dict = {"Coordination": coord, "Factor": round(value, 2)}
             coord_list.append(coordination_dict)
         print(
             "Local order parameters (i.e. resemblance to given structural motif, "
@@ -344,7 +355,7 @@ def analyse_defect_site(
         bond_lengths.append(
             {
                 "Element": i["site"].specie.as_dict()["element"],
-                "Distance": f"{i['site'].distance(struct[isite]):.3f}",
+                "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
             }
         )
     bond_length_df = pd.DataFrame(bond_lengths)
@@ -496,7 +507,7 @@ def get_structures(
         for distortion in bond_distortions:
             distortion_label = _get_distortion_filename(distortion)  # get filename
             if (
-                distortion_label != "Label_not_recognized"
+                distortion_label != "Distortion_not_recognized"
             ):  # If the distortion label is recognised
                 try:
                     defect_structures_dict[distortion] = io.parse_structure(
@@ -668,6 +679,7 @@ def calculate_struct_comparison(
             Dictionary matching bond distortions to structure
             comparison metric (disp or max_dist).
     """
+    # Check reference structure
     if isinstance(ref_structure, str) or isinstance(ref_structure, float):
         if isinstance(ref_structure, str):
             ref_name = ref_structure
@@ -736,7 +748,6 @@ def calculate_struct_comparison(
     return disp_dict
 
 
-# TODO: Add check if too many 'NaN' values in disp_dict, if so, try with higher stol
 def compare_structures(
     defect_structures_dict: dict,
     defect_energies_dict: dict,
@@ -800,7 +811,6 @@ def compare_structures(
             f"Returning None."
         )
         return None
-        # TODO: Use generator and add unit test for this
     df_list = []
     disp_dict = calculate_struct_comparison(
         defect_structures_dict,
@@ -816,6 +826,27 @@ def compare_structures(
             ref_structure=ref_structure,
             stol=stol,
         )
+        # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
+        number_of_nan = len([value for value in disp_dict.values() if value == None])
+        if number_of_nan >  len(disp_dict.values()) // 3:
+            warnings.warn(
+                f"The specified tolerance {stol} seems to be too tight as"
+                " too many lattices could not be matched. Will retry with"
+                f" larger tolerance ({stol+0.4})."
+            )
+            max_dist_dict = calculate_struct_comparison(
+                defect_structures_dict,
+                metric="max_dist",
+                ref_structure=ref_structure,
+                stol=stol+0.4,
+            )
+            disp_dict = calculate_struct_comparison(
+                defect_structures_dict,
+                metric="disp",
+                ref_structure=ref_structure,
+                stol=stol+0.4,
+                min_dist=min_dist,
+            )
 
     for distortion in defect_energies_dict["distortions"]:
         try:
@@ -896,11 +927,12 @@ def get_homoionic_bonds(
             f"Your structure does not contain element {element}!"
         )
         return {}
+    # Search for homoionic bonds in the whole structure
     sites = [
         (site_index, site)
         for site_index, site in enumerate(structure)
         if site.species_string == element
-    ]  # we search for homoionic bonds in the whole structure.
+    ]
     homoionic_bonds = {}
     for (site_index, site) in sites:
         neighbours = structure.get_neighbors(site, r=radius)
@@ -974,24 +1006,27 @@ def _site_magnetizations(
                 f"{structure[index].species_string}({index})"
             ] = {
                 "Site": f"{structure[index].species_string}({index})",
-                "Coords": [
+                "Frac coords": [
                     round(coord, 3) for coord in structure[index].frac_coords
                 ],
-                "Total mag": round(total_mag, 3),
+                "Site mag": round(total_mag, 3),
             }
             if isinstance(defect_site, int):
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
-                ].update({
-                    'Dist. (A)': round(
-                        structure.get_distance(i = defect_site, j = index), 1
-                    )
-                })
+                ].update(
+                    {
+                        'Dist. (\u212B)': round(
+                            structure.get_distance(i = defect_site, j = index),
+                            2,
+                        )
+                    }
+                )
             if orbital_projections:
                 significant_magnetizations[
                     f"{structure[index].species_string}({index})"
                 ].update(
-                    {k: round(v,4) for k,v in element.items() if k != 'tot'}
+                    {k: round(v,3) for k,v in element.items() if k != 'tot'}
                     # include site magnetization of each orbital
                     # but dont include total site magnetization again
                 )
@@ -1001,7 +1036,7 @@ def _site_magnetizations(
 
 def get_site_magnetizations(
     defect_species: str,
-    distortions: str,
+    distortions: list,
     output_path: str = ".",
     threshold: float = 0.1,
     defect_site: Optional[int or list] = None,
@@ -1069,10 +1104,18 @@ def get_site_magnetizations(
                         f"magnetization."
                     )
                     defect_site = None
-    # TODO: This could be sped up by parallelising
+
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename
         # (e.g. Bond_Distortion_50.0%)
+        if dist_label == "Distortion_not_recognized":
+            warnings.warn(
+                f"Problem parsing the distortion label {distortion}. "
+                "The distortions specified in the `distortions` list "
+                "should be the distortion factor (e.g. 0.2) or the "
+                "Unperturbed/Rattled name."
+            )
+            return None
         structure = io.read_vasp_structure(
             f"{output_path}/{defect_species}/{dist_label}/CONTCAR"
         )
@@ -1087,7 +1130,7 @@ def get_site_magnetizations(
             structure.append(
                 species="V", coords = defect_site, coords_are_cartesian = False
             )
-            defect_site = -1 # index of the added fake atom
+            defect_site = -1  # index of the added fake atom
         if not os.path.exists(
             f"{output_path}/{defect_species}/{dist_label}/OUTCAR"
         ):
@@ -1101,7 +1144,7 @@ def get_site_magnetizations(
         if verbose:
             print(
                 f"Analysing distortion {distortion}. "
-                f"Total magnetization: {round(outcar.total_mag, 3)}"
+                f"Total magnetization: {round(outcar.total_mag, 2)}"
             )
         df = _site_magnetizations(
             outcar=outcar,
@@ -1109,7 +1152,7 @@ def get_site_magnetizations(
             threshold=threshold,
             defect_site=defect_site,
             orbital_projections=orbital_projections,
-            )
+        )
         if not df.empty:
             magnetizations[distortion] = df
         elif verbose:
