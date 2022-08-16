@@ -250,8 +250,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 self.defect_charges_dict, save_format="png"
             )
 
-            wd = os.getcwd()
-            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
         return fig_dict["vac_1_Cd_-2"]
 
     @pytest.mark.mpl_image_compare(
@@ -266,8 +265,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 self.defect_charges_dict, save_format="png"
             )
 
-            wd = os.getcwd()
-            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
         return fig_dict["vac_1_Cd_-1"]
 
     @pytest.mark.mpl_image_compare(
@@ -288,10 +286,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 defect_charges_dict, save_format="png"
             )
 
-            wd = os.getcwd()
-            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
             mock_print.assert_has_calls(
-                [call(f"Plot saved to {wd}/distortion_plots/")] * 3
+                [call(f"Plot saved to {file_path}/distortion_plots/")] * 3
             )
         return fig_dict["vac_1_Cd_0"]
 
