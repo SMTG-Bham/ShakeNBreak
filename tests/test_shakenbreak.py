@@ -34,6 +34,10 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
+        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+            output_path=self.VASP_CDTE_DATA_DIR
+        )
+        self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
@@ -95,8 +99,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )  # overwrite
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
-        if "vac_1_Ti" in defect_charges_dict:
-            del defect_charges_dict["vac_1_Ti"]  # Used for magnetization tests
+        defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
         low_energy_defects = (
             energy_lowering_distortions.get_energy_lowering_distortions(
@@ -234,56 +237,56 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             ),
         )
 
-        @pytest.mark.mpl_image_compare(
-            baseline_dir="V_Cd_fake_test_distortion_plots",
-            filename="V$_{Cd}^{-2}$.png",
-            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-        )
-        def test_plot_fake_vac_1_Cd_m2():
-            with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(
-                    defect_charges_dict, save_format="png"
-                )
+    @pytest.mark.mpl_image_compare(
+        baseline_dir="V_Cd_fake_test_distortion_plots",
+        filename="V$_{Cd}^{-2}$.png",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_fake_vac_1_Cd_m2(self):
+        with patch("builtins.print") as mock_print:
+            fig_dict = plotting.plot_all_defects(
+                self.defect_charges_dict, save_format="png"
+            )
 
-                wd = os.getcwd()
-                mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
-            return fig_dict["vac_1_Cd_-2"]
+            wd = os.getcwd()
+            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+        return fig_dict["vac_1_Cd_-2"]
 
-        @pytest.mark.mpl_image_compare(
-            baseline_dir="V_Cd_fake_test_distortion_plots",
-            filename="V$_{Cd}^{-1}$.png",
-            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-        )
-        def test_plot_fake_vac_1_Cd_m1():
-            with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(
-                    defect_charges_dict, save_format="png"
-                )
+    @pytest.mark.mpl_image_compare(
+        baseline_dir="V_Cd_fake_test_distortion_plots",
+        filename="V$_{Cd}^{-1}$.png",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_fake_vac_1_Cd_m1(self):
+        with patch("builtins.print") as mock_print:
+            fig_dict = plotting.plot_all_defects(
+                self.defect_charges_dict, save_format="png"
+            )
 
-                wd = os.getcwd()
-                mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
-            return fig_dict["vac_1_Cd_-1"]
+            wd = os.getcwd()
+            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+        return fig_dict["vac_1_Cd_-1"]
 
-        @pytest.mark.mpl_image_compare(
-            baseline_dir="V_Cd_fake_test_distortion_plots",
-            filename="V$_{Cd}^{0}$.png",
-            style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-            savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-        )
-        def test_plot_fake_vac_1_Cd_0():
-            with patch("builtins.print") as mock_print:
-                fig_dict = plotting.plot_all_defects(
-                    defect_charges_dict, save_format="png"
-                )
+    @pytest.mark.mpl_image_compare(
+        baseline_dir="V_Cd_fake_test_distortion_plots",
+        filename="V$_{Cd}^{0}$.png",
+        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_fake_vac_1_Cd_0(self):
+        with patch("builtins.print") as mock_print:
+            fig_dict = plotting.plot_all_defects(
+                self.defect_charges_dict, save_format="png"
+            )
 
-                wd = os.getcwd()
-                mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
-                mock_print.assert_has_calls(
-                    [call(f"Plot saved to {wd}/distortion_plots/")] * 3
-                )
-            return fig_dict["vac_1_Cd_0"]
+            wd = os.getcwd()
+            mock_print.assert_any_call(f"Plot saved to {wd}/distortion_plots/")
+            mock_print.assert_has_calls(
+                [call(f"Plot saved to {wd}/distortion_plots/")] * 3
+            )
+        return fig_dict["vac_1_Cd_0"]
 
 
 if __name__ == "__main__":

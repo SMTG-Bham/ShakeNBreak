@@ -636,7 +636,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 Structure.from_file(
                     f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/POSCAR"
                 ),
-            )  # TODO: Flesh out tests
+            )
 
         # Test for copying over VASP input files (INCAR, KPOINTS and (empty)
         # POTCAR files)
@@ -736,13 +736,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         # Check structure
-        # self.assertEqual(
-        #     Structure.from_file(os.path.join(
-        #         self.CP2K_DATA_DIR,
-        #         "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/structure.cif"
-        #     )),
-        #     self.V_Cd_minus_0pt55_structure
-        # )
         struct = Structure.from_file(
             os.path.join(
                 self.CP2K_DATA_DIR,
@@ -805,10 +798,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
         aaa = AseAtomsAdaptor()
         struct = aaa.get_structure(atoms)
-        # self.assertEqual(
-        #     struct,
-        #     self.V_Cd_minus_0pt55_structure
-        # )
         self.assertTrue(
             analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0]
             < 0.01
@@ -865,10 +854,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/geometry.in",
             )
         )
-        # self.assertEqual(
-        #     struct,
-        #     self.V_Cd_minus_0pt55_structure
-        # )
         self.assertTrue(
             analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0]
             < 0.01
@@ -926,10 +911,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )
         )
-        # self.assertEqual(
-        #     struct,
-        #     self.V_Cd_minus_0pt55_structure
-        # )
         self.assertTrue(
             analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0]
             < 0.01
