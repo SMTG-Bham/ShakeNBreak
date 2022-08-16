@@ -11,6 +11,7 @@ from shakenbreak import (
     input,
     energy_lowering_distortions,
     plotting,
+    io,
 )
 
 
@@ -236,25 +237,41 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             ),
         )
 
+    # Now we test parsing of final energies and plotting
+
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_test_distortion_plots",
+        baseline_dir="remote_V_Cd_plots",
         filename="V$_{Cd}^{-2}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_m2(self):
-        defect_dir = "vac_1_Cd_-1"
+        defect_dir = "vac_1_Cd_-2"
         if_present_rm(defect_dir)
         os.mkdir(defect_dir)
-        V_Cd_2_dict = {
-            'distortions': {
-                -0.35: -205.7,
-                "-50.0%_from_0": -206.5,
-                0.0: -205.6,
-            },
-            'Unperturbed': -205.8
-        }
-        dumpfn(V_Cd_2_dict, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
+        for dist, energy in {
+            "Bond_Distortion_-35.0%": -205.7,
+            "Bond_Distortion_-50.0%_from_0": -206.5,
+            "Bond_Distortion_0.0%": -205.6
+        }:
+            # Just using relevant part of the OUTCAR file to quickly test parsing
+            # as parsing of the full file has been extensively tested in test_cli.py
+            outcar=f"""
+            FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
+            ---------------------------------------------------
+            free  energy   TOTEN  =     -1173.02056574 eV
+
+            energy  without entropy=    -1173.02056574  energy(sigma->0) =    {energy}
+
+            d Force = 0.4804267E-04[ 0.582E-05, 0.903E-04]  d Energy = 0.2446833E-04 0.236E-04
+            d Force =-0.1081853E+01[-0.108E+01,-0.108E+01]  d Ewald  =-0.1081855E+01 0.235E-05
+            """
+            with open(f"{defect_dir}/{dist}/OUTCAR", "w") as f:
+                f.write(outcar)
+
+        # Parse final energies from OUTCAR files and write them to yaml files
+        io.parse_energies(defect=defect_dir)
+
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
@@ -264,27 +281,83 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         return fig_dict["vac_1_Cd_-2"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_test_distortion_plots",
+        baseline_dir="remote_V_Cd_plots",
         filename="V$_{Cd}^{-1}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_m1(self):
+        defect_dir = "vac_1_Cd_-1"
+        if_present_rm(defect_dir)
+        os.mkdir(defect_dir)
+        for dist, energy in {  # Fake energies
+            "Bond_Distortion_-35.0%": -205.7,
+            "Bond_Distortion_0.0%": -205.6,
+            "Bond_Distortion_-50.0%_from_0": -206.5,
+            "Bond_Distortion_-20.0%_from_-1": -206.5,
+        }:
+            # Just using relevant part of the OUTCAR file to quickly test parsing
+            # as parsing of the full file has been extensively tested in test_cli.py
+            outcar=f"""
+            FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
+            ---------------------------------------------------
+            free  energy   TOTEN  =     -1173.02056574 eV
+
+            energy  without entropy=    -1173.02056574  energy(sigma->0) =    {energy}
+
+            d Force = 0.4804267E-04[ 0.582E-05, 0.903E-04]  d Energy = 0.2446833E-04 0.236E-04
+            d Force =-0.1081853E+01[-0.108E+01,-0.108E+01]  d Ewald  =-0.1081855E+01 0.235E-05
+            """
+            with open(f"{defect_dir}/{dist}/OUTCAR", "w") as f:
+                f.write(outcar)
+
+        # Parse final energies from OUTCAR files and write them to yaml files
+        io.parse_energies(defect=defect_dir)
+
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+        defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+
         fig_dict = plotting.plot_all_defects(
-            self.defect_charges_dict, save_format="png"
+            defect_charges_dict, save_format="png"
         )
         return fig_dict["vac_1_Cd_-1"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_test_distortion_plots",
+        baseline_dir="remote_V_Cd_plots",
         filename="V$_{Cd}^{0}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_0(self):
-        shutil.copytree(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
-        )  # overwrite
+        defect_dir = "vac_1_Cd_0"
+        if_present_rm(defect_dir)
+        os.mkdir(defect_dir)
+        for dist, energy in {  # fake energies
+            "Bond_Distortion_-40.0%": -205.7,
+            "Bond_Distortion_-20.0%": -206.7,
+            "Bond_Distortion_0.0%": -205.6,
+            "Bond_Distortion_20.0%": -206.7,
+            "Bond_Distortion_40.0%": -206.7,
+            "Bond_Distortion_-50.0%_from_0": -206.5,
+        }:
+            # Just using relevant part of the OUTCAR file to quickly test parsing
+            # as parsing of the full file has been extensively tested in test_cli.py
+            outcar=f"""
+            FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
+            ---------------------------------------------------
+            free  energy   TOTEN  =     -1173.02056574 eV
+
+            energy  without entropy=    -1173.02056574  energy(sigma->0) =    {energy}
+
+            d Force = 0.4804267E-04[ 0.582E-05, 0.903E-04]  d Energy = 0.2446833E-04 0.236E-04
+            d Force =-0.1081853E+01[-0.108E+01,-0.108E+01]  d Ewald  =-0.1081855E+01 0.235E-05
+            """
+            with open(f"{defect_dir}/{dist}/OUTCAR", "w") as f:
+                        f.write(outcar)
+
+        # Parse final energies from OUTCAR files and write them to yaml files
+        io.parse_energies(defect=defect_dir)
+
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
