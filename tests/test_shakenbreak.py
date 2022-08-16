@@ -60,9 +60,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
-        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories(
-            output_path=self.VASP_CDTE_DATA_DIR
-        )
+        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
     def tearDown(self):
@@ -239,57 +237,60 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_fake_test_distortion_plots",
+        baseline_dir="V_Cd_test_distortion_plots",
         filename="V$_{Cd}^{-2}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_m2(self):
-        with patch("builtins.print") as mock_print:
-            fig_dict = plotting.plot_all_defects(
-                self.defect_charges_dict, save_format="png"
-            )
+        defect_dir = "vac_1_Cd_-1"
+        if_present_rm(defect_dir)
+        os.mkdir(defect_dir)
+        V_Cd_2_dict = {
+            'distortions': {
+                -0.35: -205.7,
+                "-50.0%_from_0": -206.5,
+                0.0: -205.6,
+            },
+            'Unperturbed': -205.8
+        }
+        dumpfn(V_Cd_2_dict, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+        defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
-            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
+        fig_dict = plotting.plot_all_defects(
+            defect_charges_dict, save_format="png"
+        )
         return fig_dict["vac_1_Cd_-2"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_fake_test_distortion_plots",
+        baseline_dir="V_Cd_test_distortion_plots",
         filename="V$_{Cd}^{-1}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_m1(self):
-        with patch("builtins.print") as mock_print:
-            fig_dict = plotting.plot_all_defects(
-                self.defect_charges_dict, save_format="png"
-            )
-
-            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
+        fig_dict = plotting.plot_all_defects(
+            self.defect_charges_dict, save_format="png"
+        )
         return fig_dict["vac_1_Cd_-1"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="V_Cd_fake_test_distortion_plots",
+        baseline_dir="V_Cd_test_distortion_plots",
         filename="V$_{Cd}^{0}$.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_fake_vac_1_Cd_0(self):
-        with patch("builtins.print") as mock_print:
-            shutil.copytree(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
-            )  # overwrite
-            defect_charges_dict = energy_lowering_distortions.read_defects_directories()
-            defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        shutil.copytree(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0"), "vac_1_Cd_0"
+        )  # overwrite
+        defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+        defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
-            fig_dict = plotting.plot_all_defects(
-                defect_charges_dict, save_format="png"
-            )
-
-            mock_print.assert_any_call(f"Plot saved to {file_path}/distortion_plots/")
-            mock_print.assert_has_calls(
-                [call(f"Plot saved to {file_path}/distortion_plots/")] * 3
-            )
+        fig_dict = plotting.plot_all_defects(
+            defect_charges_dict, save_format="png"
+        )
         return fig_dict["vac_1_Cd_0"]
 
 
