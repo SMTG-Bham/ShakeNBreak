@@ -422,12 +422,14 @@ class DistortionLocalTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
 
+        # check INCAR
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         Int_Cd_2_INCAR = Incar.from_file(Int_Cd_2_minus60_folder + "/INCAR")
         # neutral even-electron INCARs the same except for NELECT:
         for incar in [V_Cd_INCAR, Int_Cd_2_INCAR]:
             incar.pop("NELECT")  # https://tenor.com/bgVv9.gif
         self.assertEqual(V_Cd_INCAR, Int_Cd_2_INCAR)
+        # Kpoints
         Int_Cd_2_KPOINTS = Kpoints.from_file(Int_Cd_2_minus60_folder + "/KPOINTS")
         self.assertEqual(Int_Cd_2_KPOINTS.kpts, [[1, 1, 1]])
         # check if POTCARs have been written:
@@ -439,7 +441,14 @@ class DistortionLocalTestCase(unittest.TestCase):
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
         wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
-        dumpfn({}, f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        dumpfn(
+            {
+                "distortions":
+                    {-0.4: -1176.28458753},
+                "Unperturbed": -1173.02056574,
+            },
+            f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml"
+        )
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -465,7 +474,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
         compare_images(
             wd + "/distortion_plots/V$_{Ti}^{0}$.png",
-            f"{file_path}/remote_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
+            f"{file_path}/local_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         self.tearDown()
@@ -515,18 +524,18 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
         self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
-        os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Compare figures
         compare_images(
             wd + "/distortion_plots/V$_{Cd}^{0}$.png",
-            f"{file_path}/remote_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
+            f"{file_path}/local_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
+        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
+        os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
 
     def test_generate_all_input_file(self):
-        """Test generate_all() function when user gives input_file"""
+        """Test generate_all() function when user specifies input_file"""
         defects_dir = f"pesky_defects"
         defect_name = "vac_1_Cd"
         os.mkdir(defects_dir)
@@ -570,6 +579,8 @@ class DistortionLocalTestCase(unittest.TestCase):
         incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
         self.assertEqual(incar_dict["GGA"].lower(), "PS".lower())
         self.assertEqual(incar_dict["IBRION"], 1)
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
         shutil.rmtree(f"{defect_name}_0")
         os.remove("INCAR")
 
@@ -705,6 +716,57 @@ class DistortionLocalTestCase(unittest.TestCase):
         )
         shutil.rmtree(f"{defect_name}_0")
         self.tearDown()
+
+    def test_generate(self):
+        "Test generate command"
+
+        test_yml = f"""
+bond_distortions: [-0.5,]
+stdev: 0.15
+d_min: 2.1250262890187375  # 0.75 * 2.8333683853583165
+nbr_cutoff: 3.4
+n_iter: 3
+active_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] # np.arange(0,31)
+width: 0.3
+max_attempts: 10000
+max_disp: 1.0
+seed: 20
+local_rattle: False"""
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-v",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        V_Cd_kwarged_POSCAR = Poscar.from_file(
+            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+        )
+        for file in ["KPOINTS", "POTCAR", "INCAR"]:
+            self.assertTrue(os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}"))
+        # Check KPOINTS file
+        kpoints = Kpoints.from_file(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        # Check INCAR
+        incar = Incar.from_file(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "INCAR")
+        self.assertEqual(incar.pop("IBRION"), 2)
+        self.assertEqual(incar.pop("EDIFF"), 1e-5)
+        self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
 
 if __name__ == "__main__":
     unittest.main()

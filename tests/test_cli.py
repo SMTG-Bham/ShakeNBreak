@@ -19,6 +19,7 @@ from click.testing import CliRunner
 
 from shakenbreak.cli import snb
 
+file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -404,8 +405,7 @@ class CLITestCase(unittest.TestCase):
             )
             self.assertEqual(result.exit_code, 0)
             if w:
-                # self.assertNotEqual(w[0].category, UserWarning)  # we have other POTCAR warnings
-                # being caught, so just check no UserWarning # TODO: this runs ok locally but not on github actions?
+                # Check no problems in identifying the defect site
                 self.assertNotIn("Coordinates", str(w[0].message))
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
@@ -818,11 +818,6 @@ nonsense_key: nonsense_value"""
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
         self.tearDown()
 
-        # TODO:
-        # test error handling and all print messages
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally -- add CLI INCAR KPOINTS and POTCAR local tests!
-
     def test_snb_generate_all(self):
         """Test generate_all() function."""
         # Test parsing defects from folders with non-standard names
@@ -1072,7 +1067,6 @@ nonsense_key: nonsense_value"""
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
-        # if_present_rm(f"{defect_name}_0")
         self.tearDown()
 
         # Test wrong folder defect name
@@ -1279,6 +1273,20 @@ nonsense_key: nonsense_value"""
         )
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"))
+
+        # Test parsing from inside the defect folder
+        defect_name = "vac_1_Ti_-1"
+        os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml")
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
+        os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
     def test_parse_codes(self):
@@ -1558,8 +1566,7 @@ nonsense_key: nonsense_value"""
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
         ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
-        # Figures are compared in the local test since on Github Actions images are saved
-        # with a different size (raising error when comparing).
+        # Figures are compared in the local test.
 
         self.tearDown()
 
