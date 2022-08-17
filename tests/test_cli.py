@@ -1,4 +1,3 @@
-from os.path import exists
 import unittest
 import os
 import datetime
@@ -9,13 +8,13 @@ import warnings
 from monty.serialization import loadfn
 import numpy as np
 import filecmp
+import subprocess
 
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar, Incar
 
 # Click
-from click import exceptions
 from click.testing import CliRunner
 
 from shakenbreak.cli import snb
@@ -37,6 +36,7 @@ class CLITestCase(unittest.TestCase):
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
         self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR,
@@ -59,6 +59,7 @@ class CLITestCase(unittest.TestCase):
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
     def tearDown(self):
+        os.chdir(os.path.dirname(__file__))
         for i in [
             "parsed_defects_dict.pickle",
             "distortion_metadata.json",
@@ -1116,6 +1117,86 @@ nonsense_key: nonsense_value"""
         # The input_file option is tested in local test, as INCAR
         # not written in Github Action
         self.tearDown()
+
+
+    def test_run(self):
+        """Test snb-run function"""
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        proc = subprocess.Popen(["snb-run", "-v"], stdout=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        self.assertIn(
+            "Job file 'job' not in current directory, so will only submit jobs in folders with "
+            "'job' present",
+            out
+        )
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        # but no OUTCAR so shouldn't print message
+
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+                                stdout=subprocess.PIPE)  # setting 'job command' to 'echo' to
+        # test job submit command
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
+            "'job_file' present",
+            out
+        )
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
+
+        if_present_rm("job_file")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test save_vasp_files:
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(["snb-run", "-v"], stdout=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out)
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 3)
+        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        saved_poscar = [i for i in saved_files if "POSCAR" in i][0]
+        shutil.copyfile(f"Bond_Distortion_10.0%/{saved_poscar}", "Bond_Distortion_10.0%/POSCAR")
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
+        os.remove("Bond_Distortion_10.0%/OUTCAR")
+
+        # test "--all" option
+        os.chdir("..")
+        shutil.copytree("vac_1_Ti_0", "vac_1_Ti_1")
+        proc = subprocess.Popen(["snb-run", "-v", "-a"],
+                                stdout=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
+        self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
+        shutil.rmtree("vac_1_Ti_1")
+
+
+        os.chdir("..")
+        proc = subprocess.Popen(["snb-run", "-v"],
+                                stdout=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        self.assertIn("No distortion folders found in current directory", out)
+
+        proc = subprocess.Popen(["snb-run", "-v", "-a"],
+                                stdout=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        print(out)
+        self.assertIn("No defect folders (with names ending in a number (charge state)) found in "
+                      "current directory", out)
+
 
     def test_parse(self):
         """Test parse() function.

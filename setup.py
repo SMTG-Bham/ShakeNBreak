@@ -67,6 +67,7 @@ setup(
             "shakenbreak = shakenbreak.cli:snb",
             "shakenbreak-generate = shakenbreak.cli:generate",
             "shakenbreak-generate_all = shakenbreak.cli:generate_all",
+            "shakenbreak-run = shakenbreak.cli:run",
             "shakenbreak-parse = shakenbreak.cli:parse",
             "shakenbreak-analyse = shakenbreak.cli:analyse",
             "shakenbreak-plot = shakenbreak.cli:plot",
