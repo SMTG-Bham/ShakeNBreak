@@ -848,7 +848,7 @@ def generate_all(
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (including charge state) to parse energies for",
+    help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0')",
     type=str,
     default=None,
 )
@@ -863,7 +863,7 @@ def generate_all(
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
+    help="Path to the top-level directory containing the defect folder. "
         "Defaults to current directory ('./').",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
@@ -871,7 +871,7 @@ def generate_all(
 @click.option(
     "--code",
     "-c",
-    help ="Code to generate relaxation input files for. "
+    help ="Code used to run the geometry optimisations. "
           "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
           "Defaults to 'vasp'",
     type=str,
@@ -976,7 +976,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect to analyse",
+    help="Name of defect (including charge state) to analyse (e.g. 'vac_1_Cd_0')",
     type=str,
     default=None,
 )
@@ -991,7 +991,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
+    help="Path to the top-level directory containing the defect folder(s). "
         "Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
@@ -1000,19 +1000,20 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     "--code",
     "-c",
     help ="Code used to run the geometry optimisations. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--ref_struct",
     "-ref",
-    help ="Structure to use as a reference for comparison"
+    help ="Structure to use as a reference for comparison "
         "(to compute atomic displacements). Given as a key from"
-        "`defect_structures_dict`. Defaults to 'Unperturbed'",
+        "`defect_structures_dict`.",
     type=str,
     default="Unperturbed",
+    show_default=True,
 )
 @click.option(
     "--verbose",
@@ -1080,7 +1081,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (inncluding charge state) to analyse",
+    help="Name of defect (including charge state) to analyse",
     type=str,
     default=None,
 )
@@ -1104,15 +1105,15 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     "--code",
     "-c",
     help ="Code used to run the geometry optimisations. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--colorbar",
     "-cb",
-    help ="Whether to add a colorbar indicating structural"
+    help ="Whether to add a colourbar indicating structural"
         " similarity between each structure and the unperturbed one.",
     type=bool,
     default=False,
@@ -1128,6 +1129,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         " matched sites ('max_dist', default).",
     type=str,
     default="max_dist",
+    show_default=True,
 )
 @click.option(
     "--format",

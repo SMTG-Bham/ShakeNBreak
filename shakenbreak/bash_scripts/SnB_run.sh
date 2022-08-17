@@ -18,6 +18,9 @@ job_filename=${2:-"job"}  # jobscript name
 job_name_option=${3:-"-N"}  # job name option
 
 DIR="$(dirname "${BASH_SOURCE[0]}")"
+if [ $single_defect = true ]; then
+    defect_name=${PWD##*/}/ # Use current directory name
+fi
 
 # Job parsing and running script
 if shopt -q extglob
@@ -27,7 +30,7 @@ else
 fi
 
 if [ ! -f "$job_filename" ]
-  then echo "Job file $job_filename not in current directory, so will only submit jobs in folders with $job_filename present"
+  then echo "Job file '$job_filename' not in current directory, so will only submit jobs in folders with '$job_filename' present"
   job_in_cwd=false
 fi
 
@@ -42,7 +45,7 @@ SnB_run_loop () {
         then
         builtin cd "$i" || return
         if [ ! -f "${job_filename}" ] && [ ! "$job_in_cwd" = false ]
-          then "cp" ../../"${job_filename}" . || return
+          then "cp" ../../"${job_filename}" . || "cp" ../"${job_filename}" . || return
         fi
         if [ -f OUTCAR ]  # if OUTCAR exists so rerunning rather than 1st run
           then echo "${i%?} not (fully) relaxed, saving files and rerunning"
@@ -53,7 +56,8 @@ SnB_run_loop () {
         fi
         if [ -f "${job_filename}" ]
           then echo "Running job for ${i%?}"
-          ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${i:16:6}" "${job_filename}"
+          folder_shortname="${i##*_}"
+          ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}"
         fi
         builtin cd .. || return
       else
