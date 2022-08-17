@@ -1129,11 +1129,11 @@ nonsense_key: nonsense_value"""
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         # but no OUTCAR so shouldn't print message
 
+        # test job submit command
         with open("job_file", "w") as fp:
             fp.write("Test pop")
         proc = subprocess.Popen(["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
                                 stdout=subprocess.PIPE)  # setting 'job command' to 'echo' to
-        # test job submit command
         out = str(proc.communicate()[0])
         self.assertNotIn(
             "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
