@@ -360,10 +360,10 @@ def snb():
 @click.option(
     "--code",
     help="Code to generate relaxation input files for. "
-    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-    "Defaults to 'VASP'",
+    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'.",
     default="VASP",
     type=str,
+    show_default=True,
 )
 @click.option(
     "--name",
@@ -560,9 +560,10 @@ def generate(
     "-s",
     help="File termination/name from which to"
     "parse defect structure from. Only required if defects are stored "
-    "in individual directories. Defaults to POSCAR",
+    "in individual directories.",
     type=str,
     default="POSCAR",
+    show_default=True,
 )
 @click.option(
     "--bulk",
@@ -573,10 +574,10 @@ def generate(
 @click.option(
     "--code",
     help="Code to generate relaxation input files for. "
-    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-    "Defaults to 'VASP'",
+    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'.",
     type=str,
     default="VASP",
+    show_default=True,
 )
 @click.option(
     "--config",
@@ -600,6 +601,7 @@ def generate(
     help="Print information about identified defects and generated distortions",
     default=False,
     is_flag=True,
+    show_default=True,
 )
 def generate_all(
     defects,
@@ -872,10 +874,10 @@ def generate_all(
     "--code",
     "-c",
     help ="Code used to run the geometry optimisations. "
-          "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-          "Defaults to 'vasp'",
+          "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 def parse(defect, all, path, code):
     """
@@ -915,25 +917,27 @@ def parse(defect, all, path, code):
 @click.option(
     "--submit-command",
     "-s",
-    help="Job submission command for the HPC scheduler (qsub, sbatch etc). Default = 'qsub'",
+    help="Job submission command for the HPC scheduler (qsub, sbatch etc).",
     type=str,
     default="qsub",
+    show_default=True,
 )
 @click.option(
     "--job-script",
     "-j",
-    help="Filename of the job script file to submit to HPC scheduler. Default = 'job'",
+    help="Filename of the job script file to submit to HPC scheduler.",
     type=str,
     default="job",
+    show_default=True,
 )
 @click.option(
     "--job-name-option",
     "-n",
     help="Flag for specifying the job name option for the HPC scheduler (e.g. '-N' for 'qsub -N "
-         "JOBNAME job'). Default = "
-         "'-N'",
+         "JOBNAME job').",
     type=str,
     default="-N",
+    show_default=True,
 )
 @click.option(
     "--all",
@@ -1113,7 +1117,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--colorbar",
     "-cb",
-    help ="Whether to add a colourbar indicating structural"
+    help ="Whether to add a colorbar indicating structural"
         " similarity between each structure and the unperturbed one.",
     type=bool,
     default=False,
@@ -1134,29 +1138,32 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--format",
     "-f",
-    help ="Format to save the plot as. Defaults to `svg`.",
+    help ="Format to save the plot as.",
     type=str,
     default="svg",
+    show_default=True,
 )
 @click.option(
     "--units",
     "-u",
-    help ="Units for energy, either 'eV' or 'meV' (Default: 'eV')",
+    help ="Units for energy, either 'eV' or 'meV'.",
     type=str,
     default="eV",
+    show_default=True,
 )
 @click.option(
     "--max_energy",
     "-max",
     help ="Maximum energy (in eV), relative to the unperturbed structure,"
-          " to show on the plot. Defaults to 0.5 eV)",
+          " to show on the plot.",
     type=float,
     default=0.5,
+    show_default=True,
 )
 @click.option(
     "--title",
     "-t",
-    help ="Whether to add defect name as plot title. Defaults to `True`.",
+    help ="Whether to add defect name as plot title.",
     type=bool,
     default=True,
     is_flag=True,
@@ -1241,27 +1248,28 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     "--code",
     "-c",
     help ="Code to generate relaxation input files for. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--filename",
     "-f",
-    help ="Name of the file containing the defect structures. "
-    "Defaults to 'CONTCAR'",
+    help ="Name of the file containing the defect structures.",
     type=str,
     default="CONTCAR",
+    show_default=True,
 )
 @click.option(
     "--min",
     help ="Minimum energy difference (in eV) between the ground-state"
         " defect structure, relative to the `Unperturbed` structure,"
         " to consider it as having found a new energy-lowering"
-        " distortion. Default is 0.05 eV.",
+        " distortion.",
     type=float,
     default=0.05,
+    show_default=True,
 )
 @click.option(
     "--metastable",
@@ -1271,6 +1279,7 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
         "distortions for other charge states.",
     type=bool,
     default=False,
+    show_default=True,
 )
 @click.option(
     "--verbose",

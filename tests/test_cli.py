@@ -1163,15 +1163,13 @@ nonsense_key: nonsense_value"""
         self.assertIn("Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out)
         files = os.listdir("Bond_Distortion_10.0%")
         saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 3)
-        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
+        self.assertEqual(len(saved_files), 2)
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
-        saved_poscar = [i for i in saved_files if "POSCAR" in i][0]
-        shutil.copyfile(f"Bond_Distortion_10.0%/{saved_poscar}", "Bond_Distortion_10.0%/POSCAR")
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
+        os.remove("Bond_Distortion_10.0%/POSCAR")
 
         # test "--all" option
         os.chdir("..")
