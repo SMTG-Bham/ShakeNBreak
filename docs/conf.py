@@ -36,10 +36,16 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx_mdinclude',
     'sphinx_click',
+    "myst_nb"
     #'myst_parser',
+    #'sphinx_mdinclude',
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
