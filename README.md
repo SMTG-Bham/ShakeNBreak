@@ -56,10 +56,10 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipynb).
 
 ### Command line interface
-Alternatively, the code can be used via the command line. The scripts provided include:
+Alternatively, the code can be used via the command line. The functions provided include:
 * `snb-generate`: Generate distorted structures for a given defect
-* `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
-* `snb-run`: Submit geometry relaxations
+* `snb-generate_all`: Generate distorted structures for all defects present in the specified/current directory
+* `snb-run`: Submit geometry relaxations to the HPC scheduler
 * `snb-parse`: Parse the results of the geometry relaxations and write them to a `yaml` file
 * `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
@@ -80,6 +80,7 @@ ShakeNBreak is made available under the MIT License.
 * [Monty](https://pythonhosted.org/monty/index.html)
 * [Click](https://click.palletsprojects.com/en/8.1.x/)
 
+
 ## Contributing
 
 ### Bugs reports, feature requests and questions
@@ -89,3 +90,6 @@ Contributions to extend this package are welcome! Please use the ["Fork and Pull
 ### Tests
 Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
 Automatic testing is run on the master and develop branches using Github Actions.
+
+## Acknowledgements
+Code to identify defect species from input supercell structures was written based on the implementationg in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
