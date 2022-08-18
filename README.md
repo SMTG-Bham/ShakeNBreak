@@ -1,14 +1,20 @@
-# `shakenbreak`
-`ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
+[![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
+[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://readthedocs.org/projects/shakenbreak) 
+[![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
+[![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
+<!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
+
+# `ShakeNBreak` (`SnB`)
+<img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
 
 Main features include:
 1. Defect structure generation:
-   * Automatised generation of distorted structures for all input defects
-   * Optionally, the input files to run geometry optimisations with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
+   * Automatic generation of distorted structures for input defects
+   * Optionally, input file generation for geometry optimisation with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`)
 2. Analysis:
-   * Parsing of the geometry relaxation results
+   * Parsing of geometry relaxation results
    * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified
-   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion
+   * Coordination & bonding analysis to investigate the physico-chemical factors driving an energy-lowering distortion
    * Magnetisation analysis (currently only supported for `VASP`)
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
@@ -18,8 +24,17 @@ ShakeNBreak can be installed using `pip`:
 ```bash
   pip install --user shakenbreak
 ```
+
+
+If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:
+```bash
+  PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
+```
+   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). More details given [here](https://pymatgen.org/installation.html#potcar-setup).
+
 ### Developer installation
 For development work, ShakeNBreak can also be installed from a copy of the source directory:
+
 1. Download `ShakeNBreak` source code using the command:
 ```bash
   git clone https://github.com/SMTG-UCL/ShakeNBreak
@@ -34,11 +49,6 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ```
    This command tries to obtain the required packages and their dependencies and install them automatically.
 
-4. If using `VASP` (and not set), set the `VASP` pseudopotential directory in `$HOME/.pmgrc.yaml` as follows:
-```bash
-  PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
-```
-   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s).
 
 ## Usage
 
