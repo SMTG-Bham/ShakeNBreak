@@ -1125,13 +1125,104 @@ nonsense_key: nonsense_value"""
         # The input_file option is tested in local test, as INCAR
         # not written in Github Actions
 
+    # def test_run(self):
+    #     """Test snb-run function"""
+    #     os.chdir(self.VASP_TIO2_DATA_DIR)
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #     )
+    #     out = str(proc.communicate()[0])
+    #     self.assertIn(
+    #         "Job file 'job' not in current directory, so will only submit jobs in folders with "
+    #         "'job' present",
+    #         out,
+    #     )
+    #     self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+    #     self.assertIn("Unperturbed fully relaxed", out)
+    #     self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+    #     # but no OUTCAR so shouldn't print message
+
+    #     # test job submit command
+    #     with open("job_file", "w") as fp:
+    #         fp.write("Test pop")
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.PIPE,
+    #     )  # setting 'job command' to 'echo' to
+    #     out = str(proc.communicate()[0])
+    #     self.assertNotIn(
+    #         "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
+    #         "'job_file' present",
+    #         out,
+    #     )
+    #     self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+    #     self.assertIn("Unperturbed fully relaxed", out)
+    #     self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+    #     self.assertIn("Running job for Bond_Distortion_10.0%", out)
+    #     self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+    #     self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
+
+    #     if_present_rm("job_file")
+    #     if_present_rm("Bond_Distortion_10.0%/job_file")
+
+    #     # test save_vasp_files:
+    #     with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+    #         fp.write("Test pop")
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #     )
+    #     out = str(proc.communicate()[0])
+    #     self.assertIn(
+    #         "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+    #     )
+    #     files = os.listdir("Bond_Distortion_10.0%")
+    #     saved_files = [file for file in files if "on" in file and "CAR_" in file]
+    #     self.assertEqual(len(saved_files), 2)
+    #     self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+    #     self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+    #     for i in saved_files:
+    #         os.remove(f"Bond_Distortion_10.0%/{i}")
+    #     os.remove("Bond_Distortion_10.0%/OUTCAR")
+    #     os.remove("Bond_Distortion_10.0%/POSCAR")
+
+    #     # test "--all" option
+    #     os.chdir("..")
+    #     shutil.copytree("vac_1_Ti_0", "vac_1_Ti_1")
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #     )
+    #     out = str(proc.communicate()[0])
+    #     self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
+    #     self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
+    #     shutil.rmtree("vac_1_Ti_1")
+
+    #     os.chdir("..")
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #     )
+    #     out = str(proc.communicate()[0])
+    #     self.assertIn("No distortion folders found in current directory", out)
+
+    #     proc = subprocess.Popen(
+    #         ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    #     )
+    #     out = str(proc.communicate()[0])
+    #     print(out)
+    #     self.assertIn(
+    #         "No defect folders (with names ending in a number (charge state)) found in "
+    #         "current directory",
+    #         out,
+    #     )
+
     def test_run(self):
         """Test snb-run function"""
         os.chdir(self.VASP_TIO2_DATA_DIR)
-        proc = subprocess.Popen(
-            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        proc = subprocess.run(
+            ["snb-run", "-v"], capture_output=True, text=True,
+
         )
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         self.assertIn(
             "Job file 'job' not in current directory, so will only submit jobs in folders with "
             "'job' present",
@@ -1145,12 +1236,12 @@ nonsense_key: nonsense_value"""
         # test job submit command
         with open("job_file", "w") as fp:
             fp.write("Test pop")
-        proc = subprocess.Popen(
+        proc = subprocess.run(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            capture_output=True,
+            text=True,
         )  # setting 'job command' to 'echo' to
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         self.assertNotIn(
             "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
             "'job_file' present",
@@ -1169,10 +1260,10 @@ nonsense_key: nonsense_value"""
         # test save_vasp_files:
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write("Test pop")
-        proc = subprocess.Popen(
-            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        proc = subprocess.run(
+            ["snb-run", "-v"], capture_output=True, text=True,
         )
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
@@ -1189,25 +1280,25 @@ nonsense_key: nonsense_value"""
         # test "--all" option
         os.chdir("..")
         shutil.copytree("vac_1_Ti_0", "vac_1_Ti_1")
-        proc = subprocess.Popen(
-            ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        proc = subprocess.run(
+            ["snb-run", "-v", "-a"], capture_output=True, text=True,
         )
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
         self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
         shutil.rmtree("vac_1_Ti_1")
 
         os.chdir("..")
-        proc = subprocess.Popen(
-            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        proc = subprocess.run(
+            ["snb-run", "-v"], capture_output=True, text=True,
         )
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         self.assertIn("No distortion folders found in current directory", out)
 
-        proc = subprocess.Popen(
-            ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        proc = subprocess.run(
+            ["snb-run", "-v", "-a"], capture_output=True, text=True,
         )
-        out = str(proc.communicate()[0])
+        out = str(proc.stdout)
         print(out)
         self.assertIn(
             "No defect folders (with names ending in a number (charge state)) found in "

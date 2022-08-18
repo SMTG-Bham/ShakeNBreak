@@ -12,13 +12,15 @@ Additionally, the core functionality of the code can be accessed through the com
 1. Generation of distorted structures and/or their relaxation input files:
     * for a specific defect: ``snb-generate``
     * for all defects present in a directory: ``snb-generate_all``
-2. Parsing of the geometry optimisation results:
+2. Submitting the geometry optimisations:
+    ``snb-run``
+3. Parsing of the geometry optimisation results:
     ``snb-parse``
-3. Analysis of the energies and structural differences between the relaxed configurations:
+4. Analysis of the energies and structural differences between the relaxed configurations:
     ``snb-analyse``
-4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
+5. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
     ``snb-plot``
-5. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+6. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
     ``snb-regenerate``
 
 All commands are documented in the `Python API section <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,

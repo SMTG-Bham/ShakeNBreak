@@ -1,5 +1,5 @@
 [![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
-[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://readthedocs.org/projects/shakenbreak) 
+[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://readthedocs.org/projects/shakenbreak)
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 <!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
@@ -59,6 +59,7 @@ ShakeNBreak can be used through a python API, as exemplified in the jupyter note
 Alternatively, the code can be used via the command line. The scripts provided include:
 * `snb-generate`: Generate distorted structures for a given defect
 * `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
+* `snb-run`: Submit geometry relaxations
 * `snb-parse`: Parse the results of the geometry relaxations and write them to a `yaml` file
 * `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences

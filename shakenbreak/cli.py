@@ -8,6 +8,7 @@ import numpy as np
 import click
 import warnings
 from subprocess import call
+import fnmatch
 
 # Monty and pymatgen
 from monty.serialization import loadfn
@@ -266,10 +267,10 @@ def _parse_defect_dirs(path) -> list:
         if os.path.isdir(f"{path}/{dir}")
         and any(
             [
-                dist in os.listdir(f"{path}/{dir}")
+                fnmatch.filter(os.listdir(f"{path}/{dir}"), f"{dist}*")
                 for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
             ]
-        )  # avoid parsing directories that aren't defects
+        )  # only parse defect directories that contain distortion folders
     ]
 
 
