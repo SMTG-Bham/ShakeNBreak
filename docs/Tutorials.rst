@@ -37,7 +37,7 @@ Getting help
 Beyond the `documentation <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
 we can get a full list of accepted flags and their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
 
-.. code-block::
+.. code-block:: bash
 
     $ snb-generate --help
 
