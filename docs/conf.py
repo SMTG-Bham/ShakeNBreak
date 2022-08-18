@@ -37,7 +37,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_click',
-    "myst_nb"
+    #"myst_nb", # for jupyter notebooks
     #'myst_parser',
     #'sphinx_mdinclude',
 ]
