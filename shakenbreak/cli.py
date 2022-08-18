@@ -2,7 +2,6 @@
 ShakeNBreak command-line-interface (CLI)
 """
 import os
-import warnings
 import pickle
 from copy import deepcopy
 import numpy as np
