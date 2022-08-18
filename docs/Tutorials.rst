@@ -3,7 +3,9 @@ Tutorials
 
 Python API
 ----------
-Usage of ShakeNBreak from a python API is exemplified in the `tutorials section <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_.
+Usage of ShakeNBreak from a python API is exemplified in a `jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_.
+This tutorial can also be run interactively using
+`Binder <https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipyn>`_.
 
 Command line interface (CLI)
 ----------------------------

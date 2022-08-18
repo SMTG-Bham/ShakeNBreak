@@ -1,6 +1,7 @@
 sphinx
-sphinx_rtd_theme
-sphinx-mdinclude
+# sphinx_rtd_theme
+# myst-nb
+sphinx-book-theme
 sphinx_click
 numpy
 pymatgen
