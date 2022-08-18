@@ -23,7 +23,7 @@ To specify additional distortion parameters, we can use a
 below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``). A detailed description
 of all the parameters is available in the Python API section (`shakenbreak.input subsection <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.input.html>`_).
 
-.. code::
+.. code:: yaml
 
     # Example config.yaml file for snb-generate
 
@@ -65,7 +65,7 @@ the following directory structures will be parsed correctly:
 .. code:: bash
 
     defects_folder/
-        |--- defect_1_POSCAR <-- The code expects the format of the structure files to be CIF's or POSCARS's
+        |--- defect_1_POSCAR <-- The code expects the format of the structure files to be CIFs or POSCARSs
         |
         |--- defect_2_POSCAR
         |
@@ -88,7 +88,7 @@ To specify the charge state range for each defect, as well as other optional arg
 like the one below. A detailed description of all the parameters is available in the
 Python API section (`shakenbreak.input subsection <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.input.html>`_).
 
-.. code::
+.. code:: yaml
 
     # Example config.yaml file for snb-generate-all
 
@@ -118,7 +118,7 @@ Python API section (`shakenbreak.input subsection <https://shakenbreak.readthedo
 The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
 distortion folders with the relaxation input files and structures. If using ``VASP``:
 
-.. code::
+.. code:: bash
 
     ./
     |--- vac_1_Cd_0/
