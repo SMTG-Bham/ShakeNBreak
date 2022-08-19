@@ -52,7 +52,8 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ## Usage
 
 ### Python API
-ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipynb).
+`ShakeNBreak` can be used through a Python API, as exemplified in the Jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`, which can be run interactively by clicking here: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)  
+More info is given on the [docs](https://readthedocs.org/projects/shakenbreak) site.
 
 ### Command line interface
 Alternatively, the code can be used via the command line. The functions provided include:
@@ -64,6 +65,9 @@ Alternatively, the code can be used via the command line. The functions provided
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
 * `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
 
+More information about each function and its inputs/outputs are available from the `-h` help option (e.g. `snb -h`). 
+
+We recommend at least looking through the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
 
 ## Contributing
 
