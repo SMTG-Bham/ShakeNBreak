@@ -140,11 +140,11 @@ for the code specified with the flag ``--code``.
 Saving the ground state structures
 ---------------------------------------
 
-Finally, for continuation runs it can be useful to save the ground state structures.
-Using the ``snb-groundstate`` command, can generate a ``Groundstate`` folder for each defect
+Finally, to continue our defect workflow, it can be useful to save the ground state defect structures.
+Using the ``snb-groundstate`` command, we can generate a ``Groundstate`` folder for each defect
 with its ground state structure.
-We can customise the name of the ground state directory (``--directory`` flag) and the name of the
-structure file (``--groundstate_filename`` flag):
+The name of the ground state directory and structure file can be customised with the
+``--directory`` and ``--groundstate_filename`` flag, respectively:
 
 .. code:: bash
 
