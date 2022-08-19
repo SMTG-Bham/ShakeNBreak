@@ -1363,4 +1363,65 @@ def regenerate(path, code, filename, min, metastable, verbose):
     )
 
 
-# TODO: Generate folders with new ground states
+@snb.command(
+    name="groundstate",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=False,
+)
+@click.option(
+    "--directory",
+    "-d",
+    help="Folder name where the ground state structure will be written to.",
+    type=str,
+    default="Groundstate",
+    show_default=True,
+)
+@click.option(
+    "--groundstate_filename",
+    "-gsf",
+    help="File name to save the ground state structure as.",
+    type=str,
+    default="POSCAR",
+    show_default=True,
+)
+@click.option(
+    "--structure_filename",
+    "-sf",
+    help="File name of the output structures/files.",
+    type=str,
+    default="CONTCAR",
+    show_default=True,
+)
+@click.option(
+    "--path",
+    "-p",
+    help="Path to the top-level directory containing the defect folders."
+    " Defaults to current directory.",
+    type=click.Path(exists=True, dir_okay=True),
+    default=".",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about gorund state structures and generated folders.",
+    default=True,
+    is_flag=True,
+    show_default=True,
+)
+def groundstate(
+    directory,
+    groundstate_filename,
+    structure_filename,
+    path,
+    verbose,
+):
+    """
+    Generate folders with the identified ground state structures.
+    """
+    energy_lowering_distortions.write_groundstate_structure(
+        output_path=path,
+        groundstate_folder=directory,
+        groundstate_filename=groundstate_filename,
+        structure_filename=structure_filename,
+        verbose=verbose,
+    )

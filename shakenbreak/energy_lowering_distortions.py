@@ -1132,8 +1132,10 @@ def _copy_fhi_aims_files(
 
 def write_groundstate_structure(
     output_path: str = ".",
+    groundstate_folder: str = None,
     groundstate_filename: str = "groundstate_POSCAR",
     structure_filename: str = "CONTCAR",
+    verbose: bool = False,
 ) -> None:
     """
     Writes the groundstate structure of each defect to the corresponding
@@ -1146,26 +1148,54 @@ def write_groundstate_structure(
             (need CONTCAR files for structure matching) and
             distortion_metadata.json.
             (Default: current directory = "./")
+        groundstate_folder (:obj:`str`):
+            Name of the directory to write the groundstate structure to.
+            (Default: None (ground state structure is written to the root
+            defect directory))
         groundstate_filename (:obj:`str`):
             Name of the file to write the groundstate structure to.
             (Default: "groundstate_POSCAR")
         structure_filename (:obj:`str`):
             Name of the file to read the structure from.
             (Default: "CONTCAR")
-
+        verbose (:obj:`bool`):
+            Whether to print additional information about the generated folders.
     Returns:
         None
     """
     defect_charges_dict = read_defects_directories(output_path=output_path)
-    for defect in defect_charges_dict:
-        for charge in defect_charges_dict[defect]:
+    for defect, charges in defect_charges_dict.items():
+        for charge in charges:
             energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
+            # Get ground state distortion
             _, _, gs_distortion = analysis._sort_data(
                 energies_file=energies_file,
                 verbose=False
             )
             bond_distortion = analysis._get_distortion_filename(gs_distortion)
+
+            # Origin path
+            origin_path = f"{output_path}/{defect}_{charge}/{bond_distortion}/{structure_filename}"
+            if not os.path.exists(origin_path):
+                raise FileNotFoundError(
+                    f"The structure file {structure_filename} is not present"
+                    f" in the directory {output_path}/{defect}_{charge}/{bond_distortion}"
+                )
+
+            # Destination path
+            if groundstate_folder:
+                if not os.path.exists(f"{output_path}/{defect}_{charge}/{groundstate_folder}"):
+                    os.mkdir(f"{output_path}/{defect}_{charge}/{groundstate_folder}")
+                destination_path = f"{output_path}/{defect}_{charge}/{groundstate_folder}/{groundstate_filename}"
+                if verbose:
+                    print(
+                        f"{defect}_{charge}: Gound state structure (found with "
+                        f"{gs_distortion} distortion) saved to {destination_path}"
+                    )
+            else:
+                destination_path = f"{output_path}/{defect}_{charge}/{groundstate_filename}"
+
             shutil.copyfile(
-                f"{output_path}/{defect}_{charge}/{bond_distortion}/{structure_filename}",
-                f"{output_path}/{defect}_{charge}/{groundstate_filename}",
+                origin_path,
+                destination_path,
             )
