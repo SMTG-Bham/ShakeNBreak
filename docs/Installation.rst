@@ -21,24 +21,25 @@ which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). M
 
 Developer's installation (*optional*)
 -----------------------------------------
+
 For development work, ``ShakeNBreak`` can also be installed from a copy of the source directory:
 
 1. Download ``ShakeNBreak`` source code using the command:
 
-    .. code:: bash
+   .. code:: bash
 
-        git clone https://github.com/SMTG-UCL/ShakeNBreak
+      git clone https://github.com/SMTG-UCL/ShakeNBreak
 
 2. Navigate to root directory:
 
-    .. code:: bash
+   .. code:: bash
 
-        cd ShakeNBreak
+      cd ShakeNBreak
 
 3. Install the code with the command:
 
-    .. code:: bash
+   .. code:: bash
 
-        pip install -e .
+      pip install -e .
 
-    This command tries to obtain the required packages and their dependencies and install them automatically.
+   This command tries to obtain the required packages and their dependencies and install them automatically.

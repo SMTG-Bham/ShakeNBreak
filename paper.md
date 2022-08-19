@@ -79,6 +79,8 @@ LCF/BQ/EU20/11810070). S.R.K. acknowledges the EPSRC Centre for Doctoral Trainin
 Characterisation of Materials (CDTACM)(EP/S023259/1) for funding a PhD studentship. DOS acknowledges
 support from the EPSRC (EP/N01572X/1) and from the European Research Council, ERC (Grant No. 758345).
 
-We thank Katarina Brlec, Xinwei Wang and Luisa Herring-Rodriguez for code testing and feature requests.
+ShakeNBreak has benefitted from feature requests from many members of the Walsh and Scanlon research groups,
+including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar,
+Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
 
 # References
