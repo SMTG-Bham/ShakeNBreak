@@ -1,9 +1,12 @@
+.. _tutotials:
+
 Tutorials
 ===========================================================
 
 Python API
 ----------
-Usage of ShakeNBreak from a Python API is exemplified in a `jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_,
+Usage of ShakeNBreak from a Python API is exemplified in a
+`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_,
 which can be run interactively by clicking here: |binder|
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
@@ -27,8 +30,10 @@ Additionally, the core functionality of the code can be accessed through the com
     `snb-plot <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_
 6. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
     `snb-regenerate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate>`_
+7. Saving the ground state structures
+    `snb-groundstate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
 
-All commands are documented in the `Python API section <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
+All commands are documented in the :ref:`Python API section <api_cli_commands>`,
 and their use is exemplified in the following pages:
 
 .. toctree::
@@ -39,8 +44,8 @@ and their use is exemplified in the following pages:
 
 Getting help
 ~~~~~~~~~~~~~~~~~~~~~~
-Beyond the `documentation <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
-we can get a full list of accepted flags and their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
+Beyond the :ref:`documentation <api_cli_commands>`, we can get a full list of accepted flags and
+their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
 
 .. code-block:: bash
 

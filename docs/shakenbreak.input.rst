@@ -1,3 +1,5 @@
+.. _api_input:
+
 shakenbreak.input module
 =================================
 .. automodule:: shakenbreak.input

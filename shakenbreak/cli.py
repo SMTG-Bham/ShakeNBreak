@@ -411,7 +411,8 @@ def generate(
     verbose,
 ):
     """
-    Generate the trial distortions and input files for structure-searching for a given defect.
+    Generate the trial distortions and input files for structure-searching
+    for a given defect.
     """
     if config is not None:
         user_settings = loadfn(config)
@@ -636,8 +637,8 @@ def generate_all(
     verbose,
 ):
     """
-    Generate the trial distortions and input files for structure-searching for all defects
-    in a given directory.
+    Generate the trial distortions and input files for structure-searching
+    for all defects in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
     defects_dirs = os.listdir(defects)
@@ -1178,8 +1179,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help="If the option `--colorbar` is specified, determines the criteria used for the"
-    " structural comparison. Can choose between the summed of atomic"
+    help="If the option `--colorbar` is specified, determines the criteria used"
+    " for the structural comparison. Can choose between the summed of atomic"
     " displacements ('disp') or the maximum distance between"
     " matched sites ('max_dist', default).",
     type=str,
@@ -1416,7 +1417,12 @@ def groundstate(
     verbose,
 ):
     """
-    Generate folders with the identified ground state structures.
+    Generate folders with the identified ground state structures. For each defect
+    present in the specified path, a folder (named `directory`) is created with
+    the ground state structure (named `groundstate_filename`). If the name
+    of the structure/output files is not specified, the code assumes `CONTCAR`
+    (e.g. geometry optimisations performed with VASP). If using a different code,
+    please specify the name of the structure/output files.
     """
     energy_lowering_distortions.write_groundstate_structure(
         output_path=path,

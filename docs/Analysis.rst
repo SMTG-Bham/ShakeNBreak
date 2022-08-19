@@ -1,3 +1,5 @@
+.. _tutorial_analysis:
+
 Analysis & plotting
 =====================
 
@@ -46,7 +48,7 @@ to analyse the results obtained with ``VASP`` for the defect ``vac_1_Cd_0``, we 
     $ snb-analyse --defect vac_1_Cd_0 --code vasp --path defects_folder
 
 Further analysis tools are provided through the python API. These are documented in
-the section `shakenbreak.analysis <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.analysis.html>`_
+the section :ref:`shakenbreak.analysis <api_analysis>`
 and exemplified in the
 `example notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_
 (Section 5: Analyse defect distortions).
@@ -135,3 +137,38 @@ for the code specified with the flag ``--code``.
             |
             |--- Bond_Distortion_-30.0%_from_0 <-- Distortion from the neutral charge state
 
+Saving the ground state structures
+---------------------------------------
+
+Finally, for continuation runs it can be useful to save the ground state structures.
+Using the ``snb-groundstate`` command, can generate a ``Groundstate`` folder for each defect
+with its ground state structure.
+We can customise the name of the ground state directory (``--directory`` flag) and the name of the
+structure file (``--groundstate_filename`` flag):
+
+.. code:: bash
+
+    $ snb-groundstate --path ./defects_folder --directory Groundstate --groundstate_filename POSCAR
+
+This command will generate a ``Groundstate`` directory within each defect folder, e.g.:
+
+.. code:: bash
+
+    ./
+    |--- vac_1_Cd_0/
+    |       |--- Unperturbed
+    |       |
+    |       |--- Bond_Distortion_-30.0%
+    |       |
+    |       |--- Bond_Distortion_30.0%
+    |       | ...
+    |       |--- Groundstate
+    |               |--- POSCAR <-- Ground state structure
+    |
+    |--- vac_1_Cd_-1/
+            |--- Unperturbed
+            | ...
+            |--- Bond_Distortion_50%
+            |
+            |--- Groundstate
+                    |--- POSCAR <-- Ground state structure
