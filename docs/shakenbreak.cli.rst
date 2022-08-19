@@ -1,3 +1,5 @@
+.. _api_cli:
+
 shakenbreak.cli module
 ===========================
 
@@ -10,11 +12,13 @@ a given structure, as well as process it into a `Defect` object or a defect dict
 
 .. autofunction:: shakenbreak.cli.generate_defect_dict
 
+.. _api_cli_commands:
+
 Commands
 --------------
-`ShakeNBreak` has seven main commands: `snb-generate`, `snb-generate_all`, `snb-run`,
-`snb-parse`, `snb-analyse`, `snb-plot` and `snb-regenerate`. Their functionality
-and options are described below.
+`ShakeNBreak` has eight main commands: `snb-generate`, `snb-generate_all`, `snb-run`,
+`snb-parse`, `snb-analyse`, `snb-plot`, `snb-regenerate` and `snb-groundstate`.
+Their functionality and options are described below.
 
 .. click:: shakenbreak.cli:snb
    :prog: snb
