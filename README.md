@@ -77,7 +77,7 @@ Contributions to extend this package are welcome! Please use the ["Fork and Pull
 
 ### Tests
 Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
-Automatic testing is run on the master and develop branches using Github Actions.
+Automatic testing is run on the master and develop branches using Github Actions. Please run tests and add new tests for any new features whenever submitting pull requests.
 
 ## Acknowledgements
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
