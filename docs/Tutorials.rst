@@ -33,7 +33,7 @@ Additionally, the core functionality of the code can be accessed through the com
 7. Saving the ground state structures
     `snb-groundstate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
 
-All commands are documented in the :ref:`Python API section <api_cli_commands>`,
+All commands are documented in the :ref:`Python API section <cli_commands>`,
 and their use is exemplified in the following pages:
 
 .. toctree::
@@ -44,7 +44,7 @@ and their use is exemplified in the following pages:
 
 Getting help
 ~~~~~~~~~~~~~~~~~~~~~~
-Beyond the :ref:`documentation <api_cli_commands>`, we can get a full list of accepted flags and
+Beyond the :ref:`documentation <cli_commands>`, we can get a full list of accepted flags and
 their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
 
 .. code-block:: bash

@@ -119,7 +119,7 @@ Alternatively, the code can be used via the command line. The functions provided
 * ``snb-groundstate``: Save the ground state structures to a ``Groundstate`` directory for continuation runs
 
 More information about each function and its inputs/outputs are available from the
-:ref:`CLI section of the docs <api_cli_commands>` or using ``-h`` help option (e.g. ``snb -h``).
+:ref:`CLI section of the docs <cli_commands>` or using ``-h`` help option (e.g. ``snb -h``).
 
 We recommend at least looking through the :ref:`Tutorials <tutotials>`
 or the example Jupyter notebook (|binder|)
