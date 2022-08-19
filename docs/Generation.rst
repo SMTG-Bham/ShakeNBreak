@@ -7,7 +7,8 @@ For a single defect
 -------------------
 To generate the distorted structures for a specific defect in a range of charge states, we need to specify
 the structure for the bulk material (with ``--bulk`` flag), the defect structure (``--defect``) and the charge
-states (``--min-charge`` and ``--min-charge``):
+states (either with ``--min-charge`` and ``--max-charge`` to specify a range of charge states or with ``-charge`` 
+for a single charge state):
 
 .. code:: bash
 
@@ -20,11 +21,10 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
     $ snb-generate --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR --min-charge -2 --max-charge 0 --defect-coords 0 0 0 --code VASP
 
-To specify additional distortion parameters, we can use a
-`config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_config.yaml>`_ ´
+To specify additional distortion parameters, we can use a 
+`config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_config.yaml>`_ 
 file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
-A detailed description of all the parameters is available in the Python API section (`Distortions`
-class in the :ref:`shakenbreak.input subsection <api_input>`).
+A detailed description of all the parameters is available in the Python API section (:ref:`shakenbreak.input subsection <api_input>`).
 
 .. code:: yaml
 
@@ -89,7 +89,7 @@ the following directory structures will be parsed correctly:
 To specify the charge state range for each defect, as well as other optional arguments, we can use a
 `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_all_config.yaml>`_ file
 like the one below. A detailed description of all the parameters is available in the
-Python API section (`Distortions` class in the :ref:`shakenbreak.input subsection <api_input>`).
+Python API section (:ref:`shakenbreak.input subsection <api_input>`).
 
 .. code:: yaml
 
