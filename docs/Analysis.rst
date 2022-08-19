@@ -39,9 +39,10 @@ Analysis
 To analyse the structures obtained from the relaxations, we can use ``snb-analyse``.
 It will generate ``csv`` files for a given/all defects with the final energies
 and structural similarities between the final configurations and a reference one
-(by default the undistorted one). Structural similarity is measured as the sum
-of atomic displacements and the maximum distance between matched sites. For instance,
-to analyse the results obtained with ``VASP`` for the defect ``vac_1_Cd_0``, we can use:
+(by default the undistorted one). Structural similarity is measured with two metrics: 
+a) the sum of atomic displacements between matched sites and b) the maximum distance 
+between matched sites. For instance, to analyse the results obtained with ``VASP``
+for the defect ``vac_1_Cd_0``, we can use:
 
 .. code:: bash
 
@@ -143,8 +144,8 @@ Saving the ground state structures
 Finally, to continue our defect workflow, it can be useful to save the ground state defect structures.
 Using the ``snb-groundstate`` command, we can generate a ``Groundstate`` folder for each defect
 with its ground state structure.
-The name of the ground state directory and structure file can be customised with the
-``--directory`` and ``--groundstate_filename`` flag, respectively:
+The name of the ground state directory and of the structure file can be customised with the
+``--directory`` and ``--groundstate_filename`` flags, respectively:
 
 .. code:: bash
 
