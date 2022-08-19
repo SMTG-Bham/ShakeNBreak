@@ -25,7 +25,6 @@ ShakeNBreak can be installed using `pip`:
   pip install --user shakenbreak
 ```
 
-
 If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:
 ```bash
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
@@ -65,6 +64,21 @@ Alternatively, the code can be used via the command line. The functions provided
 * `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
 * `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
 
+
+## Contributing
+
+### Bugs reports, feature requests and questions
+Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
+Contributions to extend this package are welcome! Please use the ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
+
+### Tests
+Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
+Automatic testing is run on the master and develop branches using Github Actions.
+
+## Acknowledgements
+`ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
+Code to identify defect species from input supercell structures was written based on the implementation in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
+
 ## License
 ShakeNBreak is made available under the MIT License.
 
@@ -79,17 +93,3 @@ ShakeNBreak is made available under the MIT License.
 * [Seaborn](https://seaborn.pydata.org/)
 * [Monty](https://pythonhosted.org/monty/index.html)
 * [Click](https://click.palletsprojects.com/en/8.1.x/)
-
-
-## Contributing
-
-### Bugs reports, feature requests and questions
-Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
-Contributions to extend this package are welcome! Please use the ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
-
-### Tests
-Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
-Automatic testing is run on the master and develop branches using Github Actions.
-
-## Acknowledgements
-Code to identify defect species from input supercell structures was written based on the implementationg in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
