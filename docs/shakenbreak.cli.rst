@@ -12,7 +12,7 @@ a given structure, as well as process it into a `Defect` object or a defect dict
 
 Commands
 --------------
-`ShakeNBreak` has six main commands: `snb-generate`, `snb-generate_all`,
+`ShakeNBreak` has seven main commands: `snb-generate`, `snb-generate_all`, `snb-run`,
 `snb-parse`, `snb-analyse`, `snb-plot` and `snb-regenerate`. Their functionality
 and options are described below.
 
