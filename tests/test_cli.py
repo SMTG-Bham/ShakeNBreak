@@ -1728,6 +1728,71 @@ nonsense_key: nonsense_value"""
                 )
         self.tearDown()
 
+    def test_groundstate(self):
+        """Test groundstate() function"""
+        # Test default behaviour
+        defect = "vac_1_Cd_0"
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Groundstate/POSCAR",
+            result.output,
+        )
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # Test keywords: groundstate_filename and directory
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "-d",
+                "My_Groundstate",
+                "--groundstate_filename",
+                "Groundstate_CONTCAR",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR")
+        )
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/My_Groundstate/Groundstate_CONTCAR",
+            result.output,
+        )
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
+
+        # Test non existent structure file
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "--structure_filename",
+                "Fake_structure",
+            ],
+            catch_exceptions=True,
+        )
+        self.assertFalse(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate"))
+        self.assertIsInstance(result.exception, FileNotFoundError)
+        self.assertIn(
+            f"The structure file Fake_structure is not present in the directory {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%",
+            str(result.exception),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
