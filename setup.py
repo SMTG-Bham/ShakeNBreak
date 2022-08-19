@@ -48,8 +48,8 @@ setup(
         ],
         "docs": [
             "sphinx",
-            "sphinx_rtd_theme",
-            "sphinx_mdinclude",
+            "sphinx-book-theme",
+            "sphinx_click",
         ],
     },
     package_data={"shakenbreak": ["shakenbreak/*"] + data_files},

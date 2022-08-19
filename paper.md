@@ -1,6 +1,5 @@
 ---
 title: 'ShakeNBreak: Navigating the defect configurational landscape'
-# or 'ShakeNBreak: Shake, Rattle and Break to navigate the defect configurational space'
 tags:
   - point defects
   - structure searching
@@ -70,16 +69,8 @@ and analyse site and orbital-decomposed magnetisations (Figure 1b).
 
 The distortion procedure, underlying rationale and its application to a wide range of semiconductors have recently been described [@Mosquera-Lois:2022]. In addition,
 the package has been employed to identify the defect structures reported in several studies [@Kavanagh:2021; @Kavanagh:2022], with the identified configurations having significant impact on predicted behaviour.
-<!-- previous studies that employed the package to identify low energy defect structures found them -->
-<!-- to significantly impact predicted behaviour [@Kavanagh:2021; @Kavanagh:2022]. -->
 
 ![Example analysis for a cadmium vacancy defect in CdTe: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations for the Unperturbed configuration, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](figures/Figure_joss.png)
-
-<!-- # Author contributions
-
-I.M.L. and S.R.K. wrote the code. S.R.K. designed the structure search strategy.
-All authors decided which features should be available.
-The first draft of the manuscript was written by I.M.L. with input from all co-authours. -->
 
 # Acknowledgements
 
