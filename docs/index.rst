@@ -16,12 +16,18 @@
  :target: https://pypi.org/project/shakenbreak
 
 |
+
 Welcome to ShakeNBreak!
 =======================================
 
 ``ShakeNBreak`` (``SnB``) is a defect structure-searching method employing
 chemically-guided bond distortions to locate ground-state and metastable
-structures of point defects in solid materials.
+structures of point defects in solid materials. |logo|
+
+.. |logo| image:: toc.png
+  :width: 300
+  :alt: ShakeNBreak logo
+  :class: with-shadow float-right
 
 Main features include:
 
@@ -49,7 +55,7 @@ ShakeNBreak can be installed using ``pip``:
   pip install --user shakenbreak
 
 If using ``VASP``, in order for ``ShakeNBreak`` to automatically generate the pseudopotential
-input files (``POTCAR``s), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``
+input files (``POTCARs``), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``
 configuration file ``$HOME/.pmgrc.yaml`` as follows:
 
 .. code:: bash
@@ -91,23 +97,61 @@ Usage
 Python API
 ----------------
 
-ShakeNBreak can be used through a python API, as exemplified in the
-`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_.
-This tutorial can also be run interactively using
-`Binder <https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipyn>`_.
+``ShakeNBreak`` can be used through a python API, as exemplified in the
+`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_, which can be run interactively by clicking here: |binder|
+
+.. |binder| image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials
 
 Command line interface
 -------------------------
 
-Alternatively, the code can be used via the command line. The scripts provided include:
+Alternatively, the code can be used via the command line. The functions provided include:
 
 * ``snb-generate``: Generate distorted structures for a given defect
 * ``snb-generate_all``: Generate distorted structures for all defects present int the specified/current directory
-* ``snb-run``: Submit geometry relaxations
+* ``snb-run``: Submit geometry relaxations to the HPC scheduler
 * ``snb-parse``: Parse the results of the geometry relaxations and write them to a ``yaml`` file
 * ``snb-analyse``: Generate ``csv`` files with energies and structural differences between the final configurations
 * ``snb-plot``: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
 * ``snb-regenerate``: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+
+More information about each function and its inputs/outputs are available from the
+`CLI section of the docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands>`_
+or using ``-h`` help option (e.g. ``snb -h``).
+
+We recommend at least looking through the `tutotials <https://shakenbreak.readthedocs.io/en/latest/Tutorials.html>`_
+or the example Jupyter notebook (|binder|)
+when first starting to use ``ShakeNBreak``, to familiarise yourself with the full functionality and workflow.
+
+Acknowledgements
+========================
+
+``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
+used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
+Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
+Code to identify defect species from input supercell structures was written based on the implementation
+in `PyCDT <https://doi.org/10.1016/j.cpc.2018.01.004>`_ by Broberg *et al.*
+
+Contributing
+========================
+
+Bugs reports, feature requests and questions
+----------------------------------------------
+
+Please use the `Issue Tracker <https://github.com/SMTG-UCL/ShakeNBreak/issues>`_
+to report bugs or request new features.
+Contributions to extend this package are welcome! Please use the
+`"Fork and Pull" <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_
+workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
+
+Tests
+----------------------------------------------
+
+Unit tests are in the ``tests`` directory and can be run from the top directory using
+`unittest <https://docs.python.org/3/library/unittest.html>`_.
+Automatic testing is run on the master and develop branches using Github Actions. Please
+run tests and add new tests for any new features whenever submitting pull requests.
 
 License
 ========================
@@ -128,23 +172,6 @@ Requirements
 * `Seaborn <https://seaborn.pydata.org/>`_
 * `Monty <https://pythonhosted.org/monty/index.html>`_
 * `Click <https://click.palletsprojects.com/en/8.1.x/>`_
-
-Contributing
-========================
-
-Bugs reports, feature requests and questions
-----------------------------------------------
-
-Please use the `Issue Tracker <https://github.com/SMTG-UCL/ShakeNBreak/issues>`_ to report bugs or request new features.
-Contributions to extend this package are welcome! Please use the `"Fork and Pull" <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_
-workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
-
-Tests
-----------------------------------------------
-
-Unit tests are in the ``tests`` directory and can be run from the top directory using `unittest <https://docs.python.org/3/library/unittest.html>`_.
-Automatic testing is run on the master and develop branches using Github Actions.
-
 
 .. toctree::
    :hidden:

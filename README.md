@@ -52,22 +52,22 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ## Usage
 
 ### Python API
-`ShakeNBreak` can be used through a Python API, as exemplified in the Jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`, which can be run interactively by clicking here: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)  
+`ShakeNBreak` can be used through a Python API, as exemplified in the [Jupyter notebook](https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb), which can be run interactively by clicking here: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)
 More info is given on the [docs](https://readthedocs.org/projects/shakenbreak) site.
 
 ### Command line interface
 Alternatively, the code can be used via the command line. The functions provided include:
-* `snb-generate`: Generate distorted structures for a given defect
-* `snb-generate_all`: Generate distorted structures for all defects present in the specified/current directory
-* `snb-run`: Submit geometry relaxations to the HPC scheduler
-* `snb-parse`: Parse the results of the geometry relaxations and write them to a `yaml` file
-* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
-* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
-* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+* [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
+* [`snb-generate_all`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all): Generate distorted structures for all defects present in the specified/current directory
+* [`snb-run`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-run): Submit geometry relaxations to the HPC scheduler
+* [`snb-parse`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-parse): Parse the results of the geometry relaxations and write them to a `yaml` file
+* [`snb-analyse`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-analyse): Generate `csv` files with energies and structural differences between the final configurations
+* [`snb-plot`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot): Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
+* [`snb-regenerate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate): Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
 
-More information about each function and its inputs/outputs are available from the `-h` help option (e.g. `snb -h`). 
+More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
-We recommend at least looking through the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+We recommend at least looking through the [tutotials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
 
 ## Contributing
 
