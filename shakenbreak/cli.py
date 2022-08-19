@@ -1360,3 +1360,6 @@ def regenerate(path, code, filename, min, metastable, verbose):
         metastable=metastable,
         verbose=verbose,
     )
+
+
+# TODO: Generate folders with new ground states
