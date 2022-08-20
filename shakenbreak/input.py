@@ -34,7 +34,7 @@ warnings.filterwarnings(
 )  # Ignore pymatgen POTCAR warnings
 warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
 
-# format warnings output:
+
 def _warning_on_one_line(
     message, category, filename, lineno, file=None, line=None
 ) -> str:
@@ -310,7 +310,7 @@ def _calc_number_electrons(
 
     else:
         raise ValueError(
-            f"`defect_dict` has an invalid `defect_type`:"
+            "`defect_dict` has an invalid `defect_type`:"
             + f"{defect_dict['defect_type']}"
         )
 
@@ -351,6 +351,7 @@ def _calc_number_neighbours(num_electrons: int) -> int:
 
 
 # Main functions
+
 
 def _apply_rattle_bond_distortions(
     defect_dict: dict,
@@ -503,7 +504,9 @@ def _apply_rattle_bond_distortions(
             sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
             reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
             if local_rattle:
-                bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
+                bond_distorted_defect[
+                    "distorted_structure"
+                ] = distortions.local_mc_rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     frac_coords=frac_coords,
                     site_index=defect_site_index,
@@ -949,13 +952,12 @@ class Distortions:
         _bold_print(f"\nDefect: {defect_name}")
         if number_electrons < 0:
             _bold_print(
-                f"Number of extra electrons in neutral state: "
+                "Number of extra electrons in neutral state: "
                 + f"{abs(number_electrons)}"
             )
         elif number_electrons >= 0:
             _bold_print(
-                f"Number of missing electrons in neutral state: "
-                + f"{number_electrons}"
+                f"Number of missing electrons in neutral state: {number_electrons}"
             )
         return number_electrons
 
@@ -1399,7 +1401,6 @@ class Distortions:
                                 {section: {key: input_parameters[section][key]}}
                             )
 
-
         aaa = AseAtomsAdaptor()
 
         # loop for each defect in dict
@@ -1632,7 +1633,7 @@ class Distortions:
                             calc.param.charge = charge  # Defect charge state
                             calc.set_atoms(atoms)
                             calc.initialize()  # this writes the .param file
-                        except:
+                        except Exception:
                             warnings.warn(
                                 "Problem setting up the CASTEP `.param` file. "
                                 "Only structures will be written "
