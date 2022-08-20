@@ -161,6 +161,7 @@ def _cast_energies_to_floats(
             `_organize_data()` or `analysis.get_energies()`)..
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
+
     Returns:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), with all energy
@@ -274,6 +275,7 @@ def _remove_high_energy_points(
             Dictionary matching distortion to sum of atomic displacements, as
             produced by `analysis.calculate_struct_comparison()`
             (Default: None)
+
     Returns:
         Tuple[dict, dict]: energies_dict, disp_dict
     """
@@ -328,6 +330,7 @@ def _get_displacement_dict(
             Code used for the geometry relaxations. Valid code names are:
             "vasp", "espresso", "cp2k" and "fhi-aims" (case insensitive).
             (Default: "vasp")
+
     Returns:
         Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and
         `disp_dict`
@@ -575,9 +578,12 @@ def _format_axis(
 def _get_line_colors(number_of_colors: int) -> list:
     """
     Get list of colors for plotting several lines.
+
     Args:
         number_of_colors (int):
             Number of colors.
+
+    Returns: list
     """
     if 11 > number_of_colors > 1:
         # If user didnt specify colors and more than one color needed,
@@ -603,6 +609,7 @@ def _setup_colormap(
         disp_dict (:obj: `dict`):
             dictionary mapping distortion key to structural similarity between
             the associated structure and the reference structure.
+
     Returns:
         Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
         colormap, vmin, vmedium, vmax, norm
@@ -639,8 +646,12 @@ def _format_colorbar(
         metric (:obj:`str`):
             metric to be plotted: "disp" or "max_dist"
         vmin (:obj:`float`):
+            tick label for the colorbar
         vmax (:obj:`float`):
+            tick label for the colorbar
         vmedium (:obj:`float`):
+            tick label for the colorbar
+
     Returns:
         cbar (:obj:`mpl.colorbar.Colorbar`)
     """
@@ -735,6 +746,7 @@ def plot_all_defects(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+
     Returns:
         :obj:`dict`:
             Dictionary of {Defect Species (Name & Charge): Energy vs Distortion Plot}
@@ -891,6 +903,7 @@ def plot_defect(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: "svg")
+
     Returns:
         :obj:`mpl.figure.Figure`:
             Energy vs distortion plot, as a mpl.figure.Figure object
@@ -1290,6 +1303,7 @@ def plot_datasets(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+
     Returns:
         :obj:`mpl.figure.Figure`:
             Energy vs distortion plot for multiple datasets,

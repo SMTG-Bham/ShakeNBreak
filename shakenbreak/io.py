@@ -4,7 +4,7 @@ FHI-aims, CASTEP and CP2K.
 """
 import os
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Union
 import datetime
 
 from monty.serialization import loadfn, dumpfn
@@ -59,9 +59,7 @@ def parse_energies(
     """
 
     def _match(filename, grep_string):
-        """
-        Helper function to grep for a string in a file.
-        """
+        """Helper function to grep for a string in a file."""
         try:
             return regrep(
                 filename=filename,
@@ -207,7 +205,9 @@ def parse_energies(
         ]  # parse distortion directories
 
         # Parse energies and write them to file
-        energies = {"distortions": {}}
+        energies = {
+            "distortions": {}
+        }  # maps each distortion to the energy of the optimised structure
         for dist in dist_dirs:
             outcar = None
             energy = None
@@ -248,7 +248,7 @@ def parse_energies(
 # Parsing output structures of different codes
 def read_vasp_structure(
     file_path: str,
-) -> Structure:
+) -> Union[Structure, str]:
     """
     Read VASP structure from `file_path` and convert to `pymatgen` Structure
     object.
@@ -282,7 +282,7 @@ def read_vasp_structure(
 
 def read_espresso_structure(
     filename: str,
-) -> Structure:
+) -> Union[Structure, str]:
     """
     Reads a structure from Quantum Espresso output and returns it as a pymatgen
     Structure.
@@ -290,6 +290,7 @@ def read_espresso_structure(
     Args:
         filename (:obj:`str`):
             Path to the Quantum Espresso output file.
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -366,7 +367,7 @@ def read_espresso_structure(
     return structure
 
 
-def read_fhi_aims_structure(filename: str, format="aims") -> Structure:
+def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, str]:
     """
     Reads a structure from fhi-aims output and returns it as a pymatgen
     Structure.
@@ -376,6 +377,7 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Structure:
             Path to the fhi-aims output file.
         format (:obj:`str`):
             either aims-output (output file) aims (geometry file)
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -400,7 +402,7 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Structure:
 
 def read_cp2k_structure(
     filename: str,
-) -> Structure:
+) -> Union[Structure, str]:
     """
     Reads a structure from cp2k restart file and returns it as a pymatgen
     Structure.
@@ -408,6 +410,7 @@ def read_cp2k_structure(
     Args:
         filename (:obj:`str`):
             Path to the cp2k restart file.
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -435,7 +438,7 @@ def read_cp2k_structure(
 
 def read_castep_structure(
     filename: str,
-) -> Structure:
+) -> Union[Structure, str]:
     """
     Reads a structure from castep output (`.castep`) file and returns it as a
     pymatgen Structure.
@@ -473,7 +476,7 @@ def parse_structure(
     code: str,
     structure_path: str,
     structure_filename: str,
-) -> Structure:
+) -> Union[Structure, str]:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
     CATSEP, FHI-aims) and converts it to a pymatgen Structure object.
@@ -493,6 +496,7 @@ def parse_structure(
             Quantum espresso: "espresso.out",
             castep: "castep.castep" (castep output file is used)
             fhi-aims: geometry.in.next_step
+
     Returns:
         :obj:`Structure`:
             `pymatgen` Structure object
@@ -527,7 +531,7 @@ def parse_structure(
 
 
 # Parse code input files
-def parse_qe_input(path) -> dict:
+def parse_qe_input(path: str) -> dict:
     """
     Parse the input file of Quantum Espresso and return it as a dictionary
     of the parameters.
@@ -535,6 +539,7 @@ def parse_qe_input(path) -> dict:
     Args:
         path (:obj:`str`):
             Path to the Quantum Espresso input file.
+
     Returns: :obj:`dict`
     """
     if not os.path.exists(path):
@@ -594,7 +599,7 @@ def parse_qe_input(path) -> dict:
     return params
 
 
-def parse_fhi_aims_input(path):
+def parse_fhi_aims_input(path: str) -> dict:
     """
     Parse the input file of FHI-aims and return it as a dictionary
     of the parameters.
@@ -602,6 +607,7 @@ def parse_fhi_aims_input(path):
     Args:
         path (:obj:`str`):
             Path to the Quantum Espresso input file.
+
     Returns: :obj:`dict`
     """
     if not os.path.exists(path):

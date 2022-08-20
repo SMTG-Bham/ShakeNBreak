@@ -1,6 +1,4 @@
-"""
-Module containing functions for applying distortions to defect structures
-"""
+"""Module containing functions for applying distortions to defect structures"""
 import sys
 import os
 import warnings
@@ -14,7 +12,7 @@ from pymatgen.analysis.local_env import MinimumDistanceNN
 from ase.neighborlist import NeighborList
 from hiphive.structure_generation.rattle import (
     generate_mc_rattled_structures,
-    _probability_mc_rattle
+    _probability_mc_rattle,
 )
 
 
@@ -394,8 +392,8 @@ def _local_mc_rattle_displacements(
 def _generate_local_mc_rattled_structures(
     atoms, site_index, n_configs, rattle_std, d_min, seed=42, **kwargs
 ):
-    # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
-    """Returns list of configurations after applying a Monte Carlo local
+    r"""
+    Returns list of configurations after applying a Monte Carlo local
     rattle.
     Compared to the standard Monte Carlo rattle, here the displacements
     tail off as we move away from the defect site.
@@ -410,45 +408,43 @@ def _generate_local_mc_rattled_structures(
     the magnitude of the final displacements is not *directly*
     connected to `rattle_std`.
 
-    Warning
-    -------
-    Repeatedly calling this function *without* providing different
-    seeds will yield identical or correlated results. To avoid this
-    behavior it is recommended to specify a different seed for each
-    call to this function.
+    This function has been adapted from https://gitlab.com/materials-modeling/hiphive
 
-    Notes
-    ------
-    The procedure implemented here might not generate a symmetric
-    distribution for the displacements `kwargs` will be forwarded to
-    `mc_rattle` (see user guide for a detailed explanation)
+    Warning:
+        Repeatedly calling this function *without* providing different
+        seeds will yield identical or correlated results. To avoid this
+        behavior it is recommended to specify a different seed for each
+        call to this function.
 
-    Parameters
-    ----------
-    atoms : ase.Atoms
-        prototype structure
-    site_index: int
-        Index of defect site in structure (for substitutions or
-        interstitials), counting from 1.
-    n_structures : int
-        number of structures to generate
-    rattle_std : float
-        rattle amplitude (standard deviation in normal distribution);
-        note this value is not connected to the final
-        average displacement for the structures
-    d_min : float
-        interatomic distance used for computing the probability for each rattle
-        move
-    seed : int
-        seed for setting up NumPy random state from which random numbers are
-        generated
-    n_iter : int
-        number of Monte Carlo cycles
+    Notes:
+        The procedure implemented here might not generate a symmetric
+        distribution for the displacements `kwargs` will be forwarded to
+        `mc_rattle` (see user guide for a detailed explanation)
 
-    Returns
-    -------
-    list of ase.Atoms
-        generated structures
+    Args:
+        atoms : ase.Atoms
+            prototype structure
+        site_index: int
+            Index of defect site in structure (for substitutions or
+            interstitials), counting from 1.
+        n_structures : int
+            number of structures to generate
+        rattle_std : float
+            rattle amplitude (standard deviation in normal distribution);
+            note this value is not connected to the final
+            average displacement for the structures
+        d_min : float
+            interatomic distance used for computing the probability for each rattle
+            move
+        seed : int
+            seed for setting up NumPy random state from which random numbers are
+            generated
+        n_iter : int
+            number of Monte Carlo cycles
+
+    Returns:
+        list of ase.Atoms
+            generated structures
     """
     rs = np.random.RandomState(seed)
     atoms_list = []

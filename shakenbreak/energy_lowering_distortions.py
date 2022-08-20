@@ -758,6 +758,7 @@ def write_distorted_inputs(
             CP2K: "cp2k_input.inp", CASTEP: "castep.param",
             FHI-aims: "control.in"
             (Default: None)
+
     Returns:
         None
     """
@@ -911,8 +912,8 @@ def _copy_espresso_files(
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
         params = params.replace(
-            params[params.find("ATOMIC_POSITIONS"):],
-            new_struct[new_struct.find("ATOMIC_POSITIONS"):],
+            params[params.find("ATOMIC_POSITIONS") :],
+            new_struct[new_struct.find("ATOMIC_POSITIONS") :],
             1,
         )  # Replace ionic positions
         with open(f"{distorted_dir}/{input_filename}", "w") as f:
@@ -941,8 +942,8 @@ def _copy_espresso_files(
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
             params = params.replace(
-                params[params.find("ATOMIC_POSITIONS"):],
-                new_struct[new_struct.find("ATOMIC_POSITIONS"):],
+                params[params.find("ATOMIC_POSITIONS") :],
+                new_struct[new_struct.find("ATOMIC_POSITIONS") :],
                 1,
             )  # Replace lines with the ionic positions
             with open(f"{distorted_dir}/{input_filename}", "w") as f:
@@ -1129,6 +1130,7 @@ def write_groundstate_structure(
             (Default: "CONTCAR")
         verbose (:obj:`bool`):
             Whether to print additional information about the generated folders.
+
     Returns:
         None
     """
@@ -1158,7 +1160,7 @@ def write_groundstate_structure(
                     os.mkdir(f"{output_path}/{defect}_{charge}/{groundstate_folder}")
                 destination_path = os.path.join(
                     f"{output_path}/{defect}_{charge}/",
-                    f"{groundstate_folder}/{groundstate_filename}"
+                    f"{groundstate_folder}/{groundstate_filename}",
                 )
                 if verbose:
                     print(

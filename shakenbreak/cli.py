@@ -1,6 +1,4 @@
-"""
-ShakeNBreak command-line-interface (CLI)
-"""
+"""ShakeNBreak command-line-interface (CLI)"""
 import os
 import pickle
 from copy import deepcopy
@@ -277,6 +275,14 @@ def _parse_defect_dirs(path) -> list:
 def CommandWithConfigFile(
     config_file_param_name,
 ):  # can also set CLI options using config file
+    """
+    Set CLI options using config file.
+
+    Args:
+        config_file_param_name (:obj:`str`):
+            name of config file
+    """
+
     class CustomCommandClass(click.Command):
         def invoke(self, ctx):
             config_file = ctx.params[config_file_param_name]
@@ -300,9 +306,7 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 @click.group("snb", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 def snb():
-    """
-    ShakeNBreak: Defect structure-searching
-    """
+    """ShakeNBreak: Defect structure-searching"""
 
 
 @snb.command(
