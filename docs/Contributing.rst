@@ -10,8 +10,19 @@ request new features. Contributions to extend this package are welcome! Please u
 workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
 The easiest way to handle this is to run the following in the **correct sequence** on your local machine.
 First run `black <https://black.readthedocs.io/en/stable/index.html>`_, as this will automatically reformat
-the code to PEP8 conventions. Then run `pycodestyle <https://pycodestyle.pycqa.org/en/latest/>`_,
+the code to PEP8 conventions:
+
+.. code:: bash
+
+    $ black  --line-length 88 --check --diff --color shakenbreak
+
+Then run `pycodestyle <https://pycodestyle.pycqa.org/en/latest/>`_,
 followed by `flake8 <https://flake8.pycqa.org/en/latest/>`_, which will identify any remaning issues.
+
+.. code:: bash
+
+    $ pycodestyle --max-line-length=107 shakenbreak
+    $ flake8 --max-line-length 107 --color always --ignore=E121,E123,E126,E226,E24,E704,W503,W504,F401 shakenbreak
 
 Tests
 -------

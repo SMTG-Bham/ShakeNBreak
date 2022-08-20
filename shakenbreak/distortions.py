@@ -104,7 +104,7 @@ def distort(
         distorted_element
     ):  # filter the neighbours that match the element criteria and are
         # closer than 4.5 Angstroms
-        nearest = []
+        nearest = []  # list of nearest neighbours
         for dist, index, element in distances[1:]:
             if (
                 element == distorted_element

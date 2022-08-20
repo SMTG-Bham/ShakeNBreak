@@ -165,7 +165,8 @@ def parse_energies(
             # check if ionic relaxation is converged
             # Convergence string deduced from:
             # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
-            # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/blob/master/test/examples/TiO2-geom.castep
+            # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/
+            # blob/master/test/examples/TiO2-geom.castep
             energy = _match(outcar, r"Final Total Energy\s+([\d\-\.]+)")[0][0][
                 0
             ]  # Energy of first match in eV
