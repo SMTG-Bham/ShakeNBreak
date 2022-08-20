@@ -142,6 +142,7 @@ def _format_distortion_names(
     Args:
         distortion_label (:obj:`str`):
             distortion label used for file names.
+
     Returns:
         distortion (:obj:`float` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
@@ -240,6 +241,7 @@ def _sort_data(energies_file: str, verbose: bool = True):
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
+
     Returns:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
@@ -986,6 +988,7 @@ def _site_magnetizations(
             Whether to print orbital projections. If not necessary, set
             to False (faster).
             (Default: False)
+
     Returns:
         :obj:`pandas.DataFrame`:
             pandas.Dataframe with sites with magnetization above threshold.

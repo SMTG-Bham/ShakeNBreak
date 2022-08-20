@@ -1,6 +1,4 @@
-"""
-Module to generate VASP input files for defect calculations
-"""
+"""Module to generate VASP input files for defect calculations"""
 import os
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 from typing import TYPE_CHECKING
@@ -63,7 +61,7 @@ def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/su
 
 # Duplicated code from doped (from github.com/SMTG-UCL/doped)
 def _import_psp():
-    """import pmg settings for _PotcarSingleMod"""
+    """Import pmg settings for _PotcarSingleMod."""
     pmg_settings = None
     try:
         import pymatgen.settings
@@ -191,6 +189,7 @@ class DefectRelaxSet(MPRelaxSet):
 
     @property
     def incar(self):
+        """Get Incar object"""
         inc = super(self.__class__, self).incar
         try:
             if self.charge:
@@ -202,9 +201,7 @@ class DefectRelaxSet(MPRelaxSet):
 
     @property
     def potcar(self):
-        """
-        Potcar object.
-        """
+        """Potcar object."""
         return _PotcarMod(
             symbols=self.potcar_symbols, functional=self.potcar_functional
         )
@@ -213,6 +210,7 @@ class DefectRelaxSet(MPRelaxSet):
     def all_input(self):
         """
         Returns all input files as a dict of {filename: vasp object}
+
         Returns:
             dict of {filename: object}, e.g., {'INCAR': Incar object, ...}
         """

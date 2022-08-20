@@ -54,9 +54,7 @@ def _bold_print(string: str) -> None:
 
 
 def _create_folder(folder_name: str) -> None:
-    """
-    Creates a folder at `./folder_name` if it doesn't already exist.
-    """
+    """Creates a folder at `./folder_name` if it doesn't already exist."""
     path = os.getcwd()
     if not os.path.isdir(path + "/" + folder_name):
         try:
@@ -342,7 +340,6 @@ def _calc_number_neighbours(num_electrons: int) -> int:
     Returns:
         Number of neighbours to distort (:obj:`int`)
     """
-
     if abs(num_electrons) > 4:
         num_neighbours = abs(8 - abs(num_electrons))
     else:
@@ -940,6 +937,7 @@ class Distortions:
             defect (:obj:`dict`):
                 Defect entry in dictionary of defects as generated with
                 `doped` `ChargedDefectsStructures()`.
+
         Returns:
             Number of extra/missing electrons for the defect.
         """
@@ -988,9 +986,7 @@ class Distortions:
         bond_distortions: list,
         stdev: float,
     ) -> None:
-        """
-        Print applied bond distortions and rattle stanard deviation
-        """
+        """Print applied bond distortions and rattle stanard deviation"""
         print(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -1062,6 +1058,7 @@ class Distortions:
     ) -> dict:
         """
         Add defect information to `distorted_defects_dict`.
+
         Args:
             defect_name (:obj:`str`):
                 Name of the defect to use as key in the `distorted_defects_dict`.
@@ -1069,6 +1066,7 @@ class Distortions:
                 Defect dictionary to add to `distorted_defects_dict`.
             distorted_defects_dict (:obj:`dict`):
                 Full dictionary of distorted defects.
+
         Returns:
             (:obj:`dict`)
         """
@@ -1373,6 +1371,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1486,6 +1485,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1576,6 +1576,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1681,6 +1682,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
