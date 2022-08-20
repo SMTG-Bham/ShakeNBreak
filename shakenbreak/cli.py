@@ -294,7 +294,7 @@ def CommandWithConfigFile(
     return CustomCommandClass
 
 
-## CLI Commands:
+# CLI Commands:
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
@@ -767,7 +767,7 @@ def generate_all(
             try:  # try to parse structure from it
                 defect_struc = Structure.from_file(f"{defects}/{defect}")
                 defect_name = parse_defect_name(defect, defect_settings)
-            except:
+            except Exception:
                 continue
 
         elif os.path.isdir(f"{defects}/{defect}"):
@@ -1021,7 +1021,7 @@ def parse(defect, all, path, code):
                 defect = path.split("/")[-1]
                 path = path.rsplit("/", 1)[0]
             io.parse_energies(defect, path, code)
-        except:
+        except Exception:
             warnings.warn(
                 "Could not parse energies! Please specify a defect to parse "
                 "(with option --defect) or use the --all flag to parse all defects"

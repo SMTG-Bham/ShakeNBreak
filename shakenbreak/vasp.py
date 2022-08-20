@@ -29,13 +29,11 @@ if TYPE_CHECKING:
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
-default_incar_settings = loadfn(
-    os.path.join(MODULE_DIR, "../input_files/incar.yaml")
-)
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
 defect_config = loadfn(os.path.join(MODULE_DIR, "../input_files/DefectSet.yaml"))
 
 
-def _check_psp_dir(): # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
+def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
     """
     Helper function to check if potcars are set up correctly for use with
     pymatgen, to be compatible across pymatgen versions (breaking changes in v2022)
@@ -43,19 +41,22 @@ def _check_psp_dir(): # Provided by Katarina Brlec, from github.com/SMTG-UCL/sur
     potcar = False
     try:
         import pymatgen.settings
+
         pmg_settings = pymatgen.settings.SETTINGS
-        if 'PMG_VASP_PSP_DIR' in pmg_settings:
+        if "PMG_VASP_PSP_DIR" in pmg_settings:
             potcar = True
     except ModuleNotFoundError:
         try:
             import pymatgen
+
             pmg_settings = pymatgen.SETTINGS
-            if 'PMG_VASP_PSP_DIR' in pmg_settings:
+            if "PMG_VASP_PSP_DIR" in pmg_settings:
                 potcar = True
         except AttributeError:
             from pymatgen.core import SETTINGS
+
             pmg_settings = SETTINGS
-            if 'PMG_VASP_PSP_DIR' in pmg_settings:
+            if "PMG_VASP_PSP_DIR" in pmg_settings:
                 potcar = True
     return potcar
 
@@ -66,17 +67,20 @@ def _import_psp():
     pmg_settings = None
     try:
         import pymatgen.settings
+
         pmg_settings = pymatgen.settings.SETTINGS
     except ModuleNotFoundError:
         try:
             import pymatgen
+
             pmg_settings = pymatgen.SETTINGS
         except AttributeError:
             from pymatgen.core import SETTINGS
+
             pmg_settings = SETTINGS
 
     if pmg_settings is None:
-        raise ValueError('pymatgen settings not found?')
+        raise ValueError("pymatgen settings not found?")
     else:
         return pmg_settings
 
@@ -85,8 +89,8 @@ class _PotcarSingleMod(PotcarSingle):
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
-    #@staticmethod
-    #def from_file(filename):
+    # @staticmethod
+    # def from_file(filename):
     #    with smart_open.smart_open(filename, "rt") as f:
     #        return PotcarSingle(f.read())
 
@@ -97,46 +101,50 @@ class _PotcarSingleMod(PotcarSingle):
             functional = settings.get("PMG_DEFAULT_FUNCTIONAL", "PBE")
         funcdir = PotcarSingle.functional_dir[functional]
 
-        if not os.path.isdir(os.path.join(
-                settings.get("PMG_VASP_PSP_DIR"), funcdir)):
-            functional_dir = {"LDA_US": "pot",
-                              "PW91_US": "pot_GGA",
-                              "LDA": "potpaw",
-                              "PW91": "potpaw_GGA",
-                              "LDA_52": "potpaw_LDA.52",
-                              "LDA_54": "potpaw_LDA.54",
-                              "PBE": "potpaw_PBE",
-                              "PBE_52": "potpaw_PBE.52",
-                              "PBE_54": "potpaw_PBE.54",
-                              }
+        if not os.path.isdir(os.path.join(settings.get("PMG_VASP_PSP_DIR"), funcdir)):
+            functional_dir = {
+                "LDA_US": "pot",
+                "PW91_US": "pot_GGA",
+                "LDA": "potpaw",
+                "PW91": "potpaw_GGA",
+                "LDA_52": "potpaw_LDA.52",
+                "LDA_54": "potpaw_LDA.54",
+                "PBE": "potpaw_PBE",
+                "PBE_52": "potpaw_PBE.52",
+                "PBE_54": "potpaw_PBE.54",
+            }
             funcdir = functional_dir[functional]
 
         d = settings.get("PMG_VASP_PSP_DIR")
         if d is None:
-            raise ValueError("No POTCAR directory found. Please set "
-                             "the VASP_PSP_DIR environment variable")
+            raise ValueError(
+                "No POTCAR directory found. Please set "
+                "the VASP_PSP_DIR environment variable"
+            )
 
-        paths_to_try = [os.path.join(d, funcdir, "POTCAR.{}".format(symbol)),
-                        os.path.join(d, funcdir, symbol, "POTCAR.Z"),
-                        os.path.join(d, funcdir, symbol, "POTCAR")]
+        paths_to_try = [
+            os.path.join(d, funcdir, "POTCAR.{}".format(symbol)),
+            os.path.join(d, funcdir, symbol, "POTCAR.Z"),
+            os.path.join(d, funcdir, symbol, "POTCAR"),
+        ]
         for p in paths_to_try:
             p = os.path.expanduser(p)
             p = zpath(p)
             if os.path.exists(p):
                 return _PotcarSingleMod.from_file(p)
         raise IOError(
-            f"You do not have the right POTCAR with functional " +
-            f"{functional} and label {symbol} in your VASP_PSP_DIR"
+            "You do not have the right POTCAR with functional "
+            + f"{functional} and label {symbol} in your VASP_PSP_DIR"
         )
 
 
 class _PotcarMod(Potcar):
-    """"Modified Potcar class"""
+    """Modified Potcar class"""
+
     def __init__(self, **kwargs):
         super(self.__class__, self).__init__(**kwargs)
 
-    def set_symbols(self, symbols, functional=None,
-                    sym_potcar_map=None):
+    def set_symbols(self, symbols, functional=None, sym_potcar_map=None):
         """
         Initialize the POTCAR from a set of symbols. Currently, the POTCARs can
         be fetched from a location specified in .pmgrc.yaml. Use pmg config
@@ -172,11 +180,11 @@ class DefectRelaxSet(MPRelaxSet):
     """
 
     def __init__(self, structure, **kwargs):
-        charge = kwargs.pop('charge', 0)
-        user_incar_settings = kwargs.get('user_incar_settings', {})
-        defect_settings = deepcopy(defect_config['defect'])
+        charge = kwargs.pop("charge", 0)
+        user_incar_settings = kwargs.get("user_incar_settings", {})
+        defect_settings = deepcopy(defect_config["defect"])
         defect_settings.update(user_incar_settings)
-        kwargs['user_incar_settings'] = defect_settings
+        kwargs["user_incar_settings"] = defect_settings
 
         super(self.__class__, self).__init__(structure, **kwargs)
         self.charge = charge
@@ -186,8 +194,8 @@ class DefectRelaxSet(MPRelaxSet):
         inc = super(self.__class__, self).incar
         try:
             if self.charge:
-                inc['NELECT'] = self.nelect - self.charge
-        except:
+                inc["NELECT"] = self.nelect - self.charge
+        except Exception:
             print("NELECT flag is not set due to non-availability of POTCARs")
 
         return inc
@@ -197,7 +205,9 @@ class DefectRelaxSet(MPRelaxSet):
         """
         Potcar object.
         """
-        return _PotcarMod(symbols=self.potcar_symbols, functional=self.potcar_functional)
+        return _PotcarMod(
+            symbols=self.potcar_symbols, functional=self.potcar_functional
+        )
 
     @property
     def all_input(self):
@@ -208,15 +218,13 @@ class DefectRelaxSet(MPRelaxSet):
         """
         try:
             return super(DefectRelaxSet, self).all_input
-        except:   # Expecting the error to be POTCAR related, its ignored
+        except Exception:  # Expecting the error to be POTCAR related, its ignored
             kpoints = self.kpoints
             incar = self.incar
             if np.product(kpoints.kpts) < 4 and incar.get("ISMEAR", 0) == -5:
                 incar["ISMEAR"] = 0
 
-            return {'INCAR': incar,
-                    'KPOINTS': kpoints,
-                    'POSCAR': self.poscar}
+            return {"INCAR": incar, "KPOINTS": kpoints, "POSCAR": self.poscar}
 
 
 def _scaled_ediff(natoms):  # 1e-5 for 50 atoms, up to max 1e-4
@@ -278,9 +286,7 @@ def write_vasp_gam_files(
     potcar_dict = deepcopy(default_potcar_dict)
     if potcar_settings:
         if "POTCAR_FUNCTIONAL" in potcar_settings.keys():
-            potcar_dict["POTCAR_FUNCTIONAL"] = potcar_settings[
-                "POTCAR_FUNCTIONAL"
-            ]
+            potcar_dict["POTCAR_FUNCTIONAL"] = potcar_settings["POTCAR_FUNCTIONAL"]
         if "POTCAR" in potcar_settings.keys():
             potcar_dict["POTCAR"].update(potcar_settings.pop("POTCAR"))
 
@@ -315,13 +321,15 @@ def write_vasp_gam_files(
 
     # Update system dependent parameters
     default_incar_settings_copy = default_incar_settings.copy()
-    default_incar_settings_copy.update({
-        "NELECT": nelect,
-        "NUPDOWN": f"{nelect % 2:.0f} # But could be {nelect % 2 + 2:.0f} "
-        + "if strong spin polarisation or magnetic behaviour present",
-        "EDIFF": f"{_scaled_ediff(supercell.num_sites)} # May need to reduce for tricky relaxations",
-        "ROPT": ("1e-3 " * num_elements).rstrip(),
-    })
+    default_incar_settings_copy.update(
+        {
+            "NELECT": nelect,
+            "NUPDOWN": f"{nelect % 2:.0f} # But could be {nelect % 2 + 2:.0f} "
+            + "if strong spin polarisation or magnetic behaviour present",
+            "EDIFF": f"{_scaled_ediff(supercell.num_sites)} # May need to reduce for tricky relaxations",
+            "ROPT": ("1e-3 " * num_elements).rstrip(),
+        }
+    )
     if incar_settings:
         for (
             k
@@ -342,10 +350,7 @@ def write_vasp_gam_files(
 
     # kpoints
     vaspgamkpts = Kpoints().from_dict(
-        {
-            "comment": "Gamma-only KPOINTS from ShakeNBreak",
-            "generation_style": "Gamma"
-        }
+        {"comment": "Gamma-only KPOINTS from ShakeNBreak", "generation_style": "Gamma"}
     )
 
     vaspgamposcar = defect_relax_set.poscar
@@ -400,7 +405,7 @@ def prepare_vasp_defect_inputs(defects: dict) -> dict:
             poscar.comment = (
                 defect["name"]
                 + str(dict_transf["defect_supercell_site"].frac_coords)
-                + "_-dNELECT=" # change in NELECT from bulk supercell
+                + "_-dNELECT="  # change in NELECT from bulk supercell
                 + str(charge)
             )
             folder_name = defect["name"] + f"_{charge}"
@@ -409,6 +414,6 @@ def prepare_vasp_defect_inputs(defects: dict) -> dict:
             defect_input_dict[folder_name] = {
                 "Defect Structure": struct,
                 "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf
+                "Transformation Dict": dict_transf,
             }
     return defect_input_dict
