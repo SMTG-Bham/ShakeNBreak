@@ -46,6 +46,7 @@ jobs:
       - name: black
         run:  |
           black --version
+          black  --line-length 88 --color shakenbreak
           black  --line-length 88 --check --diff --color shakenbreak
 
       - name: flake8
