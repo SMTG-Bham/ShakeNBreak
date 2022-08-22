@@ -8,13 +8,13 @@ Please use the `Issue Tracker <https://github.com/SMTG-UCL/ShakeNBreak/issues>`_
 request new features. Contributions to extend this package are welcome! Please use the
 `Fork and Pull <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_
 workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
-The easiest way to handle this is to run the following in the **correct sequence** on your local machine.
-First run `black <https://black.readthedocs.io/en/stable/index.html>`_, as this will automatically reformat
-the code to PEP8 conventions:
+The easiest way to handle these guidelines is to run the following in the **correct sequence**
+on your local machine. First run `black <https://black.readthedocs.io/en/stable/index.html>`_,
+as this will automatically reformat the code to ``PEP8`` conventions:
 
 .. code:: bash
 
-    $ black  --line-length 88 --check --diff --color shakenbreak
+    $ black  --line-length 88 --diff --color shakenbreak
 
 Then run `pycodestyle <https://pycodestyle.pycqa.org/en/latest/>`_,
 followed by `flake8 <https://flake8.pycqa.org/en/latest/>`_, which will identify any remaning issues.

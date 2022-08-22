@@ -267,43 +267,43 @@ def _local_mc_rattle_displacements(
     seed=42,
 ):
     # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
-    """Generate displacements using the Monte Carlo rattle method.
+    """
+    Generate displacements using the Monte Carlo rattle method.
     The displacements tail off as we move away from the defect site.
 
-    Parameters
-    ----------
-    atoms: ase.Atoms
-        prototype structure
-    site: index of defect, starting from 0
-    rattle_std : float
-        rattle amplitude (standard deviation in normal distribution)
-    d_min : float
-        interatomic distance used for computing the probability for each rattle
-        move. Center position of the error function
-    width : float
-        width of the error function
-    n_iter : int
-        number of Monte Carlo cycle
-    max_disp : float
-        rattle moves that yields a displacement larger than max_disp will
-        always be rejected. This rarley occurs and is more used as a safety net
-        for not generating structures where two or more have swapped positions.
-    max_attempts : int
-        limit for how many attempted rattle moves are allowed a single atom;
-        if this limit is reached an `Exception` is raised.
-    active_atoms : list
-        list of which atomic indices should undergo Monte Carlo rattling
-    nbr_cutoff : float
-        The cutoff used to construct the neighborlist used for checking
-        interatomic distances, defaults to 2 * d_min
-    seed : int
-        seed for setting up NumPy random state from which random numbers are
-        generated
+    Args:
+        atoms: ase.Atoms
+            prototype structure
+        site: int
+            index of defect, starting from 0
+        rattle_std : float
+            rattle amplitude (standard deviation in normal distribution)
+        d_min : float
+            interatomic distance used for computing the probability for each rattle
+            move. Center position of the error function
+        width : float
+            width of the error function
+        n_iter : int
+            number of Monte Carlo cycle
+        max_disp : float
+            rattle moves that yields a displacement larger than max_disp will
+            always be rejected. This rarley occurs and is more used as a safety net
+            for not generating structures where two or more have swapped positions.
+        max_attempts : int
+            limit for how many attempted rattle moves are allowed a single atom;
+            if this limit is reached an `Exception` is raised.
+        active_atoms : list
+            list of which atomic indices should undergo Monte Carlo rattling
+        nbr_cutoff : float
+            The cutoff used to construct the neighborlist used for checking
+            interatomic distances, defaults to 2 * d_min
+        seed : int
+            seed for setting up NumPy random state from which random numbers are
+            generated
 
-    Returns
-    -------
-    numpy.ndarray
-        atomic displacements (`Nx3`)
+    Returns:
+        numpy.ndarray
+            atomic displacements (`Nx3`)
     """
 
     def scale_stdev(disp, r_min, r):
@@ -391,7 +391,7 @@ def _local_mc_rattle_displacements(
 
 def _generate_local_mc_rattled_structures(
     atoms, site_index, n_configs, rattle_std, d_min, seed=42, **kwargs
-):
+) -> list:
     r"""
     Returns list of configurations after applying a Monte Carlo local
     rattle.
