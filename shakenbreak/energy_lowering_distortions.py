@@ -25,7 +25,7 @@ def _format_distortion_directory_name(
     defect_species: str,
     output_path: str,
 ) -> str:
-    """Format name of distortion directory"""
+    """Format name of distortion directory."""
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
         distorted_dir = (
             f"{output_path}/{defect_species}/Bond_Distortion_"
@@ -94,9 +94,9 @@ def _compare_distortion(
     min_dist: float = 0.2,
 ) -> dict:
     """
-    Compare the gs_distortion to the other favourable
-    distortions stored in low_energy_defects. If different,
-    add distortion as separate entry to low_energy_defects.
+    Compare the ground state distortion (`gs_distortion`) to the other
+    favourable distortions stored in `low_energy_defects`. If different,
+    add distortion as separate entry to `low_energy_defects`.
     If same, store together with the other similar distortions.
 
     Args:
@@ -124,7 +124,8 @@ def _compare_distortion(
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
 
-    Returns: :obj:`dict`
+    Returns:
+        :obj:`dict`
     """
     comparison_dicts_dict = {}  # index: comparison_dict
     for i in range(len(low_energy_defects[defect])):  # use _initial_ list count
@@ -227,7 +228,8 @@ def _prune_dict_across_charges(
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
 
-    Returns: :obj:`dict`
+    Returns:
+        :obj:`dict`
     """
     for defect, distortion_list in low_energy_defects.items():
         for distortion_dict in distortion_list:
@@ -727,7 +729,7 @@ def write_distorted_inputs(
     input_filename: str = None,
 ) -> None:
     """
-    Create folders with VASP input files for testing the low-energy
+    Create folders with relaxation input files for testing the low-energy
     distorted defect structures found for other charge states of that
     defect, as identified with `get_energy_lowering_distortions()`.
 
@@ -851,7 +853,7 @@ def _copy_vasp_files(
     defect_species: str,
 ) -> None:
     """
-    Copy VASP input files from an existing Distortion directory
+    Copy VASP input files from an existing distortion directory
     to a new directory.
     """
     distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
@@ -891,7 +893,7 @@ def _copy_espresso_files(
     input_filename: str = "espresso.pwi",
 ) -> None:
     """
-    Copy Quantum Espresso input files from an existing Distortion
+    Copy Quantum Espresso input files from an existing distortion
     directory to a new directory.
     """
     if not input_filename:
@@ -970,7 +972,7 @@ def _copy_cp2k_files(
     input_filename: str = "cp2k_input.inp",
 ) -> None:
     """
-    Copy CP2K input files from an existing Distortion directory
+    Copy CP2K input files from an existing distortion directory
     to a new directory.
     """
     if not input_filename:
@@ -1013,7 +1015,7 @@ def _copy_castep_files(
     input_filename: str = "castep.param",
 ) -> None:
     """
-    Copy CASTEP input files from an existing Distortion directory
+    Copy CASTEP input files from an existing distortion directory
     to a new directory.
     """
     if not input_filename:
@@ -1059,7 +1061,7 @@ def _copy_fhi_aims_files(
     input_filename: str = "control.in",
 ) -> None:
     """
-    Copy FHI-aims input files from an existing Distortion directory
+    Copy FHI-aims input files from an existing distortion directory
     to a new directory.
     """
     if not input_filename:

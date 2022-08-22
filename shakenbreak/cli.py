@@ -1091,7 +1091,7 @@ def parse(defect, all, path, code):
 def analyse(defect, all, path, code, ref_struct, verbose):
     """
     Generate `csv` file mapping each distortion to its final energy (in eV) and its
-    mean displacement (in angstrom and relative to `ref_struct`).
+    mean displacement (in Angstrom and relative to `ref_struct`).
     """
 
     def analyse_single_defect(defect, path, code, ref_struct, verbose):

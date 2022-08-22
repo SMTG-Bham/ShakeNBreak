@@ -59,9 +59,10 @@ def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/su
     return potcar
 
 
-# Duplicated code from doped (from github.com/SMTG-UCL/doped)
 def _import_psp():
-    """Import pmg settings for _PotcarSingleMod."""
+    """Import pmg settings for _PotcarSingleMod.
+    Duplicated code from doped (from github.com/SMTG-UCL/doped).
+    """
     pmg_settings = None
     try:
         import pymatgen.settings
@@ -84,6 +85,7 @@ def _import_psp():
 
 
 class _PotcarSingleMod(PotcarSingle):
+    """Modified PotcarSingle class."""
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -137,7 +139,7 @@ class _PotcarSingleMod(PotcarSingle):
 
 
 class _PotcarMod(Potcar):
-    """Modified Potcar class"""
+    """Modified Potcar class."""
 
     def __init__(self, **kwargs):
         super(self.__class__, self).__init__(**kwargs)
@@ -170,7 +172,7 @@ class _PotcarMod(Potcar):
 class DefectRelaxSet(MPRelaxSet):
     """
     Extension to MPRelaxSet which modifies some parameters appropriate
-    for defect calculations
+    for defect calculations.
 
     Args:
         charge (:obj:`int`):
@@ -237,8 +239,7 @@ def write_vasp_gam_files(
     potcar_settings: dict = None,
 ) -> None:
     """
-    Generates input files for vasp Gamma-point-only rough relaxation
-    (before more expensive vasp_std relaxation)
+    Generates input files for vasp Gamma-point-only relaxation.
 
     Args:
         single_defect_dict (:obj:`dict`):
@@ -360,10 +361,10 @@ def write_vasp_gam_files(
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
 
 
-# Duplicated from doped (from github.com/SMTG-UCL/doped)
 def prepare_vasp_defect_inputs(defects: dict) -> dict:
     """
-    Generates a dictionary of folders for VASP defect calculations
+    Generates a dictionary of folders for VASP defect calculations.
+    Duplicated from doped (from github.com/SMTG-UCL/doped).
 
     Args:
         defects (dict):

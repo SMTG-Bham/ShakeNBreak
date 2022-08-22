@@ -16,13 +16,14 @@ from shakenbreak import analysis
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Helper functions for formatting plots
 
+# Helper functions for formatting plots
 
 def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
 ) -> None:
+    """Check top-level directory (e.g. `output_path`) and defect folders exist."""
     # Check directories and input
     if not os.path.isdir(output_path):  # if output_path does not exist, raise error
         raise FileNotFoundError(
@@ -37,9 +38,9 @@ def _verify_data_directories_exist(
         )
 
 
-def _parse_distortion_metadata(distortion_metadata, defect, charge):
+def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
     """
-    Parse the number abd type of distorted nearest neighbours for a
+    Parse the number and type of distorted nearest neighbours for a
     given defect from the distortion_metadata dictionary.
     """
     if defect in distortion_metadata["defects"].keys():
@@ -81,7 +82,7 @@ def _format_defect_name(
     include_site_num_in_name: bool,
 ) -> str:
     """
-    Format defect name. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
+    Format defect name for plot titles. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
 
     Args:
         defect_species (:obj:`str`):
@@ -91,7 +92,8 @@ def _format_defect_name(
             $V_{Cd,1}^{0}$)
 
     Returns:
-        str: formatted defect name
+        :obj:`str`:
+            formatted defect name
     """
     if not isinstance(defect_species, str):  # Check inputs
         raise (TypeError(f"`defect_species` {defect_species} must be a string"))
@@ -153,8 +155,9 @@ def _cast_energies_to_floats(
     defect_species: str,
 ) -> dict:
     """
-    If values of the energies_dict are not floats, convert them to floats.
+    If values of the `energies_dict` are not floats, convert them to floats.
     If any problem encountered during conversion, raise ValueError.
+
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
@@ -228,6 +231,7 @@ def _purge_data_dicts(
         (this may be due to relaxation not converged).
     - Any data point from energies_dict if its displacement is not in the disp_dict\
         (this might be due to the lattice matching algorithm failing).
+
     Args:
         disp_dict (dict):
             dictionary with displacements (for each structure relative to
@@ -263,7 +267,8 @@ def _remove_high_energy_points(
 ) -> Tuple[dict, dict]:
     """
     Remove points whose energy is higher than the reference (Unperturbed) by
-    more than max_energy_above_unperturbed.
+    more than `max_energy_above_unperturbed`.
+
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
@@ -307,6 +312,7 @@ def _get_displacement_dict(
     and makes them consistent otherwise.
     If any problems encountered when parsing or calculating structural
     similarity, warning will be raised and `add_colorbar` will be set to False.
+
     Args:
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
@@ -378,6 +384,7 @@ def _format_datapoints_from_other_chargestates(
     """
     Format distortions keys of the energy lowering distortions imported from
     other charge states.
+
     Args:
         energies_dict (dict):
             Dictionary matching distortion to final energy.
@@ -462,7 +469,7 @@ def _save_plot(
     verbose: bool = True,
 ) -> None:
     """
-    Save plot in directory ´distortion_plots´
+    Save plot in directory `distortion_plots`.
 
     Args:
         fig (:obj:`mpl.figure.Figure`):
@@ -471,6 +478,9 @@ def _save_plot(
             Defect name that will be used as file name.
         save_format (:obj:`str`):
             Format to save the plot as, given as string.
+
+    Returns:
+        None
     """
     wd = os.getcwd()
     if not os.path.isdir(wd + "/distortion_plots/"):
@@ -491,10 +501,10 @@ def _format_tick_labels(
 ) -> mpl.axes.Axes:
     """
     Format axis labels of distortion plots and set limits of y axis.
-    For the y-axis (energies), show number with: \
-     1 decimal point if energy range is higher than 0.4 eV,
-     3 decimal points if energy range is smaller than 0.1 eV,
-     2 decimal points otherwise.
+    For the y-axis (energies), show number with:
+    - 1 decimal point if energy range is higher than 0.4 eV,
+    - 3 decimal points if energy range is smaller than 0.1 eV,
+    - 2 decimal points otherwise.
 
     Args:
         ax (obj:`mpl.axes.Axes`):
@@ -537,7 +547,7 @@ def _format_axis(
     neighbour_atom: Optional[str],
 ) -> mpl.axes.Axes:
     """
-    Format and set axis labels of distortion plots, and set axis locators.
+    Format and set axis labels and locators of distortion plots.
 
     Args:
         ax (:obj:`mpl.axes.Axes`):
@@ -583,7 +593,8 @@ def _get_line_colors(number_of_colors: int) -> list:
         number_of_colors (int):
             Number of colors.
 
-    Returns: list
+    Returns:
+        list
     """
     if 11 > number_of_colors > 1:
         # If user didnt specify colors and more than one color needed,
@@ -605,6 +616,7 @@ def _setup_colormap(
 ) -> Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
     """
     Setup colormap to measure structural similarity between structures.
+
     Args:
         disp_dict (:obj: `dict`):
             dictionary mapping distortion key to structural similarity between
@@ -636,7 +648,8 @@ def _format_colorbar(
     vmedium: float,
 ) -> mpl.figure.Figure.colorbar:
     """
-    Format colorbar of plot
+    Format colorbar of plot.
+
     Args:
         fig (:obj:`mpl.figure.Figure`):
             matplotlib.figure.Figure object

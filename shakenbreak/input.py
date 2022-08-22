@@ -70,7 +70,7 @@ def _write_distortion_metadata(
 ) -> None:
     """
     Write metadata to file. If the file already exists, it will be
-    renamed to distortion_metadata_datetime.json and updated with new metadata.
+    renamed to distortion_metadata_<datetime>.json and updated with new metadata.
 
     Args:
         new_metadata (:obj:`dict`):
@@ -81,6 +81,9 @@ def _write_distortion_metadata(
         output_path (:obj:`str`):
              Path to directory in which to write distortion_metadata.json file.
              (Default is current directory = "./")
+
+    Returns:
+        None
     """
     filepath = os.path.join(output_path, filename)
     if os.path.exists(filepath):
@@ -186,6 +189,9 @@ def _create_vasp_input(
             Path to directory in which to write distorted defect structures and
             calculation inputs.
             (Default is current directory = "./")
+
+    Returns:
+        None
     """
     # create folder for defect
     _create_folder(os.path.join(output_path, defect_name))
@@ -209,8 +215,8 @@ def _create_vasp_input(
 
 def _get_bulk_comp(defect_dict) -> Composition:
     """
-    Convenience function to determine the chemical composition of the bulk structure for a
-    given defect. Useful for auto-determing oxidation states.
+    Convenience function to determine the chemical composition of the bulk
+    structure for a given defect. Useful for auto-determing oxidation states.
 
     Args:
         defect_dict (:obj:`dict`):
@@ -282,7 +288,8 @@ def _calc_number_electrons(
             species.
 
     Returns:
-        Extra/missing charge (negative of the number of extra/missing electrons).
+        :obj:`int`:
+            Extra/missing charge (negative of the number of extra/missing electrons).
     """
     oxidation_states["Vac"] = 0  # A vacancy has an oxidation state of zero
 
@@ -338,7 +345,8 @@ def _calc_number_neighbours(num_electrons: int) -> int:
             defect species.
 
     Returns:
-        Number of neighbours to distort (:obj:`int`)
+        :obj:`int`:
+            Number of neighbours to distort
     """
     if abs(num_electrons) > 4:
         num_neighbours = abs(8 - abs(num_electrons))
@@ -409,7 +417,7 @@ def _apply_rattle_bond_distortions(
             `mc_rattle` function.
 
     Returns:
-        (:obj:`dict`):
+        :obj:`dict`:
             Dictionary with distorted defect structure and the distortion
             parameters.
     """
@@ -691,53 +699,53 @@ class Distortions:
     (in `doped` `ChargedDefectsStructures()` format).
 
     Args:
-            defects_dict (:obj:`dict`):
-                Dictionary of defects as generated with `doped`
-                `ChargedDefectsStructures()`
-            oxidation_states (:obj:`dict`):
-                Dictionary of oxidation states for species in your material,
-                used to determine the number of defect neighbours to distort
-                (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
-                states will be guessed based on the bulk composition and most
-                common oxidation states of any extrinsic species.
-            dict_number_electrons_user (:obj:`dict`):
-                Optional argument to set the number of extra/missing charge
-                (negative of electron count change) for the input defects
-                in their neutral state, as a dictionary with format
-                {'defect_name': charge_change} where charge_change is the
-                negative of the number of extra/missing electrons.
-                (Default: None)
-            distortion_increment (:obj:`float`):
-                Bond distortion increment. Distortion factors will range from
-                0 to +/-0.6, in increments of `distortion_increment`.
-                Recommended values: 0.1-0.3
-                (Default: 0.1)
-            bond_distortions (:obj:`list`):
-                List of bond distortions to apply to nearest neighbours,
-                instead of the default set (e.g. [-0.5, 0.5]).
-                (Default: None)
-            local_rattle (:obj:`bool`):
-                Whether to apply random displacements that tail off as we move
-                away from the defect site. Recommended as it is often faster than
-                the full rattle (requires less ionic relaxation steps). If False,
-                all supercell sites are rattled with the same amplitude (full ratlle).
-                (Default: True)
-            stdev (:obj:`float`):
-                Standard deviation (in Angstroms) of the Gaussian distribution
-                from which random atomic displacement distances are drawn during
-                rattling. Recommended values: 0.25, or 0.15 for strongly-bound
-                /ionic materials.
-                (Default: 0.25)
-            distorted_elements (:obj:`dict`):
-                Optional argument to specify the neighbouring elements to
-                distort for each defect, in the form of a dictionary with
-                format {'defect_name': ['element1', 'element2', ...]}
-                (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
-                the defect are chosen.
-                (Default: None)
-            **kwargs:
-                Additional keyword arguments to pass to `hiphive`'s
-                `mc_rattle` function.
+        defects_dict (:obj:`dict`):
+            Dictionary of defects as generated with `doped`
+            `ChargedDefectsStructures()`
+        oxidation_states (:obj:`dict`):
+            Dictionary of oxidation states for species in your material,
+            used to determine the number of defect neighbours to distort
+            (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
+            states will be guessed based on the bulk composition and most
+            common oxidation states of any extrinsic species.
+        dict_number_electrons_user (:obj:`dict`):
+            Optional argument to set the number of extra/missing charge
+            (negative of electron count change) for the input defects
+            in their neutral state, as a dictionary with format
+            {'defect_name': charge_change} where charge_change is the
+            negative of the number of extra/missing electrons.
+            (Default: None)
+        distortion_increment (:obj:`float`):
+            Bond distortion increment. Distortion factors will range from
+            0 to +/-0.6, in increments of `distortion_increment`.
+            Recommended values: 0.1-0.3
+            (Default: 0.1)
+        bond_distortions (:obj:`list`):
+            List of bond distortions to apply to nearest neighbours,
+            instead of the default set (e.g. [-0.5, 0.5]).
+            (Default: None)
+        local_rattle (:obj:`bool`):
+            Whether to apply random displacements that tail off as we move
+            away from the defect site. Recommended as it is often faster than
+            the full rattle (requires less ionic relaxation steps). If False,
+            all supercell sites are rattled with the same amplitude (full ratlle).
+            (Default: True)
+        stdev (:obj:`float`):
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Recommended values: 0.25, or 0.15 for strongly-bound
+            /ionic materials.
+            (Default: 0.25)
+        distorted_elements (:obj:`dict`):
+            Optional argument to specify the neighbouring elements to
+            distort for each defect, in the form of a dictionary with
+            format {'defect_name': ['element1', 'element2', ...]}
+            (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
+            the defect are chosen.
+            (Default: None)
+        **kwargs:
+            Additional keyword arguments to pass to `hiphive`'s
+            `mc_rattle` function.
     """
 
     def __init__(
@@ -753,7 +761,7 @@ class Distortions:
         **kwargs,  # for mc rattle
     ):
         """
-        Setup the distortion parameters
+        Setup the distortion parameters.
 
         Args:
             defects_dict (:obj:`dict`):
@@ -921,6 +929,7 @@ class Distortions:
         """
         Parse or calculate the number of extra/missing electrons
         for a neutral defect, and print this information.
+
         Args:
             defect_name (:obj:`str`):
                 Name of the defect for which to parse the distorted elements.
@@ -939,7 +948,8 @@ class Distortions:
                 `doped` `ChargedDefectsStructures()`.
 
         Returns:
-            Number of extra/missing electrons for the defect.
+            :obj:`int`:
+                Number of extra/missing electrons for the defect.
         """
         # If the user does not specify the electron count change, we calculate it:
         if dict_number_electrons_user:
@@ -967,7 +977,7 @@ class Distortions:
     ) -> int:
         """
         Calculate extra/missing electrons accounting for the charge state of
-        the defect
+        the defect.
         """
         num_electrons_charged_defect = (
             number_electrons + charge
@@ -986,7 +996,7 @@ class Distortions:
         bond_distortions: list,
         stdev: float,
     ) -> None:
-        """Print applied bond distortions and rattle stanard deviation"""
+        """Print applied bond distortions and rattle standard deviation."""
         print(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -1005,7 +1015,7 @@ class Distortions:
     ) -> dict:
         """
         Update distortion_metadata with distortion information for each
-        charged defect
+        charged defect.
         """
         if defect_site_index:
             distortion_metadata["defects"][defect_name][
@@ -1034,7 +1044,7 @@ class Distortions:
         charge: int,
         defect_name: str,
     ) -> str:
-        """Generate comment for structure files"""
+        """Generate comment for structure files."""
         poscar_comment = (
             str(
                 key_distortion.split("_")[-1]
@@ -1068,7 +1078,7 @@ class Distortions:
                 Full dictionary of distorted defects.
 
         Returns:
-            (:obj:`dict`)
+            :obj:`dict`
         """
         distorted_defects_dict[defect_name] = {
             "defect_type": defect["name"],
@@ -1092,7 +1102,8 @@ class Distortions:
     ) -> None:
         """
         Write metadata to file. If the file already exists, it will be
-        renamed to distortion_metadata_datetime.json and updated with new metadata.
+        renamed to distortion_metadata_<datetime>.json and updated with
+        new metadata.
 
         Args:
             output_path (:obj:`str`):
@@ -1557,8 +1568,8 @@ class Distortions:
         verbose: Optional[bool] = False,
     ) -> Tuple[dict, dict]:
         """
-        Generates input `.cell` files for CASTEP relaxations of all output
-        structures.
+        Generates input `.cell` and `.param` files for CASTEP relaxations of
+        all output structures.
 
         Args:
             input_file (:obj:`str`, optional):
@@ -1657,8 +1668,8 @@ class Distortions:
         verbose: Optional[bool] = False,
     ) -> Tuple[dict, dict]:
         """
-        Generates input geometry files for FHI-aims relaxations of all
-        output structures.
+        Generates input geometry and control files for FHI-aims relaxations
+        of all output structures.
 
         Args:
             input_file (:obj:`str`, optional):

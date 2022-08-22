@@ -369,12 +369,12 @@ def read_espresso_structure(
 
 def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, str]:
     """
-    Reads a structure from fhi-aims output and returns it as a pymatgen
+    Reads a structure from FHI-aims output and returns it as a pymatgen
     Structure.
 
     Args:
         filename (:obj:`str`):
-            Path to the fhi-aims output file.
+            Path to the FHI-aims output file.
         format (:obj:`str`):
             either aims-output (output file) aims (geometry file)
 
@@ -404,7 +404,7 @@ def read_cp2k_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from cp2k restart file and returns it as a pymatgen
+    Reads a structure from CP2K restart file and returns it as a pymatgen
     Structure.
 
     Args:
@@ -440,12 +440,12 @@ def read_castep_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from castep output (`.castep`) file and returns it as a
+    Reads a structure from CASTEP output (`.castep`) file and returns it as a
     pymatgen Structure.
 
     Args:
         filename (:obj:`str`):
-            Path to the castep output file.
+            Path to the CASTEP output file.
 
     Returns:
         :obj:`Structure`:

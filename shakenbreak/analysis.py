@@ -27,7 +27,6 @@ crystalNN = CrystalNN(
 )
 
 
-# format warnings output:
 def _warning_on_one_line(
     message,
     category,
@@ -36,6 +35,7 @@ def _warning_on_one_line(
     file=None,
     line=None,
 ):
+    """Format warnings output."""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
@@ -43,7 +43,8 @@ warnings.formatwarning = _warning_on_one_line
 
 
 def _isipython():
-    # using stackoverflow.com/questions/15411967/
+    """Check if code if executed in ipython notebook."""
+    # Using stackoverflow.com/questions/15411967/
     # how-can-i-check-if-code-is-executed-in-the-ipython-notebook
     try:
         get_ipython().__class__.__name__
@@ -57,6 +58,7 @@ if _isipython():
 
 
 class _HiddenPrints:
+    """Block calls to print."""
     # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
     def __enter__(self):
         self._original_stdout = sys.stdout
@@ -135,7 +137,7 @@ def _get_distortion_filename(distortion) -> str:
 
 def _format_distortion_names(
     distortion_label: str,
-):
+) -> str:
     """
     Formats the distortion filename to the names used internally and for
     analysis. (i.e. 'Bond_Distortion_-50.0%' -> -0.5)
@@ -224,7 +226,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     return energy_diff, gs_distortion
 
 
-def _sort_data(energies_file: str, verbose: bool = True):
+def _sort_data(energies_file: str, verbose: bool = True) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
     of ground-state defect structure relative to `Unperturbed` structure
@@ -378,7 +380,7 @@ def analyse_structure(
 ) -> tuple:
     """
     Analyse the local distortion of the input defect structure. Requires
-    access to the distortion_metadata.json file generated with
+    access to the `distortion_metadata.json` file generated with
     ShakeNBreak to read info about defect site. If lacking this,
     can alternatively use `analyse_defect_site()`.
 
@@ -433,7 +435,8 @@ def get_structures(
     store them in a dictionary matching the bond distortion to the final
     structure. By default, will read the structures from the distortion
     subdirectories present in each defect folder. If only certain
-    distortions should be parsed, use `bond_distortions` to specify them.
+    distortions should be parsed, use the argument `bond_distortions`
+    to specify them.
 
     Args:
         defect_species (:obj:`str`):
@@ -637,7 +640,7 @@ def calculate_struct_comparison(
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
     min_dist: float = 0.1,
-) -> Optional[dict]:
+) -> dict:
     """
     Calculate either the summed atomic displacement, with metric = "disp",
     or the maximum distance between matched atoms, with metric = "max_dist",
@@ -675,7 +678,7 @@ def calculate_struct_comparison(
             displacements sum (in Å, default 0.1 Å).
 
     Returns:
-        :obj:`dict`, optional:
+        :obj:`dict`:
             Dictionary matching bond distortions to structure
             comparison metric (disp or max_dist).
     """
@@ -901,7 +904,9 @@ def get_homoionic_bonds(
     verbose: bool = True,
 ) -> dict:
     """
-    Returns a list of homoionic bonds for the given element.
+    Returns a list of homoionic bonds for the given element. These bonds
+    are often formed by the defect neighbouts to accomodate charge
+    deficiency.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
@@ -973,7 +978,7 @@ def _site_magnetizations(
 ) -> pd.DataFrame:
     """
     Prints sites with magnetization above threshold.
-    Only implemented for vasp calculations.
+    Only implemented for VASP calculations.
 
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
