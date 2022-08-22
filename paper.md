@@ -13,12 +13,15 @@ authors:
     affiliation: 1
   - name: Seán R. Kavanagh
     affiliation: 1, 2
+    corresponding: true
     orcid: 0000-0003-4577-9647
   - name: Aron Walsh
     affiliation: 2
+    orcid: 0000-0001-5460-7033
   - name: David O. Scanlon
     corresponding: true
     affiliation: 1
+    orcid: 0000-0001-9174-8601
 affiliations:
  - name: Thomas Young Centre and Department of Chemistry, University College London, 20 Gordon Street, London, WC1H 0AJ, UK
    index: 1
