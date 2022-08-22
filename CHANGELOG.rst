@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v1.0
+------
+
+Release with full code functionality (CLI and Python), pre JOSS submission.
+
 v0.2
 ------
 
