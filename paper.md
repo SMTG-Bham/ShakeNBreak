@@ -1,6 +1,5 @@
 ---
 title: 'ShakeNBreak: Navigating the defect configurational landscape'
-# or 'ShakeNBreak: Shake, Rattle and Break to navigate the defect configurational space'
 tags:
   - point defects
   - structure searching
@@ -70,16 +69,8 @@ and analyse site and orbital-decomposed magnetisations (Figure 1b).
 
 The distortion procedure, underlying rationale and its application to a wide range of semiconductors have recently been described [@Mosquera-Lois:2022]. In addition,
 the package has been employed to identify the defect structures reported in several studies [@Kavanagh:2021; @Kavanagh:2022], with the identified configurations having significant impact on predicted behaviour.
-<!-- previous studies that employed the package to identify low energy defect structures found them -->
-<!-- to significantly impact predicted behaviour [@Kavanagh:2021; @Kavanagh:2022]. -->
 
 ![Example analysis for a cadmium vacancy defect in CdTe: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations for the Unperturbed configuration, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](figures/Figure_joss.png)
-
-<!-- # Author contributions
-
-I.M.L. and S.R.K. wrote the code. S.R.K. designed the structure search strategy.
-All authors decided which features should be available.
-The first draft of the manuscript was written by I.M.L. with input from all co-authours. -->
 
 # Acknowledgements
 
@@ -88,6 +79,8 @@ LCF/BQ/EU20/11810070). S.R.K. acknowledges the EPSRC Centre for Doctoral Trainin
 Characterisation of Materials (CDTACM)(EP/S023259/1) for funding a PhD studentship. DOS acknowledges
 support from the EPSRC (EP/N01572X/1) and from the European Research Council, ERC (Grant No. 758345).
 
-We thank Katarina Brlec, Xinwei Wang and Luisa Herring-Rodriguez for code testing and feature requests.
+ShakeNBreak has benefitted from feature requests from many members of the Walsh and Scanlon research groups,
+including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar,
+Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
 
 # References

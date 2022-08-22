@@ -1,13 +1,12 @@
-"""
-ShakeNBreak command-line-interface (CLI)
-"""
+"""ShakeNBreak command-line-interface (CLI)"""
 import os
-import warnings
 import pickle
 from copy import deepcopy
 import numpy as np
 import click
 import warnings
+from subprocess import call
+import fnmatch
 
 # Monty and pymatgen
 from monty.serialization import loadfn
@@ -261,17 +260,29 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
 def _parse_defect_dirs(path) -> list:
     """Parse defect directories present in the specified path."""
     return [
-        dir for dir in os.listdir(path)
+        dir
+        for dir in os.listdir(path)
         if os.path.isdir(f"{path}/{dir}")
-        and any([
-            dist in os.listdir(f"{path}/{dir}") for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
-        ])  # avoid parsing directories that aren't defects
+        and any(
+            [
+                fnmatch.filter(os.listdir(f"{path}/{dir}"), f"{dist}*")
+                for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
+            ]
+        )  # only parse defect directories that contain distortion folders
     ]
 
 
 def CommandWithConfigFile(
     config_file_param_name,
 ):  # can also set CLI options using config file
+    """
+    Set CLI options using config file.
+
+    Args:
+        config_file_param_name (:obj:`str`):
+            name of config file
+    """
+
     class CustomCommandClass(click.Command):
         def invoke(self, ctx):
             config_file = ctx.params[config_file_param_name]
@@ -289,15 +300,13 @@ def CommandWithConfigFile(
     return CustomCommandClass
 
 
-## CLI Commands:
+# CLI Commands:
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 
 @click.group("snb", context_settings=CONTEXT_SETTINGS, no_args_is_help=True)
 def snb():
-    """
-    ShakeNBreak: Defect structure-searching
-    """
+    """ShakeNBreak: Defect structure-searching"""
 
 
 @snb.command(
@@ -320,13 +329,7 @@ def snb():
     required=True,
     type=click.Path(exists=True, dir_okay=False),
 )
-@click.option(
-    "--charge",
-    "-c",
-    help="Defect charge state",
-    default=None,
-    type=int
-)
+@click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
 @click.option(
     "--min-charge",
     "--min",
@@ -359,10 +362,10 @@ def snb():
 @click.option(
     "--code",
     help="Code to generate relaxation input files for. "
-    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-    "Defaults to 'VASP'",
+    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'.",
     default="VASP",
     type=str,
+    show_default=True,
 )
 @click.option(
     "--name",
@@ -377,7 +380,7 @@ def snb():
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in"
-        "/input_files/example_generate_config.yaml",
+    "/input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
 )
@@ -392,8 +395,7 @@ def snb():
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified defects and generated "
-        "distortions",
+    help="Print information about identified defects and generated " "distortions",
     default=False,
     is_flag=True,
     show_default=True,
@@ -413,7 +415,8 @@ def generate(
     verbose,
 ):
     """
-    Generate the trial distortions and input files for structure-searching for a given defect.
+    Generate the trial distortions and input files for structure-searching
+    for a given defect.
     """
     if config is not None:
         user_settings = loadfn(config)
@@ -423,12 +426,33 @@ def generate(
     func_args = list(locals().keys())
     if user_settings:
         valid_args = [
-            "defect", "bulk", "charge", "min_charge", "max_charge",
-            "defect_index", "defect_coords", "code", "name", "config",
-            "input_file", "verbose", "oxidation_states", "dict_number_electrons_user",
-            "distortion_increment", "bond_distortions", "local_rattle",
-            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
-            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+            "defect",
+            "bulk",
+            "charge",
+            "min_charge",
+            "max_charge",
+            "defect_index",
+            "defect_coords",
+            "code",
+            "name",
+            "config",
+            "input_file",
+            "verbose",
+            "oxidation_states",
+            "dict_number_electrons_user",
+            "distortion_increment",
+            "bond_distortions",
+            "local_rattle",
+            "distorted_elements",
+            "stdev",
+            "d_min",
+            "n_iter",
+            "active_atoms",
+            "nbr_cutoff",
+            "width",
+            "max_attempts",
+            "max_disp",
+            "seed",
         ]
         for key in func_args:
             if key in user_settings:
@@ -504,7 +528,12 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
                 verbose=verbose,
             )
-    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+    elif code.lower() in [
+        "espresso",
+        "quantum_espresso",
+        "quantum-espresso",
+        "quantumespresso",
+    ]:
         print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
@@ -550,18 +579,19 @@ def generate(
     "--defects",
     "-d",
     help="Path root directory with defect folders/files. "
-        "Defaults to current directory ('./')",
+    "Defaults to current directory ('./')",
     type=click.Path(exists=True, dir_okay=True),
-    default="."
+    default=".",
 )
 @click.option(
     "--structure_file",
     "-s",
     help="File termination/name from which to"
     "parse defect structure from. Only required if defects are stored "
-    "in individual directories. Defaults to POSCAR",
+    "in individual directories.",
     type=str,
     default="POSCAR",
+    show_default=True,
 )
 @click.option(
     "--bulk",
@@ -572,16 +602,16 @@ def generate(
 @click.option(
     "--code",
     help="Code to generate relaxation input files for. "
-    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'. "
-    "Defaults to 'VASP'",
+    "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'.",
     type=str,
     default="VASP",
+    show_default=True,
 )
 @click.option(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-        "/input_files/example_generate_all_config.yaml",
+    "/input_files/example_generate_all_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
@@ -599,6 +629,7 @@ def generate(
     help="Print information about identified defects and generated distortions",
     default=False,
     is_flag=True,
+    show_default=True,
 )
 def generate_all(
     defects,
@@ -610,8 +641,8 @@ def generate_all(
     verbose,
 ):
     """
-    Generate the trial distortions and input files for structure-searching for all defects
-    in a given directory.
+    Generate the trial distortions and input files for structure-searching
+    for all defects in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
     defects_dirs = os.listdir(defects)
@@ -633,11 +664,28 @@ def generate_all(
     pseudopotentials = None
     if user_settings:
         valid_args = [
-            "defects", "bulk", "structure_file", "code", "config", "input_file",
-            "verbose", "oxidation_states", "dict_number_electrons_user",
-            "distortion_increment", "bond_distortions", "local_rattle",
-            "distorted_elements", "stdev", "d_min", "n_iter", "active_atoms",
-            "nbr_cutoff", "width", "max_attempts", "max_disp", "seed"
+            "defects",
+            "bulk",
+            "structure_file",
+            "code",
+            "config",
+            "input_file",
+            "verbose",
+            "oxidation_states",
+            "dict_number_electrons_user",
+            "distortion_increment",
+            "bond_distortions",
+            "local_rattle",
+            "distorted_elements",
+            "stdev",
+            "d_min",
+            "n_iter",
+            "active_atoms",
+            "nbr_cutoff",
+            "width",
+            "max_attempts",
+            "max_disp",
+            "seed",
         ]
         for key in func_args:
             if key in user_settings:
@@ -675,7 +723,10 @@ def generate_all(
                     f"Will parse defect name from folders/files."
                 )
         if (not defect_name) and any(
-            [substring in defect.lower() for substring in ("as", "vac", "int", "sub", "v", "i")]
+            [
+                substring in defect.lower()
+                for substring in ("as", "vac", "int", "sub", "v", "i")
+            ]
         ):
             # if user didnt specify defect names in config file,
             # check if defect filename correspond to standard defect abbreviations
@@ -720,7 +771,7 @@ def generate_all(
             try:  # try to parse structure from it
                 defect_struc = Structure.from_file(f"{defects}/{defect}")
                 defect_name = parse_defect_name(defect, defect_settings)
-            except:
+            except Exception:
                 continue
 
         elif os.path.isdir(f"{defects}/{defect}"):
@@ -753,7 +804,7 @@ def generate_all(
             defect_structure=defect_struc,
             bulk_structure=bulk_struc,
             defect_index=defect_index,
-            defect_coords=defect_coords
+            defect_coords=defect_coords,
         )
         if verbose:
             click.echo(
@@ -799,7 +850,12 @@ def generate_all(
             distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
                 verbose=verbose,
             )
-    elif code.lower() in ["espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"]:
+    elif code.lower() in [
+        "espresso",
+        "quantum_espresso",
+        "quantum-espresso",
+        "quantumespresso",
+    ]:
         print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
@@ -840,6 +896,77 @@ def generate_all(
 
 
 @snb.command(
+    name="run",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=False,  # here we often would run with no options/arguments set
+)
+@click.option(
+    "--submit-command",
+    "-s",
+    help="Job submission command for the HPC scheduler (qsub, sbatch etc).",
+    type=str,
+    default="qsub",
+    show_default=True,
+)
+@click.option(
+    "--job-script",
+    "-j",
+    help="Filename of the job script file to submit to HPC scheduler.",
+    type=str,
+    default="job",
+    show_default=True,
+)
+@click.option(
+    "--job-name-option",
+    "-n",
+    help="Flag for specifying the job name option for the HPC scheduler (e.g. '-N' for 'qsub -N "
+    "JOBNAME job' (default)).",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--all",
+    "-a",
+    help="Loop through all defect folders (then through their distortion subfolders) in the "
+    "current directory",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about calculations which have fully converged",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+def run(submit_command, job_script, job_name_option, all, verbose):
+    """
+    Loop through distortion subfolders for a defect (or for all defect folders in the current
+    directory, if the --all (-a) flag is set) and submit calculations to the HPC scheduler.
+    """
+    optional_flags = "-"
+    if all:
+        optional_flags += "a"
+    if verbose:
+        optional_flags += "v"
+    if optional_flags == "-":
+        optional_flags = ""
+
+    if submit_command == "sbatch" and job_name_option is None:
+        job_name_option = "-J"
+    elif job_name_option is None:
+        job_name_option = "-N"
+
+    call(
+        f"{os.path.dirname(__file__)}/bash_scripts/SnB_run.sh {optional_flags} {submit_command}"
+        f" {job_script} {job_name_option}",
+        shell=True,
+    )
+
+
+@snb.command(
     name="parse",
     context_settings=CONTEXT_SETTINGS,
     no_args_is_help=False,  # to allow convenient parsing
@@ -847,7 +974,7 @@ def generate_all(
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (including charge state) to parse energies for",
+    help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0')",
     type=str,
     default=None,
 )
@@ -862,19 +989,19 @@ def generate_all(
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
-        "Defaults to current directory ('./').",
+    help="Path to the top-level directory containing the defect folder. "
+    "Defaults to current directory ('./').",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
 @click.option(
     "--code",
     "-c",
-    help ="Code to generate relaxation input files for. "
-          "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-          "Defaults to 'vasp'",
+    help="Code used to run the geometry optimisations. "
+    "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 def parse(defect, all, path, code):
     """
@@ -892,13 +1019,13 @@ def parse(defect, all, path, code):
             if path == "." or path == "./":
                 path = os.getcwd()
             if path.endswith("/"):
-                defect =  path.split("/")[-2]
+                defect = path.split("/")[-2]
                 path = path.rsplit("/", 2)[0]
             else:
                 defect = path.split("/")[-1]
                 path = path.rsplit("/", 1)[0]
             io.parse_energies(defect, path, code)
-        except:
+        except Exception:
             warnings.warn(
                 "Could not parse energies! Please specify a defect to parse "
                 "(with option --defect) or use the --all flag to parse all defects"
@@ -914,7 +1041,7 @@ def parse(defect, all, path, code):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect to analyse",
+    help="Name of defect (including charge state) to analyse (e.g. 'vac_1_Cd_0')",
     type=str,
     default=None,
 )
@@ -929,33 +1056,34 @@ def parse(defect, all, path, code):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
-        "Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folder(s). "
+    "Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
 @click.option(
     "--code",
     "-c",
-    help ="Code used to run the geometry optimisations. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+    help="Code used to run the geometry optimisations. "
+    "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--ref_struct",
     "-ref",
-    help ="Structure to use as a reference for comparison"
-        "(to compute atomic displacements). Given as a key from"
-        "`defect_structures_dict`. Defaults to 'Unperturbed'",
+    help="Structure to use as a reference for comparison "
+    "(to compute atomic displacements). Given as a key from"
+    "`defect_structures_dict`.",
     type=str,
     default="Unperturbed",
+    show_default=True,
 )
 @click.option(
     "--verbose",
     "-v",
-    help ="Print information about identified energy lowering distortions.",
+    help="Print information about identified energy lowering distortions.",
     default=False,
     is_flag=True,
     show_default=True,
@@ -965,21 +1093,16 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     Generate `csv` file mapping each distortion to its final energy (in eV) and its
     mean displacement (in angstrom and relative to `ref_struct`).
     """
+
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
         if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
-            raise FileNotFoundError(
-                f"Could not find {defect} in the directory {path}."
-            )
+            raise FileNotFoundError(f"Could not find {defect} in the directory {path}.")
         io.parse_energies(defect, path, code)
         defect_energies_dict = analysis.get_energies(
-            defect_species=defect,
-            output_path=path,
-            verbose=verbose
+            defect_species=defect, output_path=path, verbose=verbose
         )
         defect_structures_dict = analysis.get_structures(
-            defect_species=defect,
-            output_path=path,
-            code=code
+            defect_species=defect, output_path=path, code=code
         )
         dataframe = analysis.compare_structures(
             defect_structures_dict=defect_structures_dict,
@@ -1018,7 +1141,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (inncluding charge state) to analyse",
+    help="Name of defect (including charge state) to analyse",
     type=str,
     default=None,
 )
@@ -1034,24 +1157,24 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder."
-         "Defaults to current directory.",
+    "Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
-    default="."
+    default=".",
 )
 @click.option(
     "--code",
     "-c",
-    help ="Code used to run the geometry optimisations. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+    help="Code used to run the geometry optimisations. "
+    "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--colorbar",
     "-cb",
-    help ="Whether to add a colorbar indicating structural"
-        " similarity between each structure and the unperturbed one.",
+    help="Whether to add a colorbar indicating structural"
+    " similarity between each structure and the unperturbed one.",
     type=bool,
     default=False,
     is_flag=True,
@@ -1060,39 +1183,43 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help ="If the option `--colorbar` is specified, determines the criteria used for the"
-        " structural comparison. Can choose between the summed of atomic"
-        " displacements ('disp') or the maximum distance between"
-        " matched sites ('max_dist', default).",
+    help="If the option `--colorbar` is specified, determines the criteria used"
+    " for the structural comparison. Can choose between the summed of atomic"
+    " displacements ('disp') or the maximum distance between"
+    " matched sites ('max_dist', default).",
     type=str,
     default="max_dist",
+    show_default=True,
 )
 @click.option(
     "--format",
     "-f",
-    help ="Format to save the plot as. Defaults to `svg`.",
+    help="Format to save the plot as.",
     type=str,
     default="svg",
+    show_default=True,
 )
 @click.option(
     "--units",
     "-u",
-    help ="Units for energy, either 'eV' or 'meV' (Default: 'eV')",
+    help="Units for energy, either 'eV' or 'meV'.",
     type=str,
     default="eV",
+    show_default=True,
 )
 @click.option(
     "--max_energy",
     "-max",
-    help ="Maximum energy (in eV), relative to the unperturbed structure,"
-          " to show on the plot. Defaults to 0.5 eV)",
+    help="Maximum energy (in eV), relative to the unperturbed structure,"
+    " to show on the plot.",
     type=float,
     default=0.5,
+    show_default=True,
 )
 @click.option(
     "--title",
     "-t",
-    help ="Whether to add defect name as plot title. Defaults to `True`.",
+    help="Whether to add defect name as plot title.",
     type=bool,
     default=True,
     is_flag=True,
@@ -1101,12 +1228,14 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--verbose",
     "-v",
-    help ="Print information about identified energy lowering distortions.",
+    help="Print information about identified energy lowering distortions.",
     default=False,
     is_flag=True,
     show_default=True,
 )
-def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose):
+def plot(
+    defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose
+):
     """
     Generate energy vs distortion plots. Optionally, the structural
     similarity between configurations can be illustrated with a colorbar.
@@ -1169,49 +1298,51 @@ def plot(defect, all, path, code, colorbar, metric, format, units, max_energy, t
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folders."
-        " Defaults to current directory.",
+    " Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
 @click.option(
     "--code",
     "-c",
-    help ="Code to generate relaxation input files for. "
-        "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'. "
-        "Defaults to 'vasp'",
+    help="Code to generate relaxation input files for. "
+    "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
     default="vasp",
+    show_default=True,
 )
 @click.option(
     "--filename",
     "-f",
-    help ="Name of the file containing the defect structures. "
-    "Defaults to 'CONTCAR'",
+    help="Name of the file containing the defect structures.",
     type=str,
     default="CONTCAR",
+    show_default=True,
 )
 @click.option(
     "--min",
-    help ="Minimum energy difference (in eV) between the ground-state"
-        " defect structure, relative to the `Unperturbed` structure,"
-        " to consider it as having found a new energy-lowering"
-        " distortion. Default is 0.05 eV.",
+    help="Minimum energy difference (in eV) between the ground-state"
+    " defect structure, relative to the `Unperturbed` structure,"
+    " to consider it as having found a new energy-lowering"
+    " distortion.",
     type=float,
     default=0.05,
+    show_default=True,
 )
 @click.option(
     "--metastable",
     "-meta",
-    help ="Whether to also consider non-spontaneous metastable "
-        "energy-lowering distortions, as these can become ground-state "
-        "distortions for other charge states.",
+    help="Whether to also consider non-spontaneous metastable "
+    "energy-lowering distortions, as these can become ground-state "
+    "distortions for other charge states.",
     type=bool,
     default=False,
+    show_default=True,
 )
 @click.option(
     "--verbose",
     "-v",
-    help ="Print information about identified energy lowering distortions.",
+    help="Print information about identified energy lowering distortions.",
     default=False,
     is_flag=True,
     show_default=True,
@@ -1233,5 +1364,74 @@ def regenerate(path, code, filename, min, metastable, verbose):
         write_input_files=True,
         min_e_diff=min,
         metastable=metastable,
+        verbose=verbose,
+    )
+
+
+@snb.command(
+    name="groundstate",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=False,
+)
+@click.option(
+    "--directory",
+    "-d",
+    help="Folder name where the ground state structure will be written to.",
+    type=str,
+    default="Groundstate",
+    show_default=True,
+)
+@click.option(
+    "--groundstate_filename",
+    "-gsf",
+    help="File name to save the ground state structure as.",
+    type=str,
+    default="POSCAR",
+    show_default=True,
+)
+@click.option(
+    "--structure_filename",
+    "-sf",
+    help="File name of the output structures/files.",
+    type=str,
+    default="CONTCAR",
+    show_default=True,
+)
+@click.option(
+    "--path",
+    "-p",
+    help="Path to the top-level directory containing the defect folders."
+    " Defaults to current directory.",
+    type=click.Path(exists=True, dir_okay=True),
+    default=".",
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about gorund state structures and generated folders.",
+    default=True,
+    is_flag=True,
+    show_default=True,
+)
+def groundstate(
+    directory,
+    groundstate_filename,
+    structure_filename,
+    path,
+    verbose,
+):
+    """
+    Generate folders with the identified ground state structures. For each defect
+    present in the specified path, a folder (named `directory`) is created with
+    the ground state structure (named `groundstate_filename`). If the name
+    of the structure/output files is not specified, the code assumes `CONTCAR`
+    (e.g. geometry optimisations performed with VASP). If using a different code,
+    please specify the name of the structure/output files.
+    """
+    energy_lowering_distortions.write_groundstate_structure(
+        output_path=path,
+        groundstate_folder=directory,
+        groundstate_filename=groundstate_filename,
+        structure_filename=structure_filename,
         verbose=verbose,
     )

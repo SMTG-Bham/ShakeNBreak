@@ -36,10 +36,16 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx_mdinclude',
     'sphinx_click',
+    #"myst_nb", # for jupyter notebooks
     #'myst_parser',
+    #'sphinx_mdinclude',
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -55,11 +61,12 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'sphinx_book_theme' # 'sphinx_rtd_theme'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 html_logo = "toc.png"
+html_title = "ShakeNBreak"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -72,6 +79,16 @@ html_use_smartypants = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
 # html_show_sphinx = True
+
+html_theme_options = {
+    "repository_url": "https://github.com/SMTG-UCL/ShakeNBreak",
+    "repository_branch": "develop",
+    "path_to_docs": "docs",
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_edit_page_button": True, # add button to suggest edits
+    "home_page_in_toc": True,
+}
 
 # Adding “Edit Source” links on your Sphinx theme
 html_context = {

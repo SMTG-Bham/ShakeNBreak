@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Mosquera-Lois"
+  given-names: "Irea"
+  orcid: "https://orcid.org/0000-0001-7651-0814"
+- family-names: "Kavanagh"
+  given-names: "Seán R."
+  orcid: "https://orcid.org/0000-0003-4577-9647"
+- family-names: "Walsh"
+  given-names: "Aron"
+  orcid: "https://orcid.org/0000-0001-5460-7033"
+- family-names: "Scanlon"
+  given-names: "David O."
+  orcid: "https://orcid.org/0000-0001-9174-8601"
+title: "ShakeNBreak"
+version: 0.2.4
+doi: 10.48550/arXiv.2207.09862
+date-released: 2022-09-01
+url: "https://github.com/SMTG-UCL/ShakeNBreak"  # update this to JOSS when published
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Mosquera-Lois"
+    given-names: "Irea"
+    orcid: "https://orcid.org/0000-0001-7651-0814"
+  - family-names: "Kavanagh"
+    given-names: "Seán R."
+    orcid: "https://orcid.org/0000-0003-4577-9647"
+  - family-names: "Walsh"
+    given-names: "Aron"
+    orcid: "https://orcid.org/0000-0001-5460-7033"
+  - family-names: "Scanlon"
+    given-names: "David O."
+    orcid: "https://orcid.org/0000-0001-9174-8601"
+  doi: "10.48550/arXiv.2207.09862"  # update this when published
+  journal: "arXiv"
+  month: 8
+  #start: 1 # First page number
+  #end: 10 # Last page number
+  title: "Identifying the ground state structures of point defects in solids"
+  #issue: 1
+  #volume: 1
+  year: 2022

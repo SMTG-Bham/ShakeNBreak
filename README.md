@@ -1,14 +1,20 @@
-# `shakenbreak`
-`ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
+[![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
+[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://readthedocs.org/projects/shakenbreak)
+[![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
+[![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
+<!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
+
+# `ShakeNBreak` (`SnB`)
+<img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
 
 Main features include:
 1. Defect structure generation:
-   * Automatised generation of distorted structures for all input defects
-   * Optionally, the input files to run geometry optimisations with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`) can be generated and organised into separate folders
+   * Automatic generation of distorted structures for input defects
+   * Optionally, input file generation for geometry optimisation with several codes (`VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`)
 2. Analysis:
-   * Parsing of the geometry relaxation results
+   * Parsing of geometry relaxation results
    * Plotting of final energies versus distortion to demonstrate what energy-lowering reconstructions have been identified
-   * Coordination & bonding analysis to investigate the physico-chemical factors driving a distortion
+   * Coordination & bonding analysis to investigate the physico-chemical factors driving an energy-lowering distortion
    * Magnetisation analysis (currently only supported for `VASP`)
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
@@ -18,8 +24,16 @@ ShakeNBreak can be installed using `pip`:
 ```bash
   pip install --user shakenbreak
 ```
+
+If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:
+```bash
+  PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
+```
+   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). More details given [here](https://pymatgen.org/installation.html#potcar-setup).
+
 ### Developer installation
 For development work, ShakeNBreak can also be installed from a copy of the source directory:
+
 1. Download `ShakeNBreak` source code using the command:
 ```bash
   git clone https://github.com/SMTG-UCL/ShakeNBreak
@@ -34,25 +48,48 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 ```
    This command tries to obtain the required packages and their dependencies and install them automatically.
 
-4. If using `VASP` (and not set), set the `VASP` pseudopotential directory in `$HOME/.pmgrc.yaml` as follows:
-```bash
-  PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
-```
-   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s).
 
 ## Usage
 
 ### Python API
-ShakeNBreak can be used through a python API, as exemplified in the jupyter notebook `tutorials/ShakeNBreak_Example_Workflow.ipynb`. This tutorial can also be run interactively using [Binder](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?urlpath=https%3A%2F%2Fgithub.com%2FSMTG-UCL%2FShakeNBreak%2Fblob%2Fdevelop%2Ftutorials%2FShakeNBreak_Example_Workflow.ipynb).
+`ShakeNBreak` can be used through a Python API, as exemplified in the [Jupyter notebook](https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb), which can be run interactively by clicking here: [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)
+More info is given on the [docs](https://readthedocs.org/projects/shakenbreak) site.
 
 ### Command line interface
-Alternatively, the code can be used via the command line. The scripts provided include:
-* `snb-generate`: Generate distorted structures for a given defect
-* `snb-generate_all`: Generate distorted structures for all defects present int the specified/current directory
-* `snb-parse`: Parse the results of the geometry relaxations and write them to a `yaml` file
-* `snb-analyse`: Generate `csv` files with energies and structural differences between the final configurations
-* `snb-plot`: Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
-* `snb-regenerate`: Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+Alternatively, the code can be used via the command line. The functions provided include:
+* [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
+* [`snb-generate_all`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all): Generate distorted structures for all defects present in the specified/current directory
+* [`snb-run`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-run): Submit geometry relaxations to the HPC scheduler
+* [`snb-parse`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-parse): Parse the results of the geometry relaxations and write them to a `yaml` file
+* [`snb-analyse`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-analyse): Generate `csv` files with energies and structural differences between the final configurations
+* [`snb-plot`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot): Generate plots of energy vs distortion, with the option to include a colorbar to quantify structural differences
+* [`snb-regenerate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate): Identify defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+* [`snb-groundstate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate): Save the ground state structures to a ``Groundstate`` directory for continuation runs
+
+More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
+
+We recommend at least looking through the [tutotials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+
+## Contributing
+
+### Bugs reports, feature requests and questions
+Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
+Contributions to extend this package are welcome! Please use the
+["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects)
+workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
+The easiest way to handle this is to run the following in the **correct sequence** on your local machine.
+First run [black](https://black.readthedocs.io/en/stable/index.html), as this will automatically reformat
+the code to PEP8 conventions. Then run [pycodestyle](https://pycodestyle.pycqa.org/en/latest/),
+followed by [flake8](https://flake8.pycqa.org/en/latest/) (see the
+[Documentation](https://shakenbreak.readthedocs.io/en/latest/Contributing.html) for detailed instructions).
+
+### Tests
+Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
+Automatic testing is run on the master and develop branches using Github Actions. Please run tests and add new tests for any new features whenever submitting pull requests.
+
+## Acknowledgements
+`ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
+Code to identify defect species from input supercell structures was written based on the implementation in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
 
 ## License
 ShakeNBreak is made available under the MIT License.
@@ -68,13 +105,3 @@ ShakeNBreak is made available under the MIT License.
 * [Seaborn](https://seaborn.pydata.org/)
 * [Monty](https://pythonhosted.org/monty/index.html)
 * [Click](https://click.palletsprojects.com/en/8.1.x/)
-
-## Contributing
-
-### Bugs reports, feature requests and questions
-Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
-Contributions to extend this package are welcome! Please use the ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
-
-### Tests
-Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
-Automatic testing is run on the master and develop branches using Github Actions.

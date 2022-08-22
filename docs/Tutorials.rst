@@ -1,27 +1,39 @@
+.. _tutotials:
+
 Tutorials
 ===========================================================
 
 Python API
 ----------
-Usage of ShakeNBreak from a python API is exemplified in the `tutorials section <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_.
+Usage of ShakeNBreak from a Python API is exemplified in a
+`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_,
+which can be run interactively by clicking here: |binder|
+
+.. |binder| image:: https://mybinder.org/badge_logo.svg
+ :target: https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials
+
 
 Command line interface (CLI)
 ----------------------------
 Additionally, the core functionality of the code can be accessed through the command line, with the following commands:
 
 1. Generation of distorted structures and/or their relaxation input files:
-    * for a specific defect: ``snb-generate``
-    * for all defects present in a directory: ``snb-generate_all``
-2. Parsing of the geometry optimisation results:
-    ``snb-parse``
-3. Analysis of the energies and structural differences between the relaxed configurations:
-    ``snb-analyse``
-4. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
-    ``snb-plot``
-5. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
-    ``snb-regenerate``
+    * for a specific defect: `snb-generate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate>`_
+    * for all defects present in a directory: `snb-generate_all <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all>`_
+2. Submitting the geometry optimisations to the HPC scheduler:
+    `snb-run <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-run>`_
+3. Parsing of the geometry optimisation results:
+    `snb-parse <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-parse>`_
+4. Analysis of the energies and structural differences between the relaxed configurations:
+    `snb-analyse <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-analyse>`_
+5. Plotting of energy vs distortions to identify what energy lowering reconstructions have been found:
+    `snb-plot <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_
+6. Identification of defect species undergoing energy-lowering distortions and test these distortions for the other charge states of the defect
+    `snb-regenerate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate>`_
+7. Saving the ground state structures
+    `snb-groundstate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
 
-All commands are documented in the `Python API section <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
+All commands are documented in the :ref:`Python API section <cli_commands>`,
 and their use is exemplified in the following pages:
 
 .. toctree::
@@ -32,10 +44,10 @@ and their use is exemplified in the following pages:
 
 Getting help
 ~~~~~~~~~~~~~~~~~~~~~~
-Beyond the `documentation <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html>`_,
-we can get a full list of accepted flags and their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
+Beyond the :ref:`documentation <cli_commands>`, we can get a full list of accepted flags and
+their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
 
-.. code-block::
+.. code-block:: bash
 
     $ snb-generate --help
 

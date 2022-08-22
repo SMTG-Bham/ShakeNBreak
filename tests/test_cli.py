@@ -1,4 +1,3 @@
-from os.path import exists
 import unittest
 import os
 import datetime
@@ -9,18 +8,19 @@ import warnings
 from monty.serialization import loadfn
 import numpy as np
 import filecmp
+import subprocess
 
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar, Incar
 
 # Click
-from click import exceptions
 from click.testing import CliRunner
 
 from shakenbreak.cli import snb
 
 file_path = os.path.dirname(__file__)
+
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -38,6 +38,7 @@ class CLITestCase(unittest.TestCase):
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
         self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR,
@@ -60,6 +61,7 @@ class CLITestCase(unittest.TestCase):
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
     def tearDown(self):
+        os.chdir(os.path.dirname(__file__))
         for i in [
             "parsed_defects_dict.pickle",
             "distortion_metadata.json",
@@ -70,7 +72,13 @@ class CLITestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
-            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
+            elif (
+                "Vac_Cd" in i
+                or "Int_Cd" in i
+                or "Wally_McDoodle" in i
+                or "pesky_defects" in i
+                or "vac_1_Cd_0" in i
+            ):
                 shutil.rmtree(i)
         if os.path.exists(f"{os.getcwd()}/distortion_plots"):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
@@ -79,7 +87,8 @@ class CLITestCase(unittest.TestCase):
             if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 [
                     shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
-                    for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}") if "_from_" in dir
+                    for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+                    if "_from_" in dir
                 ]
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -439,7 +448,7 @@ class CLITestCase(unittest.TestCase):
                         "unique_site": [
                             0.0,
                             0.0,
-                            0.0
+                            0.0,
                         ],  # matching final site not slightly-off
                         # user input
                         "charges": {
@@ -775,10 +784,16 @@ local_rattle: False
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
         self.assertNotIn("Defect vac_1_Cd in charge state: +1", result.output)
-        #test parsed defects pickle
+        # test parsed defects pickle
         with open("./parsed_defects_dict.pickle", "rb") as fp:
             parsed_defects_dict = pickle.load(fp)
-        for key in ["name", "defect_type", "site_multiplicity", "site_specie", "unique_site"]:
+        for key in [
+            "name",
+            "defect_type",
+            "site_multiplicity",
+            "site_specie",
+            "unique_site",
+        ]:
             self.assertEqual(
                 parsed_defects_dict["vacancies"][0][key],
                 self.cdte_defect_dict["vacancies"][0][key],
@@ -924,7 +939,7 @@ nonsense_key: nonsense_value"""
         # check POSCAR
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
-            self.V_Cd_0pt3_local_rattled
+            self.V_Cd_0pt3_local_rattled,
         )
         if_present_rm(defects_dir)
         for charge in range(-2, 3):
@@ -1049,7 +1064,7 @@ nonsense_key: nonsense_value"""
         self.assertEqual(
             f"No charge (range) set for defect {defect_name} in config file,"
             " assuming default range of +/-2",
-            str(w[1].message)
+            str(w[1].message),
         )
         # Only neutral charge state
         self.assertIn(
@@ -1108,8 +1123,97 @@ nonsense_key: nonsense_value"""
             str(result.exception),
         )
         # The input_file option is tested in local test, as INCAR
-        # not written in Github Action
-        self.tearDown()
+        # not written in Github Actions
+
+    def test_run(self):
+        """Test snb-run function"""
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        proc = subprocess.Popen(
+            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out = str(proc.communicate()[0])
+        self.assertIn(
+            "Job file 'job' not in current directory, so will only submit jobs in folders with "
+            "'job' present",
+            out,
+        )
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        # but no OUTCAR so shouldn't print message
+
+        # test job submit command
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
+            "'job_file' present",
+            out,
+        )
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
+
+        if_present_rm("job_file")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test save_vasp_files:
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(
+            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out = str(proc.communicate()[0])
+        self.assertIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 2)
+        self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
+        os.remove("Bond_Distortion_10.0%/OUTCAR")
+        os.remove("Bond_Distortion_10.0%/POSCAR")
+
+        # test "--all" option
+        os.chdir("..")
+        shutil.copytree("vac_1_Ti_0", "vac_1_Ti_1")
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out = str(proc.communicate()[0])
+        self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
+        self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
+        shutil.rmtree("vac_1_Ti_1")
+
+        os.chdir("..")
+        proc = subprocess.Popen(
+            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out = str(proc.communicate()[0])
+        self.assertIn("No distortion folders found in current directory", out)
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        out = str(proc.communicate()[0])
+        print(out)
+        self.assertIn(
+            "No defect folders (with names ending in a number (charge state)) found in "
+            "current directory",
+            out,
+        )
 
     def test_parse(self):
         """Test parse() function.
@@ -1134,11 +1238,13 @@ nonsense_key: nonsense_value"""
         )
         self.assertIn(
             f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml to ",
-            result.output
+            result.output,
         )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         test_energies = {
-            "distortions": {-0.4: -1176.28458753,},
+            "distortions": {
+                -0.4: -1176.28458753,
+            },
             "Unperturbed": -1173.02056574,
         }  # Using dictionary here (rather than file/string), because parsing order
         # is difference on github actions
@@ -1179,8 +1285,14 @@ nonsense_key: nonsense_value"""
         # Test --all option
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
         defect_name = "vac_1_Ti_-1"
-        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
-        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0")
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}",
+        )
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0",
+        )
         result = runner.invoke(
             snb,
             [
@@ -1191,12 +1303,22 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"))
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"
+            )
+        )
 
         # Test parsing from inside the defect folder
         defect_name = "vac_1_Ti_-1"
-        os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml")
+        os.remove(
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+        )
         os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
         result = runner.invoke(
             snb,
@@ -1205,7 +1327,11 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"))
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+            )
+        )
         os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
@@ -1229,11 +1355,15 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
-        ))
+        self.assertTrue(
+            os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
+        )
+        self.assertTrue(
+            filecmp.cmp(
+                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+            )
+        )
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # CASTEP
@@ -1251,11 +1381,15 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
-        ))
+        self.assertTrue(
+            os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
+        )
+        self.assertTrue(
+            filecmp.cmp(
+                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+            )
+        )
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # Espresso
@@ -1273,11 +1407,15 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
-        ))
+        self.assertTrue(
+            os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
+        )
+        self.assertTrue(
+            filecmp.cmp(
+                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+            )
+        )
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # FHI-aims
@@ -1295,11 +1433,15 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        self.assertTrue(filecmp.cmp(
-            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"
-        ))
+        self.assertTrue(
+            os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
+        )
+        self.assertTrue(
+            filecmp.cmp(
+                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+            )
+        )
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
     def test_analyse(self):
@@ -1319,19 +1461,18 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertIn(
-            f"Comparing structures to Unperturbed...",
-            result.output
-        )
+        self.assertIn(f"Comparing structures to Unperturbed...", result.output)
         self.assertIn(
             f"Saved results to {self.EXAMPLE_RESULTS}/{defect}/{defect}.csv",
-            result.output
+            result.output,
         )
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.csv") as f:
             file = f.read()
-        csv_content = ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n" \
-            +"0,-0.4,5.315,0.88,-3.26\n" \
-            +"1,Unperturbed,0.0,0.0,0.0\n"
+        csv_content = (
+            ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
+            + "0,-0.4,5.315,0.88,-3.26\n"
+            + "1,Unperturbed,0.0,0.0,0.0\n"
+        )
 
         self.assertEqual(csv_content, file)
         [
@@ -1343,8 +1484,14 @@ nonsense_key: nonsense_value"""
         # Test --all flag
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
         defect_name = "vac_1_Ti_-1"
-        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
-        shutil.copytree(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0", f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0")
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}",
+        )
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0",
+        )
         result = runner.invoke(
             snb,
             [
@@ -1355,11 +1502,19 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.csv"))
-        self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.csv"))
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.csv"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.csv"
+            )
+        )
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         # Test non-existent defect
-        name =  "vac_1_Ti_-2"
+        name = "vac_1_Ti_-2"
         result = runner.invoke(
             snb,
             [
@@ -1374,7 +1529,7 @@ nonsense_key: nonsense_value"""
         self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
             f"Could not find {name} in the directory {self.EXAMPLE_RESULTS}.",
-            str(result.exception)
+            str(result.exception),
         )
 
     def test_plot(self):
@@ -1382,7 +1537,9 @@ nonsense_key: nonsense_value"""
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
-        wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
+        wd = (
+            os.getcwd()
+        )  # plots saved to distortion_plots directory in current directory
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
@@ -1402,19 +1559,16 @@ nonsense_key: nonsense_value"""
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t", # No title
+                    "-t",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,
             )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, and unperturbed: -3.26 eV.",
-            result.output
+            result.output,
         )  # verbose output
-        self.assertIn(
-            f"Plot saved to {wd}/distortion_plots/",
-            result.output
-        )
+        self.assertIn(f"Plot saved to {wd}/distortion_plots/", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
@@ -1426,7 +1580,8 @@ nonsense_key: nonsense_value"""
         self.tearDown()
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
-            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
+            if "yaml" in file
         ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
@@ -1438,11 +1593,13 @@ nonsense_key: nonsense_value"""
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
-                            "distorted_atoms": [[33, "Te"], [42, "Te"]]
+                            "distorted_atoms": [[33, "Te"], [42, "Te"]],
                         },
                         "-1": {
                             "num_nearest_neighbours": 1,
-                            "distorted_atoms": [[33, "Te"],]
+                            "distorted_atoms": [
+                                [33, "Te"],
+                            ],
                         },
                     }
                 },
@@ -1450,7 +1607,7 @@ nonsense_key: nonsense_value"""
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 3,
-                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]]
+                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]],
                         },
                     }
                 },
@@ -1478,12 +1635,14 @@ nonsense_key: nonsense_value"""
             [
                 self.assertNotEqual(
                     f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
-                    str(warning.message)
-                ) for warning in w
-            ] # distortion_metadata file is present
+                    str(warning.message),
+                )
+                for warning in w
+            ]  # distortion_metadata file is present
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
-            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
+            if "yaml" in file
         ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Figures are compared in the local test.
@@ -1507,11 +1666,13 @@ nonsense_key: nonsense_value"""
         if w:
             self.assertTrue(any([war.category == UserWarning for war in w]))
             self.assertTrue(
-                any([
-                    f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"
-                    == str(war.message)
-                    for war in w
-                ])
+                any(
+                    [
+                        f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"
+                        == str(war.message)
+                        for war in w
+                    ]
+                )
             )
         # self.assertIn(
         #     f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
@@ -1525,7 +1686,7 @@ nonsense_key: nonsense_value"""
         )
         self.assertIn(
             "Comparing and pruning defect structures across charge states...",
-            result.output
+            result.output,
         )
         self.assertIn(
             f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
@@ -1551,13 +1712,86 @@ nonsense_key: nonsense_value"""
         # Remove generated files
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
-            if os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)):
-                shutil.rmtree(os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder))
+            if os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+            ):
+                shutil.rmtree(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                )
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
-            if os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)):
-                shutil.rmtree(os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder))
+            if os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+            ):
+                shutil.rmtree(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                )
         self.tearDown()
+
+    def test_groundstate(self):
+        """Test groundstate() function"""
+        # Test default behaviour
+        defect = "vac_1_Cd_0"
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Groundstate/POSCAR",
+            result.output,
+        )
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # Test keywords: groundstate_filename and directory
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "-d",
+                "My_Groundstate",
+                "--groundstate_filename",
+                "Groundstate_CONTCAR",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR")
+        )
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/My_Groundstate/Groundstate_CONTCAR",
+            result.output,
+        )
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
+
+        # Test non existent structure file
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "--structure_filename",
+                "Fake_structure",
+            ],
+            catch_exceptions=True,
+        )
+        self.assertFalse(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate"))
+        self.assertIsInstance(result.exception, FileNotFoundError)
+        self.assertIn(
+            f"The structure file Fake_structure is not present in the directory {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%",
+            str(result.exception),
+        )
 
 
 if __name__ == "__main__":
