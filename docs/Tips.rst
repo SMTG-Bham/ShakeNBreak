@@ -1,0 +1,54 @@
+Miscellaneous Tips & Tricks
+=====================
+
+Tricky Relaxations
+----------
+
+If certain relaxations are not converging after multiple continuation calculations (i.e. if :code:`snb-run` keeps
+resubmitting certain relaxations), this is likely due to an error in the underlying calculation, and so you should
+check the calculation output files to see if this requires fixing. Often this may require changing a specific input file
+setting (e.g. in the :code:`INCAR` for :code:`VASP`), and copying the updated input files to other directories for which
+relaxations are struggling to converge.
+
+- For :code:`VASP`, a common culprit is :code:`EDWAV` in the output file, which can typically be avoided by reducing
+  :code:`NCORE` and/or :code:`KPAR`. Another is :code:`ZPOTRF` which can happen in rare cases and suggests too large
+  initial forces, so typically easiest to just ignore this specific distortion.
+
+If the calculation outputs show that the relaxation is proceeding fine, without any errors, just not converging to
+completion, then other input settings such as the ionic relaxation algorithm (:code:`IBRION` in :code:`VASP`),
+electronic minimisation algorithm (:code:`ALGO` in :code:`VASP`) or real space force projection (:code:`LREAL`
+in :code:`VASP`) should be adjusted to aid convergence.
+
+
+Hard/Ionic Materials
+----------
+The default bond distortion range of -60% to 60%, and the default rattling standard deviation of 0.25 Å, can be too
+extreme in the case of hard/ionic/oxide materials which typically yield larger forces in response to bond distortion.
+If this is the case for your material, it will manifest in the form of:
+
+- High energies / unconverging calculations for the +/-60% endpoints. Here you should adjust the distortion range to
+  exclude these points, or just ignore these calculations.
+
+- If the rattle standard deviation is too large, it may result in high energies for each distorted & rattled structure
+  (consistently higher energy than the unperturbed structure). In this case, you will need to reduce the rattle
+  standard deviation to e.g. 0.15 Å or 0.075 Å to avoid this. Typically the largest rattle standard deviation for which
+  the relaxations run without issue is best for performance in terms of finding groundstate structures.
+
+
+:code:`neighbour_elements` Use Cases
+----------
+
+When generating atomic distortions with :code:`ShakeNBreak`, the :code:`neighbour_elements` optional parameter can be
+particularly useful in certain cases if:
+
+- You have a complex multi-cation / multi-anion system, and believe that the most likely distorting species about
+  certain defect sites are not the nearest neighbour atoms. For example, in a rare case you might have two cations (A
+  and B), where the nearest neighbours of cation A are cations B, but it is the (second-nearest-neighbour) anions which
+  are likely most prone to rearrange upon formation of a A cation vacancy.
+
+- You have 'spectator' ions (e.g. the A-site cation in ABX\ :sub:`3` perovskites) that are nearest neighbours to the
+  defect, but unlikely to distort or rebond. This has been seen in studies in our research groups (reference to be
+  added when preprinted).
+
+
+Have any tips for users from using `ShakeNBreak`? Please share it with the developers and we'll add them here!
