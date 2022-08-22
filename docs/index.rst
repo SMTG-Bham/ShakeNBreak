@@ -184,4 +184,5 @@ Requirements
    Installation
    Python API <modules>
    Tutorials
+   Tips
    Contributing
