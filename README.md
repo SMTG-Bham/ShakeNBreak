@@ -74,14 +74,12 @@ We recommend at least looking through the [tutotials](https://shakenbreak.readth
 
 ### Bugs reports, feature requests and questions
 Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
-Contributions to extend this package are welcome! Please use the
+
+Contributions to extend this package are very welcome! Please use the
 ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects)
 workflow to do so and follow the [PEP8](https://peps.python.org/pep-0008/) style guidelines.
-The easiest way to handle this is to run the following in the **correct sequence** on your local machine.
-First run [black](https://black.readthedocs.io/en/stable/index.html), as this will automatically reformat
-the code to PEP8 conventions. Then run [pycodestyle](https://pycodestyle.pycqa.org/en/latest/),
-followed by [flake8](https://flake8.pycqa.org/en/latest/) (see the
-[Documentation](https://shakenbreak.readthedocs.io/en/latest/Contributing.html) for detailed instructions).
+
+See the [Contributing Documentation](https://shakenbreak.readthedocs.io/en/latest/Contributing.html) for detailed instructions.
 
 ### Tests
 Unit tests are in the `tests` directory and can be run from the top directory using [unittest](https://docs.python.org/3/library/unittest.html).
