@@ -1,4 +1,4 @@
-.. _tutotial_generation:
+.. _tutorial_generation:
 
 Structure generation
 =====================
