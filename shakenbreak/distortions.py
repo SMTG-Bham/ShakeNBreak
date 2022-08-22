@@ -1,6 +1,4 @@
-"""
-Module containing functions for applying distortions to defect structures
-"""
+"""Module containing functions for applying distortions to defect structures"""
 import sys
 import os
 import warnings
@@ -10,14 +8,16 @@ import numpy as np
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.analysis.local_env import MinimumDistanceNN
-from pymatgen.io.ase import AseAtomsAdaptor
 
-from hiphive.structure_generation.rattle import generate_mc_rattled_structures
-from hiphive.structure_generation.rattle import *
-from hiphive.structure_generation.rattle import _probability_mc_rattle
+from ase.neighborlist import NeighborList
+from hiphive.structure_generation.rattle import (
+    generate_mc_rattled_structures,
+    _probability_mc_rattle,
+)
 
-# format warnings output:
+
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
+    """Format warnings output"""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
@@ -85,10 +85,7 @@ def distort(
     )  # Prevent self-counting of the defect atom itself
     distances = [  # Get all distances between the selected atom and all other atoms
         (
-            round(
-                input_structure_ase.get_distance(atom_number, index, mic=True),
-                4
-            ),
+            round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
             index + 1,
             symbol,
         )
@@ -105,7 +102,7 @@ def distort(
         distorted_element
     ):  # filter the neighbours that match the element criteria and are
         # closer than 4.5 Angstroms
-        nearest = []
+        nearest = []  # list of nearest neighbours
         for dist, index, element in distances[1:]:
             if (
                 element == distorted_element
@@ -267,7 +264,7 @@ def _local_mc_rattle_displacements(
     max_disp=2.0,
     active_atoms=None,
     nbr_cutoff=None,
-    seed=42
+    seed=42,
 ):
     # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
     """Generate displacements using the Monte Carlo rattle method.
@@ -315,7 +312,7 @@ def _local_mc_rattle_displacements(
         according to its distance to the defect (e.g. sites further away
         from defect will experience a smaller distortion).
         """
-        if r == 0: # avoid dividing by 0 for defect site
+        if r == 0:  # avoid dividing by 0 for defect site
             r = r_min
         return disp * r_min / r
 
@@ -323,10 +320,9 @@ def _local_mc_rattle_displacements(
     aaa = AseAtomsAdaptor()
     structure = aaa.get_structure(atoms)
     dist_defect_to_nn = max(
-        structure[site_index].distance(_["site"]) for _ in MinimumDistanceNN().get_nn_info(
-            structure, site_index
-        )
-    ) # distance between defect and nearest neighbours
+        structure[site_index].distance(_["site"])
+        for _ in MinimumDistanceNN().get_nn_info(structure, site_index)
+    )  # distance between defect and nearest neighbours
 
     # setup
     rs = np.random.RandomState(seed)
@@ -340,10 +336,10 @@ def _local_mc_rattle_displacements(
     atoms_rattle = atoms.copy()
     reference_positions = atoms_rattle.get_positions()
     nbr_list = NeighborList(
-        [nbr_cutoff/2]*len(atoms_rattle),
+        [nbr_cutoff / 2] * len(atoms_rattle),
         skin=0.0,
         self_interaction=False,
-        bothways=True
+        bothways=True,
     )
     nbr_list.update(atoms_rattle)
 
@@ -362,7 +358,7 @@ def _local_mc_rattle_displacements(
                     0.0,
                     scale_stdev(rattle_std, dist_defect_to_nn, dist_defect_to_i),
                     3,
-                ) # displacement tails off with distance from defect
+                )  # displacement tails off with distance from defect
                 atoms_rattle.positions[i] += delta_disp
                 disp_i = atoms_rattle.positions[i] - reference_positions[i]
 
@@ -376,7 +372,9 @@ def _local_mc_rattle_displacements(
                 if len(i_nbrs) == 0:
                     min_distance = np.inf
                 else:
-                    min_distance = np.min(atoms_rattle.get_distances(i, i_nbrs, mic=True))
+                    min_distance = np.min(
+                        atoms_rattle.get_distances(i, i_nbrs, mic=True)
+                    )
 
                 # accept or reject delta_disp
                 if _probability_mc_rattle(min_distance, d_min, width) > rs.rand():
@@ -392,16 +390,10 @@ def _local_mc_rattle_displacements(
 
 
 def _generate_local_mc_rattled_structures(
-    atoms,
-    site_index,
-    n_configs,
-    rattle_std,
-    d_min,
-    seed=42,
-    **kwargs
+    atoms, site_index, n_configs, rattle_std, d_min, seed=42, **kwargs
 ):
-    # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
-    """Returns list of configurations after applying a Monte Carlo local
+    r"""
+    Returns list of configurations after applying a Monte Carlo local
     rattle.
     Compared to the standard Monte Carlo rattle, here the displacements
     tail off as we move away from the defect site.
@@ -416,45 +408,43 @@ def _generate_local_mc_rattled_structures(
     the magnitude of the final displacements is not *directly*
     connected to `rattle_std`.
 
-    Warning
-    -------
-    Repeatedly calling this function *without* providing different
-    seeds will yield identical or correlated results. To avoid this
-    behavior it is recommended to specify a different seed for each
-    call to this function.
+    This function has been adapted from https://gitlab.com/materials-modeling/hiphive
 
-    Notes
-    ------
-    The procedure implemented here might not generate a symmetric
-    distribution for the displacements `kwargs` will be forwarded to
-    `mc_rattle` (see user guide for a detailed explanation)
+    Warning:
+        Repeatedly calling this function *without* providing different
+        seeds will yield identical or correlated results. To avoid this
+        behavior it is recommended to specify a different seed for each
+        call to this function.
 
-    Parameters
-    ----------
-    atoms : ase.Atoms
-        prototype structure
-    site_index: int
-        Index of defect site in structure (for substitutions or
-        interstitials), counting from 1.
-    n_structures : int
-        number of structures to generate
-    rattle_std : float
-        rattle amplitude (standard deviation in normal distribution);
-        note this value is not connected to the final
-        average displacement for the structures
-    d_min : float
-        interatomic distance used for computing the probability for each rattle
-        move
-    seed : int
-        seed for setting up NumPy random state from which random numbers are
-        generated
-    n_iter : int
-        number of Monte Carlo cycles
+    Notes:
+        The procedure implemented here might not generate a symmetric
+        distribution for the displacements `kwargs` will be forwarded to
+        `mc_rattle` (see user guide for a detailed explanation)
 
-    Returns
-    -------
-    list of ase.Atoms
-        generated structures
+    Args:
+        atoms : ase.Atoms
+            prototype structure
+        site_index: int
+            Index of defect site in structure (for substitutions or
+            interstitials), counting from 1.
+        n_structures : int
+            number of structures to generate
+        rattle_std : float
+            rattle amplitude (standard deviation in normal distribution);
+            note this value is not connected to the final
+            average displacement for the structures
+        d_min : float
+            interatomic distance used for computing the probability for each rattle
+            move
+        seed : int
+            seed for setting up NumPy random state from which random numbers are
+            generated
+        n_iter : int
+            number of Monte Carlo cycles
+
+    Returns:
+        list of ase.Atoms
+            generated structures
     """
     rs = np.random.RandomState(seed)
     atoms_list = []
@@ -544,9 +534,7 @@ def local_mc_rattle(
         atom_number = site_index - 1  # Align atom number with python 0-indexing
     elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         ase_struct.append("V")  # fake "V" at vacancy
-        ase_struct.positions[-1] = np.dot(
-            frac_coords, ase_struct.cell
-        )
+        ase_struct.positions[-1] = np.dot(frac_coords, ase_struct.cell)
         atom_number = len(ase_struct) - 1
     else:
         raise ValueError(

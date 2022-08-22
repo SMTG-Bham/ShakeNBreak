@@ -34,7 +34,7 @@ warnings.filterwarnings(
 )  # Ignore pymatgen POTCAR warnings
 warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
 
-# format warnings output:
+
 def _warning_on_one_line(
     message, category, filename, lineno, file=None, line=None
 ) -> str:
@@ -54,9 +54,7 @@ def _bold_print(string: str) -> None:
 
 
 def _create_folder(folder_name: str) -> None:
-    """
-    Creates a folder at `./folder_name` if it doesn't already exist.
-    """
+    """Creates a folder at `./folder_name` if it doesn't already exist."""
     path = os.getcwd()
     if not os.path.isdir(path + "/" + folder_name):
         try:
@@ -310,7 +308,7 @@ def _calc_number_electrons(
 
     else:
         raise ValueError(
-            f"`defect_dict` has an invalid `defect_type`:"
+            "`defect_dict` has an invalid `defect_type`:"
             + f"{defect_dict['defect_type']}"
         )
 
@@ -342,7 +340,6 @@ def _calc_number_neighbours(num_electrons: int) -> int:
     Returns:
         Number of neighbours to distort (:obj:`int`)
     """
-
     if abs(num_electrons) > 4:
         num_neighbours = abs(8 - abs(num_electrons))
     else:
@@ -351,6 +348,7 @@ def _calc_number_neighbours(num_electrons: int) -> int:
 
 
 # Main functions
+
 
 def _apply_rattle_bond_distortions(
     defect_dict: dict,
@@ -503,7 +501,9 @@ def _apply_rattle_bond_distortions(
             sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
             reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
             if local_rattle:
-                bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
+                bond_distorted_defect[
+                    "distorted_structure"
+                ] = distortions.local_mc_rattle(
                     structure=bond_distorted_defect["distorted_structure"],
                     frac_coords=frac_coords,
                     site_index=defect_site_index,
@@ -937,6 +937,7 @@ class Distortions:
             defect (:obj:`dict`):
                 Defect entry in dictionary of defects as generated with
                 `doped` `ChargedDefectsStructures()`.
+
         Returns:
             Number of extra/missing electrons for the defect.
         """
@@ -949,13 +950,12 @@ class Distortions:
         _bold_print(f"\nDefect: {defect_name}")
         if number_electrons < 0:
             _bold_print(
-                f"Number of extra electrons in neutral state: "
+                "Number of extra electrons in neutral state: "
                 + f"{abs(number_electrons)}"
             )
         elif number_electrons >= 0:
             _bold_print(
-                f"Number of missing electrons in neutral state: "
-                + f"{number_electrons}"
+                f"Number of missing electrons in neutral state: {number_electrons}"
             )
         return number_electrons
 
@@ -986,9 +986,7 @@ class Distortions:
         bond_distortions: list,
         stdev: float,
     ) -> None:
-        """
-        Print applied bond distortions and rattle stanard deviation
-        """
+        """Print applied bond distortions and rattle stanard deviation"""
         print(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -1060,6 +1058,7 @@ class Distortions:
     ) -> dict:
         """
         Add defect information to `distorted_defects_dict`.
+
         Args:
             defect_name (:obj:`str`):
                 Name of the defect to use as key in the `distorted_defects_dict`.
@@ -1067,6 +1066,7 @@ class Distortions:
                 Defect dictionary to add to `distorted_defects_dict`.
             distorted_defects_dict (:obj:`dict`):
                 Full dictionary of distorted defects.
+
         Returns:
             (:obj:`dict`)
         """
@@ -1371,6 +1371,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1398,7 +1399,6 @@ class Distortions:
                             default_input_parameters.update(
                                 {section: {key: input_parameters[section][key]}}
                             )
-
 
         aaa = AseAtomsAdaptor()
 
@@ -1485,6 +1485,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1575,6 +1576,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
@@ -1632,7 +1634,7 @@ class Distortions:
                             calc.param.charge = charge  # Defect charge state
                             calc.set_atoms(atoms)
                             calc.initialize()  # this writes the .param file
-                        except:
+                        except Exception:
                             warnings.warn(
                                 "Problem setting up the CASTEP `.param` file. "
                                 "Only structures will be written "
@@ -1680,6 +1682,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: False)
+
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
