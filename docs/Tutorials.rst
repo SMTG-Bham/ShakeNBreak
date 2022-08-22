@@ -6,7 +6,7 @@ Tutorials
 Python API
 ----------
 Usage of ShakeNBreak from a Python API is exemplified in a
-`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/tree/main/tutorials>`_,
+`jupyter notebook <http://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_,
 which can be run interactively by clicking here: |binder|
 
 .. |binder| image:: https://mybinder.org/badge_logo.svg
@@ -39,6 +39,8 @@ and their use is exemplified in the following pages:
 .. toctree::
    :maxdepth: 2
 
+   Python API (Interactive) <http://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials>
+   Python API (Static) <http://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>
    Generation
    Analysis
 
