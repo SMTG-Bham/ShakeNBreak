@@ -1,5 +1,5 @@
 sphinx
-# myst-nb
+myst-nb
 sphinx-book-theme
 sphinx_click
 numpy
