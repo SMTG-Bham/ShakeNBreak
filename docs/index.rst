@@ -7,7 +7,7 @@
  :target: https://github.com/SMTG-UCL/ShakeNBreak/actions
 
 .. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat
- :target: https://readthedocs.org/projects/shakenbreak
+ :target: https://shakenbreak.readthedocs.io/en/latest/
 
 .. image:: https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg
  :target: https://arxiv.org/abs/2207.09862
