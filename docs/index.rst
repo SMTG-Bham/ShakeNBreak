@@ -170,7 +170,6 @@ Requirements
 ``ShakeNBreak`` is compatible with Python 3.8 & 3.9 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
-* `Pymatgen-analysis-defects <https://materialsproject.github.io/pymatgen-analysis-defects/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
 * `Hiphive <https://hiphive.materialsmodeling.org/>`_
 * `Numpy <https://numpy.org/>`_
