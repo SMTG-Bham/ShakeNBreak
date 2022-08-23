@@ -1,5 +1,5 @@
 [![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
-[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://readthedocs.org/projects/shakenbreak)
+[![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://shakenbreak.readthedocs.io/en/latest/)
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 <!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
