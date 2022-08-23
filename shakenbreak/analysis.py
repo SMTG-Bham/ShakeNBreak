@@ -59,6 +59,7 @@ if _isipython():
 
 class _HiddenPrints:
     """Block calls to print."""
+
     # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
     def __enter__(self):
         self._original_stdout = sys.stdout
