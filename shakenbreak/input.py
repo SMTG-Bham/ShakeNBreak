@@ -414,7 +414,25 @@ def _apply_rattle_bond_distortions(
             (Default: False)
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
-            `mc_rattle` function.
+            `mc_rattle` function. These include:
+            - d_min (:obj:`float`):
+                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                moves that put atoms at distances less than this will be heavily
+                penalised.
+                (Default: 2.25)
+            - max_disp (:obj:`float`):
+                Maximum atomic displacement (in Angstroms) during Monte Carlo
+                rattling. Rarely occurs and is used primarily as a safety net.
+                (Default: 2.0)
+            - max_attempts (:obj:`int`):
+                Limit for how many attempted rattle moves are allowed a single atom.
+            - active_atoms (:obj:`list`):
+                List of the atomic indices which should undergo Monte
+                Carlo rattling. By default, all atoms are rattled.
+                (Default: None)
+            - seed (:obj:`int`):
+                Seed for setting up NumPy random state from which random
+                numbers are generated.
 
     Returns:
         :obj:`dict`:
@@ -589,7 +607,25 @@ def apply_snb_distortions(
             (Default: False)
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
-            `mc_rattle` function.
+            `mc_rattle` function. These include:
+            - d_min (:obj:`float`):
+                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                moves that put atoms at distances less than this will be heavily
+                penalised.
+                (Default: 2.25)
+            - max_disp (:obj:`float`):
+                Maximum atomic displacement (in Angstroms) during Monte Carlo
+                rattling. Rarely occurs and is used primarily as a safety net.
+                (Default: 2.0)
+            - max_attempts (:obj:`int`):
+                Limit for how many attempted rattle moves are allowed a single atom.
+            - active_atoms (:obj:`list`):
+                List of the atomic indices which should undergo Monte
+                Carlo rattling. By default, all atoms are rattled.
+                (Default: None)
+            - seed (:obj:`int`):
+                Seed for setting up NumPy random state from which random
+                numbers are generated.
 
     Returns:
         :obj:`dict`:
@@ -745,7 +781,25 @@ class Distortions:
             (Default: None)
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
-            `mc_rattle` function.
+            `mc_rattle` function. These include:
+            - d_min (:obj:`float`):
+                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                moves that put atoms at distances less than this will be heavily
+                penalised.
+                (Default: 2.25)
+            - max_disp (:obj:`float`):
+                Maximum atomic displacement (in Angstroms) during Monte Carlo
+                rattling. Rarely occurs and is used primarily as a safety net.
+                (Default: 2.0)
+            - max_attempts (:obj:`int`):
+                Limit for how many attempted rattle moves are allowed a single atom.
+            - active_atoms (:obj:`list`):
+                List of the atomic indices which should undergo Monte
+                Carlo rattling. By default, all atoms are rattled.
+                (Default: None)
+            - seed (:obj:`int`):
+                Seed for setting up NumPy random state from which random
+                numbers are generated.
     """
 
     def __init__(
@@ -810,7 +864,26 @@ class Distortions:
                 (Default: None)
             **kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
-                `mc_rattle` function.
+                `mc_rattle` function. These include:
+                - d_min (:obj:`float`):
+                    Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                    moves that put atoms at distances less than this will be heavily
+                    penalised.
+                    (Default: 2.25)
+                - max_disp (:obj:`float`):
+                    Maximum atomic displacement (in Angstroms) during Monte Carlo
+                    rattling. Rarely occurs and is used primarily as a safety net.
+                    (Default: 2.0)
+                - max_attempts (:obj:`int`):
+                    Limit for how many attempted rattle moves are allowed a single atom.
+                - active_atoms (:obj:`list`):
+                    List of the atomic indices which should undergo Monte
+                    Carlo rattling. By default, all atoms are rattled.
+                    (Default: None)
+                - seed (:obj:`int`):
+                    Seed for setting up NumPy random state from which random
+                    numbers are generated.
+
         """
         self.defects_dict = defects_dict
         self.oxidation_states = oxidation_states

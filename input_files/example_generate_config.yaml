@@ -14,16 +14,16 @@
 #     2
 
 ## Rattle options
-# stdev: 0.25
-# d_min: 2.25  # (Default = 80% of auto-determined bulk bond length)
-# n_iter: 1
-# active_atoms: None  # (Default = all atoms)
-# nbr_cutoff: 5
-# width: 0.1
-# max_attempts: 5000
-# max_disp: 2.0
-# seed: 42
-# local_rattle: True
+# stdev: 0.25  # Rattle standard deviation
+# d_min: 2.25  # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
+# n_iter: 1  # Number of Monte Carlo cycles to perform. (Default: 1)
+# active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
+# nbr_cutoff: 5  # The radial cutoff distance (in Angstroms) used to construct the list of atomic neighbours for checking interatomic distances. (Default: 5)
+# width: 0.1  # Width of the Monte Carlo rattling error function, in Angstroms. (Default: 0.1)
+# max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
+# max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
+# seed: 42  # Seed for setting up NumPy random state from which random numbers are generated
+# local_rattle: True  # If True, rattle displacements will tail-off as we more away from the defect site
 
 ## CLI arguments can also be specified using the config file:
 # charge: 0  # (Default = None, assumes charge range from -2 to +2)

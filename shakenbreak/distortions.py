@@ -272,37 +272,37 @@ def _local_mc_rattle_displacements(
     The displacements tail off as we move away from the defect site.
 
     Args:
-        atoms: ase.Atoms
+        atoms (:obj:`ase.Atoms`):
             prototype structure
-        site: int
+        site (:obj:`int`):
             index of defect, starting from 0
-        rattle_std : float
+        rattle_std (:obj:`float`):
             rattle amplitude (standard deviation in normal distribution)
-        d_min : float
+        d_min (:obj:`float`):
             interatomic distance used for computing the probability for each rattle
             move. Center position of the error function
-        width : float
+        width (:obj:`float`):
             width of the error function
-        n_iter : int
+        n_iter (:obj:`int`):
             number of Monte Carlo cycle
-        max_disp : float
+        max_disp (:obj:`float`):
             rattle moves that yields a displacement larger than max_disp will
             always be rejected. This rarley occurs and is more used as a safety net
             for not generating structures where two or more have swapped positions.
-        max_attempts : int
+        max_attempts (:obj:`int`):
             limit for how many attempted rattle moves are allowed a single atom;
             if this limit is reached an `Exception` is raised.
-        active_atoms : list
+        active_atoms (:obj:`list`):
             list of which atomic indices should undergo Monte Carlo rattling
-        nbr_cutoff : float
+        nbr_cutoff (:obj:`float`):
             The cutoff used to construct the neighborlist used for checking
             interatomic distances, defaults to 2 * d_min
-        seed : int
+        seed (:obj:`int`):
             seed for setting up NumPy random state from which random numbers are
             generated
 
     Returns:
-        numpy.ndarray
+        :obj:`numpy.ndarray`:
             atomic displacements (`Nx3`)
     """
 
@@ -422,29 +422,29 @@ def _generate_local_mc_rattled_structures(
         `mc_rattle` (see user guide for a detailed explanation)
 
     Args:
-        atoms : ase.Atoms
+        atoms (:obj:`ase.Atoms`):
             prototype structure
-        site_index: int
+        site_index (:obj:`int`):
             Index of defect site in structure (for substitutions or
             interstitials), counting from 1.
-        n_structures : int
+        n_structures (:obj:`int`):
             number of structures to generate
-        rattle_std : float
+        rattle_std (:obj:`float`):
             rattle amplitude (standard deviation in normal distribution);
             note this value is not connected to the final
             average displacement for the structures
-        d_min : float
+        d_min (:obj:`float`):
             interatomic distance used for computing the probability for each rattle
             move
-        seed : int
+        seed (:obj:`int`):
             seed for setting up NumPy random state from which random numbers are
             generated
-        n_iter : int
+        n_iter (:obj:`int`):
             number of Monte Carlo cycles
 
     Returns:
-        list of ase.Atoms
-            generated structures
+        :obj:`list`:
+            list of ase.Atoms generated structures
     """
     rs = np.random.RandomState(seed)
     atoms_list = []

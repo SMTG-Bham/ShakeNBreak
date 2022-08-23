@@ -19,6 +19,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Helper functions for formatting plots
 
+
 def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
