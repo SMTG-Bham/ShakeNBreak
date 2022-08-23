@@ -11,3 +11,5 @@ seaborn
 hiphive
 monty
 click
+shakenbreak
+doped
