@@ -123,7 +123,7 @@ Alternatively, the code can be used via the command line. The functions provided
 More information about each function and its inputs/outputs are available from the
 :ref:`CLI section of the docs <cli_commands>` or using ``-h`` help option (e.g. ``snb -h``).
 
-We recommend at least looking through the :ref:`Tutorials <tutotials>`
+We recommend at least looking through the :ref:`Tutorials <tutorials>`
 or the example Jupyter notebook (|binder|)
 when first starting to use ``ShakeNBreak``, to familiarise yourself with the full functionality and workflow.
 
