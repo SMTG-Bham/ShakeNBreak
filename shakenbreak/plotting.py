@@ -1122,7 +1122,6 @@ def plot_colorbar(
         disp_dict=disp_dict,
         max_energy_above_unperturbed=max_energy_above_unperturbed,
     )  # Remove high energy points
-    print("Energies dict", energies_dict)
 
     # Setting line color and colorbar
     if not line_color:
