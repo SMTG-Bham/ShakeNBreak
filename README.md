@@ -69,7 +69,7 @@ Alternatively, the code can be used via the command line. The functions provided
 
 More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
-We recommend at least looking through the [tutotials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
 
 ## Contributing
 
