@@ -39,8 +39,7 @@ and their use is exemplified in the following pages:
 .. toctree::
    :maxdepth: 2
 
-   Python API (Interactive) <http://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials>
-   Python API (Static) <http://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>
+   ShakeNBreak_Example_Workflow
    Generation
    Analysis
 

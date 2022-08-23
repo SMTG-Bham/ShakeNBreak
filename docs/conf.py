@@ -12,6 +12,7 @@
 #
 import os
 import sys
+from recommonmark.transform import AutoStructify
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -37,9 +38,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_click',
-    #"myst_nb", # for jupyter notebooks
-    #'myst_parser',
-    #'sphinx_mdinclude',
+    'sphinx_mdinclude',
+    "myst_nb",  # for jupyter notebooks
+    # 'myst_parser',
 ]
 
 source_suffix = {
@@ -108,3 +109,13 @@ intersphinx_mapping = {
     "pymatgen": ("http://pymatgen.org/", None),
     "matplotlib": ("http://matplotlib.org", None),
 }
+
+#myst_render_markdown_format = "gfm"
+myst_heading_anchors = 2
+github_doc_root = 'https://github.com/executablebooks/MyST-Parser/tree/master/docs/'
+def setup(app):
+    app.add_config_value('myst_parser_config', {
+            'url_resolver': lambda url: github_doc_root + url,
+            'auto_toc_tree_section': 'Contents',
+            }, True)
+    app.add_transform(AutoStructify)
