@@ -23,6 +23,9 @@ setup(
     version="1.0.0",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
+    long_description="Python package to automatise the process of defect structure searching. "
+    "It employs chemically-guided bond distortions to locate ground-state and metastable structures"
+    " of point defects in solid materials.",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
     author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
