@@ -44,6 +44,7 @@ setup(
     install_requires=[
         "numpy",
         "pymatgen",
+        "pymatgen-analysis-defects"
         "matplotlib",
         "ase",
         "pandas",
