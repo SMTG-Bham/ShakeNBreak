@@ -1,10 +1,10 @@
 sphinx
-# sphinx_rtd_theme
 # myst-nb
 sphinx-book-theme
 sphinx_click
 numpy
 pymatgen
+pymatgen-analysis-defects
 ase
 matplotlib
 pandas

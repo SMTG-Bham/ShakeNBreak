@@ -95,6 +95,7 @@ ShakeNBreak is made available under the MIT License.
 ## Requirements
 `ShakeNBreak` is compatible with Python 3.8 & 3.9 and requires the following open-source python packages:
 * [Pymatgen](https://pymatgen.org/)
+* [Pymatgen-analysis-defects](https://materialsproject.github.io/pymatgen-analysis-defects/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)
 * [Numpy](https://numpy.org/)
