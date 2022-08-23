@@ -22,17 +22,23 @@ in :code:`VASP`) should be adjusted to aid convergence.
 
 Hard/Ionic Materials
 ----------
-The default bond distortion range of -60% to 60%, and the default rattling standard deviation of 0.25 Å, can be too
+The default bond distortion range of -60% to +60%, and the default rattling standard deviation of 0.25 Å, can be too
 extreme in the case of hard/ionic/oxide materials which typically yield larger forces in response to bond distortion.
 If this is the case for your material, it will manifest in the form of:
 
-- High energies / unconverging calculations for the +/-60% endpoints. Here you should adjust the distortion range to
-  exclude these points, or just ignore these calculations.
+- High energies / unconverging calculations for the ±60% endpoints. Here you should adjust the distortion range to
+  exclude these points (e.g. :code:`bond_distortions = np.arange(-0.5, 0.501, 0.1)`), or just ignore these calculations.
 
 - If the rattle standard deviation is too large, it may result in high energies for each distorted & rattled structure
   (consistently higher energy than the unperturbed structure). In this case, you will need to reduce the rattle
-  standard deviation to e.g. 0.15 Å or 0.075 Å to avoid this. Typically the largest rattle standard deviation for which
-  the relaxations run without issue is best for performance in terms of finding groundstate structures.
+  standard deviation to 0.15 Å (or 0.075 Å if this still causes higher energies) to avoid this. Typically the largest
+  rattle standard deviation for which the relaxations run without issue is best for performance in terms of finding
+  groundstate structures.
+
+If you are unsure but suspect this could be an issue for your material, the best strategy is often to begin with the
+default settings, and then monitor the results of the first few distortion meshes that run; if the final energies are
+less than or equal to the unperturbed relaxation, then no need to change. Otherwise, you should reduce the rattle
+:code:`std_dev` as above.
 
 
 :code:`neighbour_elements` Use Cases
