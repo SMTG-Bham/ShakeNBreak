@@ -3,8 +3,7 @@ sphinx
 sphinx-book-theme
 sphinx_click
 numpy
-pymatgen
-pymatgen-analysis-defects
+pymatgen<2022.8.23
 ase
 matplotlib
 pandas

@@ -46,8 +46,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pymatgen",
-        "pymatgen-analysis-defects",
+        "pymatgen<2022.8.23",
         "matplotlib",
         "ase",
         "pandas",

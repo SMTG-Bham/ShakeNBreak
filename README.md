@@ -69,7 +69,7 @@ Alternatively, the code can be used via the command line. The functions provided
 
 More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
-We recommend at least looking through the [tutotials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) or the example Jupyter notebook ([![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials)) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
 
 ## Contributing
 
@@ -96,7 +96,6 @@ ShakeNBreak is made available under the MIT License.
 ## Requirements
 `ShakeNBreak` is compatible with Python 3.8 & 3.9 and requires the following open-source python packages:
 * [Pymatgen](https://pymatgen.org/)
-* [Pymatgen-analysis-defects](https://materialsproject.github.io/pymatgen-analysis-defects/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)
 * [Numpy](https://numpy.org/)
