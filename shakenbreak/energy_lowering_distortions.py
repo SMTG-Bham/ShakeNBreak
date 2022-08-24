@@ -535,6 +535,19 @@ def get_energy_lowering_distortions(
                                 }
                             ]
 
+            # warning if all rattled distortions are higher energy than unperturbed
+            elif gs_distortion == "Unperturbed" and all(
+                    [value - energies_dict["Unperturbed"]> 0.1 for value in energies_dict[
+                        "distortions"].values()]):
+                warnings.warn(
+                    f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
+                    f"than unperturbed, indicating problems with the relaxations. You should "
+                    f"firstly check the calculations finished ok for this defect species, "
+                    f"and if so, you likely need to adjust the `std_dev` rattling parameter ("
+                    f"can occur for hard/ionic/close-packed materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                )
+
             else:
                 print(
                     f"No energy lowering distortion with energy difference greater "
