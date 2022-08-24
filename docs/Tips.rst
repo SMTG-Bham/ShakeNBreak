@@ -56,5 +56,18 @@ particularly useful in certain cases if:
   defect, but unlikely to distort or rebond. This has been seen in studies in our research groups (reference to be
   added when preprinted).
 
+Defect Complexes
+----------
+At present, ``ShakeNBreak`` is optimised to work with isolated *point* defects. However, it can also be used with
+complex defects (and has been found to be important in these cases as well, e.g. this |chemsci|_), but requires some workarounds as the ``pymatgen`` defect
+functions are not natively built for this.
+This involves generating the defect *complex* as a ``pymatgen`` ``Defect`` object using one of the *point*
+defects as the 'bulk' structure and the other as the 'defect', then feeding this to ``ShakeNBreak`` in order to
+generate the distortions. If you are trying to do this and are running into issues, you can contact the developers and
+we can share some guidance for this (until improved ``pymatgen``-based functionality comes about for complex defects).
+
+.. _chemsci: https://doi.org/10.1039/D1SC03775G
+
+.. |chemsci| replace:: *Chem Sci* paper
 
 Have any tips for users from using `ShakeNBreak`? Please share it with the developers and we'll add them here!
