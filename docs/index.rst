@@ -99,7 +99,7 @@ Usage
 Python API
 ----------------
 
-``ShakeNBreak`` can be used through a Python API, as exemplified in the :ref:`SnB Python API tutorial <shakenbreak_example_workflow>`.
+``ShakeNBreak`` can be used through a Python API, as exemplified in the :ref:`SnB Python API tutorial <snb_python_api>`.
 
 Command line interface
 -------------------------
