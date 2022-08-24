@@ -5,7 +5,7 @@ Tutorials
 
 Python API
 ----------
-Usage of ShakeNBreak from a Python API is exemplified in the :ref:`SnB Python API tutorial <shakenbreak_example_workflow>`.
+Usage of ShakeNBreak from a Python API is exemplified in the :ref:`SnB Python API tutorial <snb_python_api>`.
 
 
 Command line interface (CLI)
