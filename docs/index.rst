@@ -99,12 +99,7 @@ Usage
 Python API
 ----------------
 
-``ShakeNBreak`` can be used through a python API, as exemplified in the
-`jupyter notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_,
-which can be run interactively by clicking here: |binder|
-
-.. |binder| image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/SMTG-UCL/ShakeNBreak/HEAD?filepath=tutorials
+``ShakeNBreak`` can be used through a Python API, as exemplified in the :ref:`SnB Python API tutorial <shakenbreak_example_workflow>`.
 
 Command line interface
 -------------------------
@@ -123,9 +118,8 @@ Alternatively, the code can be used via the command line. The functions provided
 More information about each function and its inputs/outputs are available from the
 :ref:`CLI section of the docs <cli_commands>` or using ``-h`` help option (e.g. ``snb -h``).
 
-We recommend at least looking through the :ref:`Tutorials <tutorials>`
-or the example Jupyter notebook (|binder|)
-when first starting to use ``ShakeNBreak``, to familiarise yourself with the full functionality and workflow.
+We recommend at least looking through the :ref:`Tutorials <tutorials>` when first starting to use ``ShakeNBreak``, to
+familiarise yourself with the full functionality and workflow.
 
 Acknowledgements
 ========================
