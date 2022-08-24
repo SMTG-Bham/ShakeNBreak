@@ -379,18 +379,20 @@ def snb():
 @click.option(
     "--config",
     "-conf",
-    help="Config file for advanced distortion settings. See example in"
-    "/input_files/example_generate_config.yaml",
+    help="Config file for advanced distortion settings. See example in "
+    "input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
+    show_default=True,
 )
 @click.option(
     "--input_file",
     "-inp",
     help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults.",
+    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    show_default=True,
 )
 @click.option(
     "--verbose",
@@ -611,17 +613,19 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "/input_files/example_generate_all_config.yaml",
+    "input_files/example_generate_all_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    show_default=True,
 )
 @click.option(
     "--input_file",
     "-inp",
     help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults.",
+    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
+    show_default=True,
 )
 @click.option(
     "--verbose",
