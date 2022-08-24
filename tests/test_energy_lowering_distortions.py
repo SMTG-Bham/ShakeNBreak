@@ -80,6 +80,19 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "sub_1_In_on_Cd_1",
         ]
 
+        self.orig_castep_0pt3_files = os.listdir(
+            self.CASTEP_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
+        )
+        self.orig_cp2k_0pt3_files = os.listdir(
+            self.CP2K_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
+        )
+        self.orig_fhi_aims_0pt3_files = os.listdir(
+            self.FHI_AIMS_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
+        )
+        self.orig_espresso_0pt3_files = os.listdir(
+            self.ESPRESSO_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
+        )
+
     def tearDown(self):
         # removed generated folders
         for data_dir in [
@@ -91,6 +104,31 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ]:
             for defect_dir in self.defect_folders_list + ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
                 if_present_rm(os.path.join(data_dir, defect_dir))
+
+        # remove generated files
+        for data_dir, orig_files in [
+            (self.CASTEP_DATA_DIR, self.orig_castep_0pt3_files),
+            (self.CP2K_DATA_DIR, self.orig_cp2k_0pt3_files),
+            (self.FHI_AIMS_DATA_DIR, self.orig_fhi_aims_0pt3_files),
+            (self.ESPRESSO_DATA_DIR, self.orig_espresso_0pt3_files),
+        ]:  # everything but VASP data dir
+            if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "fake_vac_1_Cd_0.yaml"))
+            if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "vac_1_Cd_0.yaml"))
+            for defect_dir in os.listdir(os.path.join(data_dir, "vac_1_Cd_0")):
+                if "Bond_Distortion_30.0%" not in defect_dir and os.path.isdir(
+                    os.path.join(data_dir, "vac_1_Cd_0", defect_dir)
+                ):
+                    if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", defect_dir))
+
+            for file in os.listdir(
+                os.path.join(data_dir, "vac_1_Cd_0", "Bond_Distortion_30.0%")
+            ):
+                if file not in orig_files:
+                    if_present_rm(
+                        os.path.join(
+                            data_dir, "vac_1_Cd_0", "Bond_Distortion_30.0%", file
+                        )
+                    )
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
@@ -551,7 +589,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "not be included in low_energy_defects (check relaxation folders with CONTCARs "
                 "are present)."  # check this is skipped if no data
             )
-            self.assertEqual(len(w), 2)  # No Int_Cd_2_1 data and too large rattle warnings
+            self.assertEqual(
+                len(w), 2
+            )  # No Int_Cd_2_1 data and too large rattle warnings
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
 
@@ -820,6 +860,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
 
         # Test copying over Quantum Espresso input files
+        shutil.move(  # avoid overwriting yaml file
+            f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+            f"{self.CP2K_DATA_DIR}/test_vac_1_Cd_0.yaml")
         for i in os.listdir(self.CP2K_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.CP2K_DATA_DIR, i)
@@ -829,6 +872,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     os.path.join(self.ESPRESSO_DATA_DIR, i),
                     dirs_exist_ok=True,
                 )
+        shutil.move(  # restore yaml file
+            f"{self.CP2K_DATA_DIR}/test_vac_1_Cd_0.yaml",
+            f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
         if_present_rm(
             os.path.join(
                 self.ESPRESSO_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
@@ -880,6 +926,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # Test copying over FHI-aims input files when the input files are only
         # present in one distortion directory (different from Unperturbed)
         # Test copying over Quantum Espresso input files
+        shutil.move(  # avoid overwriting yaml file
+            f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+            f"{self.ESPRESSO_DATA_DIR}/test_vac_1_Cd_0.yaml")
         for i in os.listdir(self.ESPRESSO_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.ESPRESSO_DATA_DIR, i)
@@ -889,6 +938,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     os.path.join(self.FHI_AIMS_DATA_DIR, i),
                     dirs_exist_ok=True,
                 )
+        shutil.move(  # restore yaml file
+            f"{self.ESPRESSO_DATA_DIR}/test_vac_1_Cd_0.yaml",
+            f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
         if_present_rm(
             os.path.join(
                 self.FHI_AIMS_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
@@ -936,6 +988,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
 
         # Test CASTEP input files
+        shutil.move(  # avoid overwriting yaml file
+            f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+            f"{self.FHI_AIMS_DATA_DIR}/test_vac_1_Cd_0.yaml")
         for i in os.listdir(self.FHI_AIMS_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.FHI_AIMS_DATA_DIR, i)
@@ -945,6 +1000,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     os.path.join(self.CASTEP_DATA_DIR, i),
                     dirs_exist_ok=True,
                 )
+        shutil.move(  # restore yaml file
+            f"{self.FHI_AIMS_DATA_DIR}/test_vac_1_Cd_0.yaml",
+            f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
         if_present_rm(
             os.path.join(
                 self.CASTEP_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
