@@ -20,7 +20,7 @@ data_files = package_files("data/")
 
 setup(
     name="shakenbreak",
-    version="1.0.0",
+    version="1.0.1",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "
