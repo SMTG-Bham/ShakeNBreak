@@ -1156,7 +1156,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
+    help="Path to the top-level directory containing the defect folder. "
     "Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
