@@ -16,7 +16,7 @@ def package_files(directory):
     return paths
 
 
-input_files = package_files("input_files/")
+input_files = package_files("SnB_input_files/")
 
 setup(
     name="shakenbreak",

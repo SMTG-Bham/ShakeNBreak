@@ -380,7 +380,7 @@ def snb():
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in"
-    "/input_files/example_generate_config.yaml",
+    "/SnB_input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
 )
@@ -611,7 +611,7 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "/input_files/example_generate_all_config.yaml",
+    "/SnB_input_files/example_generate_all_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
 )
