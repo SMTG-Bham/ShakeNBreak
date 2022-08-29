@@ -16,7 +16,7 @@ def package_files(directory):
     return paths
 
 
-data_files = package_files("data/")
+input_files = package_files("input_files/")
 
 setup(
     name="shakenbreak",
@@ -70,7 +70,7 @@ setup(
             "sphinx_click",
         ],
     },
-    package_data={"shakenbreak": ["shakenbreak/*"] + data_files},
+    package_data={"shakenbreak": ["shakenbreak/*"] + input_files},
     include_package_data=True,
     entry_points={
         "console_scripts": [
