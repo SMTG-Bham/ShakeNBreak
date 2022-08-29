@@ -241,7 +241,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
     @pytest.mark.mpl_image_compare(
         baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{-2}$.png",
+        filename="vac_1_Cd_-2.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -286,7 +286,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
     @pytest.mark.mpl_image_compare(
         baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{-1}$.png",
+        filename="vac_1_Cd_-1.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -332,7 +332,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
     @pytest.mark.mpl_image_compare(
         baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{0}$.png",
+        filename="vac_1_Cd_0.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )

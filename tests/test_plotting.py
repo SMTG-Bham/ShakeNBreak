@@ -472,7 +472,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
@@ -489,7 +489,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
-            defect_name="fake$_{Cd}^{0}$",
+            defect_species="sub_1_In_on_Cd_1",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
@@ -506,7 +506,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
             num_nearest_neighbours=None,
             neighbour_atom="Te",
             metric="disp",
@@ -525,7 +525,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
             num_nearest_neighbours=2,
             neighbour_atom=None,
             legend_label="SnB: 2 Te",
@@ -536,7 +536,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             y_label="E (eV)",
         )
         self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/V$_{Cd}^{0}$.svg")
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Cd_0.svg")
         )
         return fig
 
@@ -548,12 +548,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_datasets_keywords(self):
         """Test plot_datasets() function testing several keywords:
-        colors, save_format, title, defect_name, title, neighbour_atom, num_nearest_neighbours,
+        colors, save_format, title, defect_species, title, neighbour_atom, num_nearest_neighbours,
         dataset_labels"""
         fig = plotting.plot_datasets(
             datasets=[self.V_O_energies_dict_fm, self.V_O_energies_dict_afm],
             dataset_labels=["FM", "AFM"],
-            defect_name="V$_{O}^{0}$",
+            defect_species="vac_1_Cd_0",
             num_nearest_neighbours=2,
             neighbour_atom="Ti",
             title="V$_{O}^{0}$",
@@ -562,7 +562,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             colors=["green", "orange"],
         )
         self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/V$_{O}^{0}$.png")
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Cd_0.png")
         )
         return fig
 
@@ -581,7 +581,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_datasets(
             datasets=[self.V_O_energies_dict_fm, self.V_O_energies_dict_afm],
             dataset_labels=["FM", "AFM"],
-            defect_name="V$_{O}^{0}$",
+            defect_species="vac_1_Cd_0",
             save_plot=False,
             markers=["s", "<"],
             linestyles=[":", "-."],
@@ -605,7 +605,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_datasets(
             datasets=[self.V_O_energies_dict_fm, self.V_O_energies_dict_afm],
             dataset_labels=["FM", "AFM"],
-            defect_name="V$_{O}^{0}$",
+            defect_species="vac_1_Cd_0",
             save_plot=False,
             markers=[
                 "s",
@@ -630,7 +630,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 self.V_Cd_energies_dict_from_other_charge_states,
             ],
             dataset_labels=["SnB: 2 Te"],
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
@@ -649,7 +649,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 self.V_Cd_m2_energies_dict,
             ],
             dataset_labels=["SnB: 2 Te"],
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
         )
         return fig
 
@@ -667,7 +667,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 self.V_Cd_m2_energies_dict_from_other_charge_states,
             ],
             dataset_labels=["SnB: 2 Te"],
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
         )
         return fig
 
@@ -689,7 +689,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         fig = plotting.plot_datasets(
             datasets=datasets,
             dataset_labels=["SnB: 2 Te"],
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="vac_1_Cd_0",
         )
         return fig
 
@@ -703,7 +703,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 self.V_Cd_energies_dict_from_other_charge_states,
             ],
             dataset_labels=["SnB: 2 Te", "Another one"],
-            defect_name="V$_{Cd}^{0}$",
+            defect_species="V$_{Cd}^{0}$",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
