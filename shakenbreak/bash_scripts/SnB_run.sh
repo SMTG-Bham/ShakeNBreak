@@ -73,7 +73,7 @@ if [ "$single_defect" = false ]
   # for each defect, in the directory where your top-level defect folders are
   for defect_name in *[0-9]/;  # matches each subdirectory with a name ending in a number (charge state)
     do
-    if [ $defect_name == "*[0-9]/" ]
+    if [ "$defect_name" == "*[0-9]/" ]
         then echo "No defect folders (with names ending in a number (charge state)) found in current directory"
         break  # exit if no defect folders found
     fi

@@ -25,10 +25,10 @@ if TYPE_CHECKING:
 
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
+default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
-defect_config = loadfn(os.path.join(MODULE_DIR, "../input_files/DefectSet.yaml"))
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml"))
+defect_config = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/DefectSet.yaml"))
 
 
 def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
@@ -254,7 +254,7 @@ def write_vasp_gam_files(
         incar_settings (:obj:`dict`):
             Dictionary of user INCAR settings (AEXX, NCORE etc.) to override
             default settings. Highly recommended to look at
-            `/input_files/incar.yaml`, or output INCARs or doped.vasp_input
+            `/SnB_input_files/incar.yaml`, or output INCARs or doped.vasp_input
             source code, to see what the default INCAR settings are.
             (default: None)
         potcar_settings (:obj:`dict`):
