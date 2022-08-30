@@ -14,7 +14,7 @@ from monty.json import MontyDecoder
 
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
-from pymatgen.analysis.defects.core import Defect
+from pymatgen.analysis.defects.core import Defect, Element
 
 # ShakeNBreak
 from shakenbreak import io, input, analysis, plotting, energy_lowering_distortions
@@ -176,7 +176,7 @@ def identify_defect(
         "@module": "pymatgen.analysis.defects.core",
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
-        "defect_site": defect_site,
+        "site": defect_site,
     }
 
     defect = MontyDecoder().process_decoded(for_monty_defect)
@@ -204,7 +204,7 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
         "site_multiplicity": defect_object.multiplicity,
         "supercell": {
             "size": [1, 1, 1],
-            "structure": defect_object.generate_defect_structure(),
+            "structure": defect_object.defect_structure,
         },
         "charges": charges,
     }
@@ -212,7 +212,7 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
     if "Substitution" in str(type(defect_object)):
         # get bulk_site
         poss_deflist = sorted(
-            defect_object.bulk_structure.get_sites_in_sphere(
+            defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
                 defect_object.site.coords, 0.01, include_index=True
             ),
             key=lambda x: x[1],
@@ -223,7 +223,7 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
                 f"site inside bulk structure for {defect_name}"
             )
         defindex = poss_deflist[0][2]
-        sub_site_in_bulk = defect_object.bulk_structure[
+        sub_site_in_bulk = defect_object.structure[
             defindex
         ]  # bulk site of substitution
 
@@ -502,7 +502,9 @@ def generate(
         charges = list(range(-2, +3))
 
     if name is None:
-        name = defect_object.name
+        name = (
+            defect_object.name
+        )  # Va_X, X_i or X_Y for vacancies, interstitials, substitutions
 
     defects_dict = generate_defect_dict(defect_object, charges, name)
 
@@ -722,13 +724,23 @@ def generate_all(
                     f"Defect {defect} not found in config file {config}. "
                     f"Will parse defect name from folders/files."
                 )
-        if (not defect_name) and any(
-            [
-                substring in defect.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i")
-            ]
+        dummy_h = Element("H")
+        if (not defect_name) and (
+            any(
+                [
+                    substring in defect.lower()
+                    for substring in ("as", "vac", "int", "sub", "v", "i")
+                ]
+            )
+            or any(
+                [
+                    (dummy_h.is_valid_symbol(substring[-2:]) or substring[-2:] == "Va")
+                    for substring in defect.split("_")
+                ]  # underscore preceded by either an element symbol or "Va" (new pymatgen defect
+            # naming convention)
+            )
         ):
-            # if user didnt specify defect names in config file,
+            # if user didn't specify defect names in config file,
             # check if defect filename correspond to standard defect abbreviations
             defect_name = defect
         if not defect_name:
@@ -975,7 +987,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     "--defect",
     "-d",
     help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0'). "
-         "Default is current directory name.",
+    "Default is current directory name.",
     type=str,
     default=None,
 )
@@ -1042,7 +1054,8 @@ def parse(defect, all, path, code):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (including charge state) to analyse (e.g. 'vac_1_Cd_0')",
+    help="Name of defect folder to analyse. Should match defect species name (including charge "
+         "state; e.g. 'vac_1_Cd_0').",
     type=str,
     default=None,
 )
@@ -1142,7 +1155,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (including charge state) to analyse",
+    help="Name of defect (including charge state) to analyse and plot. "
+         "Should match defect folder name (e.g. 'vac_1_Cd_0').",
     type=str,
     default=None,
 )
