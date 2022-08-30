@@ -2,7 +2,7 @@
 '# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''
 '# KPAR': '# No KPAR, only one kpoint'
 ALGO: Normal
-EDIFFG: -0.01
+EDIFFG: -0.025
 ENCUT: 300
 HFSCREEN: 0.2
 IBRION: '2 # While often slower than ''1'' (RMM-DIIS), this is more stable and reliable,
