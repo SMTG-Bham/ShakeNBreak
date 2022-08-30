@@ -591,9 +591,30 @@ class InputTestCase(unittest.TestCase):
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
-        vasp_defect_inputs = vasp.prepare_vasp_defect_inputs(
-            copy.deepcopy(self.cdte_defect_dict)
+        # Create doped/PyCDT-style defect dict:
+        supercell = self.V_Cd_dict["supercell"]
+        V_Cd_defect_relax_set = vasp.DefectRelaxSet(supercell["structure"], charge=0)
+        poscar = V_Cd_defect_relax_set.poscar
+        struct = V_Cd_defect_relax_set.structure
+        dict_transf = {
+            "defect_type": self.V_Cd_dict["name"],
+            "defect_site": self.V_Cd_dict["unique_site"],
+            "defect_supercell_site": self.V_Cd_dict["bulk_supercell_site"],
+            "defect_multiplicity": self.V_Cd_dict["site_multiplicity"],
+            "charge": 0,
+            "supercell": supercell["size"],
+        }
+        poscar.comment = (
+                self.V_Cd_dict["name"]
+                + str(dict_transf["defect_supercell_site"].frac_coords)
+                + "_-dNELECT="  # change in NELECT from bulk supercell
+                + str(0)
         )
+        vasp_defect_inputs = {"vac_1_Cd_0": {
+            "Defect Structure": struct,
+            "POSCAR Comment": poscar.comment,
+            "Transformation Dict": dict_transf,
+        }}
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
