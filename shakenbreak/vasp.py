@@ -28,7 +28,6 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
 default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml"))
-defect_config = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/DefectSet.yaml"))
 
 
 def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
@@ -182,10 +181,6 @@ class DefectRelaxSet(MPRelaxSet):
 
     def __init__(self, structure, **kwargs):
         charge = kwargs.pop("charge", 0)
-        user_incar_settings = kwargs.get("user_incar_settings", {})
-        defect_settings = deepcopy(defect_config["defect"])
-        defect_settings.update(user_incar_settings)
-        kwargs["user_incar_settings"] = defect_settings
 
         super(self.__class__, self).__init__(structure, **kwargs)
         self.charge = charge
