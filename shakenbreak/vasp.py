@@ -287,7 +287,7 @@ def write_vasp_gam_files(
 
     defect_relax_set = DefectRelaxSet(
         supercell,
-        charge=single_defect_dict["Transformation " "Dict"]["charge"],
+        charge=single_defect_dict["Transformation Dict"]["charge"],
         user_potcar_settings=potcar_dict["POTCAR"],
         user_potcar_functional=potcar_dict["POTCAR_FUNCTIONAL"],
     )
@@ -355,60 +355,3 @@ def write_vasp_gam_files(
     with zopen(vaspgaminputdir + "INCAR", "wt") as incar_file:
         incar_file.write(vaspgamincar.get_string())
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
-
-
-def prepare_vasp_defect_inputs(defects: dict) -> dict:
-    """
-    Generates a dictionary of folders for VASP defect calculations.
-    Duplicated from doped (from github.com/SMTG-UCL/doped).
-
-    Args:
-        defects (dict):
-            Dictionary of defect-object-dictionaries from PyCDT's
-            ChargedDefectsStructures class (see example notebook)
-
-    Returns:
-        :obj:`dict`:
-            Dictionary mapping each defect to a dictionary with defect
-            information ("Defect Structure", "Poscar Comment",
-            "Transformation Dict")
-    """
-    defect_input_dict = {}
-    comb_defs = functools.reduce(
-        lambda x, y: x + y, [defects[key] for key in defects if key != "bulk"]
-    )
-
-    for defect in comb_defs:
-        # noinspection DuplicatedCode
-        for charge in defect["charges"]:
-            supercell = defect["supercell"]
-            dict_transf = {
-                "defect_type": defect["name"],
-                "defect_site": defect["unique_site"],
-                "defect_supercell_site": defect["bulk_supercell_site"],
-                "defect_multiplicity": defect["site_multiplicity"],
-                "charge": charge,
-                "supercell": supercell["size"],
-            }
-            if "substitution_specie" in defect:
-                dict_transf["substitution_specie"] = defect["substitution_specie"]
-
-            defect_relax_set = DefectRelaxSet(supercell["structure"], charge=charge)
-
-            poscar = defect_relax_set.poscar
-            struct = defect_relax_set.structure
-            poscar.comment = (
-                defect["name"]
-                + str(dict_transf["defect_supercell_site"].frac_coords)
-                + "_-dNELECT="  # change in NELECT from bulk supercell
-                + str(charge)
-            )
-            folder_name = defect["name"] + f"_{charge}"
-            print(folder_name)
-
-            defect_input_dict[folder_name] = {
-                "Defect Structure": struct,
-                "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf,
-            }
-    return defect_input_dict
