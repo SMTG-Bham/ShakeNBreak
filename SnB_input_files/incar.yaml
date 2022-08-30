@@ -14,11 +14,12 @@ ISMEAR: 0
 ISPIN: '2 # Spin polarisation likely for defects'
 ISYM: '0 # Symmetry breaking extremely likely for defects'
 LASPH: true
+LCHARG: false
 LHFCALC: true
 LORBIT: 11
 LREAL: false
 LVHAR: 'True # Needed if using the Freysoldt (FNV) charge correction scheme'
-LWAVE: true
+LWAVE: false
 NCORE: 12
 NEDOS: 2000
 NELM: 100
