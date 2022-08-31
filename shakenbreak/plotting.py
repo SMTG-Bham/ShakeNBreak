@@ -1116,8 +1116,9 @@ def plot_colorbar(
         ax = _format_axis(
             ax=ax,
             y_label=y_label,
-            defect_name=_format_defect_name(defect_species,
-                                            include_site_num_in_name=include_site_num_in_name),
+            defect_name=_format_defect_name(
+                defect_species, include_site_num_in_name=include_site_num_in_name
+            ),
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
         )
@@ -1363,8 +1364,9 @@ def plot_datasets(
     ax = _format_axis(
         ax=ax,
         y_label=y_label,
-        defect_name=_format_defect_name(defect_species,
-                                        include_site_num_in_name=include_site_num_in_name),
+        defect_name=_format_defect_name(
+            defect_species, include_site_num_in_name=include_site_num_in_name
+        ),
         num_nearest_neighbours=num_nearest_neighbours,
         neighbour_atom=neighbour_atom,
     )
