@@ -18,7 +18,6 @@ LCHARG: false
 LHFCALC: true
 LORBIT: 11
 LREAL: false
-LVHAR: 'True # Needed if using the Freysoldt (FNV) charge correction scheme'
 LWAVE: false
 NCORE: 12
 NEDOS: 2000
