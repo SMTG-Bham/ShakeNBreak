@@ -15,7 +15,7 @@ LASPH: true
 LCHARG: false
 LHFCALC: true
 LORBIT: 11
-LREAL: false
+LREAL: Auto
 LWAVE: false
 NCORE: 12
 NEDOS: 2000
