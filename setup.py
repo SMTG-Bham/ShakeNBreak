@@ -15,13 +15,13 @@ class move_ttf(install):
     def run(self):
         """
         Performs the usual install process and then copies the True Type fonts
-        that come with clearplot into matplotlib's True Type font directory,
-        and deletes the matplotlib fontList.cache
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
         """
         # Perform the usual install process
         install.run(self)
-        print("Trying to install Whitney font")
-        # Try to install custom fonts
+        print("Trying to install Whitney font...")
+        # Try to install custom font
         try:
             import os, shutil
             import matplotlib as mpl
@@ -31,7 +31,7 @@ class move_ttf(install):
             mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
             mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
 
-            # Copy the font files to matplotlib's True Type font directory
+            # Copy the font file to matplotlib's True Type font directory
             fonts_dir = "fonts/"
             for file_name in os.listdir(fonts_dir):
                 if '.ttf' in file_name:  # must be in ttf format for matplotlib
@@ -40,7 +40,7 @@ class move_ttf(install):
                     shutil.copyfile(old_path, new_path)
                     print("Copying " + old_path + " -> " + new_path)
                 else:
-                    print(f"No ttf fonts found inf the {fonts_dir} directory.")
+                    print(f"No ttf fonts found in the {fonts_dir} directory.")
 
             # Try to delete matplotlib's fontList cache
             mpl_cache_dir = mpl.get_cachedir()
