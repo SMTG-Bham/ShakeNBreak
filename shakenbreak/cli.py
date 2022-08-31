@@ -975,7 +975,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     "--defect",
     "-d",
     help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0'). "
-         "Default is current directory name.",
+    "Default is current directory name.",
     type=str,
     default=None,
 )

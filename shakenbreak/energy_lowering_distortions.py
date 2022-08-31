@@ -537,8 +537,11 @@ def get_energy_lowering_distortions(
 
             # warning if all rattled distortions are higher energy than unperturbed
             elif gs_distortion == "Unperturbed" and all(
-                    [value - energies_dict["Unperturbed"]> 0.1 for value in energies_dict[
-                        "distortions"].values()]):
+                [
+                    value - energies_dict["Unperturbed"] > 0.1
+                    for value in energies_dict["distortions"].values()
+                ]
+            ):
                 warnings.warn(
                     f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
                     f"than unperturbed, indicating problems with the relaxations. You should "
