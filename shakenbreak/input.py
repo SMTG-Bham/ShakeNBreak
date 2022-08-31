@@ -1066,25 +1066,20 @@ class Distortions:
 
     def _setup_distorted_defect_dict(
         self,
-        defect_name: str,
         defect: dict,
-        distorted_defects_dict: dict,
     ) -> dict:
         """
-        Add defect information to `distorted_defects_dict`.
+        Setup `distorted_defect_dict` with info for `defect`.
 
         Args:
-            defect_name (:obj:`str`):
-                Name of the defect to use as key in the `distorted_defects_dict`.
             defect (:obj:`dict`):
-                Defect dictionary to add to `distorted_defects_dict`.
-            distorted_defects_dict (:obj:`dict`):
-                Full dictionary of distorted defects.
+                Defect dictionary to generate `distorted_defect_dict` from.
 
         Returns:
             :obj:`dict`
+                Dictionary with information for `defect`.
         """
-        distorted_defects_dict[defect_name] = {
+        distorted_defect_dict = {
             "defect_type": defect["name"],
             "defect_site": defect["unique_site"],
             "defect_supercell_site": defect["bulk_supercell_site"],
@@ -1097,8 +1092,8 @@ class Distortions:
             "substituting_specie",
         ]:  # substitutions and antisites
             if key in defect:
-                distorted_defects_dict[defect_name][key] = defect[key]
-        return distorted_defects_dict
+                distorted_defect_dict[key] = defect[key]
+        return distorted_defect_dict
 
     def write_distortion_metadata(
         self,
@@ -1187,10 +1182,8 @@ class Distortions:
                 "charges": {},
             }
 
-            distorted_defects_dict = self._setup_distorted_defect_dict(
-                distorted_defects_dict=distorted_defects_dict,
-                defect_name=defect_name,
-                defect=defect,
+            distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
+                defect
             )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
