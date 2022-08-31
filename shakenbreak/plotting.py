@@ -540,15 +540,27 @@ def _save_plot(
     wd = os.getcwd()
     if not os.path.isdir(wd + "/distortion_plots/"):
         os.mkdir(wd + "/distortion_plots/")
-    if verbose:
-        print(f"Plot saved to {wd}/distortion_plots/")
+    # use pycairo as backend if installed and save_format is pdf:
+    backend = None
+    if "pdf" in save_format:
+        try:
+            import cairo
+            backend = "cairo"
+        except ImportError:
+            warnings.warn(
+                "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
+                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
+                "`pip install pycairo` if you want ShakeNBreak's default font."
+            )
     fig.savefig(
         wd + "/distortion_plots/" + defect_name + f".{save_format}",
         format=save_format,
         transparent=True,
         bbox_inches="tight",
-        backend="cairo" if save_format == "pdf" else None,
+        backend=backend,
     )
+    if verbose:
+        print(f"Plot saved to {wd}/distortion_plots/{defect_name}.{save_format}")
 
 
 def _format_tick_labels(

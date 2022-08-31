@@ -30,13 +30,13 @@ def _install_custom_font():
 
         # Find where matplotlib stores its True Type fonts
         mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
-        mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
+        mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
 
         # Copy the font file to matplotlib's True Type font directory
         fonts_dir = f"{path_to_file}/fonts/"
         try:
             for file_name in os.listdir(fonts_dir):
-                if '.ttf' in file_name:  # must be in ttf format for matplotlib
+                if ".ttf" in file_name:  # must be in ttf format for matplotlib
                     old_path = os.path.join(fonts_dir, file_name)
                     new_path = os.path.join(mpl_fonts_dir, file_name)
                     shutil.copyfile(old_path, new_path)
@@ -49,8 +49,8 @@ def _install_custom_font():
         # Try to delete matplotlib's fontList cache
         mpl_cache_dir = mpl.get_cachedir()
         mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
-        if 'fontList.cache' in mpl_cache_dir_ls:
-            fontList_path = os.path.join(mpl_cache_dir, 'fontList.cache')
+        if "fontList.cache" in mpl_cache_dir_ls:
+            fontList_path = os.path.join(mpl_cache_dir, "fontList.cache")
             if fontList_path:
                 os.remove(fontList_path)
                 print("Deleted the matplotlib fontList.cache.")
@@ -76,6 +76,7 @@ class PostInstallCommand(install):
     after installation. Note that this only works when using 'python setup.py install'
     but not 'pip install .' or 'pip install -e .'.
     """
+
     def run(self):
         """
         Performs the usual install process and then copies the True Type fonts
@@ -89,6 +90,7 @@ class PostInstallCommand(install):
 
 class PostDevelopCommand(develop):
     """Post-installation for development mode."""
+
     def run(self):
         develop.run(self)
         _install_custom_font()
@@ -105,7 +107,7 @@ def package_files(directory):
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
+            paths.append(os.path.join("..", path, filename))
     return paths
 
 
@@ -120,8 +122,8 @@ setup(
     long_description="Python package to automatise the process of defect structure searching. "
     "It employs chemically-guided bond distortions to locate ground-state and metastable structures"
     " of point defects in solid materials. Read the [docs]("
-                     "https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
-    long_description_content_type='text/markdown',
+    "https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
+    long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
     author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
@@ -129,7 +131,7 @@ setup(
     readme="README.md",  # PyPI readme
     url="https://github.com/SMTG-UCL/ShakeNBreak",
     license="MIT",
-    license_files = ("LICENSE",),
+    license_files=("LICENSE",),
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
@@ -152,17 +154,19 @@ setup(
         "hiphive",
         "monty",
         "click",
-        "pycairo",
     ],
     extras_require={
         "tests": [
             "pytest",
-            "pytest-mpl==0.15.1", # New version 0.16.0 has a bug
+            "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
         ],
         "docs": [
             "sphinx",
             "sphinx-book-theme",
             "sphinx_click",
+        ],
+        "pdf": [
+            "pycairo",
         ],
     },
     # Specify any non-python files to be distributed with the package
@@ -195,9 +199,9 @@ setup(
         ],
     },
     cmdclass={
-        "install" : PostInstallCommand,
+        "install": PostInstallCommand,
         "develop": PostDevelopCommand,
-        'egg_info': CustomEggInfoCommand,
+        "egg_info": CustomEggInfoCommand,
     },
 )
 
