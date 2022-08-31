@@ -2,12 +2,14 @@
 Module containing functions to plot distorted defect relaxation outputs and identify
 energy-lowering distortions.
 """
-import os
+import os, shutil
 import warnings
 from typing import Optional, Tuple
 import numpy as np
 
+import matplotlib
 import matplotlib as mpl
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import seaborn as sns
@@ -15,6 +17,58 @@ import seaborn as sns
 from shakenbreak import analysis
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _install_custom_font():
+    """Check if SnB custom font has been installed, and install it otherwise."""
+    # Find where matplotlib stores its True Type fonts
+    mpl_data_dir = os.path.dirname(matplotlib.matplotlib_fname())
+    print(mpl_data_dir)
+    mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
+    custom_fonts = [
+        font for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
+        if "whitney-book-pro" in font.lower()
+    ]
+    if not custom_fonts:  # If custom hasn't been installed, install it
+        print("Trying to install ShakeNBreak custom font...")
+        try:
+            # Copy the font file to matplotlib's True Type font directory
+            fonts_dir = f"{MODULE_DIR}/../fonts/"
+            try:
+                for file_name in os.listdir(fonts_dir):
+                    if '.ttf' in file_name:  # must be in ttf format for matplotlib
+                        old_path = os.path.join(fonts_dir, file_name)
+                        new_path = os.path.join(mpl_fonts_dir, file_name)
+                        shutil.copyfile(old_path, new_path)
+                        print("Copying " + old_path + " -> " + new_path)
+                    else:
+                        print(f"No ttf fonts found in the {fonts_dir} directory.")
+            except:
+                pass
+
+            # Try to delete matplotlib's fontList cache
+            mpl_cache_dir = mpl.get_cachedir()
+            mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
+            if 'fontList.cache' in mpl_cache_dir_ls:
+                fontList_path = os.path.join(mpl_cache_dir, 'fontList.cache')
+                if fontList_path:
+                    os.remove(fontList_path)
+                    print("Deleted the matplotlib fontList.cache.")
+            else:
+                print("Couldn't find matplotlib cache, so will continue.")
+
+            # Add font to MAtplotlib Fontmanager
+            for font in os.listdir(fonts_dir):
+                font_manager._load_fontmanager(try_read_cache=False)
+                font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
+                print(f"Adding {font} font to matplotlib fonts.")
+        except:
+            warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
+                The widely available Helvetica font will be used instead."""
+            warnings.warn(warning_msg)
+
+
+_install_custom_font()
 
 
 # Helper functions for formatting plots
