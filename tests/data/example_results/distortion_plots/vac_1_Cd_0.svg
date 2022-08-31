@@ -1,0 +1,1118 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="399.413828pt" height="391.794844pt" viewBox="0 0 399.413828 391.794844" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2022-08-31T19:41:13.195021</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.5.3, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 391.794844 
+L 399.413828 391.794844 
+L 399.413828 0 
+L 0 0 
+L 0 391.794844 
+z
+" style="fill: none"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 57.413828 344.72 
+L 392.213828 344.72 
+L 392.213828 39.8 
+L 57.413828 39.8 
+L 57.413828 344.72 
+z
+" style="fill: none"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1">
+      <defs>
+       <path id="mbadac7ec87" d="M 0 0 
+L 0 -12 
+" style="stroke: #000000; stroke-width: 0.2"/>
+      </defs>
+      <g>
+       <use xlink:href="#mbadac7ec87" x="72.63201" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_1">
+      <!-- -0.6 -->
+      <g transform="translate(62.47158 358.976641)scale(0.115 -0.115)">
+       <defs>
+        <path id="Whitney-Book-2d" d="M 1939 1600 
+L 390 1600 
+L 390 2022 
+L 1939 2022 
+L 1939 1600 
+z
+" transform="scale(0.015625)"/>
+        <path id="Whitney-Book-30" d="M 3132 3805 
+Q 3558 3200 3558 2169 
+Q 3558 1139 3129 528 
+Q 2701 -83 1971 -83 
+Q 1235 -83 809 521 
+Q 384 1126 384 2156 
+Q 384 3187 813 3798 
+Q 1242 4410 1971 4410 
+Q 2707 4410 3132 3805 
+z
+M 2822 796 
+Q 3123 1299 3123 2163 
+Q 3123 3027 2822 3529 
+Q 2522 4032 1971 4032 
+Q 1421 4032 1120 3529 
+Q 819 3027 819 2163 
+Q 819 1299 1120 796 
+Q 1421 294 1971 294 
+Q 2522 294 2822 796 
+z
+" transform="scale(0.015625)"/>
+        <path id="Whitney-Book-2e" d="M 947 0 
+L 454 0 
+L 454 627 
+L 947 627 
+L 947 0 
+z
+" transform="scale(0.015625)"/>
+        <path id="Whitney-Book-36" d="M 2701 4026 
+Q 1050 3571 838 2214 
+Q 1402 2605 2010 2605 
+Q 2611 2605 2969 2256 
+Q 3328 1907 3328 1312 
+Q 3328 691 2928 304 
+Q 2528 -83 1914 -83 
+Q 1242 -83 816 413 
+Q 390 909 390 1754 
+Q 390 3789 2643 4416 
+L 2701 4026 
+z
+M 1939 2234 
+Q 1363 2234 813 1798 
+L 813 1773 
+Q 813 1114 1120 701 
+Q 1427 288 1920 288 
+Q 2362 288 2627 563 
+Q 2893 838 2893 1293 
+Q 2893 1722 2649 1978 
+Q 2406 2234 1939 2234 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-36" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2">
+      <g>
+       <use xlink:href="#mbadac7ec87" x="148.722919" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_2">
+      <!-- -0.3 -->
+      <g transform="translate(138.821239 358.976641)scale(0.115 -0.115)">
+       <defs>
+        <path id="Whitney-Book-33" d="M 2970 1171 
+Q 2970 621 2560 269 
+Q 2150 -83 1498 -83 
+Q 813 -83 288 256 
+L 358 678 
+Q 909 301 1523 301 
+Q 1984 301 2256 534 
+Q 2528 768 2528 1165 
+Q 2528 1600 2217 1843 
+Q 1907 2086 1274 2086 
+L 1082 2086 
+L 1024 2470 
+L 1318 2470 
+Q 1869 2470 2157 2691 
+Q 2445 2912 2445 3296 
+Q 2445 3622 2221 3824 
+Q 1997 4026 1574 4026 
+Q 960 4026 416 3610 
+L 358 4013 
+Q 915 4410 1594 4410 
+Q 2221 4410 2553 4099 
+Q 2886 3789 2886 3315 
+Q 2886 2560 2061 2291 
+Q 2970 2029 2970 1171 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-33" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_3">
+     <g id="line2d_3">
+      <g>
+       <use xlink:href="#mbadac7ec87" x="224.813828" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_3">
+      <!-- 0.0 -->
+      <g transform="translate(216.470938 358.976641)scale(0.115 -0.115)">
+       <use xlink:href="#Whitney-Book-30"/>
+       <use xlink:href="#Whitney-Book-2e" x="61.599991"/>
+       <use xlink:href="#Whitney-Book-30" x="83.499985"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_4">
+      <g>
+       <use xlink:href="#mbadac7ec87" x="300.904737" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_4">
+      <!-- 0.3 -->
+      <g transform="translate(293.096417 358.976641)scale(0.115 -0.115)">
+       <use xlink:href="#Whitney-Book-30"/>
+       <use xlink:href="#Whitney-Book-2e" x="61.599991"/>
+       <use xlink:href="#Whitney-Book-33" x="83.499985"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_5">
+      <g>
+       <use xlink:href="#mbadac7ec87" x="376.995646" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_5">
+      <!-- 0.6 -->
+      <g transform="translate(368.928576 358.976641)scale(0.115 -0.115)">
+       <use xlink:href="#Whitney-Book-30"/>
+       <use xlink:href="#Whitney-Book-2e" x="61.599991"/>
+       <use xlink:href="#Whitney-Book-36" x="83.499985"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_6">
+      <defs>
+       <path id="maeb8f70bfb" d="M 0 0 
+L 0 -5 
+" style="stroke: #000000; stroke-width: 0.2"/>
+      </defs>
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="97.995646" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_7">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="123.359283" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_8">
+     <g id="line2d_8">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="174.086555" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_9">
+     <g id="line2d_9">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="199.450192" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_10">
+     <g id="line2d_10">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="250.177464" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_11">
+     <g id="line2d_11">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="275.541101" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_12">
+     <g id="line2d_12">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="326.268374" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="xtick_13">
+     <g id="line2d_13">
+      <g>
+       <use xlink:href="#maeb8f70bfb" x="351.63201" y="344.72" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+    </g>
+    <g id="text_6">
+     <!-- Bond Distortion Factor -->
+     <g transform="translate(154.434531 381.850313)scale(0.15 -0.15)">
+      <defs>
+       <path id="Whitney-Book-42" d="M 3174 1274 
+Q 3174 653 2755 326 
+Q 2336 0 1606 0 
+L 589 0 
+L 589 4416 
+L 1613 4416 
+Q 2278 4416 2627 4118 
+Q 2976 3821 2976 3315 
+Q 2976 2624 2304 2349 
+Q 3174 2106 3174 1274 
+z
+M 2541 3296 
+Q 2541 3648 2304 3840 
+Q 2067 4032 1600 4032 
+L 1024 4032 
+L 1024 2496 
+L 1587 2496 
+Q 2042 2496 2291 2717 
+Q 2541 2938 2541 3296 
+z
+M 2739 1248 
+Q 2739 1690 2444 1910 
+Q 2150 2131 1619 2131 
+L 1024 2131 
+L 1024 384 
+L 1645 384 
+Q 2150 384 2444 611 
+Q 2739 838 2739 1248 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-6f" d="M 3040 1510 
+Q 3040 781 2653 358 
+Q 2266 -64 1664 -64 
+Q 1069 -64 688 358 
+Q 307 781 307 1510 
+Q 307 2246 691 2668 
+Q 1075 3091 1664 3091 
+Q 2272 3091 2656 2668 
+Q 3040 2246 3040 1510 
+z
+M 2605 1510 
+Q 2605 2067 2349 2400 
+Q 2093 2733 1664 2733 
+Q 1242 2733 989 2406 
+Q 736 2080 736 1510 
+Q 736 960 992 627 
+Q 1248 294 1664 294 
+Q 2093 294 2349 620 
+Q 2605 947 2605 1510 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-6e" d="M 2880 0 
+L 2458 0 
+L 2458 2086 
+Q 2458 2714 1894 2714 
+Q 1453 2714 915 2189 
+L 915 0 
+L 493 0 
+L 493 3027 
+L 819 3027 
+L 890 2579 
+Q 1466 3091 1978 3091 
+Q 2419 3091 2649 2848 
+Q 2880 2605 2880 2163 
+L 2880 0 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-64" d="M 2906 0 
+L 2586 0 
+L 2509 442 
+Q 2086 -64 1536 -64 
+Q 1005 -64 659 317 
+Q 314 698 314 1427 
+Q 314 2221 710 2646 
+Q 1107 3072 1696 3072 
+Q 2144 3072 2483 2918 
+L 2483 4518 
+L 2906 4595 
+L 2906 0 
+z
+M 2483 858 
+L 2483 2528 
+Q 2131 2707 1709 2707 
+Q 1280 2707 1011 2384 
+Q 742 2061 742 1446 
+Q 742 909 972 611 
+Q 1203 314 1574 314 
+Q 2035 314 2483 858 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-20" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-44" d="M 4090 2214 
+Q 4090 1197 3462 598 
+Q 2835 0 1773 0 
+L 589 0 
+L 589 4416 
+L 1792 4416 
+Q 2880 4416 3485 3817 
+Q 4090 3219 4090 2214 
+z
+M 3635 2208 
+Q 3635 3085 3139 3552 
+Q 2643 4019 1798 4019 
+L 1030 4019 
+L 1030 397 
+L 1798 397 
+Q 2656 397 3145 857 
+Q 3635 1318 3635 2208 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-69" d="M 960 4275 
+Q 1050 4186 1050 4058 
+Q 1050 3930 960 3840 
+Q 870 3750 748 3750 
+Q 627 3750 534 3840 
+Q 442 3930 442 4058 
+Q 442 4186 534 4275 
+Q 627 4365 748 4365 
+Q 870 4365 960 4275 
+z
+M 954 0 
+L 538 0 
+L 538 3027 
+L 954 3027 
+L 954 0 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-73" d="M 2502 819 
+Q 2502 410 2201 176 
+Q 1901 -58 1376 -58 
+Q 781 -58 288 218 
+L 358 627 
+Q 870 301 1414 301 
+Q 1734 301 1916 429 
+Q 2099 557 2099 787 
+Q 2099 1011 1936 1136 
+Q 1773 1261 1318 1382 
+Q 800 1517 579 1712 
+Q 358 1907 358 2272 
+Q 358 2630 640 2860 
+Q 922 3091 1389 3091 
+Q 1875 3091 2330 2886 
+L 2259 2483 
+Q 1818 2720 1376 2720 
+Q 1075 2720 918 2601 
+Q 762 2483 762 2291 
+Q 762 2106 909 1994 
+Q 1056 1882 1440 1779 
+Q 2003 1626 2252 1418 
+Q 2502 1210 2502 819 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-74" d="M 1850 0 
+Q 1670 -51 1427 -51 
+Q 640 -51 640 691 
+L 640 2669 
+L 173 2669 
+L 173 3027 
+L 640 3027 
+L 640 4077 
+L 1056 4147 
+L 1056 3027 
+L 1754 3027 
+L 1811 2669 
+L 1056 2669 
+L 1056 762 
+Q 1056 531 1158 425 
+Q 1261 320 1504 320 
+Q 1613 320 1786 352 
+L 1850 0 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-72" d="M 2048 2694 
+Q 1690 2669 1382 2445 
+Q 1075 2221 915 1901 
+L 915 0 
+L 493 0 
+L 493 3027 
+L 806 3027 
+L 902 2406 
+Q 1344 3072 1978 3091 
+L 2048 2694 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-46" d="M 2803 4013 
+L 1030 4013 
+L 1030 2438 
+L 2451 2438 
+L 2515 2042 
+L 1030 2042 
+L 1030 0 
+L 589 0 
+L 589 4416 
+L 2803 4416 
+L 2803 4013 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-61" d="M 2662 0 
+L 2342 0 
+L 2272 403 
+Q 1773 -64 1203 -64 
+Q 800 -64 550 153 
+Q 301 371 301 762 
+Q 301 1293 758 1565 
+Q 1216 1837 2246 1939 
+L 2246 2138 
+Q 2246 2720 1619 2720 
+Q 1133 2720 576 2451 
+L 518 2829 
+Q 1120 3091 1645 3091 
+Q 2662 3091 2662 2157 
+L 2662 0 
+z
+M 2246 749 
+L 2246 1606 
+Q 1670 1549 1324 1430 
+Q 979 1312 851 1158 
+Q 723 1005 723 787 
+Q 723 550 870 422 
+Q 1018 294 1267 294 
+Q 1760 294 2246 749 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-63" d="M 2701 275 
+Q 2259 -64 1677 -64 
+Q 1082 -64 694 358 
+Q 307 781 307 1510 
+Q 307 2253 700 2672 
+Q 1094 3091 1702 3091 
+Q 2253 3091 2675 2784 
+L 2605 2362 
+Q 2170 2726 1690 2726 
+Q 1267 2726 1001 2406 
+Q 736 2086 736 1517 
+Q 736 954 1008 630 
+Q 1280 307 1715 307 
+Q 2221 307 2643 666 
+L 2701 275 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#Whitney-Book-42"/>
+      <use xlink:href="#Whitney-Book-6f" x="54.699997"/>
+      <use xlink:href="#Whitney-Book-6e" x="106.999985"/>
+      <use xlink:href="#Whitney-Book-64" x="159.299973"/>
+      <use xlink:href="#Whitney-Book-20" x="212.399963"/>
+      <use xlink:href="#Whitney-Book-44" x="234.999954"/>
+      <use xlink:href="#Whitney-Book-69" x="305.099945"/>
+      <use xlink:href="#Whitney-Book-73" x="328.499939"/>
+      <use xlink:href="#Whitney-Book-74" x="372.299927"/>
+      <use xlink:href="#Whitney-Book-6f" x="405.299911"/>
+      <use xlink:href="#Whitney-Book-72" x="457.599899"/>
+      <use xlink:href="#Whitney-Book-74" x="491.999893"/>
+      <use xlink:href="#Whitney-Book-69" x="524.999878"/>
+      <use xlink:href="#Whitney-Book-6f" x="548.399872"/>
+      <use xlink:href="#Whitney-Book-6e" x="600.69986"/>
+      <use xlink:href="#Whitney-Book-20" x="652.999847"/>
+      <use xlink:href="#Whitney-Book-46" x="675.599838"/>
+      <use xlink:href="#Whitney-Book-61" x="723.299835"/>
+      <use xlink:href="#Whitney-Book-63" x="772.199829"/>
+      <use xlink:href="#Whitney-Book-74" x="818.699814"/>
+      <use xlink:href="#Whitney-Book-6f" x="851.699799"/>
+      <use xlink:href="#Whitney-Book-72" x="903.999786"/>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_14">
+      <defs>
+       <path id="ma21fc5cefe" d="M 0 0 
+L 12 0 
+" style="stroke: #000000; stroke-width: 0.2"/>
+      </defs>
+      <g>
+       <use xlink:href="#ma21fc5cefe" x="57.413828" y="334.42528" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_7">
+      <!-- -0.8 -->
+      <g transform="translate(31.058828 338.553601)scale(0.115 -0.115)">
+       <defs>
+        <path id="Whitney-Book-38" d="M 365 1088 
+Q 365 1824 1286 2285 
+Q 531 2624 531 3328 
+Q 531 3789 905 4099 
+Q 1280 4410 1856 4410 
+Q 2438 4410 2793 4106 
+Q 3149 3802 3149 3341 
+Q 3149 2694 2374 2266 
+Q 2822 2074 3056 1795 
+Q 3290 1517 3290 1101 
+Q 3290 595 2877 256 
+Q 2464 -83 1830 -83 
+Q 1165 -83 765 253 
+Q 365 589 365 1088 
+z
+M 787 1114 
+Q 787 742 1081 508 
+Q 1376 275 1843 275 
+Q 2278 275 2572 512 
+Q 2867 749 2867 1107 
+Q 2867 1466 2611 1683 
+Q 2355 1901 1670 2131 
+Q 1261 1965 1024 1699 
+Q 787 1434 787 1114 
+z
+M 954 3334 
+Q 954 3014 1181 2812 
+Q 1408 2611 1997 2413 
+Q 2726 2771 2726 3322 
+Q 2726 3642 2483 3850 
+Q 2240 4058 1843 4058 
+Q 1434 4058 1194 3843 
+Q 954 3629 954 3334 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-38" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_15">
+      <g>
+       <use xlink:href="#ma21fc5cefe" x="57.413828" y="267.12146" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_8">
+      <!-- -0.6 -->
+      <g transform="translate(31.092969 271.249781)scale(0.115 -0.115)">
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-36" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_16">
+      <g>
+       <use xlink:href="#ma21fc5cefe" x="57.413828" y="199.81764" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_9">
+      <!-- -0.4 -->
+      <g transform="translate(30.805469 203.94596)scale(0.115 -0.115)">
+       <defs>
+        <path id="Whitney-Book-34" d="M 3584 1024 
+L 2874 1024 
+L 2874 0 
+L 2477 0 
+L 2477 1024 
+L 262 1024 
+L 262 1325 
+L 2355 4346 
+L 2874 4346 
+L 2874 1376 
+L 3584 1376 
+L 3584 1024 
+z
+M 2477 1376 
+L 2477 3878 
+L 730 1376 
+L 2477 1376 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-34" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_17">
+      <g>
+       <use xlink:href="#ma21fc5cefe" x="57.413828" y="132.51382" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_10">
+      <!-- -0.2 -->
+      <g transform="translate(31.472109 136.64214)scale(0.115 -0.115)">
+       <defs>
+        <path id="Whitney-Book-32" d="M 3046 0 
+L 320 0 
+L 320 314 
+L 1914 2010 
+Q 2259 2381 2396 2643 
+Q 2534 2906 2534 3206 
+Q 2534 3597 2307 3811 
+Q 2080 4026 1677 4026 
+Q 1094 4026 499 3507 
+L 435 3930 
+Q 1005 4410 1702 4410 
+Q 2298 4410 2637 4090 
+Q 2976 3770 2976 3232 
+Q 2976 2842 2806 2522 
+Q 2637 2202 2227 1773 
+L 896 378 
+L 2989 378 
+L 3046 0 
+z
+" transform="scale(0.015625)"/>
+       </defs>
+       <use xlink:href="#Whitney-Book-2d"/>
+       <use xlink:href="#Whitney-Book-30" x="36.399994"/>
+       <use xlink:href="#Whitney-Book-2e" x="97.999985"/>
+       <use xlink:href="#Whitney-Book-32" x="119.899979"/>
+      </g>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_18">
+      <g>
+       <use xlink:href="#ma21fc5cefe" x="57.413828" y="65.21" style="stroke: #000000; stroke-width: 0.2"/>
+      </g>
+     </g>
+     <g id="text_11">
+      <!-- 0.0 -->
+      <g transform="translate(34.728047 69.33832)scale(0.115 -0.115)">
+       <use xlink:href="#Whitney-Book-30"/>
+       <use xlink:href="#Whitney-Book-2e" x="61.599991"/>
+       <use xlink:href="#Whitney-Book-30" x="83.499985"/>
+      </g>
+     </g>
+    </g>
+    <g id="text_12">
+     <!-- Energy (eV) -->
+     <g transform="translate(18.060938 229.969766)rotate(-90)scale(0.15 -0.15)">
+      <defs>
+       <path id="Whitney-Book-45" d="M 2957 0 
+L 589 0 
+L 589 4416 
+L 2893 4416 
+L 2893 4013 
+L 1030 4013 
+L 1030 2509 
+L 2502 2509 
+L 2566 2112 
+L 1030 2112 
+L 1030 403 
+L 2957 403 
+L 2957 0 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-65" d="M 2829 365 
+Q 2323 -64 1670 -64 
+Q 1056 -64 681 345 
+Q 307 755 307 1517 
+Q 307 2234 672 2662 
+Q 1037 3091 1606 3091 
+Q 2195 3091 2515 2662 
+Q 2835 2234 2835 1574 
+L 2835 1485 
+L 730 1485 
+Q 742 922 992 611 
+Q 1242 301 1696 301 
+Q 2240 301 2765 749 
+L 2829 365 
+z
+M 1600 2752 
+Q 1261 2752 1033 2509 
+Q 806 2266 742 1818 
+L 2400 1818 
+Q 2368 2240 2163 2496 
+Q 1958 2752 1600 2752 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-67" d="M 2970 -243 
+Q 2970 -666 2557 -909 
+Q 2144 -1152 1529 -1152 
+Q 915 -1152 531 -947 
+Q 147 -742 147 -365 
+Q 147 83 838 435 
+Q 614 576 614 755 
+Q 614 973 915 1158 
+Q 659 1286 508 1520 
+Q 358 1754 358 2061 
+Q 358 2522 688 2806 
+Q 1018 3091 1478 3091 
+Q 1933 3091 2246 2835 
+L 3002 3078 
+L 3072 2662 
+L 2464 2598 
+Q 2624 2355 2624 2061 
+Q 2624 1594 2291 1312 
+Q 1958 1030 1491 1030 
+Q 1344 1030 1222 1056 
+Q 1030 947 1030 838 
+Q 1030 749 1158 697 
+Q 1286 646 1709 570 
+L 1933 525 
+Q 2464 429 2717 253 
+Q 2970 77 2970 -243 
+z
+M 1542 224 
+Q 1485 237 1408 249 
+Q 1331 262 1276 275 
+Q 1222 288 1171 301 
+Q 563 19 563 -339 
+Q 563 -570 832 -701 
+Q 1101 -832 1555 -832 
+Q 2010 -832 2288 -678 
+Q 2566 -525 2566 -294 
+Q 2566 -115 2403 -9 
+Q 2240 96 1837 173 
+L 1542 224 
+z
+M 2208 2061 
+Q 2208 2368 2003 2573 
+Q 1798 2778 1478 2778 
+Q 1158 2778 966 2573 
+Q 774 2368 774 2048 
+Q 774 1747 969 1545 
+Q 1165 1344 1491 1344 
+Q 1818 1344 2013 1545 
+Q 2208 1747 2208 2061 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-79" d="M 2880 3027 
+L 1594 -397 
+Q 1440 -819 1229 -985 
+Q 1018 -1152 685 -1152 
+Q 634 -1152 499 -1133 
+L 435 -755 
+Q 576 -781 678 -781 
+Q 877 -781 1001 -678 
+Q 1126 -576 1216 -333 
+L 1344 -19 
+L 198 2989 
+L 614 3066 
+L 1549 493 
+L 2438 3027 
+L 2880 3027 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-28" d="M 2234 -525 
+L 1811 -614 
+Q 1146 -26 797 598 
+Q 448 1222 448 1990 
+Q 448 3616 2067 4653 
+L 2138 4256 
+Q 1504 3808 1200 3257 
+Q 896 2707 896 1978 
+Q 896 666 2234 -525 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-56" d="M 4102 4416 
+L 2368 -26 
+L 1965 -26 
+L 250 4365 
+L 691 4461 
+L 2176 544 
+L 3635 4416 
+L 4102 4416 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-29" d="M 269 4538 
+L 691 4627 
+Q 1357 4038 1705 3414 
+Q 2054 2790 2054 2022 
+Q 2054 390 435 -640 
+L 365 -243 
+Q 1005 205 1309 752 
+Q 1613 1299 1613 2035 
+Q 1613 3354 269 4538 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#Whitney-Book-45"/>
+      <use xlink:href="#Whitney-Book-6e" x="50.699997"/>
+      <use xlink:href="#Whitney-Book-65" x="102.999985"/>
+      <use xlink:href="#Whitney-Book-72" x="152.099976"/>
+      <use xlink:href="#Whitney-Book-67" x="186.499969"/>
+      <use xlink:href="#Whitney-Book-79" x="236.699966"/>
+      <use xlink:href="#Whitney-Book-20" x="284.699951"/>
+      <use xlink:href="#Whitney-Book-28" x="307.299942"/>
+      <use xlink:href="#Whitney-Book-65" x="346.499939"/>
+      <use xlink:href="#Whitney-Book-56" x="395.59993"/>
+      <use xlink:href="#Whitney-Book-29" x="463.599915"/>
+     </g>
+    </g>
+   </g>
+   <g id="line2d_19">
+    <path d="M 72.63201 319.31 
+L 97.995646 66.931924 
+L 123.359283 319.216555 
+L 148.722919 319.157086 
+L 174.086555 66.423182 
+L 199.450192 66.343713 
+L 224.813828 66.351173 
+L 250.177464 66.343713 
+L 275.541101 66.423182 
+L 300.904737 66.423182 
+L 326.268374 66.423182 
+L 351.63201 66.423182 
+L 376.995646 66.423182 
+" clip-path="url(#p12f15525e7)" style="fill: none; stroke: #59a590; stroke-linecap: square"/>
+    <defs>
+     <path id="mc1b14acc48" d="M 0 3 
+C 0.795609 3 1.55874 2.683901 2.12132 2.12132 
+C 2.683901 1.55874 3 0.795609 3 0 
+C 3 -0.795609 2.683901 -1.55874 2.12132 -2.12132 
+C 1.55874 -2.683901 0.795609 -3 0 -3 
+C -0.795609 -3 -1.55874 -2.683901 -2.12132 -2.12132 
+C -2.683901 -1.55874 -3 -0.795609 -3 0 
+C -3 0.795609 -2.683901 1.55874 -2.12132 2.12132 
+C -1.55874 2.683901 -0.795609 3 0 3 
+z
+" style="stroke: #59a590"/>
+    </defs>
+    <g clip-path="url(#p12f15525e7)">
+     <use xlink:href="#mc1b14acc48" x="72.63201" y="319.31" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="97.995646" y="66.931924" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="123.359283" y="319.216555" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="148.722919" y="319.157086" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="174.086555" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="199.450192" y="66.343713" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="224.813828" y="66.351173" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="250.177464" y="66.343713" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="275.541101" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="300.904737" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="326.268374" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="351.63201" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+     <use xlink:href="#mc1b14acc48" x="376.995646" y="66.423182" style="fill: #59a590; stroke: #59a590"/>
+    </g>
+   </g>
+   <g id="line2d_20">
+    <defs>
+     <path id="mc3c1f536e4" d="M -0 6.363961 
+L 3.818377 0 
+L 0 -6.363961 
+L -3.818377 -0 
+z
+" style="stroke: #59a590; stroke-linejoin: miter"/>
+    </defs>
+    <g clip-path="url(#p12f15525e7)">
+     <use xlink:href="#mc3c1f536e4" x="224.813828" y="65.21" style="fill: #59a590; stroke: #59a590; stroke-linejoin: miter"/>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 57.413828 344.72 
+L 57.413828 39.8 
+" style="fill: none; stroke: #000000; stroke-width: 0.5; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 392.213828 344.72 
+L 392.213828 39.8 
+" style="fill: none; stroke: #000000; stroke-width: 0.5; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 57.413828 344.72 
+L 392.213828 344.72 
+" style="fill: none; stroke: #000000; stroke-width: 0.5; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 57.413828 39.8 
+L 392.213828 39.8 
+" style="fill: none; stroke: #000000; stroke-width: 0.5; stroke-linejoin: miter; stroke-linecap: square"/>
+   </g>
+   <g id="text_13">
+    <!-- V$_{Cd}^{0}$ -->
+    <g transform="translate(209.413828 24.8)scale(0.2 -0.2)">
+     <defs>
+      <path id="Whitney-Book-43" d="M 3738 358 
+Q 3149 -83 2394 -83 
+Q 1498 -83 944 547 
+Q 390 1178 390 2202 
+Q 390 3219 953 3859 
+Q 1517 4499 2426 4499 
+Q 3123 4499 3667 4122 
+L 3597 3674 
+Q 3021 4102 2419 4102 
+Q 1696 4102 1270 3584 
+Q 845 3066 845 2214 
+Q 845 1357 1270 838 
+Q 1696 320 2413 320 
+Q 3072 320 3674 781 
+L 3738 358 
+z
+" transform="scale(0.015625)"/>
+     </defs>
+     <use xlink:href="#Whitney-Book-56" transform="translate(0 0.146875)"/>
+     <use xlink:href="#Whitney-Book-30" transform="translate(68.841625 39.765625)scale(0.7)"/>
+     <use xlink:href="#Whitney-Book-43" transform="translate(68.841625 -23.9)scale(0.7)"/>
+     <use xlink:href="#Whitney-Book-64" transform="translate(113.501617 -23.9)scale(0.7)"/>
+    </g>
+   </g>
+   <g id="legend_1">
+    <g id="patch_7">
+     <path d="M 282.796484 338.22 
+L 383.113828 338.22 
+Q 385.713828 338.22 385.713828 335.62 
+L 385.713828 300.495625 
+Q 385.713828 297.895625 383.113828 297.895625 
+L 282.796484 297.895625 
+Q 280.196484 297.895625 280.196484 300.495625 
+L 280.196484 335.62 
+Q 280.196484 338.22 282.796484 338.22 
+z
+" style="fill: #ffffff; opacity: 0.8; stroke: #cccccc; stroke-linejoin: miter"/>
+    </g>
+    <g id="line2d_21">
+     <path d="M 285.396484 307.879219 
+L 293.196484 307.879219 
+L 300.996484 307.879219 
+" style="fill: none; stroke: #59a590; stroke-linecap: square"/>
+     <g>
+      <use xlink:href="#mc1b14acc48" x="293.196484" y="307.879219" style="fill: #59a590; stroke: #59a590"/>
+     </g>
+    </g>
+    <g id="text_14">
+     <!-- Distortions -->
+     <g transform="translate(311.396484 312.429219)scale(0.13 -0.13)">
+      <use xlink:href="#Whitney-Book-44"/>
+      <use xlink:href="#Whitney-Book-69" x="70.099991"/>
+      <use xlink:href="#Whitney-Book-73" x="93.499985"/>
+      <use xlink:href="#Whitney-Book-74" x="137.299973"/>
+      <use xlink:href="#Whitney-Book-6f" x="170.299957"/>
+      <use xlink:href="#Whitney-Book-72" x="222.599945"/>
+      <use xlink:href="#Whitney-Book-74" x="256.999939"/>
+      <use xlink:href="#Whitney-Book-69" x="289.999924"/>
+      <use xlink:href="#Whitney-Book-6f" x="313.399918"/>
+      <use xlink:href="#Whitney-Book-6e" x="365.699905"/>
+      <use xlink:href="#Whitney-Book-73" x="417.999893"/>
+     </g>
+    </g>
+    <g id="line2d_22">
+     <g>
+      <use xlink:href="#mc3c1f536e4" x="293.196484" y="326.091406" style="fill: #59a590; stroke: #59a590; stroke-linejoin: miter"/>
+     </g>
+    </g>
+    <g id="text_15">
+     <!-- Unperturbed -->
+     <g transform="translate(311.396484 330.641406)scale(0.13 -0.13)">
+      <defs>
+       <path id="Whitney-Book-55" d="M 3840 1683 
+Q 3840 877 3392 403 
+Q 2944 -70 2170 -70 
+Q 1402 -70 960 400 
+Q 518 870 518 1651 
+L 518 4416 
+L 960 4416 
+L 960 1709 
+Q 960 1075 1270 700 
+Q 1581 326 2176 326 
+Q 2765 326 3081 688 
+Q 3398 1050 3398 1683 
+L 3398 4416 
+L 3840 4416 
+L 3840 1683 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-70" d="M 3085 1600 
+Q 3085 813 2688 387 
+Q 2291 -38 1702 -38 
+Q 1274 -38 915 109 
+L 915 -1101 
+L 493 -1171 
+L 493 3027 
+L 819 3027 
+L 890 2592 
+Q 1331 3091 1869 3091 
+Q 2394 3091 2739 2707 
+Q 3085 2323 3085 1600 
+z
+M 2656 1581 
+Q 2656 2118 2425 2416 
+Q 2195 2714 1824 2714 
+Q 1363 2714 915 2170 
+L 915 499 
+Q 1286 320 1690 320 
+Q 2118 320 2387 646 
+Q 2656 973 2656 1581 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-75" d="M 2854 0 
+L 2528 0 
+L 2458 448 
+Q 1882 -64 1370 -64 
+Q 922 -64 694 179 
+Q 467 422 467 864 
+L 467 3027 
+L 890 3027 
+L 890 941 
+Q 890 320 1453 320 
+Q 1901 320 2432 838 
+L 2432 3027 
+L 2854 3027 
+L 2854 0 
+z
+" transform="scale(0.015625)"/>
+       <path id="Whitney-Book-62" d="M 3066 1600 
+Q 3066 800 2659 381 
+Q 2253 -38 1594 -38 
+Q 1075 -38 493 160 
+L 493 4518 
+L 915 4595 
+L 915 2630 
+Q 1338 3091 1850 3091 
+Q 2374 3091 2720 2707 
+Q 3066 2323 3066 1600 
+z
+M 2637 1581 
+Q 2637 2118 2406 2416 
+Q 2176 2714 1805 2714 
+Q 1363 2714 915 2189 
+L 915 448 
+Q 1216 326 1613 326 
+Q 2086 326 2361 640 
+Q 2637 954 2637 1581 
+z
+" transform="scale(0.015625)"/>
+      </defs>
+      <use xlink:href="#Whitney-Book-55"/>
+      <use xlink:href="#Whitney-Book-6e" x="68.099991"/>
+      <use xlink:href="#Whitney-Book-70" x="120.399979"/>
+      <use xlink:href="#Whitney-Book-65" x="173.499969"/>
+      <use xlink:href="#Whitney-Book-72" x="222.59996"/>
+      <use xlink:href="#Whitney-Book-74" x="256.999954"/>
+      <use xlink:href="#Whitney-Book-75" x="289.999939"/>
+      <use xlink:href="#Whitney-Book-72" x="342.299927"/>
+      <use xlink:href="#Whitney-Book-62" x="376.699921"/>
+      <use xlink:href="#Whitney-Book-65" x="429.499908"/>
+      <use xlink:href="#Whitney-Book-64" x="478.599899"/>
+     </g>
+    </g>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p12f15525e7">
+   <rect x="57.413828" y="39.8" width="334.8" height="304.92"/>
+  </clipPath>
+ </defs>
+</svg>

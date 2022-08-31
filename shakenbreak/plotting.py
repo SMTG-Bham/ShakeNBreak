@@ -7,7 +7,6 @@ import warnings
 from typing import Optional, Tuple
 import numpy as np
 
-import matplotlib
 import matplotlib as mpl
 from matplotlib import font_manager
 import matplotlib.pyplot as plt
@@ -22,7 +21,7 @@ MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 def _install_custom_font():
     """Check if SnB custom font has been installed, and install it otherwise."""
     # Find where matplotlib stores its True Type fonts
-    mpl_data_dir = os.path.dirname(matplotlib.matplotlib_fname())
+    mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
     print(mpl_data_dir)
     mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
     custom_fonts = [
@@ -43,7 +42,7 @@ def _install_custom_font():
                         print("Copying " + old_path + " -> " + new_path)
                     else:
                         print(f"No ttf fonts found in the {fonts_dir} directory.")
-            except:
+            except Exception:
                 pass
 
             # Try to delete matplotlib's fontList cache
@@ -62,7 +61,7 @@ def _install_custom_font():
                 font_manager._load_fontmanager(try_read_cache=False)
                 font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
                 print(f"Adding {font} font to matplotlib fonts.")
-        except:
+        except Exception:
             warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
                 The widely available Helvetica font will be used instead."""
             warnings.warn(warning_msg)
