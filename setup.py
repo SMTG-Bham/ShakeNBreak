@@ -116,6 +116,7 @@ setup(
         "hiphive",
         "monty",
         "click",
+        "pycairo",
     ],
     extras_require={
         "tests": [

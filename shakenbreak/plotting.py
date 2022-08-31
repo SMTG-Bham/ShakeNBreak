@@ -493,6 +493,7 @@ def _save_plot(
         format=save_format,
         transparent=True,
         bbox_inches="tight",
+        backend="cairo" if save_format == "pdf" else None,
     )
 
 
