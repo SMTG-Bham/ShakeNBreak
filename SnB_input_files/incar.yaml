@@ -7,8 +7,6 @@ ENCUT: 300
 HFSCREEN: 0.2
 IBRION: '2 # While often slower than ''1'' (RMM-DIIS), this is more stable and reliable,
     and vasp_gam relaxations are typically cheap enough to justify it'
-ICHARG: 1
-ICORELEVEL: '0 # Needed if using the Kumagai-Oba (eFNV) anisotropic charge correction'
 ISIF: 2
 ISMEAR: 0
 ISPIN: '2 # Spin polarisation likely for defects'
