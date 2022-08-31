@@ -14,6 +14,7 @@ from ase.calculators.aims import Aims
 
 from shakenbreak import input, io, distortions, vasp
 
+
 def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
@@ -605,16 +606,18 @@ class InputTestCase(unittest.TestCase):
             "supercell": supercell["size"],
         }
         poscar.comment = (
-                self.V_Cd_dict["name"]
-                + str(dict_transf["defect_supercell_site"].frac_coords)
-                + "_-dNELECT="  # change in NELECT from bulk supercell
-                + str(0)
+            self.V_Cd_dict["name"]
+            + str(dict_transf["defect_supercell_site"].frac_coords)
+            + "_-dNELECT="  # change in NELECT from bulk supercell
+            + str(0)
         )
-        vasp_defect_inputs = {"vac_1_Cd_0": {
-            "Defect Structure": struct,
-            "POSCAR Comment": poscar.comment,
-            "Transformation Dict": dict_transf,
-        }}
+        vasp_defect_inputs = {
+            "vac_1_Cd_0": {
+                "Defect Structure": struct,
+                "POSCAR Comment": poscar.comment,
+                "Transformation Dict": dict_transf,
+            }
+        }
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
@@ -931,13 +934,17 @@ class InputTestCase(unittest.TestCase):
             with open(f"distortion_metadata.json", "r") as metadata_file:
                 metadata = json.load(metadata_file)
             for defect in metadata["defects"].values():
-                defect["charges"] = {int(k): v for k,v in defect["charges"].items()}
+                defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
                 # json converts integer keys to strings
             metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"] = [
-                tuple(x) for x in metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"]]
+                tuple(x)
+                for x in metadata["defects"]["Int_Cd_2"]["charges"][1][
+                    "distorted_atoms"
+                ]
+            ]
             np.testing.assert_equal(
                 metadata,  # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict
+                kwarged_Int_Cd_2_dict,
             )
 
             # check expected info printing:
@@ -985,9 +992,7 @@ class InputTestCase(unittest.TestCase):
                 "\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m"
             )
             mock_Int_Cd_2_print.assert_any_call(
-                "\033[1m"
-                + "Number of extra electrons in neutral state: 2"
-                + "\033[0m"
+                "\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m"
             )
             mock_Int_Cd_2_print.assert_any_call(
                 "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 1"
@@ -1358,8 +1363,10 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
 
-    def test_local_rattle(self,):
-        """"Test option local_rattle of Distortions class"""
+    def test_local_rattle(
+        self,
+    ):
+        """ "Test option local_rattle of Distortions class"""
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         oxidation_states = {"Cd": +2, "Te": -2}
@@ -1376,9 +1383,9 @@ class InputTestCase(unittest.TestCase):
             Structure.from_file(
                 f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0_-30.0%_Distortion_tailed_off_rattle_POSCAR"
             ),
-            defects_dict['vac_1_Cd']["charges"][0]["structures"]["distortions"][
+            defects_dict["vac_1_Cd"]["charges"][0]["structures"]["distortions"][
                 "Bond_Distortion_-30.0%"
-            ]
+            ],
         )
         # Check if option written to metadata file
         self.assertTrue(metadata_dict["distortion_parameters"]["local_rattle"])
@@ -1390,7 +1397,9 @@ class InputTestCase(unittest.TestCase):
         dist = input.Distortions(
             {"interstitials": [int_Cd_2]},
             oxidation_states=oxidation_states,
-            bond_distortions=[-0.3,], # zero electron change
+            bond_distortions=[
+                -0.3,
+            ],  # zero electron change
             local_rattle=True,  # default
         )
         defects_dict, metadata_dict = dist.apply_distortions()
@@ -1398,10 +1407,11 @@ class InputTestCase(unittest.TestCase):
             Structure.from_file(
                 f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
             ),
-            defects_dict['Int_Cd_2']["charges"][2]["structures"]["distortions"][
+            defects_dict["Int_Cd_2"]["charges"][2]["structures"]["distortions"][
                 "Rattled"
-            ]
+            ],
         )
+
 
 if __name__ == "__main__":
     unittest.main()

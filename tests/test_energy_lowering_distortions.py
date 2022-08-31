@@ -862,7 +862,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # Test copying over Quantum Espresso input files
         shutil.move(  # avoid overwriting yaml file
             f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
-            f"{self.CP2K_DATA_DIR}/test_vac_1_Cd_0.yaml")
+            f"{self.CP2K_DATA_DIR}/test_vac_1_Cd_0.yaml",
+        )
         for i in os.listdir(self.CP2K_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.CP2K_DATA_DIR, i)
@@ -874,7 +875,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
         shutil.move(  # restore yaml file
             f"{self.CP2K_DATA_DIR}/test_vac_1_Cd_0.yaml",
-            f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
+            f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+        )
         if_present_rm(
             os.path.join(
                 self.ESPRESSO_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
@@ -928,7 +930,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # Test copying over Quantum Espresso input files
         shutil.move(  # avoid overwriting yaml file
             f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
-            f"{self.ESPRESSO_DATA_DIR}/test_vac_1_Cd_0.yaml")
+            f"{self.ESPRESSO_DATA_DIR}/test_vac_1_Cd_0.yaml",
+        )
         for i in os.listdir(self.ESPRESSO_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.ESPRESSO_DATA_DIR, i)
@@ -940,7 +943,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
         shutil.move(  # restore yaml file
             f"{self.ESPRESSO_DATA_DIR}/test_vac_1_Cd_0.yaml",
-            f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
+            f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+        )
         if_present_rm(
             os.path.join(
                 self.FHI_AIMS_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
@@ -990,7 +994,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         # Test CASTEP input files
         shutil.move(  # avoid overwriting yaml file
             f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
-            f"{self.FHI_AIMS_DATA_DIR}/test_vac_1_Cd_0.yaml")
+            f"{self.FHI_AIMS_DATA_DIR}/test_vac_1_Cd_0.yaml",
+        )
         for i in os.listdir(self.FHI_AIMS_DATA_DIR):
             if i.startswith("vac_1_Cd") and os.path.isdir(
                 os.path.join(self.FHI_AIMS_DATA_DIR, i)
@@ -1002,7 +1007,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
         shutil.move(  # restore yaml file
             f"{self.FHI_AIMS_DATA_DIR}/test_vac_1_Cd_0.yaml",
-            f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml")
+            f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/test_vac_1_Cd_0.yaml",
+        )
         if_present_rm(
             os.path.join(
                 self.CASTEP_DATA_DIR, "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"

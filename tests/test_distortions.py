@@ -93,8 +93,8 @@ class DistortionTestCase(unittest.TestCase):
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-        +"            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-        +"            Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"
         )
 
         # Test if num_nearest_neighbours = 0 that nothing happens:
@@ -110,8 +110,8 @@ class DistortionTestCase(unittest.TestCase):
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-            +"            Original Neighbour Distances: []\n"
-            +"            Distorted Neighbour Distances:\n\t[]"
+            + "            Original Neighbour Distances: []\n"
+            + "            Distorted Neighbour Distances:\n\t[]"
         )
 
     @patch("builtins.print")
@@ -132,8 +132,8 @@ class DistortionTestCase(unittest.TestCase):
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {site_index}\n"
-        + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-        + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"
+            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"
         )
 
         # test correct behaviour with `num_nearest_neighbours` is greater than number of

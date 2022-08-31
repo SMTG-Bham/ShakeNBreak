@@ -23,9 +23,10 @@ def _install_custom_font():
     # Find where matplotlib stores its True Type fonts
     mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
     print(mpl_data_dir)
-    mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
+    mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
     custom_fonts = [
-        font for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
+        font
+        for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
         if "whitney-book-pro" in font.lower()
     ]
     if not custom_fonts:  # If custom hasn't been installed, install it
@@ -35,7 +36,7 @@ def _install_custom_font():
             fonts_dir = f"{MODULE_DIR}/../fonts/"
             try:
                 for file_name in os.listdir(fonts_dir):
-                    if '.ttf' in file_name:  # must be in ttf format for matplotlib
+                    if ".ttf" in file_name:  # must be in ttf format for matplotlib
                         old_path = os.path.join(fonts_dir, file_name)
                         new_path = os.path.join(mpl_fonts_dir, file_name)
                         shutil.copyfile(old_path, new_path)
@@ -48,8 +49,8 @@ def _install_custom_font():
             # Try to delete matplotlib's fontList cache
             mpl_cache_dir = mpl.get_cachedir()
             mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
-            if 'fontList.cache' in mpl_cache_dir_ls:
-                fontList_path = os.path.join(mpl_cache_dir, 'fontList.cache')
+            if "fontList.cache" in mpl_cache_dir_ls:
+                fontList_path = os.path.join(mpl_cache_dir, "fontList.cache")
                 if fontList_path:
                     os.remove(fontList_path)
                     print("Deleted the matplotlib fontList.cache.")
