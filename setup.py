@@ -2,10 +2,68 @@
 """
 This is a setup.py script to install ShakeNBreak
 """
-
 import os
 from setuptools import setup, find_packages
+from setuptools.command.install import install
+import warnings
 
+
+# Set up the machinery to install custom fonts.  Subclass the setup tools install
+# class in order to run custom commands during installation.
+# See https://stackoverflow.com/questions/34193900/how-do-i-distribute-fonts-with-my-python-package
+class move_ttf(install):
+    def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with clearplot into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache
+        """
+        # Perform the usual install process
+        install.run(self)
+        print("Trying to install Whitney font")
+        # Try to install custom fonts
+        try:
+            import os, shutil
+            import matplotlib as mpl
+            import matplotlib.font_manager
+
+            # Find where matplotlib stores its True Type fonts
+            mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
+            mpl_fonts_dir = os.path.join(mpl_data_dir, 'fonts', 'ttf')
+
+            # Copy the font files to matplotlib's True Type font directory
+            fonts_dir = "fonts/"
+            for file_name in os.listdir(fonts_dir):
+                if '.ttf' in file_name:  # must be in ttf format for matplotlib
+                    old_path = os.path.join(fonts_dir, file_name)
+                    new_path = os.path.join(mpl_fonts_dir, file_name)
+                    shutil.copyfile(old_path, new_path)
+                    print("Copying " + old_path + " -> " + new_path)
+                else:
+                    print(f"No ttf fonts found inf the {fonts_dir} directory.")
+
+            # Try to delete matplotlib's fontList cache
+            mpl_cache_dir = mpl.get_cachedir()
+            mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
+            if 'fontList.cache' in mpl_cache_dir_ls:
+                fontList_path = os.path.join(mpl_cache_dir, 'fontList.cache')
+                if fontList_path:
+                    os.remove(fontList_path)
+                    print("Deleted the matplotlib fontList.cache.")
+            else:
+                print("Couldn't find matplotlib cache, so will continue.")
+
+            # Add fonts
+            for font in os.listdir(fonts_dir):
+                print(font)
+                matplotlib.font_manager._load_fontmanager(try_read_cache=False)
+                matplotlib.font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
+                print("Adding Whitney font to matplotlib fonts.")
+        except:
+            warnings.warn(
+                "WARNING: An issue occured while installing the custom font for ShakeNBreak. "
+                "The widely available Helvetica font will be used instead."
+            )
 
 # https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
 def package_files(directory):
@@ -20,7 +78,7 @@ input_files = package_files("SnB_input_files/")
 
 setup(
     name="shakenbreak",
-    version="1.0.0",
+    version="1.0.1",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "
@@ -49,7 +107,7 @@ setup(
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
     install_requires=[
-        "numpy",
+        "numpy<1.22",  # Requirement of hiphive
         "pymatgen<2022.8.23",
         "matplotlib",
         "ase",
@@ -70,8 +128,14 @@ setup(
             "sphinx_click",
         ],
     },
-    package_data={"shakenbreak": ["shakenbreak/*"] + input_files},
+    # Specify any non-python files to be distributed with the package
+    package_data={
+        "shakenbreak": ["shakenbreak/*"] + input_files + ["fonts/"],
+    },
     include_package_data=True,
+    # Specify the custom install class
+    cmdclass={'install' : move_ttf},
+    zip_safe=False,
     entry_points={
         "console_scripts": [
             "snb = shakenbreak.cli:snb",
@@ -94,5 +158,4 @@ setup(
             "shakenbreak-groundstate = shakenbreak.cli:groundstate",
         ],
     },
-    # scripts=["shakenbreak/bash_scripts/*"],
 )
