@@ -32,13 +32,16 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.organized_V_Cd_distortion_data_no_unperturbed = loadfn(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml",
             )
         )
-        self.V_Cd_energies_dict = dict(analysis.get_energies(
-            defect_species="vac_1_Cd_0",
-            output_path=self.VASP_CDTE_DATA_DIR,
-        ))
+        self.V_Cd_energies_dict = dict(
+            analysis.get_energies(
+                defect_species="vac_1_Cd_0",
+                output_path=self.VASP_CDTE_DATA_DIR,
+            )
+        )
         self.V_Cd_displacement_dict = analysis.calculate_struct_comparison(
             defect_structures_dict=analysis.get_structures(
                 defect_species="vac_1_Cd_0",
