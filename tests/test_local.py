@@ -221,6 +221,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
+
         if os.path.exists(f"{os.getcwd()}/distortion_plots"):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
@@ -236,8 +237,6 @@ class DistortionLocalTestCase(unittest.TestCase):
                 os.remove(i)
             elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
                 shutil.rmtree(i)
-        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
-            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
@@ -436,7 +435,11 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(Int_Cd_2_minus60_folder + "/POTCAR"))
 
     def test_plot(self):
-        "Test plot() function"
+        """
+        Test plot() function.
+        The plots used for comparison have been generated with the Whitney Pro
+        font (can download from https://eng.fontke.com/font/20523710/).
+        """
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
@@ -449,6 +452,8 @@ class DistortionLocalTestCase(unittest.TestCase):
             },
             f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml"
         )
+        if os.path.exists(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json"):
+            os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -471,10 +476,10 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
         compare_images(
-            wd + "/distortion_plots/V$_{Ti}^{0}$.png",
-            f"{file_path}/local_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
+            wd + "/distortion_plots/vac_1_Ti_0.png",
+            f"{file_path}/local_baseline_plots/"+"vac_1_Ti_0_cli_colorbar_disp.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         self.tearDown()
@@ -521,13 +526,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_-1.png"))
         # Compare figures
         compare_images(
-            wd + "/distortion_plots/V$_{Cd}^{0}$.png",
-            f"{file_path}/local_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
+            wd + "/distortion_plots/vac_1_Cd_0.png",
+            f"{file_path}/local_baseline_plots/"+"vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
