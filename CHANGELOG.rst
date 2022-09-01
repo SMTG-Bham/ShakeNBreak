@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v1.0.1
+------
+
+Main changes:
+- Docs formatting
+- Update pymatgen version to v2022.7.25, while refactoring to be compatible with v2022.8.23 takes place.
+
 v1.0
 ------
 
