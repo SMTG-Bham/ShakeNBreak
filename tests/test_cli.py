@@ -1379,22 +1379,17 @@ nonsense_key: nonsense_value"""
                 [
                     str(warning.message)
                     == f"Energies could not be parsed for defect 'example_results' in"
-                       f" {self.DATA_DIR}. If these directories are correct, "
-                       f"check calculations have converged, and that distortion subfolders match "
-                       f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    f" {self.DATA_DIR}. If these directories are correct, "
+                    f"check calculations have converged, and that distortion subfolders match "
+                    f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
                     for warning in w
                 ]
             )
         )
         self.assertFalse(
-            any(
-                os.path.exists(i)
-                for i in os.listdir()
-                if i.endswith(".yaml"))
-            )
+            any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
+        )
         os.chdir(file_path)
-
-
 
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""
@@ -1643,7 +1638,7 @@ nonsense_key: nonsense_value"""
                 [
                     str(warning.message)
                     == "`--path` option ignored when running from within defect folder (i.e. "
-                       "when `--defect` is not specified."
+                    "when `--defect` is not specified."
                     for warning in w
                 ]
             )
@@ -1816,7 +1811,9 @@ nonsense_key: nonsense_value"""
             f"Will not parse its contents.",
             str(w[0].message),
         )
-        self.assertTrue(os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg"))
+        self.assertTrue(
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
+        )
         self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
@@ -1826,6 +1823,78 @@ nonsense_key: nonsense_value"""
             for file in os.listdir(os.getcwd())
             if "yaml" in file
         ]
+        self.tearDown()
+
+        # Test warning when setting path and plotting from inside the defect folder
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-v",
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder (i.e. "
+                    "when `--defect` is not specified."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
+            result.output,
+        )  # non-verbose output
+        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
+                    f"Will not parse its contents."
+                ]
+                for warning in w
+            )
+        )
+        self.assertTrue(
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
+        )
+        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        shutil.rmtree(os.getcwd() + "/distortion_plots")
+        [
+            os.remove(os.path.join(os.getcwd(), file))
+            for file in os.listdir(os.getcwd())
+            if "yaml" in file
+        ]
+        self.tearDown()
+
+        # Test exception when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        result = runner.invoke(snb, ["plot"], catch_exceptions=True)
+        self.assertIn(
+            f"Could not analyse & plot defect 'example_results' in directory '{self.DATA_DIR}'. "
+            f"Please either specify a defect to analyse (with option --defect), run from within a "
+            f"single defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
+            str(result.exception),
+        )
+        self.assertNotIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertFalse(
+            any(
+                os.path.exists(i)
+                for i in os.listdir()
+                if i.endswith(".yaml")
+            )
+        )
         self.tearDown()
 
     def test_regenerate(self):
