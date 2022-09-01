@@ -25,17 +25,22 @@ jobs:
           pip install numpy
           pip install -e .
           pip install -e .[tests]
-          
-#       - name: Test
-#         run:  |
-#           pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
-#           pytest --mpl tests/test_shakenbreak.py  # test output plots
-#           pytest --mpl tests/test_plotting.py  # test output plots
-      
+
+      - name: Test
+        run:  |
+          pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
+          pytest --mpl tests/test_shakenbreak.py  # test output plots
+          pytest --mpl tests/test_plotting.py  # test output plots
+
       - name: Build packages
         run: |
           python setup.py sdist bdist_wheel
-      
+
+      - name: Generate release tag
+        uses: amitsingh-007/next-release-tag@v1.0.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Publish
         uses: pypa/gh-action-pypi-publish@master
         with:
@@ -52,8 +57,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          tag_name: ${{ env.release_tag }}
+          release_name: ${{ env.release_tag }}
           body_path: release_info.txt
           draft: false
           prerelease: false

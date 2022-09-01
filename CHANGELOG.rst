@@ -1,10 +1,22 @@
 Change Log
 ==========
 
+v22.9.1
+--------
+
+Main changes:
+
+- Test for pip install
+- Automatic release and upload to pypi
+- Add ShakeNBreak custom font, and automatise its installation
+- Update ShakeNBreak default INCAR for VASP relaxations
+- Formatting
+
 v1.0.1
 ------
 
 Main changes:
+
 - Docs formatting
 - Update pymatgen version to v2022.7.25, while refactoring to be compatible with v2022.8.23 takes place.
 
