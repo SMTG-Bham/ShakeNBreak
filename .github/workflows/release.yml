@@ -25,19 +25,22 @@ jobs:
           pip install numpy
           pip install -e .
           pip install -e .[tests]
-      - name: Test
-        run:  |
-          pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
-          pytest --mpl tests/test_shakenbreak.py  # test output plots
-          pytest --mpl tests/test_plotting.py  # test output plots
+          
+#       - name: Test
+#         run:  |
+#           pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
+#           pytest --mpl tests/test_shakenbreak.py  # test output plots
+#           pytest --mpl tests/test_plotting.py  # test output plots
+      
       - name: Build packages
         run: |
           python setup.py sdist bdist_wheel
+      
       - name: Publish
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
-          password: ${{ secrets.PYPI_PASSWORD }}
+          password: ${{ secrets.TWINE_PASSWORD }}
 
       - name: Write release info
         run: |
