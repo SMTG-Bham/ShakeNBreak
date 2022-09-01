@@ -1369,6 +1369,33 @@ nonsense_key: nonsense_value"""
         os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
+        # Test warning when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(snb, ["parse"], catch_exceptions=True)
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == f"Energies could not be parsed for defect 'example_results' in"
+                       f" {self.DATA_DIR}. If these directories are correct, "
+                       f"check calculations have converged, and that distortion subfolders match "
+                       f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    for warning in w
+                ]
+            )
+        )
+        self.assertFalse(
+            any(
+                os.path.exists(i)
+                for i in os.listdir()
+                if i.endswith(".yaml"))
+            )
+        os.chdir(file_path)
+
+
+
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""
         runner = CliRunner()
