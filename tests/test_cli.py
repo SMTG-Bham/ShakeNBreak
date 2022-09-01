@@ -54,6 +54,9 @@ class CLITestCase(unittest.TestCase):
         self.V_Cd_0pt3_local_rattled = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_0_30%_local_rattle_POSCAR")
         )
+        self.V_Cd_minus0pt55_CONTCAR_struc = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+        )
         with open(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
         ) as fp:
@@ -1887,13 +1890,11 @@ nonsense_key: nonsense_value"""
             f"defects in the specified/current directory.",
             str(result.exception),
         )
-        self.assertNotIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertNotIn(
+            f"Plot saved to {os.getcwd()}/distortion_plots/", result.output
+        )
         self.assertFalse(
-            any(
-                os.path.exists(i)
-                for i in os.listdir()
-                if i.endswith(".yaml")
-            )
+            any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )
         self.tearDown()
 
@@ -1994,9 +1995,14 @@ nonsense_key: nonsense_value"""
             os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Groundstate/POSCAR",
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
             result.output,
         )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
         # Test keywords: groundstate_filename and directory
@@ -2020,9 +2026,14 @@ nonsense_key: nonsense_value"""
             )
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/My_Groundstate/Groundstate_CONTCAR",
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR",
             result.output,
         )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
 
         # Test non existent structure file
@@ -2043,7 +2054,8 @@ nonsense_key: nonsense_value"""
         )
         self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
-            f"The structure file Fake_structure is not present in the directory {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%",
+            f"The structure file Fake_structure is not present in the directory"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-55.0%",
             str(result.exception),
         )
 
