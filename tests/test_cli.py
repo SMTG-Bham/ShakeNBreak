@@ -1534,6 +1534,29 @@ nonsense_key: nonsense_value"""
             str(result.exception),
         )
 
+        # Test analysing from inside the defect folder
+        defect_name = "vac_1_Ti_0"
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect_name}")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "analyse",
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue([warning.category == UserWarning for warning in w])
+        self.assertTrue([str(warning.message) == "No output file in Bond_Distortion_10.0% "
+                                                 "directory" for warning in w])
+        self.assertIn("Comparing structures to Unperturbed...", result.output)
+        self.assertIn(f"Saved results to {os.path.join(os.getcwd(), defect_name)}.csv",
+                      result.output)
+        self.assertTrue(os.path.exists(f"{defect_name}.csv"))
+        self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
+        os.remove(f"{defect_name}.csv")
+        os.remove(f"{defect_name}.yaml")
+        os.chdir(file_path)
+
     def test_plot(self):
         "Test plot() function"
         # Test the following options:
