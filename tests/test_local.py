@@ -445,8 +445,8 @@ class DistortionLocalTestCase(unittest.TestCase):
     def test_plot(self):
         """
         Test plot() function.
-        The plots used for comparison have been generated with the Whitney Pro
-        font (can download from https://eng.fontke.com/font/20523710/).
+        The plots used for comparison have been generated with the Montserrat font
+        (available in the fonts directory).
         """
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
@@ -500,7 +500,6 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
-        defect = "vac_1_Ti_0"
         fake_distortion_metadata = {
             "defects": {
                 "vac_1_Cd": {
