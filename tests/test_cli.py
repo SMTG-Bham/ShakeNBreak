@@ -1687,8 +1687,6 @@ nonsense_key: nonsense_value"""
         wd = (
             os.getcwd()
         )  # plots saved to distortion_plots directory in current directory
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
-            f.write("")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -1796,6 +1794,38 @@ nonsense_key: nonsense_value"""
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Figures are compared in the local test.
 
+        # Test plotting from inside the defect folder
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertNotIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
+            result.output,
+        )  # non-verbose output
+        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
+            f"Will not parse its contents.",
+            str(w[0].message),
+        )
+        self.assertTrue(os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg"))
+        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        # Figures are compared in the local test since on Github Actions images are saved
+        # with a different size (raising error when comparing).
+        shutil.rmtree(os.getcwd() + "/distortion_plots")
+        [
+            os.remove(os.path.join(os.getcwd(), file))
+            for file in os.listdir(os.getcwd())
+            if "yaml" in file
+        ]
         self.tearDown()
 
     def test_regenerate(self):
