@@ -12,7 +12,7 @@ import fnmatch
 from monty.serialization import loadfn
 from monty.json import MontyDecoder
 
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Element
 from pymatgen.io.vasp.inputs import Incar
 from pymatgen.analysis.defects.core import Defect
 
@@ -980,8 +980,8 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     "--defect",
     "-d",
     help="Name of defect species (folder) to parse (e.g. 'vac_1_Cd_0'), if run from "
-         "top-level directory or above. Default is current directory name (assumes running from "
-         "within defect folder).",
+    "top-level directory or above. Default is current directory name (assumes running from "
+    "within defect folder).",
     type=str,
     default=None,
 )
@@ -1026,12 +1026,13 @@ def parse(defect, all, path, code):
             if path != ".":
                 warnings.warn(
                     "`--path` option ignored when running from within defect folder (i.e. "
-                    "when `--defect` is not specified.")
-            path = os.getcwd()
-            defect = path.split("/")[-1]
-            path = path.rsplit("/", 1)[0]
+                    "when `--defect` is not specified."
+                )
+            cwd = os.getcwd()
+            defect = cwd.split("/")[-1]
+            path = cwd.rsplit("/", 1)[0]
             io.parse_energies(defect, path, code)
-        except:
+        except Exception:
             raise Exception(
                 f"Could not parse defect '{defect}' in directory '{path}'. Please either specify "
                 f"a defect to parse (with option --defect), run from within a single defect "
@@ -1049,8 +1050,8 @@ def parse(defect, all, path, code):
     "--defect",
     "-d",
     help="Name of defect species (folder) to analyse and plot (e.g. 'vac_1_Cd_0'), if run from "
-         "top-level directory or above. Default is current directory name (assumes running from "
-         "within defect folder).",
+    "top-level directory or above. Default is current directory name (assumes running from "
+    "within defect folder).",
     type=str,
     default=None,
 )
@@ -1128,12 +1129,14 @@ def analyse(defect, all, path, code, ref_struct, verbose):
             analyse_single_defect(defect, path, code, ref_struct, verbose)
     elif defect is None:
         # assume current directory is the defect folder
-            if path != ".":
-                warnings.warn("`--path` option ignored when running from within defect folder ("
-                              "i.e. when `--defect` is not specified.")
-            path = os.getcwd()
-            defect = path.split("/")[-1]
-            path = path.rsplit("/", 1)[0]
+        if path != ".":
+            warnings.warn(
+                "`--path` option ignored when running from within defect folder ("
+                "i.e. when `--defect` is not specified."
+            )
+        cwd = os.getcwd()
+        defect = cwd.split("/")[-1]
+        path = cwd.rsplit("/", 1)[0]
 
     defect = defect.strip("/")  # Remove trailing slash if present
     # Check if defect present in path:
@@ -1143,7 +1146,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         path = path.replace(defect, "")
     try:
         analyse_single_defect(defect, path, code, ref_struct, verbose)
-    except:
+    except Exception:
         raise Exception(
             f"Could not analyse defect '{defect}' in directory '{path}'. Please "
             f"either specify a defect to analyse (with option --defect), run from within a single "
@@ -1161,8 +1164,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     "--defect",
     "-d",
     help="Name of defect species (folder) to analyse and plot (e.g. 'vac_1_Cd_0'), if run from "
-         "top-level directory or above. Default is current directory name (assumes running from "
-         "within defect folder).",
+    "top-level directory or above. Default is current directory name (assumes running from "
+    "within defect folder).",
     type=str,
     default=None,
 )
@@ -1286,12 +1289,14 @@ def plot(
         )
     elif defect is None:
         # assume current directory is the defect folder
-            if path != ".":
-                warnings.warn("`--path` option ignored when running from within defect folder ("
-                              "i.e. when `--defect` is not specified.")
-            path = os.getcwd()
-            defect = path.split("/")[-1]
-            path = path.rsplit("/", 1)[0]
+        if path != ".":
+            warnings.warn(
+                "`--path` option ignored when running from within defect folder ("
+                "i.e. when `--defect` is not specified."
+            )
+        cwd = os.getcwd()
+        defect = cwd.split("/")[-1]
+        path = cwd.rsplit("/", 1)[0]
 
     defect = defect.strip("/")  # Remove trailing slash if present
     # Check if defect present in path:
@@ -1317,7 +1322,7 @@ def plot(
             add_title=title,
             max_energy_above_unperturbed=max_energy,
         )
-    except:
+    except Exception:
         raise Exception(
             f"Could not analyse & plot defect '{defect}' in directory '{path}'. Please "
             f"either specify a defect to analyse (with option --defect), run from within a single "
@@ -1458,13 +1463,61 @@ def groundstate(
     verbose,
 ):
     """
-    Generate folders with the identified ground state structures. For each defect
-    present in the specified path, a folder (named `directory`) is created with
-    the ground state structure (named `groundstate_filename`). If the name
-    of the structure/output files is not specified, the code assumes `CONTCAR`
+    Generate folders with the identified ground state structures. A folder (named
+    `directory`) is created with the ground state structure (named
+    `groundstate_filename`) for each defect present in the specified path (if `path` is
+    the top-level directory) or for the current defect if run within a defect folder.
+    If the name of the structure/output files is not specified, the code assumes `CONTCAR`
     (e.g. geometry optimisations performed with VASP). If using a different code,
     please specify the name of the structure/output files.
     """
+    # determine if running from within a defect directory or from the top level directory
+    if any(
+        [
+            dir
+            for dir in os.listdir()
+            if os.path.isdir(dir)
+            and any(
+                [
+                    substring in dir
+                    for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
+                ]
+            )
+        ]
+    ):  # distortion subfolders in cwd
+        cwd_name = os.getcwd().split("/")[-1]
+        dummy_h = Element("H")
+        if any(
+            [
+                substring in cwd_name.lower()
+                for substring in ("as", "vac", "int", "sub", "v", "i")
+            ]
+        ) or any(
+            [
+                (dummy_h.is_valid_symbol(substring[-2:]) or substring[-2:] == "Va")
+                for substring in cwd_name.split("_")
+            ]  # underscore preceded by either an element symbol or "Va" (new pymatgen defect
+            # naming convention)
+        ):  # cwd is defect name, assume current directory is the defect folder
+            if path != ".":
+                warnings.warn(
+                    "`--path` option ignored when running from within defect folder ("
+                    "determined to be the case here based on current directory and "
+                    "subfolder names)."
+                )
+
+            energy_lowering_distortions.write_groundstate_structure(
+                all=False,
+                output_path=os.getcwd(),
+                groundstate_folder=directory,
+                groundstate_filename=groundstate_filename,
+                structure_filename=structure_filename,
+                verbose=verbose,
+            )
+
+            return
+
+    # otherwise, assume top level directory is the path
     energy_lowering_distortions.write_groundstate_structure(
         output_path=path,
         groundstate_folder=directory,

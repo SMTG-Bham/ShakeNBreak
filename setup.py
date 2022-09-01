@@ -116,7 +116,7 @@ input_files = package_files("SnB_input_files/")
 
 setup(
     name="shakenbreak",
-    version="1.0.2",
+    version="22.9.2",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "

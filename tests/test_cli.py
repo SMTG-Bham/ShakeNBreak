@@ -2059,6 +2059,57 @@ nonsense_key: nonsense_value"""
             str(result.exception),
         )
 
+        # test running within a single defect directory and specifying no arguments
+        os.chdir(f"{self.VASP_CDTE_DATA_DIR}/{defect}")  # vac_1_Cd_0
+        result = runner.invoke(snb, ["groundstate"], catch_exceptions=False)
+        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # Test warning when setting path and parsing from inside the defect folder
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "groundstate",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder ("
+                    "determined to be the case here based on current directory and "
+                    "subfolder names)."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+
 
 if __name__ == "__main__":
     unittest.main()
