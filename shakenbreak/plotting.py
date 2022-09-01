@@ -2,7 +2,8 @@
 Module containing functions to plot distorted defect relaxation outputs and identify
 energy-lowering distortions.
 """
-import os, shutil
+import os
+import shutil
 import warnings
 from typing import Optional, Tuple
 import numpy as np
@@ -27,7 +28,7 @@ def _install_custom_font():
     custom_fonts = [
         font
         for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
-        if "whitney-book-pro" in font.lower()
+        if "montserrat" in font.lower()
     ]
     if not custom_fonts:  # If custom hasn't been installed, install it
         print("Trying to install ShakeNBreak custom font...")
@@ -545,6 +546,7 @@ def _save_plot(
     if "pdf" in save_format:
         try:
             import cairo
+
             backend = "cairo"
         except ImportError:
             warnings.warn(
