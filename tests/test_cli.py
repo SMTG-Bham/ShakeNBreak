@@ -1526,9 +1526,11 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=True,
         )
-        self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
-            f"Could not find {name} in the directory {self.EXAMPLE_RESULTS}.",
+            f"Could not analyse defect '{name}' in directory '{self.EXAMPLE_RESULTS}'. Please "
+            f"either specify a defect to analyse (with option --defect), run from within a single "
+            f"defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
             str(result.exception),
         )
 
