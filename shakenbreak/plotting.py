@@ -28,7 +28,7 @@ def _install_custom_font():
     custom_fonts = [
         font
         for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
-        if "whitney-book-pro" in font.lower()
+        if "montserrat" in font.lower()
     ]
     if not custom_fonts:  # If custom hasn't been installed, install it
         print("Trying to install ShakeNBreak custom font...")
