@@ -1557,6 +1557,21 @@ nonsense_key: nonsense_value"""
         os.remove(f"{defect_name}.yaml")
         os.chdir(file_path)
 
+        # Test exception when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        result = runner.invoke(snb, ["analyse"], catch_exceptions=True)
+        self.assertIn(
+            f"Could not analyse defect 'example_results' in directory '{self.DATA_DIR}'. Please "
+            f"either specify a defect to analyse (with option --defect), run from within a single "
+            f"defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
+            str(result.exception),
+        )
+        self.assertNotIn(f"Saved results to", result.output)
+        self.assertFalse(any(os.path.exists(i) for i in os.listdir() if (i.endswith(".csv") or
+                                                                         i.endswith(".yaml"))))
+        os.chdir(file_path)
+
     def test_plot(self):
         "Test plot() function"
         # Test the following options:
