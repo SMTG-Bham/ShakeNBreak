@@ -1625,6 +1625,38 @@ nonsense_key: nonsense_value"""
         self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
         os.remove(f"{defect_name}.csv")
         os.remove(f"{defect_name}.yaml")
+
+        # Test warning when setting path and analysing from inside the defect folder
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "analyse",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder (i.e. "
+                       "when `--defect` is not specified."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertIn("Comparing structures to Unperturbed...", result.output)
+        self.assertIn(
+            f"Saved results to {os.path.join(os.getcwd(), defect_name)}.csv",
+            result.output,
+        )
+        self.assertTrue(os.path.exists(f"{defect_name}.csv"))
+        self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
+        os.remove(f"{defect_name}.csv")
+        os.remove(f"{defect_name}.yaml")
         os.chdir(file_path)
 
         # Test exception when run with no arguments in top-level folder
