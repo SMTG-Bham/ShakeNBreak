@@ -208,7 +208,9 @@ class DistortionLocalTestCase(unittest.TestCase):
             k: v for k, v in vasp.default_incar_settings.items() if "#" not in k
         }  # pymatgen doesn't parsed commented lines
         self.parsed_incar_settings_wo_comments = {
-            k: v for k, v in self.parsed_default_incar_settings.items() if "#" not in str(v)
+            k: v
+            for k, v in self.parsed_default_incar_settings.items()
+            if "#" not in str(v)
         }  # pymatgen ignores comments after values
 
         with open(
@@ -221,6 +223,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
+
         if os.path.exists(f"{os.getcwd()}/distortion_plots"):
             shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
@@ -234,10 +237,13 @@ class DistortionLocalTestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
-            elif "Vac_Cd" in i or "Int_Cd" in i or "Wally_McDoodle" in i or "pesky_defects" in i:
+            elif (
+                "Vac_Cd" in i
+                or "Int_Cd" in i
+                or "Wally_McDoodle" in i
+                or "pesky_defects" in i
+            ):
                 shutil.rmtree(i)
-        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
-            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
@@ -401,7 +407,8 @@ class DistortionLocalTestCase(unittest.TestCase):
         parsed_settings = self.parsed_incar_settings_wo_comments.copy()
         parsed_settings.pop("ENCUT")
         self.assertTrue(
-            parsed_settings.items() <= V_Cd_INCAR.items()  # matches after
+            parsed_settings.items()
+            <= V_Cd_INCAR.items()  # matches after
             # removing kwarg settings
         )
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
@@ -436,19 +443,26 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertTrue(os.path.isfile(Int_Cd_2_minus60_folder + "/POTCAR"))
 
     def test_plot(self):
-        "Test plot() function"
+        """
+        Test plot() function.
+        The plots used for comparison have been generated with the Whitney Pro
+        font (can download from https://eng.fontke.com/font/20523710/).
+        """
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
         defect = "vac_1_Ti_0"
-        wd = os.getcwd()  # plots saved to distortion_plots directory in current directory
+        wd = (
+            os.getcwd()
+        )  # plots saved to distortion_plots directory in current directory
         dumpfn(
             {
-                "distortions":
-                    {-0.4: -1176.28458753},
+                "distortions": {-0.4: -1176.28458753},
                 "Unperturbed": -1173.02056574,
             },
-            f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml"
+            f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml",
         )
+        if os.path.exists(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json"):
+            os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -466,19 +480,23 @@ class DistortionLocalTestCase(unittest.TestCase):
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t", # No title
+                    "-t",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
         compare_images(
-            wd + "/distortion_plots/V$_{Ti}^{0}$.png",
-            f"{file_path}/local_baseline_plots/"+"V$_{Ti}^{0}$_cli_colorbar_disp.png",
+            wd + "/distortion_plots/vac_1_Ti_0.png",
+            f"{file_path}/local_baseline_plots/" + "vac_1_Ti_0_cli_colorbar_disp.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         self.tearDown()
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
+        [
+            os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
+            if "yaml" in file
+        ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
@@ -489,11 +507,13 @@ class DistortionLocalTestCase(unittest.TestCase):
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
-                            "distorted_atoms": [[33, "Te"], [42, "Te"]]
+                            "distorted_atoms": [[33, "Te"], [42, "Te"]],
                         },
                         "-1": {
                             "num_nearest_neighbours": 1,
-                            "distorted_atoms": [[33, "Te"],]
+                            "distorted_atoms": [
+                                [33, "Te"],
+                            ],
                         },
                     }
                 },
@@ -501,7 +521,7 @@ class DistortionLocalTestCase(unittest.TestCase):
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 3,
-                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]]
+                            "distorted_atoms": [[33, "O"], [42, "O"], [40, "O"]],
                         },
                     }
                 },
@@ -521,16 +541,20 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_-1.png"))
         # Compare figures
         compare_images(
-            wd + "/distortion_plots/V$_{Cd}^{0}$.png",
-            f"{file_path}/local_baseline_plots/"+"V$_{Cd}^{0}$_cli_default.png",
+            wd + "/distortion_plots/vac_1_Cd_0.png",
+            f"{file_path}/local_baseline_plots/" + "vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
-        [os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file)) for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect)) if "yaml" in file]
+        [
+            os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
+            if "yaml" in file
+        ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
 
@@ -609,8 +633,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         with open(f"{defect_name}_0/{dist}/castep.param") as fp:
             castep_lines = [line.strip() for line in fp.readlines()[-3:]]
         self.assertEqual(
-            ["XC_FUNCTIONAL: PBE", "MAX_SCF_CYCLES: 100", "CHARGE: 0"],
-            castep_lines
+            ["XC_FUNCTIONAL: PBE", "MAX_SCF_CYCLES: 100", "CHARGE: 0"], castep_lines
         )
         shutil.rmtree(f"{defect_name}_0")
         os.remove("castep.param")
@@ -758,15 +781,20 @@ local_rattle: False"""
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
         for file in ["KPOINTS", "POTCAR", "INCAR"]:
-            self.assertTrue(os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}"))
+            self.assertTrue(
+                os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}")
+            )
         # Check KPOINTS file
-        kpoints = Kpoints.from_file(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS")
+        kpoints = Kpoints.from_file(
+            f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS"
+        )
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
         # Check INCAR
         incar = Incar.from_file(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "INCAR")
         self.assertEqual(incar.pop("IBRION"), 2)
         self.assertEqual(incar.pop("EDIFF"), 1e-5)
         self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
+
 
 if __name__ == "__main__":
     unittest.main()

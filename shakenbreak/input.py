@@ -1066,25 +1066,20 @@ class Distortions:
 
     def _setup_distorted_defect_dict(
         self,
-        defect_name: str,
         defect: dict,
-        distorted_defects_dict: dict,
     ) -> dict:
         """
-        Add defect information to `distorted_defects_dict`.
+        Setup `distorted_defect_dict` with info for `defect`.
 
         Args:
-            defect_name (:obj:`str`):
-                Name of the defect to use as key in the `distorted_defects_dict`.
             defect (:obj:`dict`):
-                Defect dictionary to add to `distorted_defects_dict`.
-            distorted_defects_dict (:obj:`dict`):
-                Full dictionary of distorted defects.
+                Defect dictionary to generate `distorted_defect_dict` from.
 
         Returns:
             :obj:`dict`
+                Dictionary with information for `defect`.
         """
-        distorted_defects_dict[defect_name] = {
+        distorted_defect_dict = {
             "defect_type": defect["name"],
             "defect_site": defect["unique_site"],
             "defect_supercell_site": defect["bulk_supercell_site"],
@@ -1097,8 +1092,8 @@ class Distortions:
             "substituting_specie",
         ]:  # substitutions and antisites
             if key in defect:
-                distorted_defects_dict[defect_name][key] = defect[key]
-        return distorted_defects_dict
+                distorted_defect_dict[key] = defect[key]
+        return distorted_defect_dict
 
     def write_distortion_metadata(
         self,
@@ -1187,10 +1182,8 @@ class Distortions:
                 "charges": {},
             }
 
-            distorted_defects_dict = self._setup_distorted_defect_dict(
-                distorted_defects_dict=distorted_defects_dict,
-                defect_name=defect_name,
-                defect=defect,
+            distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
+                defect
             )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
@@ -1258,7 +1251,7 @@ class Distortions:
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
                 for those tags. Highly recommended to look at output `INCAR`s,
-                or `input_files/incar.yaml` to see what the default `INCAR`
+                or `SnB_input_files/incar.yaml` to see what the default `INCAR`
                 settings are.
                 (Default: None)
             potcar_settings (:obj:`dict`):
@@ -1266,7 +1259,7 @@ class Distortions:
                 the `doped` defaults. Using `pymatgen` syntax
                 (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
                 recommended to look at output `POTCAR`s, or `shakenbreak`
-                `input_files/default_POTCARs.yaml`, to see what the default
+                `SnB_input_files/default_POTCARs.yaml`, to see what the default
                 `POTCAR` settings are.
                 (Default: None)
             write_files (:obj:`bool`):
@@ -1367,11 +1360,11 @@ class Distortions:
             input_parameters (:obj:`dict`, optional):
                 Dictionary of user Quantum Espresso input parameters, to
                 overwrite/update `shakenbreak` default ones (see
-                `input_files/qe_input.yaml`).
+                `SnB_input_files/qe_input.yaml`).
                 (Default: None)
             input_file (:obj:`str`, optional):
                 Path to Quantum Espresso input file, to overwrite/update
-                `shakenbreak` default ones (see `input_files/qe_input.yaml`).
+                `shakenbreak` default ones (see `SnB_input_files/qe_input.yaml`).
                 If both `input_parameters` and `input_file` are provided,
                 the input_parameters will be used.
             write_structures_only (:obj:`bool`, optional):
@@ -1399,7 +1392,7 @@ class Distortions:
         # Update default parameters with user defined values
         if pseudopotentials and not write_structures_only:
             default_input_parameters = loadfn(
-                os.path.join(MODULE_DIR, "../input_files/qe_input.yaml")
+                os.path.join(MODULE_DIR, "../SnB_input_files/qe_input.yaml")
             )
             if input_file and not input_parameters:
                 input_parameters = io.parse_qe_input(input_file)
@@ -1476,7 +1469,7 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../input_files/cp2k_input.inp",
+        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
@@ -1487,7 +1480,7 @@ class Distortions:
         Args:
             input_file (:obj:`str`, optional):
                 Path to CP2K input file. If not set, default input file will be
-                used (see `shakenbreak/input_files/cp2k_input.inp`).
+                used (see `shakenbreak/SnB_input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
                 (without calculation inputs).
@@ -1509,7 +1502,7 @@ class Distortions:
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif (
-            os.path.exists(f"{MODULE_DIR}/../input_files/cp2k_input.inp")
+            os.path.exists(f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp")
             and not write_structures_only
         ):
             warnings.warn(
@@ -1518,7 +1511,7 @@ class Distortions:
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
             cp2k_input = Cp2kInput.from_file(
-                f"{MODULE_DIR}/../input_files/cp2k_input.inp"
+                f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp"
             )
 
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
@@ -1566,7 +1559,7 @@ class Distortions:
 
     def write_castep_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../input_files/castep.param",
+        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/castep.param",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = False,
@@ -1578,7 +1571,7 @@ class Distortions:
         Args:
             input_file (:obj:`str`, optional):
                 Path to CASTEP input (`.param`) file. If not set, default input
-                file will be used (see `shakenbreak/input_files/castep.param`).
+                file will be used (see `shakenbreak/SnB_input_files/castep.param`).
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
                 (without calculation inputs).

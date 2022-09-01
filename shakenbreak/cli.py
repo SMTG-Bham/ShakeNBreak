@@ -379,8 +379,8 @@ def snb():
 @click.option(
     "--config",
     "-conf",
-    help="Config file for advanced distortion settings. See example in "
-    "input_files/example_generate_config.yaml",
+    help="Config file for advanced distortion settings. See example in"
+    " SnB_input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
     show_default=True,
@@ -613,7 +613,7 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "input_files/example_generate_all_config.yaml",
+    "/SnB_input_files/example_generate_all_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
@@ -978,7 +978,8 @@ def run(submit_command, job_script, job_name_option, all, verbose):
 @click.option(
     "--defect",
     "-d",
-    help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0')",
+    help="Name of defect (including charge state) to parse energies for (e.g. 'vac_1_Cd_0'). "
+    "Default is current directory name.",
     type=str,
     default=None,
 )
@@ -1160,7 +1161,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder."
+    help="Path to the top-level directory containing the defect folder. "
     "Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",

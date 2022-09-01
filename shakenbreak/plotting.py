@@ -3,11 +3,13 @@ Module containing functions to plot distorted defect relaxation outputs and iden
 energy-lowering distortions.
 """
 import os
+import shutil
 import warnings
 from typing import Optional, Tuple
 import numpy as np
 
 import matplotlib as mpl
+from matplotlib import font_manager
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import seaborn as sns
@@ -15,6 +17,59 @@ import seaborn as sns
 from shakenbreak import analysis
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _install_custom_font():
+    """Check if SnB custom font has been installed, and install it otherwise."""
+    # Find where matplotlib stores its True Type fonts
+    mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
+    print(mpl_data_dir)
+    mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
+    custom_fonts = [
+        font
+        for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
+        if "whitney-book-pro" in font.lower()
+    ]
+    if not custom_fonts:  # If custom hasn't been installed, install it
+        print("Trying to install ShakeNBreak custom font...")
+        try:
+            # Copy the font file to matplotlib's True Type font directory
+            fonts_dir = f"{MODULE_DIR}/../fonts/"
+            try:
+                for file_name in os.listdir(fonts_dir):
+                    if ".ttf" in file_name:  # must be in ttf format for matplotlib
+                        old_path = os.path.join(fonts_dir, file_name)
+                        new_path = os.path.join(mpl_fonts_dir, file_name)
+                        shutil.copyfile(old_path, new_path)
+                        print("Copying " + old_path + " -> " + new_path)
+                    else:
+                        print(f"No ttf fonts found in the {fonts_dir} directory.")
+            except Exception:
+                pass
+
+            # Try to delete matplotlib's fontList cache
+            mpl_cache_dir = mpl.get_cachedir()
+            mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
+            if "fontList.cache" in mpl_cache_dir_ls:
+                fontList_path = os.path.join(mpl_cache_dir, "fontList.cache")
+                if fontList_path:
+                    os.remove(fontList_path)
+                    print("Deleted the matplotlib fontList.cache.")
+            else:
+                print("Couldn't find matplotlib cache, so will continue.")
+
+            # Add font to MAtplotlib Fontmanager
+            for font in os.listdir(fonts_dir):
+                font_manager._load_fontmanager(try_read_cache=False)
+                font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
+                print(f"Adding {font} font to matplotlib fonts.")
+        except Exception:
+            warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
+                The widely available Helvetica font will be used instead."""
+            warnings.warn(warning_msg)
+
+
+_install_custom_font()
 
 
 # Helper functions for formatting plots
@@ -486,14 +541,28 @@ def _save_plot(
     wd = os.getcwd()
     if not os.path.isdir(wd + "/distortion_plots/"):
         os.mkdir(wd + "/distortion_plots/")
-    if verbose:
-        print(f"Plot saved to {wd}/distortion_plots/")
+    # use pycairo as backend if installed and save_format is pdf:
+    backend = None
+    if "pdf" in save_format:
+        try:
+            import cairo
+
+            backend = "cairo"
+        except ImportError:
+            warnings.warn(
+                "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
+                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
+                "`pip install pycairo` if you want ShakeNBreak's default font."
+            )
     fig.savefig(
         wd + "/distortion_plots/" + defect_name + f".{save_format}",
         format=save_format,
         transparent=True,
         bbox_inches="tight",
+        backend=backend,
     )
+    if verbose:
+        print(f"Plot saved to {wd}/distortion_plots/{defect_name}.{save_format}")
 
 
 def _format_tick_labels(
@@ -1001,7 +1070,8 @@ def plot_defect(
             fig = plot_colorbar(
                 energies_dict=energies_dict,
                 disp_dict=disp_dict,
-                defect_name=defect_name,
+                defect_species=defect_species,
+                include_site_num_in_name=include_site_num_in_name,
                 title=defect_name if add_title else None,
                 num_nearest_neighbours=num_nearest_neighbours,
                 neighbour_atom=neighbour_atom,
@@ -1016,7 +1086,8 @@ def plot_defect(
         else:
             fig = plot_datasets(
                 datasets=[energies_dict],
-                defect_name=defect_name,
+                defect_species=defect_species,
+                include_site_num_in_name=include_site_num_in_name,
                 title=defect_name if add_title else None,
                 num_nearest_neighbours=num_nearest_neighbours,
                 neighbour_atom=neighbour_atom,
@@ -1032,7 +1103,8 @@ def plot_defect(
 def plot_colorbar(
     energies_dict: dict,
     disp_dict: dict,
-    defect_name: str,
+    defect_species: str,
+    include_site_num_in_name: Optional[bool] = False,
     num_nearest_neighbours: int = None,
     neighbour_atom: str = "NN",
     title: Optional[str] = None,
@@ -1056,9 +1128,14 @@ def plot_colorbar(
             Dictionary matching bond distortions to structure comparison metric
             (metric = 'disp' or 'max_dist'), as produced by
             `analysis.calculate_struct_comparison()`.
-        defect_name (:obj:`str`):
-            Specific defect name that will appear in plot labels and file names
-            (e.g '$V_{Cd}^0$')
+        defect_species (:obj:`str`):
+            Specific defect name that will appear in plot labels (in LaTeX form)
+             and file names (e.g 'vac_1_Cd_0')
+        include_site_num_in_name (:obj:`bool`):
+            Whether to include the site number (as generated by doped) in the
+            defect name. Useful for materials with many symmetry-inequivalent
+            sites.
+            (Default: False)
         num_nearest_neighbours (:obj:`int`):
             Number of distorted neighbour atoms (e.g. 2)
             (Default: None)
@@ -1107,7 +1184,9 @@ def plot_colorbar(
         ax = _format_axis(
             ax=ax,
             y_label=y_label,
-            defect_name=defect_name,
+            defect_name=_format_defect_name(
+                defect_species, include_site_num_in_name=include_site_num_in_name
+            ),
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
         )
@@ -1211,8 +1290,8 @@ def plot_colorbar(
         # Plot reference energy
         unperturbed_color = colormap(
             0
-        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with respect
-        # to this structure)
+        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
+        # respect to this structure)
         ax.scatter(
             0,
             energies_dict["Unperturbed"],
@@ -1244,7 +1323,7 @@ def plot_colorbar(
     if save_plot:
         _save_plot(
             fig=fig,
-            defect_name=defect_name,
+            defect_name=defect_species,
             save_format=save_format,
         )
     return fig
@@ -1253,7 +1332,8 @@ def plot_colorbar(
 def plot_datasets(
     datasets: list,
     dataset_labels: list,
-    defect_name: str,
+    defect_species: str,
+    include_site_num_in_name: Optional[bool] = False,
     title: Optional[str] = None,
     neighbour_atom: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
@@ -1277,9 +1357,14 @@ def plot_datasets(
             `analysis._organize_data()` or `analysis.get_energies()`)
         dataset_labels (:obj:`list`):
             Labels for each dataset plot legend.
-        defect_name (:obj:`str`):
-            Specific defect name that will appear in plot labels and file names
-            (e.g '$V_{Cd}^0$')
+        defect_species (:obj:`str`):
+            Specific defect name that will appear in plot labels (in LaTeX form)
+             and file names (e.g 'vac_1_Cd_0')
+        include_site_num_in_name (:obj:`bool`):
+            Whether to include the site number (as generated by doped) in the
+            defect name. Useful for materials with many symmetry-inequivalent
+            sites.
+            (Default: False)
         neighbour_atom (:obj:`str`):
             Name(s) of distorted neighbour atoms (e.g. 'Cd')
         title (:obj:`str`, optional):
@@ -1347,7 +1432,9 @@ def plot_datasets(
     ax = _format_axis(
         ax=ax,
         y_label=y_label,
-        defect_name=defect_name,
+        defect_name=_format_defect_name(
+            defect_species, include_site_num_in_name=include_site_num_in_name
+        ),
         num_nearest_neighbours=num_nearest_neighbours,
         neighbour_atom=neighbour_atom,
     )
@@ -1507,7 +1594,7 @@ def plot_datasets(
     if save_plot:  # Save plot?
         _save_plot(
             fig=fig,
-            defect_name=defect_name,
+            defect_name=defect_species,
             save_format=save_format,
         )
     return fig

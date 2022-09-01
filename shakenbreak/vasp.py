@@ -25,10 +25,11 @@ if TYPE_CHECKING:
 
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_potcar_dict = loadfn(f"{MODULE_DIR}/../input_files/default_POTCARs.yaml")
+default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../input_files/incar.yaml"))
-defect_config = loadfn(os.path.join(MODULE_DIR, "../input_files/DefectSet.yaml"))
+default_incar_settings = loadfn(
+    os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml")
+)
 
 
 def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe
@@ -182,10 +183,6 @@ class DefectRelaxSet(MPRelaxSet):
 
     def __init__(self, structure, **kwargs):
         charge = kwargs.pop("charge", 0)
-        user_incar_settings = kwargs.get("user_incar_settings", {})
-        defect_settings = deepcopy(defect_config["defect"])
-        defect_settings.update(user_incar_settings)
-        kwargs["user_incar_settings"] = defect_settings
 
         super(self.__class__, self).__init__(structure, **kwargs)
         self.charge = charge
@@ -254,7 +251,7 @@ def write_vasp_gam_files(
         incar_settings (:obj:`dict`):
             Dictionary of user INCAR settings (AEXX, NCORE etc.) to override
             default settings. Highly recommended to look at
-            `/input_files/incar.yaml`, or output INCARs or doped.vasp_input
+            `/SnB_input_files/incar.yaml`, or output INCARs or doped.vasp_input
             source code, to see what the default INCAR settings are.
             (default: None)
         potcar_settings (:obj:`dict`):
@@ -292,7 +289,7 @@ def write_vasp_gam_files(
 
     defect_relax_set = DefectRelaxSet(
         supercell,
-        charge=single_defect_dict["Transformation " "Dict"]["charge"],
+        charge=single_defect_dict["Transformation Dict"]["charge"],
         user_potcar_settings=potcar_dict["POTCAR"],
         user_potcar_functional=potcar_dict["POTCAR_FUNCTIONAL"],
     )
@@ -360,60 +357,3 @@ def write_vasp_gam_files(
     with zopen(vaspgaminputdir + "INCAR", "wt") as incar_file:
         incar_file.write(vaspgamincar.get_string())
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")
-
-
-def prepare_vasp_defect_inputs(defects: dict) -> dict:
-    """
-    Generates a dictionary of folders for VASP defect calculations.
-    Duplicated from doped (from github.com/SMTG-UCL/doped).
-
-    Args:
-        defects (dict):
-            Dictionary of defect-object-dictionaries from PyCDT's
-            ChargedDefectsStructures class (see example notebook)
-
-    Returns:
-        :obj:`dict`:
-            Dictionary mapping each defect to a dictionary with defect
-            information ("Defect Structure", "Poscar Comment",
-            "Transformation Dict")
-    """
-    defect_input_dict = {}
-    comb_defs = functools.reduce(
-        lambda x, y: x + y, [defects[key] for key in defects if key != "bulk"]
-    )
-
-    for defect in comb_defs:
-        # noinspection DuplicatedCode
-        for charge in defect["charges"]:
-            supercell = defect["supercell"]
-            dict_transf = {
-                "defect_type": defect["name"],
-                "defect_site": defect["unique_site"],
-                "defect_supercell_site": defect["bulk_supercell_site"],
-                "defect_multiplicity": defect["site_multiplicity"],
-                "charge": charge,
-                "supercell": supercell["size"],
-            }
-            if "substitution_specie" in defect:
-                dict_transf["substitution_specie"] = defect["substitution_specie"]
-
-            defect_relax_set = DefectRelaxSet(supercell["structure"], charge=charge)
-
-            poscar = defect_relax_set.poscar
-            struct = defect_relax_set.structure
-            poscar.comment = (
-                defect["name"]
-                + str(dict_transf["defect_supercell_site"].frac_coords)
-                + "_-dNELECT="  # change in NELECT from bulk supercell
-                + str(charge)
-            )
-            folder_name = defect["name"] + f"_{charge}"
-            print(folder_name)
-
-            defect_input_dict[folder_name] = {
-                "Defect Structure": struct,
-                "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf,
-            }
-    return defect_input_dict

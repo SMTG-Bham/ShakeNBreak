@@ -4,4 +4,4 @@ bond distortions to locate ground-state and metastable structures of point
 defects in solid materials.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"

@@ -41,7 +41,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.mkdir(f"{defect_dir}")
         V_Cd_1_dict = {"distortions": {-0.075: -206.700}, "Unperturbed": -205.8}
         dumpfn(V_Cd_1_dict, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
-        V_Cd_2_dict = {'distortions': {-0.35: -205.7}, 'Unperturbed': -205.8}
+        V_Cd_2_dict = {"distortions": {-0.35: -205.7}, "Unperturbed": -205.8}
         dumpfn(V_Cd_2_dict, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
 
         # create fake structures for testing functionality:
@@ -61,7 +61,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
-        self.defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+        self.defect_charges_dict = (
+            energy_lowering_distortions.read_defects_directories()
+        )
         self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
     def tearDown(self):
@@ -155,17 +157,18 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         )
 
         V_Cd_m1_dict_w_distortion = {
-            'distortions': {-0.075: -206.7, '-55.0%_from_0': -207.0},
-            'Unperturbed': -205.8
+            "distortions": {-0.075: -206.7, "-55.0%_from_0": -207.0},
+            "Unperturbed": -205.8,
         }
         dumpfn(V_Cd_m1_dict_w_distortion, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
 
         V_Cd_m2_dict_w_distortion = {
-            'distortions': {
+            "distortions": {
                 -0.35: -205.7,
-                '-55.0%_from_0': -207.0,
-                '-7.5%_from_-1': -207.7},
-            'Unperturbed': -205.8
+                "-55.0%_from_0": -207.0,
+                "-7.5%_from_-1": -207.7,
+            },
+            "Unperturbed": -205.8,
         }
         dumpfn(V_Cd_m2_dict_w_distortion, "vac_1_Cd_-2/vac_1_Cd_-2.yaml")
 
@@ -240,8 +243,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     # Now we test parsing of final energies and plotting
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{-2}$.png",
+        baseline_dir="remote_baseline_plots",
+        filename="vac_1_Cd_-2.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -257,7 +260,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         }.items():
             # Just using relevant part of the OUTCAR file to quickly test parsing
             # as parsing of the full file has been extensively tested in test_cli.py
-            outcar=f"""
+            outcar = f"""
             reached required accuracy - stopping structural energy minimisationss
             FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
             ---------------------------------------------------
@@ -279,14 +282,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
-        fig_dict = plotting.plot_all_defects(
-            defect_charges_dict, save_format="png"
-        )
+        fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_-2"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{-1}$.png",
+        baseline_dir="remote_baseline_plots",
+        filename="vac_1_Cd_-1.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -303,7 +304,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         }.items():
             # Just using relevant part of the OUTCAR file to quickly test parsing
             # as parsing of the full file has been extensively tested in test_cli.py
-            outcar=f"""
+            outcar = f"""
             reached required accuracy - stopping structural energy minimisation
             FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
             ---------------------------------------------------
@@ -325,14 +326,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
-        fig_dict = plotting.plot_all_defects(
-            defect_charges_dict, save_format="png"
-        )
+        fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_-1"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_V_Cd_plots",
-        filename="V$_{Cd}^{0}$.png",
+        baseline_dir="remote_baseline_plots",
+        filename="vac_1_Cd_0.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -351,7 +350,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         }.items():
             # Just using relevant part of the OUTCAR file to quickly test parsing
             # as parsing of the full file has been extensively tested in test_cli.py
-            outcar=f"""
+            outcar = f"""
             reached required accuracy - stopping structural energy minimisation
             FREE ENERGIE OF THE ION-ELECTRON SYSTEM (eV)
             ---------------------------------------------------
@@ -364,7 +363,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             """
             os.mkdir(f"{defect_dir}/{dist}")
             with open(f"{defect_dir}/{dist}/OUTCAR", "w") as f:
-                        f.write(outcar)
+                f.write(outcar)
 
         # Parse final energies from OUTCAR files and write them to yaml files
         io.parse_energies(defect=defect_dir, path="./")
@@ -373,9 +372,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
-        fig_dict = plotting.plot_all_defects(
-            defect_charges_dict, save_format="png"
-        )
+        fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_0"]
 
 

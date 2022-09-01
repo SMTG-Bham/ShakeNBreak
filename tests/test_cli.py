@@ -1565,16 +1565,18 @@ nonsense_key: nonsense_value"""
                 catch_exceptions=False,
             )
         self.assertIn(
-            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, and unperturbed: -3.26 eV.",
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
             result.output,
         )  # verbose output
         self.assertIn(f"Plot saved to {wd}/distortion_plots/", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
+            f"Will not parse its contents.",
             str(w[0].message),
         )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
         self.tearDown()
@@ -1628,9 +1630,9 @@ nonsense_key: nonsense_value"""
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Ti}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{0}$.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/V$_{Cd}^{-1}$.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_0.png"))
+        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_-1.png"))
         if w:
             [
                 self.assertNotEqual(
@@ -1742,7 +1744,9 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
+        )
         self.assertIn(
             f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Groundstate/POSCAR",
             result.output,
@@ -1765,7 +1769,9 @@ nonsense_key: nonsense_value"""
             catch_exceptions=False,
         )
         self.assertTrue(
-            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR")
+            os.path.exists(
+                f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR"
+            )
         )
         self.assertIn(
             f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/My_Groundstate/Groundstate_CONTCAR",
@@ -1786,7 +1792,9 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=True,
         )
-        self.assertFalse(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate"))
+        self.assertFalse(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+        )
         self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
             f"The structure file Fake_structure is not present in the directory {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%",
