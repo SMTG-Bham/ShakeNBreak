@@ -68,12 +68,7 @@ def _install_custom_font():
             warnings.warn(warning_msg)
 
 
-_install_custom_font()
-
-
 # Helper functions for formatting plots
-
-
 def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
@@ -1174,6 +1169,7 @@ def plot_colorbar(
             Energy vs distortion plot with colorbar for structural similarity,
             as a mpl.figure.Figure object
     """
+    _install_custom_font()
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         fig, ax = plt.subplots(1, 1, figsize=(6.5, 5))
 
@@ -1414,6 +1410,8 @@ def plot_datasets(
             f" {len(dataset_labels)} labels."
         )
 
+    _install_custom_font()
+    # Set up figure
     fig, ax = plt.subplots(1, 1)
     # Line colors
     if not colors:
