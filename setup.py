@@ -112,6 +112,7 @@ def package_files(directory):
 
 
 input_files = package_files("SnB_input_files/")
+fonts = package_files("fonts/")
 
 
 setup(
@@ -171,7 +172,7 @@ setup(
     },
     # Specify any non-python files to be distributed with the package
     package_data={
-        "shakenbreak": ["shakenbreak/*"] + input_files + ["fonts/"],
+        "shakenbreak": ["shakenbreak/*"] + input_files + fonts,
     },
     include_package_data=True,
     # Specify the custom install class
