@@ -207,9 +207,12 @@ def parse_energies(
         # load previously-parsed energies file if present
         energies_file = f"{path}/{defect}/{defect}.yaml"
         if os.path.exists(energies_file):
-            prev_energies_dict, _, _ = analysis._sort_data(
-                energies_file, verbose=False
-            )
+            try:
+                prev_energies_dict, _, _ = analysis._sort_data(
+                    energies_file, verbose=False
+                )
+            except:
+                prev_energies_dict = {}
         else:
             prev_energies_dict = {}
 
@@ -245,12 +248,16 @@ def parse_energies(
                     ] = float(energy)
             elif not outcar:
                 # check if energy not found, but was previously parsed, then add to dict
-                if analysis._format_distortion_names(dist) in prev_energies_dict:
-                    energies[analysis._format_distortion_names(dist)] = prev_energies_dict[
-                        analysis._format_distortion_names(dist)]
-                elif analysis._format_distortion_names(dist) in prev_energies_dict["distortions"]:
-                    energies["distortions"][analysis._format_distortion_names(dist)] = \
-                        prev_energies_dict["distortions"][analysis._format_distortion_names(dist)]
+                dist_name = analysis._format_distortion_names(dist)
+                if dist_name in prev_energies_dict:
+                    energies[dist_name] = prev_energies_dict[dist_name]
+                elif (
+                    "distortions" in prev_energies_dict
+                    and dist_name in prev_energies_dict["distortions"]
+                ):
+                    energies["distortions"][dist_name] = prev_energies_dict[
+                        "distortions"
+                    ][dist_name]
                 else:
                     warnings.warn(f"No output file in {dist} directory")
             else:
@@ -261,10 +268,12 @@ def parse_energies(
             energies = sort_energies(energies)
             save_file(energies, defect, path)
         else:
-            warnings.warn(f"Energies could not be parsed for defect '{defect}' in {path}. "
-                          f"If these directories are correct, check calculations have converged, "
-                          f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-                          f"Bond_Distortion_xxx, Rattled, Unperturbed)")
+            warnings.warn(
+                f"Energies could not be parsed for defect '{defect}' in {path}. "
+                f"If these directories are correct, check calculations have converged, "
+                f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+                f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+            )
 
 
 # Parsing output structures of different codes
