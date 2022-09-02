@@ -839,7 +839,8 @@ def plot_all_defects(
     except FileNotFoundError:
         warnings.warn(
             f"Path {output_path}/distortion_metadata.json does not exist. "
-            "Will not parse its contents."
+            "Will not parse its contents (to specify which neighbour atoms were distorted in plot "
+            "text)."
         )
         distortion_metadata = None
         num_nearest_neighbours = None
@@ -1013,7 +1014,8 @@ def plot_defect(
         except FileNotFoundError:
             warnings.warn(
                 f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents."
+                "Will not parse its contents (to specify which neighbour atoms were distorted in "
+                "plot text)."
             )
             pass
 
