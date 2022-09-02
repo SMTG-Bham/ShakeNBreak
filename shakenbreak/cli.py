@@ -1413,7 +1413,7 @@ def regenerate(path, code, filename, min, metastable, verbose):
 @snb.command(
     name="groundstate",
     context_settings=CONTEXT_SETTINGS,
-    no_args_is_help=False,
+    no_args_is_help=False,  # can be run within defect directory with no options/arguments set
 )
 @click.option(
     "--directory",
