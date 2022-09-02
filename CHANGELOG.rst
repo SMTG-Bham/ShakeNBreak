@@ -6,8 +6,10 @@ v22.9.2
 
 Main changes:
 
-- Update CLI commands
+- Update CLI commands (snb-parse, analyse, plot and groundstate can all now be run with no arguments within a defect folder)
 - Update custom font
+- Update groundstate() tests
+- Update plotting
 
 v22.9.1
 --------
