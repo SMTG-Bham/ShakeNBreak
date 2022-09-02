@@ -23,7 +23,6 @@ def _install_custom_font():
     """Check if SnB custom font has been installed, and install it otherwise."""
     # Find where matplotlib stores its True Type fonts
     mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
-    print(mpl_data_dir)
     mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
     custom_fonts = [
         font
