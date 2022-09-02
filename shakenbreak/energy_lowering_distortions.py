@@ -930,8 +930,8 @@ def _copy_espresso_files(
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
         params = params.replace(
-            params[params.find("ATOMIC_POSITIONS") :],
-            new_struct[new_struct.find("ATOMIC_POSITIONS") :],
+            params[params.find("ATOMIC_POSITIONS"):],
+            new_struct[new_struct.find("ATOMIC_POSITIONS"):],
             1,
         )  # Replace ionic positions
         with open(f"{distorted_dir}/{input_filename}", "w") as f:
@@ -960,8 +960,8 @@ def _copy_espresso_files(
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
             params = params.replace(
-                params[params.find("ATOMIC_POSITIONS") :],
-                new_struct[new_struct.find("ATOMIC_POSITIONS") :],
+                params[params.find("ATOMIC_POSITIONS"):],
+                new_struct[new_struct.find("ATOMIC_POSITIONS"):],
                 1,
             )  # Replace lines with the ionic positions
             with open(f"{distorted_dir}/{input_filename}", "w") as f:
@@ -1119,6 +1119,7 @@ def _copy_fhi_aims_files(
 
 
 def write_groundstate_structure(
+    all: bool = True,
     output_path: str = ".",
     groundstate_folder: str = None,
     groundstate_filename: str = "groundstate_POSCAR",
@@ -1126,14 +1127,20 @@ def write_groundstate_structure(
     verbose: bool = False,
 ) -> None:
     """
-    Writes the groundstate structure of each defect to the corresponding
-    defect folder, with an optional name (default "groundstate_POSCAR"),
-    to then run continuation calculations.
+    Writes the groundstate structure of each defect (if `all=True`, default)
+    to the corresponding defect folder, with an optional name
+    (default "groundstate_POSCAR"), to then run continuation calculations.
 
     Args:
+        all (:obj: `bool`):
+            Write groundstate structures for all defect folders in the
+            (top-level) directory, specified by `output_path`. If False,
+            `output_path` should be a single defect folder, for which the
+            groundstate structure will be written.
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations
-            (need CONTCAR files for structure matching) and
+            Path to top-level directory with your distorted defect
+            calculation folders (if `all=True`, else path to single defect
+            folder)(need CONTCAR files for structure matching) and
             distortion_metadata.json.
             (Default: current directory = "./")
         groundstate_folder (:obj:`str`):
@@ -1152,45 +1159,72 @@ def write_groundstate_structure(
     Returns:
         None
     """
-    defect_charges_dict = read_defects_directories(output_path=output_path)
-    for defect, charges in defect_charges_dict.items():
-        for charge in charges:
-            energies_file = f"{output_path}/{defect}_{charge}/{defect}_{charge}.yaml"
-            # Get ground state distortion
-            _, _, gs_distortion = analysis._sort_data(
-                energies_file=energies_file, verbose=False
+
+    def _write_single_groundstate(
+        output_path,
+        species,
+        groundstate_folder,
+        groundstate_filename,
+        structure_filename,
+        verbose,
+    ):
+        energies_file = f"{output_path}/{species}/{species}.yaml"
+        # Get ground state distortion
+        _, _, gs_distortion = analysis._sort_data(
+            energies_file=energies_file, verbose=False
+        )
+        bond_distortion = analysis._get_distortion_filename(gs_distortion)
+
+        # Origin path
+        origin_path = f"{output_path}/{species}/{bond_distortion}/{structure_filename}"
+        if not os.path.exists(origin_path):
+            raise FileNotFoundError(
+                f"The structure file {structure_filename} is not present"
+                f" in the directory {output_path}/{species}/{bond_distortion}"
             )
-            bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
-            # Origin path
-            origin_path = f"{output_path}/{defect}_{charge}/{bond_distortion}/{structure_filename}"
-            if not os.path.exists(origin_path):
-                raise FileNotFoundError(
-                    f"The structure file {structure_filename} is not present"
-                    f" in the directory {output_path}/{defect}_{charge}/{bond_distortion}"
-                )
-
-            # Destination path
-            if groundstate_folder:
-                if not os.path.exists(
-                    f"{output_path}/{defect}_{charge}/{groundstate_folder}"
-                ):
-                    os.mkdir(f"{output_path}/{defect}_{charge}/{groundstate_folder}")
-                destination_path = os.path.join(
-                    f"{output_path}/{defect}_{charge}/",
-                    f"{groundstate_folder}/{groundstate_filename}",
-                )
-                if verbose:
-                    print(
-                        f"{defect}_{charge}: Gound state structure (found with "
-                        f"{gs_distortion} distortion) saved to {destination_path}"
-                    )
-            else:
-                destination_path = (
-                    f"{output_path}/{defect}_{charge}/{groundstate_filename}"
-                )
-
-            shutil.copyfile(
-                origin_path,
-                destination_path,
+        # Destination path
+        if groundstate_folder:
+            if not os.path.exists(f"{output_path}/{species}/{groundstate_folder}"):
+                os.mkdir(f"{output_path}/{species}/{groundstate_folder}")
+            destination_path = os.path.join(
+                f"{output_path}/{species}/",
+                f"{groundstate_folder}/{groundstate_filename}",
             )
+            if verbose:
+                print(
+                    f"{species}: Gound state structure (found with "
+                    f"{gs_distortion} distortion) saved to {destination_path}"
+                )
+        else:
+            destination_path = f"{output_path}/{species}/{groundstate_filename}"
+
+        shutil.copyfile(
+            origin_path,
+            destination_path,
+        )
+
+    if all:
+        defect_charges_dict = read_defects_directories(output_path=output_path)
+        for defect, charges in defect_charges_dict.items():
+            for charge in charges:
+                _write_single_groundstate(
+                    output_path=output_path,
+                    species=f"{defect}_{charge}",
+                    groundstate_folder=groundstate_folder,
+                    groundstate_filename=groundstate_filename,
+                    structure_filename=structure_filename,
+                    verbose=verbose,
+                )
+    else:
+        species = output_path.split("/")[-1]
+        output_path = output_path.rsplit("/", 1)[0]
+
+        _write_single_groundstate(
+            output_path=output_path,
+            species=species,
+            groundstate_folder=groundstate_folder,
+            groundstate_filename=groundstate_filename,
+            structure_filename=structure_filename,
+            verbose=verbose,
+        )

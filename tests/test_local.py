@@ -17,7 +17,6 @@ import numpy as np
 from matplotlib.testing.compare import compare_images
 
 # Click
-from click import exceptions
 from click.testing import CliRunner
 
 from pymatgen.core.structure import Structure
@@ -329,6 +328,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         distorted_defect_dict, _ = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
@@ -445,11 +445,11 @@ class DistortionLocalTestCase(unittest.TestCase):
     def test_plot(self):
         """
         Test plot() function.
-        The plots used for comparison have been generated with the Whitney Pro
-        font (can download from https://eng.fontke.com/font/20523710/).
+        The plots used for comparison have been generated with the Montserrat font
+        (available in the fonts directory).
         """
         # Test the following options:
-        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
         wd = (
             os.getcwd()
@@ -480,7 +480,7 @@ class DistortionLocalTestCase(unittest.TestCase):
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t",  # No title
+                    "-nt",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,
@@ -500,7 +500,6 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
-        defect = "vac_1_Ti_0"
         fake_distortion_metadata = {
             "defects": {
                 "vac_1_Cd": {

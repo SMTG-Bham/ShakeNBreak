@@ -54,6 +54,9 @@ class CLITestCase(unittest.TestCase):
         self.V_Cd_0pt3_local_rattled = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_0_30%_local_rattle_POSCAR")
         )
+        self.V_Cd_minus0pt55_CONTCAR_struc = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+        )
         with open(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
         ) as fp:
@@ -1333,7 +1336,63 @@ nonsense_key: nonsense_value"""
             )
         )
         os.chdir(file_path)
+
+        # Test warning when setting path and parsing from inside the defect folder
+        defect_name = "vac_1_Ti_-1"
+        os.remove(
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+        )
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder (i.e. "
+                    "when `--defect` is not specified."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+            )
+        )
+        os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
+
+        # Test warning when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(snb, ["parse"], catch_exceptions=True)
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == f"Energies could not be parsed for defect 'example_results' in"
+                    f" {self.DATA_DIR}. If these directories are correct, "
+                    f"check calculations have converged, and that distortion subfolders match "
+                    f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    for warning in w
+                ]
+            )
+        )
+        self.assertFalse(
+            any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
+        )
+        os.chdir(file_path)
 
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""
@@ -1526,22 +1585,106 @@ nonsense_key: nonsense_value"""
             ],
             catch_exceptions=True,
         )
-        self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
-            f"Could not find {name} in the directory {self.EXAMPLE_RESULTS}.",
+            f"Could not analyse defect '{name}' in directory '{self.EXAMPLE_RESULTS}'. Please "
+            f"either specify a defect to analyse (with option --defect), run from within a single "
+            f"defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
             str(result.exception),
         )
+
+        # Test analysing from inside the defect folder
+        defect_name = "vac_1_Ti_0"
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "analyse",
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message) == "No output file in Bond_Distortion_10.0% "
+                    "directory"
+                    for warning in w
+                ]
+            )
+        )
+        self.assertIn("Comparing structures to Unperturbed...", result.output)
+        self.assertIn(
+            f"Saved results to {os.path.join(os.getcwd(), defect_name)}.csv",
+            result.output,
+        )
+        self.assertTrue(os.path.exists(f"{defect_name}.csv"))
+        self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
+        os.remove(f"{defect_name}.csv")
+        os.remove(f"{defect_name}.yaml")
+
+        # Test warning when setting path and analysing from inside the defect folder
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "analyse",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder (i.e. "
+                    "when `--defect` is not specified."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertIn("Comparing structures to Unperturbed...", result.output)
+        self.assertIn(
+            f"Saved results to {os.path.join(os.getcwd(), defect_name)}.csv",
+            result.output,
+        )
+        self.assertTrue(os.path.exists(f"{defect_name}.csv"))
+        self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
+        os.remove(f"{defect_name}.csv")
+        os.remove(f"{defect_name}.yaml")
+        os.chdir(file_path)
+
+        # Test exception when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        result = runner.invoke(snb, ["analyse"], catch_exceptions=True)
+        self.assertIn(
+            f"Could not analyse defect 'example_results' in directory '{self.DATA_DIR}'. Please "
+            f"either specify a defect to analyse (with option --defect), run from within a single "
+            f"defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
+            str(result.exception),
+        )
+        self.assertNotIn(f"Saved results to", result.output)
+        self.assertFalse(
+            any(
+                os.path.exists(i)
+                for i in os.listdir()
+                if (i.endswith(".csv") or i.endswith(".yaml"))
+            )
+        )
+        os.chdir(file_path)
 
     def test_plot(self):
         "Test plot() function"
         # Test the following options:
-        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
         wd = (
             os.getcwd()
         )  # plots saved to distortion_plots directory in current directory
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
-            f.write("")
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -1559,7 +1702,7 @@ nonsense_key: nonsense_value"""
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t",  # No title
+                    "-nt",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,
@@ -1573,7 +1716,8 @@ nonsense_key: nonsense_value"""
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
-            f"Will not parse its contents.",
+            f"Will not parse its contents (to specify which neighbour atoms were distorted in "
+            f"plot text).",
             str(w[0].message),
         )
         self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
@@ -1636,7 +1780,9 @@ nonsense_key: nonsense_value"""
         if w:
             [
                 self.assertNotEqual(
-                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
+                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
+                    f"not parse its contents (to specify which neighbour atoms were distorted in "
+                    f"plot text).",
                     str(warning.message),
                 )
                 for warning in w
@@ -1649,6 +1795,111 @@ nonsense_key: nonsense_value"""
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         # Figures are compared in the local test.
 
+        # Test plotting from inside the defect folder
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertNotIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
+            result.output,
+        )  # non-verbose output
+        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse "
+            f"its contents (to specify which neighbour atoms were distorted in plot text).",
+            str(w[0].message),
+        )
+        self.assertTrue(
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
+        )
+        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        # Figures are compared in the local test since on Github Actions images are saved
+        # with a different size (raising error when comparing).
+        shutil.rmtree(os.getcwd() + "/distortion_plots")
+        [
+            os.remove(os.path.join(os.getcwd(), file))
+            for file in os.listdir(os.getcwd())
+            if "yaml" in file
+        ]
+        self.tearDown()
+
+        # Test warning when setting path and plotting from inside the defect folder
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-v",
+                ],
+                catch_exceptions=True,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder (i.e. "
+                    "when `--defect` is not specified."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
+            result.output,
+        )  # non-verbose output
+        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
+                    f"not parse its contents (to specify which neighbour atoms were distorted in "
+                    f"plot text).",
+                ]
+                for warning in w
+            )
+        )
+        self.assertTrue(
+            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
+        )
+        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        shutil.rmtree(os.getcwd() + "/distortion_plots")
+        [
+            os.remove(os.path.join(os.getcwd(), file))
+            for file in os.listdir(os.getcwd())
+            if "yaml" in file
+        ]
+        self.tearDown()
+
+        # Test exception when run with no arguments in top-level folder
+        os.chdir(self.EXAMPLE_RESULTS)
+        result = runner.invoke(snb, ["plot"], catch_exceptions=True)
+        self.assertIn(
+            f"Could not analyse & plot defect 'example_results' in directory '{self.DATA_DIR}'. "
+            f"Please either specify a defect to analyse (with option --defect), run from within a "
+            f"single defect directory (without setting --defect) or use the --all flag to analyse all "
+            f"defects in the specified/current directory.",
+            str(result.exception),
+        )
+        self.assertNotIn(
+            f"Plot saved to {os.getcwd()}/distortion_plots/", result.output
+        )
+        self.assertFalse(
+            any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
+        )
         self.tearDown()
 
     def test_regenerate(self):
@@ -1748,9 +1999,14 @@ nonsense_key: nonsense_value"""
             os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Groundstate/POSCAR",
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
             result.output,
         )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
         # Test keywords: groundstate_filename and directory
@@ -1774,9 +2030,14 @@ nonsense_key: nonsense_value"""
             )
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/My_Groundstate/Groundstate_CONTCAR",
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR",
             result.output,
         )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
 
         # Test non existent structure file
@@ -1797,9 +2058,60 @@ nonsense_key: nonsense_value"""
         )
         self.assertIsInstance(result.exception, FileNotFoundError)
         self.assertIn(
-            f"The structure file Fake_structure is not present in the directory {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%",
+            f"The structure file Fake_structure is not present in the directory"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-55.0%",
             str(result.exception),
         )
+
+        # test running within a single defect directory and specifying no arguments
+        os.chdir(f"{self.VASP_CDTE_DATA_DIR}/{defect}")  # vac_1_Cd_0
+        result = runner.invoke(snb, ["groundstate"], catch_exceptions=False)
+        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # Test warning when setting path and parsing from inside the defect folder
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "groundstate",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == "`--path` option ignored when running from within defect folder ("
+                    "determined to be the case here based on current directory and "
+                    "subfolder names)."
+                    for warning in w
+                ]
+            )
+        )
+        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
 
 if __name__ == "__main__":

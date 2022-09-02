@@ -204,6 +204,18 @@ def parse_energies(
             )
         ]  # parse distortion directories
 
+        # load previously-parsed energies file if present
+        energies_file = f"{path}/{defect}/{defect}.yaml"
+        if os.path.exists(energies_file):
+            try:
+                prev_energies_dict, _, _ = analysis._sort_data(
+                    energies_file, verbose=False
+                )
+            except Exception:
+                prev_energies_dict = {}
+        else:
+            prev_energies_dict = {}
+
         # Parse energies and write them to file
         energies = {
             "distortions": {}
@@ -235,7 +247,19 @@ def parse_energies(
                         analysis._format_distortion_names(dist)
                     ] = float(energy)
             elif not outcar:
-                warnings.warn(f"No output file in {dist} directory")
+                # check if energy not found, but was previously parsed, then add to dict
+                dist_name = analysis._format_distortion_names(dist)
+                if dist_name in prev_energies_dict:
+                    energies[dist_name] = prev_energies_dict[dist_name]
+                elif (
+                    "distortions" in prev_energies_dict
+                    and dist_name in prev_energies_dict["distortions"]
+                ):
+                    energies["distortions"][dist_name] = prev_energies_dict[
+                        "distortions"
+                    ][dist_name]
+                else:
+                    warnings.warn(f"No output file in {dist} directory")
             else:
                 print(f"{dist} not fully relaxed")
 
@@ -243,6 +267,13 @@ def parse_energies(
         if energies != {"distortions": {}}:
             energies = sort_energies(energies)
             save_file(energies, defect, path)
+        else:
+            warnings.warn(
+                f"Energies could not be parsed for defect '{defect}' in {path}. "
+                f"If these directories are correct, check calculations have converged, "
+                f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+                f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+            )
 
 
 # Parsing output structures of different codes

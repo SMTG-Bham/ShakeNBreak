@@ -68,6 +68,9 @@ which will generate a figure like the one below:
 .. image:: ./vac_1_Cd_0.svg
     :width: 400px
 
+..
+    data from example_results folder
+
 We can make these plots more informative by adding a colorbar measuring the structural
 similarity between the structures:
 
@@ -75,8 +78,11 @@ similarity between the structures:
 
     $ snb-plot --defect vac_1_Cd_0 --path defects_folder --colorbar
 
-.. image:: ./vac_1_Cd_0_colobar.svg
+.. image:: ./vac_1_Cd_0_colorbar.svg
     :width: 400px
+
+..
+    data from example_results folder
 
 Second round of structure searching
 ---------------------------------------
