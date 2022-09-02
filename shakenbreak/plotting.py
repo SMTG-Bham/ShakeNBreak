@@ -475,7 +475,7 @@ def _format_datapoints_from_other_chargestates(
             for k in energies_dict["distortions"].keys()
             if k in disp_dict.keys()
         ]
-        # Save the values of the displ. from *other charge states*
+        # Save the values of the displacements from *other charge states*
         # As the displacements will be re-sorted -> we'll need to
         # find the index of t
         disps_from_other_charges = (sorted_disp[i] for i in imported_indices)
@@ -1297,6 +1297,14 @@ def plot_colorbar(
             label="Unperturbed",
         )
 
+        # distortion_range is sorted_distortions range, including 0 if above/below this range
+        distortion_range = (min(sorted_distortions+(0,)), max(sorted_distortions+(0,)))
+        # set xlim to distortion_range + 5% (matplotlib default padding)
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
+
         # Formatting of tick labels.
         # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
         # 2 if deltaE > 0.1 eV, otherwise 3.
@@ -1574,6 +1582,14 @@ def plot_datasets(
             c=colors[0],
             label="Unperturbed",
         )
+
+    # distortion_range is sorted_distortions range, including 0 if above/below this range
+    distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
+    # set xlim to distortion_range + 5% (matplotlib default padding)
+    ax.set_xlim(
+        distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+        distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+    )
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E
