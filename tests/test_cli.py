@@ -1716,7 +1716,8 @@ nonsense_key: nonsense_value"""
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
-            f"Will not parse its contents.",
+            f"Will not parse its contents (to specify which neighbour atoms were distorted in "
+            f"plot text).",
             str(w[0].message),
         )
         self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
@@ -1779,7 +1780,9 @@ nonsense_key: nonsense_value"""
         if w:
             [
                 self.assertNotEqual(
-                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse its contents.",
+                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
+                    f"not parse its contents (to specify which neighbour atoms were distorted in "
+                    f"plot text).",
                     str(warning.message),
                 )
                 for warning in w
@@ -1810,8 +1813,8 @@ nonsense_key: nonsense_value"""
         self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
-            f"Will not parse its contents.",
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse "
+            f"its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
         self.assertTrue(
@@ -1862,8 +1865,9 @@ nonsense_key: nonsense_value"""
             any(
                 [
                     str(warning.message)
-                    == f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
-                    f"Will not parse its contents."
+                    == f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
+                    f"not parse its contents (to specify which neighbour atoms were distorted in "
+                    f"plot text).",
                 ]
                 for warning in w
             )
@@ -2108,7 +2112,6 @@ nonsense_key: nonsense_value"""
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
-
 
 
 if __name__ == "__main__":
