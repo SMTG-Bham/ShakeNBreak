@@ -23,12 +23,11 @@ def _install_custom_font():
     """Check if SnB custom font has been installed, and install it otherwise."""
     # Find where matplotlib stores its True Type fonts
     mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
-    print(mpl_data_dir)
     mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
     custom_fonts = [
         font
         for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
-        if "whitney-book-pro" in font.lower()
+        if "montserrat" in font.lower()
     ]
     if not custom_fonts:  # If custom hasn't been installed, install it
         print("Trying to install ShakeNBreak custom font...")
@@ -69,12 +68,7 @@ def _install_custom_font():
             warnings.warn(warning_msg)
 
 
-_install_custom_font()
-
-
 # Helper functions for formatting plots
-
-
 def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
@@ -481,7 +475,7 @@ def _format_datapoints_from_other_chargestates(
             for k in energies_dict["distortions"].keys()
             if k in disp_dict.keys()
         ]
-        # Save the values of the displ. from *other charge states*
+        # Save the values of the displacements from *other charge states*
         # As the displacements will be re-sorted -> we'll need to
         # find the index of t
         disps_from_other_charges = (sorted_disp[i] for i in imported_indices)
@@ -845,7 +839,8 @@ def plot_all_defects(
     except FileNotFoundError:
         warnings.warn(
             f"Path {output_path}/distortion_metadata.json does not exist. "
-            "Will not parse its contents."
+            "Will not parse its contents (to specify which neighbour atoms were distorted in plot "
+            "text)."
         )
         distortion_metadata = None
         num_nearest_neighbours = None
@@ -1019,7 +1014,8 @@ def plot_defect(
         except FileNotFoundError:
             warnings.warn(
                 f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents."
+                "Will not parse its contents (to specify which neighbour atoms were distorted in "
+                "plot text)."
             )
             pass
 
@@ -1175,6 +1171,7 @@ def plot_colorbar(
             Energy vs distortion plot with colorbar for structural similarity,
             as a mpl.figure.Figure object
     """
+    _install_custom_font()
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         fig, ax = plt.subplots(1, 1, figsize=(6.5, 5))
 
@@ -1302,6 +1299,17 @@ def plot_colorbar(
             label="Unperturbed",
         )
 
+        # distortion_range is sorted_distortions range, including 0 if above/below this range
+        distortion_range = (
+            min(sorted_distortions + (0,)),
+            max(sorted_distortions + (0,)),
+        )
+        # set xlim to distortion_range + 5% (matplotlib default padding)
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
+
         # Formatting of tick labels.
         # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
         # 2 if deltaE > 0.1 eV, otherwise 3.
@@ -1415,6 +1423,8 @@ def plot_datasets(
             f" {len(dataset_labels)} labels."
         )
 
+    _install_custom_font()
+    # Set up figure
     fig, ax = plt.subplots(1, 1)
     # Line colors
     if not colors:
@@ -1577,6 +1587,14 @@ def plot_datasets(
             c=colors[0],
             label="Unperturbed",
         )
+
+    # distortion_range is sorted_distortions range, including 0 if above/below this range
+    distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
+    # set xlim to distortion_range + 5% (matplotlib default padding)
+    ax.set_xlim(
+        distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+        distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+    )
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E
