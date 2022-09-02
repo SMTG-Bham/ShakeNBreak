@@ -75,7 +75,7 @@ similarity between the structures:
 
     $ snb-plot --defect vac_1_Cd_0 --path defects_folder --colorbar
 
-.. image:: ./vac_1_Cd_0_colobar.svg
+.. image:: ./vac_1_Cd_0_colorbar.svg
     :width: 400px
 
 Second round of structure searching
