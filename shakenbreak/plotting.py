@@ -1300,7 +1300,10 @@ def plot_colorbar(
         )
 
         # distortion_range is sorted_distortions range, including 0 if above/below this range
-        distortion_range = (min(sorted_distortions+(0,)), max(sorted_distortions+(0,)))
+        distortion_range = (
+            min(sorted_distortions + (0,)),
+            max(sorted_distortions + (0,)),
+        )
         # set xlim to distortion_range + 5% (matplotlib default padding)
         ax.set_xlim(
             distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),

@@ -211,7 +211,7 @@ def parse_energies(
                 prev_energies_dict, _, _ = analysis._sort_data(
                     energies_file, verbose=False
                 )
-            except:
+            except Exception:
                 prev_energies_dict = {}
         else:
             prev_energies_dict = {}

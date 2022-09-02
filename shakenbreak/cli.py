@@ -1258,7 +1258,17 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     show_default=True,
 )
 def plot(
-    defect, all, path, code, colorbar, metric, format, units, max_energy, no_title, verbose
+    defect,
+    all,
+    path,
+    code,
+    colorbar,
+    metric,
+    format,
+    units,
+    max_energy,
+    no_title,
+    verbose,
 ):
     """
     Generate energy vs distortion plots. Optionally, the structural
