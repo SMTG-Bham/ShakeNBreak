@@ -17,7 +17,6 @@ import numpy as np
 from matplotlib.testing.compare import compare_images
 
 # Click
-from click import exceptions
 from click.testing import CliRunner
 
 from pymatgen.core.structure import Structure
@@ -449,7 +448,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         (available in the fonts directory).
         """
         # Test the following options:
-        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
         wd = (
             os.getcwd()
@@ -480,7 +479,7 @@ class DistortionLocalTestCase(unittest.TestCase):
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t",  # No title
+                    "-nt",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,
