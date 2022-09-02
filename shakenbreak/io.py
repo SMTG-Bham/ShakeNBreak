@@ -204,6 +204,15 @@ def parse_energies(
             )
         ]  # parse distortion directories
 
+        # load previously-parsed energies file if present
+        energies_file = f"{path}/{defect}/{defect}.yaml"
+        if os.path.exists(energies_file):
+            prev_energies_dict, _, _ = analysis._sort_data(
+                energies_file, verbose=False
+            )
+        else:
+            prev_energies_dict = {}
+
         # Parse energies and write them to file
         energies = {
             "distortions": {}
@@ -235,7 +244,15 @@ def parse_energies(
                         analysis._format_distortion_names(dist)
                     ] = float(energy)
             elif not outcar:
-                warnings.warn(f"No output file in {dist} directory")
+                # check if energy not found, but was previously parsed, then add to dict
+                if analysis._format_distortion_names(dist) in prev_energies_dict:
+                    energies[analysis._format_distortion_names(dist)] = prev_energies_dict[
+                        analysis._format_distortion_names(dist)]
+                elif analysis._format_distortion_names(dist) in prev_energies_dict["distortions"]:
+                    energies["distortions"][analysis._format_distortion_names(dist)] = \
+                        prev_energies_dict["distortions"][analysis._format_distortion_names(dist)]
+                else:
+                    warnings.warn(f"No output file in {dist} directory")
             else:
                 print(f"{dist} not fully relaxed")
 
