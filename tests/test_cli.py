@@ -1680,7 +1680,7 @@ nonsense_key: nonsense_value"""
     def test_plot(self):
         "Test plot() function"
         # Test the following options:
-        # --defect, --path, --format,  --units, --colorbar, --metric, --title, --verbose
+        # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
         wd = (
             os.getcwd()
@@ -1702,7 +1702,7 @@ nonsense_key: nonsense_value"""
                     "--colorbar",
                     "--metric",
                     "disp",
-                    "-t",  # No title
+                    "-nt",  # No title
                     "-v",
                 ],
                 catch_exceptions=False,

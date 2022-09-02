@@ -1241,11 +1241,11 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     show_default=True,
 )
 @click.option(
-    "--title",
-    "-t",
-    help="Whether to add defect name as plot title.",
+    "--no-title",
+    "-nt",
+    help="Don't add defect name as plot title.",
     type=bool,
-    default=True,
+    default=False,
     is_flag=True,
     show_default=True,
 )
@@ -1258,7 +1258,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     show_default=True,
 )
 def plot(
-    defect, all, path, code, colorbar, metric, format, units, max_energy, title, verbose
+    defect, all, path, code, colorbar, metric, format, units, max_energy, no_title, verbose
 ):
     """
     Generate energy vs distortion plots. Optionally, the structural
@@ -1284,7 +1284,7 @@ def plot(
             metric=metric,
             units=units,
             save_format=format,
-            add_title=title,
+            add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
         )
     elif defect is None:
@@ -1319,7 +1319,7 @@ def plot(
             metric=metric,
             save_format=format,
             units=units,
-            add_title=title,
+            add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
         )
     except Exception:
