@@ -328,6 +328,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             self.cdte_defect_dict,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            local_rattle=False,
         )
         distorted_defect_dict, _ = dist.write_vasp_files(
             incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
