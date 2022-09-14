@@ -796,6 +796,39 @@ class InputTestCase(unittest.TestCase):
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
+        # Test `Rattled` folder not generated for non-fully-ionised defects,
+        # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
+        self.tearDown()
+        self.assertFalse(set(self.cdte_defect_folders).issubset(set(os.listdir())))
+        reduced_V_Cd_dict = self.V_Cd_dict.copy()
+        reduced_V_Cd_dict["charges"] = [0, -2]
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            local_rattle=False,
+        )
+        _, distortion_metadata = dist.write_vasp_files(
+            verbose=False,
+        )
+        # check if expected folders were created
+        V_Cd_minus0pt5_POSCAR = Poscar.from_file(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_minus0pt5_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled
+        )
+        self.assertEqual(
+            V_Cd_minus0pt5_POSCAR.comment,
+            "-50.0%__num_neighbours=2_vac_1_Cd",
+        )  # default
+
+        self.assertFalse(os.path.exists("vac_1_Cd_0/Rattled"))
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+
+        self.assertTrue(os.path.exists("vac_1_Cd_-2/Rattled"))
+        self.assertFalse(os.path.exists("vac_1_Cd_-2/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("vac_1_Cd_-2/Unperturbed"))
+
         # test rattle kwargs:
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
