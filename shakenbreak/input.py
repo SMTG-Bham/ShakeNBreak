@@ -1293,10 +1293,10 @@ class Distortions:
             dict_transf = {
                 k: v for k, v in defect_dict.items() if k != "charges"
             }  # Single defect dict
-            charged_defect = {}
 
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
+                charged_defect = {}
 
                 for key_distortion, struct in zip(
                     [
