@@ -1136,7 +1136,7 @@ nonsense_key: nonsense_value"""
         )
         out = str(proc.communicate()[0])
         self.assertIn(
-            "Job file 'job' not in current directory, so will only submit jobs in folders with "
+            "Job file 'job' not found, so will only submit jobs in folders with "
             "'job' present",
             out,
         )
@@ -1155,7 +1155,7 @@ nonsense_key: nonsense_value"""
         )  # setting 'job command' to 'echo' to
         out = str(proc.communicate()[0])
         self.assertNotIn(
-            "Job file 'job_file' not in current directory, so will only submit jobs in folders with "
+            "Job file 'job_file' not found, so will only submit jobs in folders with "
             "'job_file' present",
             out,
         )
@@ -1167,6 +1167,30 @@ nonsense_key: nonsense_value"""
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
 
         if_present_rm("job_file")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test job file in different directory
+        with open("../job_file", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j ../job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Job file '../job_file' not found, so will only submit jobs in folders with "
+            "'job_file' present",
+            out,
+        )
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
+
+        if_present_rm("../job_file")
         if_present_rm("Bond_Distortion_10.0%/job_file")
 
         # test save_vasp_files:
