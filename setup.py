@@ -154,7 +154,7 @@ setup(
         "seaborn",
         "hiphive",
         "monty",
-        "click",
+        "click>8.0",
     ],
     extras_require={
         "tests": [
