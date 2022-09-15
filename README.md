@@ -20,6 +20,8 @@ Main features include:
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
+![](docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
+
 ## Installation
 ShakeNBreak can be installed using `pip`:
 ```bash
