@@ -732,7 +732,7 @@ def generate_all(
                 for substring in ("as", "vac", "int", "sub", "v", "i")
             ]
         ):
-            # if user didnt specify defect names in config file,
+            # if user didn't specify defect names in config file,
             # check if defect filename correspond to standard defect abbreviations
             defect_name = defect
         if not defect_name:
