@@ -299,6 +299,21 @@ class PlottingDefectsTestCase(unittest.TestCase):
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Cd$_{i_1}^{0}$")
+
+        # test lowercase interstitial
+        formatted_name = plotting._format_defect_name(
+            defect_species="int_Cd_1_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "Cd$_{i_1}^{0}$")
+
+        # test uppercase vacancy (pymatgen default name)
+        formatted_name = plotting._format_defect_name(
+            defect_species="Vac_1_Cd_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "V$_{Cd}^{0}$")
+
         # check exceptions raised: invalid charge or defect_species
         self.assertRaises(
             ValueError,

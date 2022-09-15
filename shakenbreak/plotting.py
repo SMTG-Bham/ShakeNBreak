@@ -162,7 +162,7 @@ def _format_defect_name(
         charge = "+" + str(charge)  # show positive charges with a + sign
     defect_type = defect_species.split("_")[0]  # vac, as or int
     if (
-        defect_type == "Int"
+        defect_type.capitalize() == "Int"
     ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
         site_element = defect_species.split("_")[1]
         site = defect_species.split("_")[2]
@@ -178,22 +178,22 @@ def _format_defect_name(
         site_element = defect_species.split("_")[2]  # element at defect site
 
     if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
             # double brackets to treat it literally (tex), then extra {} for
             # python str formatting
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError("Defect type not recognized. Please check spelling.")
     else:
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError(
                 f"Defect type {defect_type} not recognized. Please check spelling."
             )
