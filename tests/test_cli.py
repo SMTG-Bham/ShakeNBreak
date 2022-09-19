@@ -39,12 +39,18 @@ class CLITestCase(unittest.TestCase):
         self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
+        self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR",
+            )
+        )  # Local rattled
         self.V_Cd_minus0pt5_struc_local_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR,
-                "CdTe_V_Cd_minus0pt5_struc_local_rattled_POSCAR",
+                "CdTe_V_Cd_-50%_Distortion_local_rattle_POSCAR",
             )
-        )  # Local rattle is default
+        )  # Local rattled
         self.CdTe_distortion_config = os.path.join(
             self.VASP_CDTE_DATA_DIR, "distortion_config.yml"
         )
@@ -163,7 +169,7 @@ class CLITestCase(unittest.TestCase):
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
-            self.V_Cd_minus0pt5_struc_local_rattled,
+            self.V_Cd_minus0pt5_struc_rattled,
         )
 
         # Test recognises distortion_metadata.json:
@@ -276,7 +282,7 @@ class CLITestCase(unittest.TestCase):
                     0.6,
                 ],
                 "rattle_stdev": 0.25,
-                "local_rattle": True,
+                "local_rattle": False,
             },
             "defects": {
                 "Vac_Cd_mult32": {
@@ -444,7 +450,7 @@ class CLITestCase(unittest.TestCase):
                         0.6,
                     ],
                     "rattle_stdev": 0.25,
-                    "local_rattle": True,
+                    "local_rattle": False,
                 },
                 "defects": {
                     "Vac_Cd_mult32": {
@@ -836,8 +842,8 @@ nonsense_key: nonsense_value"""
 
     def test_snb_generate_all(self):
         """Test generate_all() function."""
-        # Test parsing defects from folders with non-standard names
-        # And default charge states
+        # Test parsing defects from folders with non-standard names and default charge states
+        # Also test local rattle parameter
         # Create a folder for defect files / directories
         defects_dir = f"pesky_defects"
         defect_name = "vac_1_Cd"
@@ -848,7 +854,8 @@ nonsense_key: nonsense_value"""
             f"{defects_dir}/{defect_name}/POSCAR",
         )
         # CONFIG file
-        test_yml = """bond_distortions: [0.3,]"""
+        test_yml = """bond_distortions: [0.3,]
+local_rattle: True"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         with warnings.catch_warnings(record=True) as w:
@@ -964,6 +971,7 @@ nonsense_key: nonsense_value"""
                 charges: [0,]
                 defect_coords: [0.0, 0.0, 0.0]
         bond_distortions: [0.3,]
+        local_rattle: True
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
