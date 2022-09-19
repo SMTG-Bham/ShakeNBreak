@@ -46,7 +46,7 @@ A detailed description of all the parameters is available in the Python API sect
     active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
     max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
     max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
-    local_rattle: True  # If True, rattle displacements will tail-off as we more away from the defect site
+    local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
 
 To display additional information about the generated distortions we can set the ``--verbose`` flag.
 
@@ -117,7 +117,7 @@ Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
     active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
     max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
     max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
-    local_rattle: True  # If True, rattle displacements will tail-off as we more away from the defect site
+    local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
 
 The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
 distortion folders with the relaxation input files and structures. If using ``VASP``:

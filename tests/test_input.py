@@ -8,7 +8,7 @@ import shutil
 import numpy as np
 import json
 
-from pymatgen.core.structure import Structure, Composition
+from pymatgen.core.structure import Structure, Composition, Element, PeriodicSite
 from pymatgen.io.vasp.inputs import Poscar
 
 from ase.calculators.aims import Aims
@@ -736,13 +736,50 @@ class InputTestCase(unittest.TestCase):
                     "Cl": -1,
                 },
             )
-            mock_print.assert_called_once_with("Oxidation states for {'Al', 'Sb', 'Cl'} were not "
-                                               "explicitly set, thus have been guessed as {'Al': "
-                                               "3.0, 'Sb': 0.0, 'Cl': -1}. If this is "
-                                               "unreasonable you should manually set "
-                                               "oxidation_states")
+            mock_print.assert_called_once_with(
+                "Oxidation states for {'Al', 'Sb', 'Cl'} were not "
+                "explicitly set, thus have been guessed as {'Al': "
+                "3.0, 'Sb': 0.0, 'Cl': -1}. If this is "
+                "unreasonable you should manually set "
+                "oxidation_states"
+            )
 
-        # need to add test for extrinsic interstitials
+        # test no print statement when all oxidation states set
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(defect_dict, oxidation_states={"Cd": 2, "Te": -2})
+            mock_print.assert_not_called()
+
+        # test extrinsic interstitial defect:
+        fake_extrinsic_interstitial_subdict = self.cdte_defect_dict["interstitials"][
+            0
+        ].copy()
+        fake_extrinsic_interstitial_subdict["site_specie"] = "Li"
+        fake_extrinsic_interstitial_site = fake_extrinsic_interstitial_subdict[
+            "supercell"
+        ]["structure"][-1]
+        fake_extrinsic_interstitial_site = PeriodicSite(
+            "Li",
+            fake_extrinsic_interstitial_site.coords,
+            fake_extrinsic_interstitial_site.lattice,
+        )
+        fake_extrinsic_interstitial_subdict[
+            "bulk_supercell_site"
+        ] = fake_extrinsic_interstitial_site
+        fake_extrinsic_interstitial_subdict[
+            "unique_site"
+        ] = fake_extrinsic_interstitial_site
+        fake_extrinsic_interstitial_subdict["name"] = "Int_Li_1"
+        fake_extrinsic_interstitial_dict = self.cdte_defect_dict.copy()
+        fake_extrinsic_interstitial_dict["interstitials"][
+            0
+        ] = fake_extrinsic_interstitial_subdict
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(fake_extrinsic_interstitial_dict)
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2.0, "
+                "'Te': -2.0, 'Li': 1}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
 
     @patch("builtins.print")
     def test_write_vasp_files(self, mock_print):
