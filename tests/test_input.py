@@ -690,7 +690,7 @@ class InputTestCase(unittest.TestCase):
         extrinsic_dist = input.Distortions(
             self.cdte_extrinsic_defects_dict,
         )
-        self.assertEqual(
+        self.assertDictEqual(
             extrinsic_dist.oxidation_states,
             {
                 "Cd": 2.0,
