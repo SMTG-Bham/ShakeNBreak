@@ -1313,7 +1313,6 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-            local_rattle=False,
         )
         # Test `write_castep_files` method, without specifing input file
         for i in self.cdte_defect_folders:
@@ -1467,7 +1466,6 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-            local_rattle=False,  # default is True
         )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(
             verbose=False,
