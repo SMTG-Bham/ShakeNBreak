@@ -1,3 +1,4 @@
+
 import unittest
 import os
 import warnings
@@ -17,6 +18,8 @@ from shakenbreak.analysis import _calculate_atomic_disp
 
 
 class IoTestCase(unittest.TestCase):
+    """"Test functions in shakenbreak.io.
+    Note that io.parse_energies is tested via test_cli.py"""
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
