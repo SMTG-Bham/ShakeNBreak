@@ -856,7 +856,7 @@ class Distortions:
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
-        if self.oxidation_states == None:
+        if self.oxidation_states is None:
             print(
                 f"Oxidation states were not explicitly set, thus have been "
                 f"guessed as {guessed_oxidation_states}. If this is unreasonable "
