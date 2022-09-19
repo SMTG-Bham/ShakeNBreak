@@ -47,6 +47,11 @@ Main features include:
 The code currently supports ``VASP``, ``CP2K``, ``Quantum-Espresso``, ``CASTEP`` and ``FHI-aims``.
 Code contributions to support additional solid-state packages are welcome!
 
+|
+.. image:: SnB_Supercell_Schematic_PES_2sec_Compressed.gif
+   :width: 800px
+|
+
 Installation
 ========================
 
