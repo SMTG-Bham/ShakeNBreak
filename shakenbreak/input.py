@@ -859,7 +859,7 @@ class Distortions:
         if self.oxidation_states == None:
             print(
                 f"Oxidation states were not explicitly set, thus have been "
-                f"guessed as {self.oxidation_states}. If this is unreasonable "
+                f"guessed as {guessed_oxidation_states}. If this is unreasonable "
                 f"you should manually set oxidation_states"
             )
             self.oxidation_states = guessed_oxidation_states
@@ -872,10 +872,16 @@ class Distortions:
             print(
                 f"Oxidation states for {missing_oxidation_states} were not explicitly set, "
                 f"thus have been guessed as "
-                f"{ {k:v for k, v in guessed_oxidation_states if k in missing_oxidation_states} }. "
+                f"{ {k:v for k, v in guessed_oxidation_states.items() if k in missing_oxidation_states} }. "
                 f"If this is unreasonable you should manually set oxidation_states"
             )
-            self.oxidation_states.update(guessed_oxidation_states)
+            self.oxidation_states.update(
+                {
+                    k: v
+                    for k, v in guessed_oxidation_states.items()
+                    if k in missing_oxidation_states
+                }
+            )
 
         if bond_distortions:
             self.distortion_increment = None  # user specified

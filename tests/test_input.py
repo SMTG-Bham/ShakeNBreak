@@ -687,6 +687,7 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions(defect_dict)
             self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
+        # test extrinsic defects
         extrinsic_dist = input.Distortions(
             self.cdte_extrinsic_defects_dict,
         )
@@ -702,6 +703,26 @@ class InputTestCase(unittest.TestCase):
                 "Cl": -1,
             },
         )
+
+        # test only partial oxidation state specification and that (wrong) bulk oxidation states
+        # are not overridden:
+        extrinsic_dist = input.Distortions(
+            self.cdte_extrinsic_defects_dict,
+            oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
+        )
+        self.assertDictEqual(
+            extrinsic_dist.oxidation_states,
+            {
+                "Cd": 7.0,
+                "Te": -20.0,
+                "Zn": 1.0,
+                "Mn": 9.0,
+                "Al": 3.0,
+                "Sb": 0.0,
+                "Cl": -1,
+            },
+        )
+
 
     @patch("builtins.print")
     def test_write_vasp_files(self, mock_print):
