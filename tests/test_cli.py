@@ -1321,6 +1321,7 @@ local_rattle: True"""
         os.remove(f"{self.VASP_DIR}/{defect}/{defect}.yaml")
 
         # Test --all option
+        self.tearDown()
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
         defect_name = "vac_1_Ti_-1"
         shutil.copytree(
@@ -1407,6 +1408,54 @@ local_rattle: True"""
         os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
+        # Test when `defect` is present higher up in `path`
+        defect_name = "vac_1_Ti_0"
+        os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder")
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect_name}",
+            f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
+        )
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
+                "-d",
+                defect_name,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}"
+                f"/{defect_name}.yaml"
+            )
+        )
+
+        # test warning when nothing parsed because defect folder not recognised
+        os.chdir(self.EXAMPLE_RESULTS)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(snb, ["parse", "-d", "defect"],
+                                   catch_exceptions=True)
+        self.assertTrue(any([warning.category == UserWarning for warning in w]))
+        self.assertTrue(
+            any(
+                [
+                    str(warning.message)
+                    == f"Energies could not be parsed for defect 'defect' in '.'. If these "
+                       f"directories are correct, check calculations have converged, and that "
+                       f"distortion subfolders match ShakeNBreak naming (e.g. "
+                       f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    for warning in w
+                ]
+            )
+        )
+        self.assertFalse(
+            any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
+        )
+        os.chdir(file_path)
+
         # Test warning when run with no arguments in top-level folder
         os.chdir(self.EXAMPLE_RESULTS)
         with warnings.catch_warnings(record=True) as w:
@@ -1417,7 +1466,7 @@ local_rattle: True"""
                 [
                     str(warning.message)
                     == f"Energies could not be parsed for defect 'example_results' in"
-                    f" {self.DATA_DIR}. If these directories are correct, "
+                    f" '{self.DATA_DIR}'. If these directories are correct, "
                     f"check calculations have converged, and that distortion subfolders match "
                     f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
                     for warning in w

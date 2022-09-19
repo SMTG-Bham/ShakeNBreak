@@ -278,7 +278,7 @@ def parse_energies(
         save_file(energies, defect, path)
     else:
         warnings.warn(
-            f"Energies could not be parsed for defect '{defect}' in {path}. "
+            f"Energies could not be parsed for defect '{defect}' in '{path}'. "
             f"If these directories are correct, check calculations have converged, "
             f"and that distortion subfolders match ShakeNBreak naming (e.g. "
             f"Bond_Distortion_xxx, Rattled, Unperturbed)"
