@@ -102,6 +102,9 @@ class CLITestCase(unittest.TestCase):
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
 
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
+
     def test_snb_generate(self):
         runner = CliRunner()
         result = runner.invoke(
@@ -1625,6 +1628,43 @@ local_rattle: True"""
             str(result.exception),
         )
 
+        # Test when `defect` is present higher up in `path`
+        defect = "vac_1_Ti_0"
+        os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder")
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}",
+            f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}",
+        )
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.yaml", "w") as f:
+            f.write("")
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            [
+                "analyse",
+                "-d",
+                defect,
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertIn(f"Comparing structures to Unperturbed...", result.output)
+        self.assertIn(
+            f"Saved results to {self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.csv",
+            result.output,
+        )
+        with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.csv") as f:
+            file = f.read()
+        csv_content = (
+                ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
+                + "0,-0.4,5.315,0.88,-3.26\n"
+                + "1,Unperturbed,0.0,0.0,0.0\n"
+        )
+
+        self.assertEqual(csv_content, file)
+        self.tearDown()
+
         # Test analysing from inside the defect folder
         defect_name = "vac_1_Ti_0"
         os.chdir(self.VASP_TIO2_DATA_DIR)
@@ -1853,6 +1893,60 @@ local_rattle: True"""
             os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
         )
         self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        # Figures are compared in the local test since on Github Actions images are saved
+        # with a different size (raising error when comparing).
+        shutil.rmtree(os.getcwd() + "/distortion_plots")
+        [
+            os.remove(os.path.join(os.getcwd(), file))
+            for file in os.listdir(os.getcwd())
+            if "yaml" in file
+        ]
+        self.tearDown()
+
+        # Test when `defect` is present higher up in `path`
+        os.chdir(file_path)
+        defect_name = "vac_1_Ti_0"
+        os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder")
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect_name}",
+            f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
+        )
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-p",
+                    f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
+                    "-d",
+                    defect_name,
+                    "-cb",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertNotIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            f"and unperturbed: -3.26 eV.",
+            result.output,
+        )  # non-verbose output
+        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json "
+            f"does not exist. Will not parse its contents (to specify which neighbour atoms were "
+            f"distorted in plot text).",
+            str(w[0].message),
+        )
+        self.assertTrue(
+            os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Ti_0.svg")
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/"
+                f"{defect_name}_defect_folder/"
+                f"{defect_name}/vac_1_Ti_0.yaml"
+            )
+        )
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
         shutil.rmtree(os.getcwd() + "/distortion_plots")
