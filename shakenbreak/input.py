@@ -841,7 +841,7 @@ class Distortions:
                     not in guessed_oxidation_states
                 ):
                     # extrinsic substituting species not in bulk composition
-                    extrinsic_specie = substitution["bulk_supercell_site"].specie
+                    extrinsic_specie = substitution["bulk_supercell_site"].specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
@@ -852,33 +852,30 @@ class Distortions:
                     not in guessed_oxidation_states
                 ):
                     # extrinsic species not in bulk composition
-                    extrinsic_specie = interstitial["bulk_supercell_site"].specie
+                    extrinsic_specie = interstitial["bulk_supercell_site"].specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
-        if not guessed_oxidation_states.keys() <= self.oxidation_states.keys():
-            # some or all oxidation states are missing, so use guessed versions for these and
-            # inform user
-            if self.oxidation_states == None:
-                print(
-                    f"Oxidation states were not explicitly set, thus have been "
-                    f"guessed as {self.oxidation_states}. If this is unreasonable "
-                    f"you should manually set oxidation_states"
-                )
-                self.oxidation_states = guessed_oxidation_states
+        if self.oxidation_states == None:
+            print(
+                f"Oxidation states were not explicitly set, thus have been "
+                f"guessed as {self.oxidation_states}. If this is unreasonable "
+                f"you should manually set oxidation_states"
+            )
+            self.oxidation_states = guessed_oxidation_states
 
-            else:  # only some oxidation states are missing, so use guessed versions for these
-                # and inform user
-                missing_oxidation_states = (
-                    guessed_oxidation_states.keys() - self.oxidation_states.keys()
-                )
-                print(
-                    f"Oxidation states for {missing_oxidation_states} were not explicitly set, "
-                    f"thus have been guessed as "
-                    f"{ {k:v for k, v in guessed_oxidation_states if k in missing_oxidation_states} }. "
-                    f"If this is unreasonable you should manually set oxidation_states"
-                )
-                self.oxidation_states.update(guessed_oxidation_states)
+        elif not guessed_oxidation_states.keys() <= self.oxidation_states.keys():
+            # some oxidation states are missing, so use guessed versions for these and inform user
+            missing_oxidation_states = (
+                guessed_oxidation_states.keys() - self.oxidation_states.keys()
+            )
+            print(
+                f"Oxidation states for {missing_oxidation_states} were not explicitly set, "
+                f"thus have been guessed as "
+                f"{ {k:v for k, v in guessed_oxidation_states if k in missing_oxidation_states} }. "
+                f"If this is unreasonable you should manually set oxidation_states"
+            )
+            self.oxidation_states.update(guessed_oxidation_states)
 
         if bond_distortions:
             self.distortion_increment = None  # user specified
