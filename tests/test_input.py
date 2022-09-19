@@ -1,4 +1,5 @@
 import unittest
+import warnings
 import os
 import pickle
 import copy
@@ -684,45 +685,64 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [self.V_Cd_dict]},
             {"interstitials": [self.Int_Cd_2_dict]},
         ]:
-            dist = input.Distortions(defect_dict)
-            self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
+            with patch("builtins.print") as mock_print:
+                dist = input.Distortions(defect_dict)
+                mock_print.assert_called_once_with(
+                    "Oxidation states were not explicitly set, thus have been guessed as "
+                    "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                    "oxidation_states"
+                )
+                self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
         # test extrinsic defects
-        extrinsic_dist = input.Distortions(
-            self.cdte_extrinsic_defects_dict,
-        )
-        self.assertDictEqual(
-            extrinsic_dist.oxidation_states,
-            {
-                "Cd": 2.0,
-                "Te": -2.0,
-                "Zn": 2.0,
-                "Mn": 2.0,
-                "Al": 3.0,
-                "Sb": 0.0,
-                "Cl": -1,
-            },
-        )
+        with patch("builtins.print") as mock_print:
+            extrinsic_dist = input.Distortions(
+                self.cdte_extrinsic_defects_dict,
+            )
+            self.assertDictEqual(
+                extrinsic_dist.oxidation_states,
+                {
+                    "Cd": 2.0,
+                    "Te": -2.0,
+                    "Zn": 2.0,
+                    "Mn": 2.0,
+                    "Al": 3.0,
+                    "Sb": 0.0,
+                    "Cl": -1,
+                },
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0, 'Zn': 2.0, 'Mn': 2.0, 'Al': 3.0, 'Sb': 0.0, 'Cl': -1}. "
+                "If this is unreasonable you should manually set oxidation_states"
+            )
 
         # test only partial oxidation state specification and that (wrong) bulk oxidation states
         # are not overridden:
-        extrinsic_dist = input.Distortions(
-            self.cdte_extrinsic_defects_dict,
-            oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
-        )
-        self.assertDictEqual(
-            extrinsic_dist.oxidation_states,
-            {
-                "Cd": 7.0,
-                "Te": -20.0,
-                "Zn": 1.0,
-                "Mn": 9.0,
-                "Al": 3.0,
-                "Sb": 0.0,
-                "Cl": -1,
-            },
-        )
+        with patch("builtins.print") as mock_print:
+            extrinsic_dist = input.Distortions(
+                self.cdte_extrinsic_defects_dict,
+                oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
+            )
+            self.assertDictEqual(
+                extrinsic_dist.oxidation_states,
+                {
+                    "Cd": 7.0,
+                    "Te": -20.0,
+                    "Zn": 1.0,
+                    "Mn": 9.0,
+                    "Al": 3.0,
+                    "Sb": 0.0,
+                    "Cl": -1,
+                },
+            )
+            mock_print.assert_called_once_with("Oxidation states for {'Al', 'Sb', 'Cl'} were not "
+                                               "explicitly set, thus have been guessed as {'Al': "
+                                               "3.0, 'Sb': 0.0, 'Cl': -1}. If this is "
+                                               "unreasonable you should manually set "
+                                               "oxidation_states")
 
+        # need to add test for extrinsic interstitials
 
     @patch("builtins.print")
     def test_write_vasp_files(self, mock_print):
