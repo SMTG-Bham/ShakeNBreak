@@ -737,9 +737,9 @@ class InputTestCase(unittest.TestCase):
                 },
             )
             mock_print.assert_called_once_with(
-                "Oxidation states for {'Al', 'Sb', 'Cl'} were not "
+                "Oxidation states for ['Al', 'Cl', 'Sb'] were not "
                 "explicitly set, thus have been guessed as {'Al': "
-                "3.0, 'Sb': 0.0, 'Cl': -1}. If this is "
+                "3.0, 'Cl': -1, 'Sb': 0.0}. If this is "
                 "unreasonable you should manually set "
                 "oxidation_states"
             )

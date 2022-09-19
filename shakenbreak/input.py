@@ -866,22 +866,17 @@ class Distortions:
 
         elif not guessed_oxidation_states.keys() <= self.oxidation_states.keys():
             # some oxidation states are missing, so use guessed versions for these and inform user
-            missing_oxidation_states = (
-                guessed_oxidation_states.keys() - self.oxidation_states.keys()
-            )
+            missing_oxidation_states = {
+                k: v
+                for k, v in sorted(guessed_oxidation_states.items(), key=lambda x: x[0])
+                if k in (guessed_oxidation_states.keys() - self.oxidation_states.keys())
+            }  # missing oxidation states in sorted dict for clean printing
             print(
-                f"Oxidation states for {missing_oxidation_states} were not explicitly set, "
-                f"thus have been guessed as "
-                f"{ {k:v for k, v in guessed_oxidation_states.items() if k in missing_oxidation_states} }. "
+                f"Oxidation states for {[k for k in missing_oxidation_states.keys()]} were not "
+                f"explicitly set, thus have been guessed as {missing_oxidation_states}. "
                 f"If this is unreasonable you should manually set oxidation_states"
             )
-            self.oxidation_states.update(
-                {
-                    k: v
-                    for k, v in guessed_oxidation_states.items()
-                    if k in missing_oxidation_states
-                }
-            )
+            self.oxidation_states.update(missing_oxidation_states)
 
         if bond_distortions:
             self.distortion_increment = None  # user specified
