@@ -27,7 +27,8 @@ from doped import vasp_input
 from shakenbreak.cli import snb
 from shakenbreak import input, vasp
 
-file_path = os.path.dirname(__file__)
+_file_path = os.path.dirname(__file__)
+_DATA_DIR = os.path.join(_file_path, "data")
 
 
 def if_present_rm(path):
@@ -222,9 +223,6 @@ class DistortionLocalTestCase(unittest.TestCase):
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
         if os.path.exists("distortion_metadata.json"):
             os.remove("distortion_metadata.json")
-
-        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
-            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
         for i in [
             "parsed_defects_dict.pickle",
@@ -451,9 +449,6 @@ class DistortionLocalTestCase(unittest.TestCase):
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
-        wd = (
-            os.getcwd()
-        )  # plots saved to distortion_plots directory in current directory
         dumpfn(
             {
                 "distortions": {-0.4: -1176.28458753},
@@ -485,17 +480,18 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
+        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
+                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
         compare_images(
-            wd + "/distortion_plots/vac_1_Ti_0.png",
-            f"{file_path}/local_baseline_plots/" + "vac_1_Ti_0_cli_colorbar_disp.png",
+            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png"),
+            f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         self.tearDown()
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
-            if "yaml" in file
+            if "yaml" in file or "png" in file
         ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
@@ -540,19 +536,21 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_0.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_-1.png"))
-        # Compare figures
+        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
+                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
+        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
+                                                    "vac_1_Cd_0/vac_1_Cd_0.png")))
+        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
+                                                    "vac_1_Cd_-1/vac_1_Cd_-1.png")))
         compare_images(
-            wd + "/distortion_plots/vac_1_Cd_0.png",
-            f"{file_path}/local_baseline_plots/" + "vac_1_Cd_0_cli_default.png",
+            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png"),
+            f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
-            if "yaml" in file
+            if "yaml" in file or "png" in file
         ]
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
