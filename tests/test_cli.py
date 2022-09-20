@@ -89,8 +89,6 @@ class CLITestCase(unittest.TestCase):
                 or "vac_1_Cd_0" in i
             ):
                 shutil.rmtree(i)
-        if os.path.exists(f"{os.getcwd()}/distortion_plots"):
-            shutil.rmtree(f"{os.getcwd()}/distortion_plots")
 
         for defect in os.listdir(self.EXAMPLE_RESULTS):
             if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{defect}"):
@@ -98,6 +96,11 @@ class CLITestCase(unittest.TestCase):
                     shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
                     for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
                     if "_from_" in dir
+                ]
+                [
+                    os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+                    for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+                    if file.endswith(".png") or file.endswith(".svg")
                 ]
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -1436,17 +1439,18 @@ local_rattle: True"""
         # test warning when nothing parsed because defect folder not recognised
         os.chdir(self.EXAMPLE_RESULTS)
         with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(snb, ["parse", "-d", "defect"],
-                                   catch_exceptions=True)
+            result = runner.invoke(
+                snb, ["parse", "-d", "defect"], catch_exceptions=True
+            )
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
                 [
                     str(warning.message)
                     == f"Energies could not be parsed for defect 'defect' in '.'. If these "
-                       f"directories are correct, check calculations have converged, and that "
-                       f"distortion subfolders match ShakeNBreak naming (e.g. "
-                       f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    f"directories are correct, check calculations have converged, and that "
+                    f"distortion subfolders match ShakeNBreak naming (e.g. "
+                    f"Bond_Distortion_xxx, Rattled, Unperturbed)"
                     for warning in w
                 ]
             )
@@ -1684,7 +1688,9 @@ local_rattle: True"""
             f"{self.EXAMPLE_RESULTS}/{defect}",
             f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}",
         )
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.yaml", "w") as f:
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.yaml", "w"
+        ) as f:
             f.write("")
         runner = CliRunner()
         result = runner.invoke(
@@ -1703,12 +1709,14 @@ local_rattle: True"""
             f"Saved results to {self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.csv",
             result.output,
         )
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.csv") as f:
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.csv"
+        ) as f:
             file = f.read()
         csv_content = (
-                ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
-                + "0,-0.4,5.315,0.88,-3.26\n"
-                + "1,Unperturbed,0.0,0.0,0.0\n"
+            ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
+            + "0,-0.4,5.315,0.88,-3.26\n"
+            + "1,Unperturbed,0.0,0.0,0.0\n"
         )
 
         self.assertEqual(csv_content, file)
@@ -1799,13 +1807,10 @@ local_rattle: True"""
         os.chdir(file_path)
 
     def test_plot(self):
-        "Test plot() function"
+        """Test plot() function"""
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect = "vac_1_Ti_0"
-        wd = (
-            os.getcwd()
-        )  # plots saved to distortion_plots directory in current directory
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -1833,7 +1838,7 @@ local_rattle: True"""
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # verbose output
-        self.assertIn(f"Plot saved to {wd}/distortion_plots/", result.output)
+        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.png", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
@@ -1841,14 +1846,16 @@ local_rattle: True"""
             f"plot text).",
             str(w[0].message),
         )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, defect, defect + ".png"))
+        )
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
         self.tearDown()
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
-            if "yaml" in file
+            if "yaml" in file or "png" in file
         ]
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
@@ -1895,9 +1902,21 @@ local_rattle: True"""
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Ti_0.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_0.png"))
-        self.assertTrue(os.path.exists(wd + "/distortion_plots/vac_1_Cd_-1.png"))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+            )
+        )
         if w:
             [
                 self.assertNotEqual(
@@ -1931,24 +1950,21 @@ local_rattle: True"""
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse "
             f"its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
-        self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
-        )
-        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
+        self.assertTrue(os.path.exists("./vac_1_Ti_0.png"))
+        self.assertTrue(os.path.exists("./vac_1_Ti_0.yaml"))
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
-        shutil.rmtree(os.getcwd() + "/distortion_plots")
         [
             os.remove(os.path.join(os.getcwd(), file))
             for file in os.listdir(os.getcwd())
-            if "yaml" in file
+            if "yaml" in file or "png" in file
         ]
         self.tearDown()
 
@@ -1978,7 +1994,7 @@ local_rattle: True"""
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json "
@@ -1987,7 +2003,10 @@ local_rattle: True"""
             str(w[0].message),
         )
         self.assertTrue(
-            os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Ti_0.svg")
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder"
+                f"/{defect_name}/vac_1_Ti_0.svg"
+            )
         )
         self.assertTrue(
             os.path.exists(
@@ -1996,14 +2015,6 @@ local_rattle: True"""
                 f"{defect_name}/vac_1_Ti_0.yaml"
             )
         )
-        # Figures are compared in the local test since on Github Actions images are saved
-        # with a different size (raising error when comparing).
-        shutil.rmtree(os.getcwd() + "/distortion_plots")
-        [
-            os.remove(os.path.join(os.getcwd(), file))
-            for file in os.listdir(os.getcwd())
-            if "yaml" in file
-        ]
         self.tearDown()
 
         # Test warning when setting path and plotting from inside the defect folder
@@ -2035,7 +2046,7 @@ local_rattle: True"""
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to {os.getcwd()}/distortion_plots/", result.output)
+        self.assertIn("Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertTrue(
             any(
                 [
@@ -2047,16 +2058,9 @@ local_rattle: True"""
                 for warning in w
             )
         )
-        self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Ti_0.svg")
-        )
+        self.assertTrue(os.path.exists("./vac_1_Ti_0.svg"))
         self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
-        shutil.rmtree(os.getcwd() + "/distortion_plots")
-        [
-            os.remove(os.path.join(os.getcwd(), file))
-            for file in os.listdir(os.getcwd())
-            if "yaml" in file
-        ]
+        if_present_rm(os.getcwd() + "/vac_1_Ti_0.yaml")
         self.tearDown()
 
         # Test exception when run with no arguments in top-level folder
@@ -2069,9 +2073,7 @@ local_rattle: True"""
             f"defects in the specified/current directory.",
             str(result.exception),
         )
-        self.assertNotIn(
-            f"Plot saved to {os.getcwd()}/distortion_plots/", result.output
-        )
+        self.assertNotIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )
