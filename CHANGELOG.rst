@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+v22.9.20
+--------
+
+Main changes:
+
+- Fonts now included in `package_data` so can be installed with `pip` from `PyPI`
+- Refactoring `distortion_plots` plot saving to saving to defect directories, and preventing overwriting of previous plots
+- Miscellaneous tests and fixes
+- Add summary GIF to docs and README
+- Handling for partial oxidation state input
+- Setting `EDIFFG = -0.01` and `local_rattle = False` as default
+
+
 v22.9.2
 --------
 
