@@ -80,7 +80,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
 
     def tearDown(self):
-        if_present_rm(f"{os.getcwd()}/distortion_plots")
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2")
 
     def test_verify_data_directories_exist(self):
@@ -653,9 +652,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             save_plot=True,
             y_label="E (eV)",
         )
-        self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Cd_0.svg")
-        )
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "vac_1_Cd_0.svg")))
         return fig
 
     @pytest.mark.mpl_image_compare(
@@ -676,11 +673,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
             neighbour_atom="Ti",
             title="V$_{O}^{0}$",
             save_plot=True,
+            output_path=self.VASP_CDTE_DATA_DIR,
             save_format="png",
             colors=["green", "orange"],
         )
         self.assertTrue(
-            os.path.exists(os.getcwd() + "/distortion_plots/vac_1_Cd_0.png")
+            os.path.exists(os.path.join(self.VASP_CDTE_DATA_DIR,"vac_1_Cd_0/vac_1_Cd_0.png"))
         )
         return fig
 
@@ -693,8 +691,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def test_plot_datasets_without_saving(self):
         """Test plot_datasets() function testing several keywords:
         title = None, num_nearest_neighbours = None, neighbour_atom = None, save_plot = False
-        and user specify style: markers, linestyles, markersize, linewidth"
-        if_present_rm(os.getcwd() + "/distortion_plots/") # remove previous plots"""
+        and user specify style: markers, linestyles, markersize, linewidth"""
 
         fig = plotting.plot_datasets(
             datasets=[self.V_O_energies_dict_fm, self.V_O_energies_dict_afm],
@@ -707,9 +704,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             linewidth=3,
         )
         # Check plot not saved if save_plot=False
-        self.assertFalse(
-            os.path.exists(os.getcwd() + "/distortion_plots/V$_{O}^{0}$.png")
-        )
+        self.assertFalse(os.path.exists(os.path.join(os.getcwd(), "vac_1_Cd_0.png")))
         return fig
 
     @pytest.mark.mpl_image_compare(
