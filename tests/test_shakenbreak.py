@@ -71,7 +71,6 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_-1",
             "vac_1_Cd_-2",
             "vac_1_Cd_0",
-            "distortion_plots",
         ]:
             if_present_rm(f"{fake_dir}")
         if os.path.exists("distortion_metadata.json"):
