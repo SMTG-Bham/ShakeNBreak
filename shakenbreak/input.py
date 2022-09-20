@@ -92,9 +92,7 @@ def _write_distortion_metadata(
         )  # keep copy of old metadata file
         os.rename(
             filepath,
-            os.path.join(
-                output_path, f"distortion_metadata" f"_{current_datetime}.json"
-            ),
+            os.path.join(output_path, f"distortion_metadata_{current_datetime}.json"),
         )
         print(
             f"There is a previous version of {filename}. Will rename old metadata to "
