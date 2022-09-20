@@ -26,6 +26,7 @@ def if_present_rm(path):
 
 
 _file_path = os.path.dirname(__file__)
+_DATA_DIR = os.path.join(_file_path, "data")
 
 
 class PlottingDefectsTestCase(unittest.TestCase):
@@ -480,6 +481,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         # Saving to defect_dir subfolder in output_path
         fig, ax = plt.subplots(1, 1)
         defect_name = "vac_1_Cd_0"
+        if_present_rm(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
         ) as w:
@@ -579,8 +581,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.svg")
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_max_dist.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_max_dist.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -596,8 +598,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_fake_defect_name.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_fake_defect_name.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -613,8 +615,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_displacement.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_displacement.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -631,8 +633,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_maxdist_title_linecolor_label.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_maxdist_title_linecolor_label.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -656,8 +658,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{O}^{0}$_colors.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_colors.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -683,8 +685,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{O}^{0}$_notitle.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_notitle.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -708,8 +710,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{O}^{0}$_not_enough_markers.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_not_enough_markers.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -730,8 +732,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_other_chargestates.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_other_charge_states.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -750,8 +752,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{-2}$_only_rattled.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_-2_only_rattled.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -767,8 +769,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{-2}$_rattled_other_charge_states.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_-2_rattled_other_charge_states.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -785,12 +787,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{-2}$_only_rattled_and_rattled_dist_from_other_charges_tates.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_-2_only_rattled_and_rattled_dist_from_other_charges_states.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
-    def test_plot_datasets_only_rattled_and_rattled_dist_from_other_chargestates(self):
+    def test_plot_datasets_only_rattled_and_rattled_dist_from_other_charge_states(self):
         """Test plot_datasets() function when one of the energy lowering distortions from other
         charge states is Rattled (i.e. `Rattled_from_0`)"""
         # Fake dataset
@@ -853,8 +855,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_plot_defect_add_colorbar_max_dist.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_plot_defect_add_colorbar_max_dist.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -871,8 +873,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_plot_defect_without_colorbar.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_plot_defect_without_colorbar.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -889,8 +891,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}_^{0}$_include_site_num_in_name.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_include_site_num_in_name.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -909,8 +911,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         return fig
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{0}$_plot_defect_without_title_units_meV.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_plot_defect_without_title_units_meV.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -966,8 +968,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_file_path}/remote_baseline_plots",
-        filename="V$_{Cd}^{-2}$_only_rattled.png",
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_-2_only_rattled.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
@@ -986,7 +988,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             for figure in fig_dict.values()
         ]
         self.assertEqual(list(fig_dict.keys()), ["vac_1_Cd_0", "vac_1_Cd_-2"])
-        # No info on distortion_metadata.json for charge state -2, so its x label should be 'Bond Distortion Factor'
+        # No info on distortion_metadata.json for charge state -2, so its x label should be 'Bond
+        # Distortion Factor'
         return fig_dict["vac_1_Cd_-2"]
 
     def test_plot_all_defects_min_e_diff(self):

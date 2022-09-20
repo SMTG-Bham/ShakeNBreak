@@ -584,8 +584,10 @@ def _save_plot(
         backend=backend,
     )
     if verbose:
-        print(f"Plot saved to {os.path.basename(os.path.dirname(plot_filepath))}"
-              f"/{os.path.basename(plot_filepath)}")
+        print(
+            f"Plot saved to {os.path.basename(os.path.dirname(plot_filepath))}"
+            f"/{os.path.basename(plot_filepath)}"
+        )
 
 
 def _format_tick_labels(
@@ -1591,8 +1593,8 @@ def plot_datasets(
                             j
                         ],  # different markers for different charge states
                         alpha=1,
-                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
-                        f"state",
+                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                        f"charge state",
                     )
 
     datasets[0][
