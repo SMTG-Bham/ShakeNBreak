@@ -82,6 +82,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     def tearDown(self):
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2")
+        for file in os.listdir(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0"):
+            if file.endswith(".svg"):
+                os.remove(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/{file}")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
@@ -503,6 +506,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
 
         # Saving to output_path where defect_dir is not in output_path and output_path is not cwd
+        if_present_rm(f"./{defect_name}.svg")
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
                 fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
@@ -513,6 +517,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
         # Saving to defect_dir subfolder in output_path where output_path is cwd
         os.chdir(self.VASP_CDTE_DATA_DIR)
+        if_present_rm(f"{defect_name}/{defect_name}.svg")
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
                 fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
