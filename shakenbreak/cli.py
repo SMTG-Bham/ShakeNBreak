@@ -707,16 +707,14 @@ def generate_all(
                 user_settings.pop(key)
 
     def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
-        """Parse defect name from file/folder name"""
+        """Parse defect name from file name"""
         defect_name = None
-        # if defect is file (not folder) and user included cif/POSCAR as part of the defect
-        # structure name, remove it
-        if os.path.isfile(defect):
-            for substring in ("cif", "POSCAR", structure_file):
-                defect = defect.replace(substring, "")
-            for symbol in ("-", "_", "."):
-                if defect.endswith(symbol):  # trailing characters
-                    defect = defect[:-1]
+        # if user included cif/POSCAR as part of the defect structure name, remove it
+        for substring in ("cif", "POSCAR", structure_file):
+            defect = defect.replace(substring, "")
+        for symbol in ("-", "_", "."):
+            if defect.endswith(symbol):  # trailing characters
+                defect = defect[:-1]
         # Check if defect specified in config file
         if defect_settings:
             defect_names = defect_settings.keys()
