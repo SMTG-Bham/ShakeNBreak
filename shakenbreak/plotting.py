@@ -558,8 +558,8 @@ def _save_plot(
         if verbose:
             print(
                 f"Previous version of {os.path.basename(plot_filepath)} found in "
-                f"{os.path.dirname(plot_filepath)}. Will rename old plot to {defect_name}"
-                f"_{current_datetime}.{save_format}."
+                f"output_path: '{os.path.basename(os.path.dirname(plot_filepath))}/'. Will rename "
+                f"old plot to {defect_name}_{current_datetime}.{save_format}."
             )
 
     # use pycairo as backend if installed and save_format is pdf:
