@@ -14,7 +14,8 @@ shift $(( OPTIND - 1 ))
 
 # User Options:
 job_submit_command=${1:-"qsub"}  # "sbatch" for Slurm
-job_filename=${2:-"job"}  # jobscript name
+job_filepath=${2:-"job"}  # jobscript path
+job_filename=$(basename "${job_filepath}") # jobscript name
 job_name_option=${3:-"-N"}  # job name option
 
 DIR="$(dirname "${BASH_SOURCE[0]}")"
@@ -29,8 +30,8 @@ else
   shopt -s extglob  # ensure extended globbing (pattern matching) is enabled
 fi
 
-if [ ! -f "$job_filename" ]
-  then echo "Job file '$job_filename' not in current directory, so will only submit jobs in folders with '$job_filename' present"
+if [ ! -f "$job_filepath" ]
+  then echo "Job file '$job_filepath' not found, so will only submit jobs in folders with '$job_filename' present"
   job_in_cwd=false
 fi
 
@@ -44,8 +45,8 @@ SnB_run_loop () {
       if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR; # check calculation fully relaxed and finished
         then
         builtin cd "$i" || return
-        if [ ! -f "${job_filename}" ] && [ ! "$job_in_cwd" = false ]
-          then "cp" ../../"${job_filename}" . 2>/dev/null || "cp" ../"${job_filename}" . || return
+        if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]
+          then "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || "cp" ../"${job_filepath}" "./${job_filename}" || return
         fi
         if [ -f OUTCAR ]  # if OUTCAR exists so rerunning rather than 1st run
           then echo "${i%?} not (fully) relaxed, saving files and rerunning"
@@ -54,7 +55,7 @@ SnB_run_loop () {
           "cp" CONTCAR POSCAR
           # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
         fi
-        if [ -f "${job_filename}" ]
+        if [ -f "./${job_filename}" ]
           then echo "Running job for ${i%?}"
           folder_shortname="${i##*_}"
           ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}"

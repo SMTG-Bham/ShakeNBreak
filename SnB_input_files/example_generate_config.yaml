@@ -23,7 +23,7 @@
 # max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
 # max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
 # seed: 42  # Seed for setting up NumPy random state from which random numbers are generated
-# local_rattle: True  # If True, rattle displacements will tail-off as we more away from the defect site
+# local_rattle: False  # If True, rattle displacements will tail-off as we move away from the defect site. Not recommended as typically worsens performance.
 
 ## CLI arguments can also be specified using the config file:
 # charge: 0  # (Default = None, assumes charge range from -2 to +2)

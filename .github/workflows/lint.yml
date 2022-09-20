@@ -52,4 +52,4 @@ jobs:
       - name: flake8
         run:  |
           flake8 --version
-          flake8 --max-line-length 107 --color always --ignore=E121,E123,E126,E226,E24,E704,W503,W504,F401,E203 shakenbreak
+          flake8 --max-line-length 107 --color always --ignore=E121,E123,E126,E203,E226,E24,E704,W503,W504,F401,E203 shakenbreak

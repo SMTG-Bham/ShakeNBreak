@@ -22,8 +22,8 @@ followed by `flake8 <https://flake8.pycqa.org/en/latest/>`_, which will identify
 
 .. code:: bash
 
-    $ pycodestyle --max-line-length=107 shakenbreak
-    $ flake8 --max-line-length 107 --color always --ignore=E121,E123,E126,E226,E24,E704,W503,W504,F401 shakenbreak
+    $ pycodestyle --max-line-length=107 --ignore=E121,E123,E126,E203,E226,E24,E704,W503,W504,F401 shakenbreak
+    $ flake8 --max-line-length 107 --color always --ignore=E121,E123,E126,E203,E226,E24,E704,W503,W504,F401 shakenbreak
 
 - Please use comments, informative docstrings and tests as much as possible.
 

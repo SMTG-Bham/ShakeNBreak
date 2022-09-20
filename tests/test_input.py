@@ -6,8 +6,9 @@ from unittest.mock import patch
 import shutil
 import numpy as np
 import json
+import datetime
 
-from pymatgen.core.structure import Structure, Composition
+from pymatgen.core.structure import Structure, Composition, Element, PeriodicSite
 from pymatgen.io.vasp.inputs import Poscar
 
 from ase.calculators.aims import Aims
@@ -684,27 +685,103 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [self.V_Cd_dict]},
             {"interstitials": [self.Int_Cd_2_dict]},
         ]:
-            dist = input.Distortions(defect_dict)
-            self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
+            with patch("builtins.print") as mock_print:
+                dist = input.Distortions(defect_dict)
+                mock_print.assert_called_once_with(
+                    "Oxidation states were not explicitly set, thus have been guessed as "
+                    "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                    "oxidation_states"
+                )
+                self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
-        extrinsic_dist = input.Distortions(
-            self.cdte_extrinsic_defects_dict,
-        )
-        self.assertEqual(
-            extrinsic_dist.oxidation_states,
-            {
-                "Cd": 2.0,
-                "Te": -2.0,
-                "Zn": 2.0,
-                "Mn": 2.0,
-                "Al": 3.0,
-                "Sb": 0.0,
-                "Cl": -1,
-            },
-        )
+        # test extrinsic defects
+        with patch("builtins.print") as mock_print:
+            extrinsic_dist = input.Distortions(
+                self.cdte_extrinsic_defects_dict,
+            )
+            self.assertDictEqual(
+                extrinsic_dist.oxidation_states,
+                {
+                    "Cd": 2.0,
+                    "Te": -2.0,
+                    "Zn": 2.0,
+                    "Mn": 2.0,
+                    "Al": 3.0,
+                    "Sb": 0.0,
+                    "Cl": -1,
+                },
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0, 'Zn': 2.0, 'Mn': 2.0, 'Al': 3.0, 'Sb': 0.0, 'Cl': -1}. "
+                "If this is unreasonable you should manually set oxidation_states"
+            )
 
-    @patch("builtins.print")
-    def test_write_vasp_files(self, mock_print):
+        # test only partial oxidation state specification and that (wrong) bulk oxidation states
+        # are not overridden:
+        with patch("builtins.print") as mock_print:
+            extrinsic_dist = input.Distortions(
+                self.cdte_extrinsic_defects_dict,
+                oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
+            )
+            self.assertDictEqual(
+                extrinsic_dist.oxidation_states,
+                {
+                    "Cd": 7.0,
+                    "Te": -20.0,
+                    "Zn": 1.0,
+                    "Mn": 9.0,
+                    "Al": 3.0,
+                    "Sb": 0.0,
+                    "Cl": -1,
+                },
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states for ['Al', 'Cl', 'Sb'] were not "
+                "explicitly set, thus have been guessed as {'Al': "
+                "3.0, 'Cl': -1, 'Sb': 0.0}. If this is "
+                "unreasonable you should manually set "
+                "oxidation_states"
+            )
+
+        # test no print statement when all oxidation states set
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(defect_dict, oxidation_states={"Cd": 2, "Te": -2})
+            mock_print.assert_not_called()
+
+        # test extrinsic interstitial defect:
+        fake_extrinsic_interstitial_subdict = self.cdte_defect_dict["interstitials"][
+            0
+        ].copy()
+        fake_extrinsic_interstitial_subdict["site_specie"] = "Li"
+        fake_extrinsic_interstitial_site = fake_extrinsic_interstitial_subdict[
+            "supercell"
+        ]["structure"][-1]
+        fake_extrinsic_interstitial_site = PeriodicSite(
+            "Li",
+            fake_extrinsic_interstitial_site.coords,
+            fake_extrinsic_interstitial_site.lattice,
+        )
+        fake_extrinsic_interstitial_subdict[
+            "bulk_supercell_site"
+        ] = fake_extrinsic_interstitial_site
+        fake_extrinsic_interstitial_subdict[
+            "unique_site"
+        ] = fake_extrinsic_interstitial_site
+        fake_extrinsic_interstitial_subdict["name"] = "Int_Li_1"
+        fake_extrinsic_interstitial_dict = self.cdte_defect_dict.copy()
+        fake_extrinsic_interstitial_dict["interstitials"][
+            0
+        ] = fake_extrinsic_interstitial_subdict
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(fake_extrinsic_interstitial_dict)
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2.0, "
+                "'Te': -2.0, 'Li': 1}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+
+    def test_write_vasp_files(self):
         """Test `write_vasp_files` methods"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
@@ -716,10 +793,11 @@ class InputTestCase(unittest.TestCase):
             local_rattle=False,
         )
         # Test `write_vasp_files` method
-        _, distortion_metadata = dist.write_vasp_files(
-            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-            verbose=False,
-        )
+        with patch("builtins.print") as mock_print:
+            _, distortion_metadata = dist.write_vasp_files(
+                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                verbose=False,
+            )
 
         # check if expected folders were created:
         self.assertTrue(set(self.cdte_defect_folders).issubset(set(os.listdir())))
@@ -795,6 +873,39 @@ class InputTestCase(unittest.TestCase):
         )
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
+
+        # Test `Rattled` folder not generated for non-fully-ionised defects,
+        # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
+        self.tearDown()
+        self.assertFalse(set(self.cdte_defect_folders).issubset(set(os.listdir())))
+        reduced_V_Cd_dict = self.V_Cd_dict.copy()
+        reduced_V_Cd_dict["charges"] = [0, -2]
+        dist = input.Distortions(
+            {"vacancies": [reduced_V_Cd_dict]},
+            local_rattle=False,
+        )
+        _, distortion_metadata = dist.write_vasp_files(
+            verbose=False,
+        )
+        # check if expected folders were created
+        V_Cd_minus0pt5_POSCAR = Poscar.from_file(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_minus0pt5_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled
+        )
+        self.assertEqual(
+            V_Cd_minus0pt5_POSCAR.comment,
+            "-50.0%__num_neighbours=2_vac_1_Cd",
+        )  # default
+
+        self.assertFalse(os.path.exists("vac_1_Cd_0/Rattled"))
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("vac_1_Cd_0/Unperturbed"))
+
+        self.assertTrue(os.path.exists("vac_1_Cd_-2/Rattled"))
+        self.assertFalse(os.path.exists("vac_1_Cd_-2/Bond_Distortion_-50.0%"))
+        self.assertTrue(os.path.exists("vac_1_Cd_-2/Unperturbed"))
 
         # test rattle kwargs:
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
@@ -997,6 +1108,41 @@ class InputTestCase(unittest.TestCase):
             mock_Int_Cd_2_print.assert_any_call(
                 "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 1"
             )
+
+        # test renaming of old distortion_metadata.json file if present
+        dist = input.Distortions({"interstitials": [reduced_Int_Cd_2_dict]})
+        with patch("builtins.print") as mock_Int_Cd_2_print:
+            _, distortion_metadata = dist.write_vasp_files()
+        self.assertTrue(os.path.exists("distortion_metadata.json"))
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        current_datetime_minus1min = (
+            datetime.datetime.now() - datetime.timedelta(minutes=1)
+        ).strftime("%Y-%m-%d-%H-%M")
+        print(mock_Int_Cd_2_print.call_args_list)
+        self.assertTrue(
+            os.path.exists(f"./distortion_metadata_{current_datetime}.json")
+            or os.path.exists(
+                f"./distortion_metadata_{current_datetime_minus1min}.json"
+            )
+        )
+        self.assertTrue(
+            any(
+                [
+                    f"There is a previous version of distortion_metadata.json. Will rename old "
+                    f"metadata to distortion_metadata_{current_datetime}.json"
+                    in call[0][0]
+                    for call in mock_Int_Cd_2_print.call_args_list
+                ]
+            )
+            or any(
+                [
+                    f"There is a previous version of distortion_metadata.json. Will rename old "
+                    f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
+                    in call[0][0]
+                    for call in mock_Int_Cd_2_print.call_args_list
+                ]
+            )
+        )
 
         # test output_path parameter:
         for i in self.cdte_defect_folders:
@@ -1202,7 +1348,6 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-            local_rattle=False,
         )
         # Test `write_castep_files` method, without specifing input file
         for i in self.cdte_defect_folders:
@@ -1356,7 +1501,6 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
-            local_rattle=False,  # default is True
         )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(
             verbose=False,

@@ -707,15 +707,14 @@ def generate_all(
                 user_settings.pop(key)
 
     def parse_defect_name(defect, defect_settings, structure_file="POSCAR"):
-        """Parse defect name from file/folder name"""
+        """Parse defect name from file name"""
         defect_name = None
-        # if user included cif/POSCAR as part of the defect
-        # structure name, remove it
+        # if user included cif/POSCAR as part of the defect structure name, remove it
         for substring in ("cif", "POSCAR", structure_file):
             defect = defect.replace(substring, "")
-            for symbol in ("-", "_", "."):
-                if defect.endswith(symbol):  # trailing characters
-                    defect = defect[:-1]
+        for symbol in ("-", "_", "."):
+            if defect.endswith(symbol):  # trailing characters
+                defect = defect[:-1]
         # Check if defect specified in config file
         if defect_settings:
             defect_names = defect_settings.keys()
@@ -732,7 +731,7 @@ def generate_all(
                 for substring in ("as", "vac", "int", "sub", "v", "i")
             ]
         ):
-            # if user didnt specify defect names in config file,
+            # if user didn't specify defect names in config file,
             # check if defect filename correspond to standard defect abbreviations
             defect_name = defect
         if not defect_name:
@@ -1142,17 +1141,25 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     # Check if defect present in path:
     if path == ".":
         path = os.getcwd()
-    if defect in path:
-        path = path.replace(defect, "")
+    if defect == os.path.basename(
+        os.path.normpath(path)
+    ):  # remove defect from end of path if present:
+        orig_path = path
+        path = os.path.dirname(path)
+    else:
+        orig_path = None
     try:
         analyse_single_defect(defect, path, code, ref_struct, verbose)
     except Exception:
-        raise Exception(
-            f"Could not analyse defect '{defect}' in directory '{path}'. Please "
-            f"either specify a defect to analyse (with option --defect), run from within a single "
-            f"defect directory (without setting --defect) or use the --all flag to analyse all "
-            f"defects in the specified/current directory."
-        )
+        try:
+            analyse_single_defect(defect, orig_path, code, ref_struct, verbose)
+        except Exception:
+            raise Exception(
+                f"Could not analyse defect '{defect}' in directory '{path}'. Please either "
+                f"specify a defect to analyse (with option --defect), run from within a single "
+                f"defect directory (without setting --defect) or use the --all flag to analyse "
+                f"all defects in the specified/current directory."
+            )
 
 
 @snb.command(
@@ -1312,8 +1319,13 @@ def plot(
     # Check if defect present in path:
     if path == ".":
         path = os.getcwd()
-    if defect in path:
-        path = path.replace(defect, "")
+    if defect == os.path.basename(
+        os.path.normpath(path)
+    ):  # remove defect from end of path if present:
+        orig_path = path
+        path = os.path.dirname(path)
+    else:
+        orig_path = None
     try:
         io.parse_energies(defect, path, code)
         defect_energies_dict = analysis.get_energies(
@@ -1333,12 +1345,31 @@ def plot(
             max_energy_above_unperturbed=max_energy,
         )
     except Exception:
-        raise Exception(
-            f"Could not analyse & plot defect '{defect}' in directory '{path}'. Please "
-            f"either specify a defect to analyse (with option --defect), run from within a single "
-            f"defect directory (without setting --defect) or use the --all flag to analyse all "
-            f"defects in the specified/current directory."
-        )
+        try:
+            io.parse_energies(defect, orig_path, code)
+            defect_energies_dict = analysis.get_energies(
+                defect_species=defect,
+                output_path=orig_path,
+                verbose=verbose,
+            )
+            plotting.plot_defect(
+                defect_species=defect,
+                energies_dict=defect_energies_dict,
+                output_path=orig_path,
+                add_colorbar=colorbar,
+                metric=metric,
+                save_format=format,
+                units=units,
+                add_title=not no_title,
+                max_energy_above_unperturbed=max_energy,
+            )
+        except Exception:
+            raise Exception(
+                f"Could not analyse & plot defect '{defect}' in directory '{path}'. Please either "
+                f"specify a defect to analyse (with option --defect), run from within a single "
+                f"defect directory (without setting --defect) or use the --all flag to analyse all "
+                f"defects in the specified/current directory."
+            )
 
 
 @snb.command(
