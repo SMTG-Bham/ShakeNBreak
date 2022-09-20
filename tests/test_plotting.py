@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 import os
 import shutil
 import warnings
@@ -17,7 +18,10 @@ from shakenbreak import plotting
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 file_path = os.path.dirname(__file__)
@@ -472,12 +476,40 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     def test_save_plot(self):
         """Test _save_plot() function"""
+        # Saving to defect_dir subfolder in output_path
         fig, ax = plt.subplots(1, 1)
-        if_present_rm(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg")
-        plotting._save_plot(fig=fig, defect_name="vac_1_Cd_0", save_format="svg")
+        defect_name = "vac_1_Cd_0"
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(record=True) as w:
+            plotting._save_plot(
+                fig=fig,
+                defect_name=defect_name,
+                output_path=self.VASP_CDTE_DATA_DIR,
+                save_format="png",
+            )
         self.assertTrue(
-            os.path.exists(f"{os.getcwd()}/distortion_plots/vac_1_Cd_0.svg")
+            os.path.exists(
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+            )
         )
+        mock_print.assert_called_once_with("Plot saved to vac_1_Cd_0/vac_1_Cd_0.png")
+        self.assertEqual(len(w), 0)  # No warnings in this case
+        if_present_rm(
+            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+        )
+
+        # Saving to output_path where defect_dir is not in output_path and output_path is not cwd
+        with patch("builtins.print") as mock_print:
+            plotting._save_plot(
+                fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
+            )
+        self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
+        mock_print.assert_called_once_with(f"Plot saved to ./vac_1_Cd_0.svg")
+        if_present_rm(f"./{defect_name}.svg")
+
+
+        # Saving to defect_dir subfolder in output_path where output_path is not cwd
+        # test old saved plot renaming and print statement
+        # test no print statements with verbose = False
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{file_path}/remote_baseline_plots",

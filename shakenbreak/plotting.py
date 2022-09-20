@@ -5,6 +5,7 @@ energy-lowering distortions.
 import os
 import shutil
 import warnings
+import datetime
 from typing import Optional, Tuple
 import numpy as np
 
@@ -515,26 +516,52 @@ def _format_datapoints_from_other_chargestates(
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
+    output_path: str,
     save_format: str,
     verbose: bool = True,
 ) -> None:
     """
-    Save plot in directory `distortion_plots`.
+    Save plot in the defect directory. If defect directory not present/recognised, save to cwd.
+    If previous saved plots with the same name exist, rename to <defect>_<datetime>.<format> to
+    prevent overwriting.
 
     Args:
         fig (:obj:`mpl.figure.Figure`):
-            mpl.figure.Figure object to save
-        defect_name (:obj:`std`):
-            Defect name that will be used as file name.
+            mpl.figure.Figure object to save.
+        defect_name (:obj:`str`):
+            Defect name that will be used as file name and for identifying defect folder.
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the plot).
         save_format (:obj:`str`):
             Format to save the plot as, given as string.
+        verbose (:obj:`bool`, optional):
+            Whether to print information about the saved plot. Defaults to True.
 
     Returns:
         None
     """
-    wd = os.getcwd()
-    if not os.path.isdir(wd + "/distortion_plots/"):
-        os.mkdir(wd + "/distortion_plots/")
+    # Locate defect directory; either subfolder in output_path or cwd
+    defect_dir = os.path.join(output_path, defect_name)
+    if not os.path.isdir(defect_dir):
+        defect_dir = output_path
+
+    plot_filepath = f"{os.path.join(defect_dir, defect_name)}.{save_format}"
+    # If plot already exists, rename to <defect>_<datetime>.<format>
+    if os.path.exists(plot_filepath):
+        current_datetime = datetime.datetime.now().strftime(
+            "%Y-%m-%d-%H-%M"
+        )  # keep copy of old plot file
+        os.rename(
+            plot_filepath,
+            f"{os.path.join(defect_dir, defect_name)}_{current_datetime}.{save_format}",
+        )
+        if verbose:
+            print(
+                f"Previous version of {os.path.basename(plot_filepath)} found in "
+                f"{os.path.dirname(plot_filepath)}. Will rename old plot to {defect_name}"
+                f"_{current_datetime}.{save_format}."
+            )
+
     # use pycairo as backend if installed and save_format is pdf:
     backend = None
     if "pdf" in save_format:
@@ -548,15 +575,17 @@ def _save_plot(
                 "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
                 "`pip install pycairo` if you want ShakeNBreak's default font."
             )
+
     fig.savefig(
-        wd + "/distortion_plots/" + defect_name + f".{save_format}",
+        plot_filepath,
         format=save_format,
         transparent=True,
         bbox_inches="tight",
         backend=backend,
     )
     if verbose:
-        print(f"Plot saved to {wd}/distortion_plots/{defect_name}.{save_format}")
+        print(f"Plot saved to {os.path.basename(os.path.dirname(plot_filepath))}"
+              f"/{os.path.basename(plot_filepath)}")
 
 
 def _format_tick_labels(
@@ -785,7 +814,7 @@ def plot_all_defects(
             Dictionary matching defect names to lists of their charge states.
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations and
+            Path to top-level directory with your distorted defect calculations and
             distortion_metadata.json file.
             (Default: current directory)
         add_colorbar (:obj:`bool`):
@@ -932,8 +961,8 @@ def plot_defect(
             Dictionary matching distortion to final energy (eV), as produced by
             `_organize_data()` or `analysis.get_energies()`)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations (to
-            calculate structure comparisons)
+            Path to top-level directory with your distorted defect calculations
+            (to calculate structure comparisons and save plots)
             (Default: current directory)
         neighbour_atom (:obj:`str`):
             Name(s) of distorted neighbour atoms (e.g. 'Cd'). If not specified,
@@ -1077,6 +1106,7 @@ def plot_defect(
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 line_color=line_color,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
             )
         else:
@@ -1091,6 +1121,7 @@ def plot_defect(
                 y_label=y_label,
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
             )
     return fig
@@ -1108,6 +1139,7 @@ def plot_colorbar(
     metric: Optional[str] = "max_dist",
     max_energy_above_unperturbed: Optional[float] = 0.5,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
@@ -1159,6 +1191,10 @@ def plot_colorbar(
         save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         y_label (:obj:`str`):
             Y axis label
             (Default: 'Energy (eV)')
@@ -1332,6 +1368,7 @@ def plot_colorbar(
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
         )
     return fig
@@ -1353,6 +1390,7 @@ def plot_datasets(
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     save_format: Optional[str] = "svg",
 ) -> Figure:
     """
@@ -1406,6 +1444,10 @@ def plot_datasets(
         save_plot (:obj:`bool`):
             Whether to save the plots.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
@@ -1613,6 +1655,7 @@ def plot_datasets(
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
         )
     return fig
