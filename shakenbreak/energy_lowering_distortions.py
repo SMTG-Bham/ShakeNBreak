@@ -930,8 +930,8 @@ def _copy_espresso_files(
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
         params = params.replace(
-            params[params.find("ATOMIC_POSITIONS"):],
-            new_struct[new_struct.find("ATOMIC_POSITIONS"):],
+            params[params.find("ATOMIC_POSITIONS") :],
+            new_struct[new_struct.find("ATOMIC_POSITIONS") :],
             1,
         )  # Replace ionic positions
         with open(f"{distorted_dir}/{input_filename}", "w") as f:
@@ -960,8 +960,8 @@ def _copy_espresso_files(
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
             params = params.replace(
-                params[params.find("ATOMIC_POSITIONS"):],
-                new_struct[new_struct.find("ATOMIC_POSITIONS"):],
+                params[params.find("ATOMIC_POSITIONS") :],
+                new_struct[new_struct.find("ATOMIC_POSITIONS") :],
                 1,
             )  # Replace lines with the ionic positions
             with open(f"{distorted_dir}/{input_filename}", "w") as f:

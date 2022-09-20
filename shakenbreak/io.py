@@ -190,6 +190,18 @@ def parse_energies(
                 energy = energy[0][0][0]  # Energy of first match in eV
         return energy, outcar
 
+    energies = {
+        "distortions": {}
+    }  # maps each distortion to the energy of the optimised structure
+
+    if defect == os.path.basename(os.path.normpath(path)) and not [
+        dir
+        for dir in path
+        if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
+    ]:  # if `defect` is in end of `path` and `path` doesn't have a subdirectory called `defect`
+        # then remove defect from end of path
+        path = os.path.dirname(path)
+
     defect_dir = f"{path}/{defect}"
     if os.path.isdir(defect_dir):
         dist_dirs = [
@@ -217,9 +229,6 @@ def parse_energies(
             prev_energies_dict = {}
 
         # Parse energies and write them to file
-        energies = {
-            "distortions": {}
-        }  # maps each distortion to the energy of the optimised structure
         for dist in dist_dirs:
             outcar = None
             energy = None
@@ -263,17 +272,17 @@ def parse_energies(
             else:
                 print(f"{dist} not fully relaxed")
 
-        # only write energy file if energies have been parsed
-        if energies != {"distortions": {}}:
-            energies = sort_energies(energies)
-            save_file(energies, defect, path)
-        else:
-            warnings.warn(
-                f"Energies could not be parsed for defect '{defect}' in {path}. "
-                f"If these directories are correct, check calculations have converged, "
-                f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-                f"Bond_Distortion_xxx, Rattled, Unperturbed)"
-            )
+    # only write energy file if energies have been parsed
+    if energies != {"distortions": {}}:
+        energies = sort_energies(energies)
+        save_file(energies, defect, path)
+    else:
+        warnings.warn(
+            f"Energies could not be parsed for defect '{defect}' in '{path}'. "
+            f"If these directories are correct, check calculations have converged, "
+            f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+            f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+        )
 
 
 # Parsing output structures of different codes

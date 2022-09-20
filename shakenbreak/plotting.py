@@ -5,6 +5,7 @@ energy-lowering distortions.
 import os
 import shutil
 import warnings
+import datetime
 from typing import Optional, Tuple
 import numpy as np
 
@@ -162,7 +163,7 @@ def _format_defect_name(
         charge = "+" + str(charge)  # show positive charges with a + sign
     defect_type = defect_species.split("_")[0]  # vac, as or int
     if (
-        defect_type == "Int"
+        defect_type.capitalize() == "Int"
     ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
         site_element = defect_species.split("_")[1]
         site = defect_species.split("_")[2]
@@ -178,22 +179,22 @@ def _format_defect_name(
         site_element = defect_species.split("_")[2]  # element at defect site
 
     if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
             # double brackets to treat it literally (tex), then extra {} for
             # python str formatting
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError("Defect type not recognized. Please check spelling.")
     else:
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError(
                 f"Defect type {defect_type} not recognized. Please check spelling."
             )
@@ -515,26 +516,52 @@ def _format_datapoints_from_other_chargestates(
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
+    output_path: str,
     save_format: str,
     verbose: bool = True,
 ) -> None:
     """
-    Save plot in directory `distortion_plots`.
+    Save plot in the defect directory. If defect directory not present/recognised, save to cwd.
+    If previous saved plots with the same name exist, rename to <defect>_<datetime>.<format> to
+    prevent overwriting.
 
     Args:
         fig (:obj:`mpl.figure.Figure`):
-            mpl.figure.Figure object to save
-        defect_name (:obj:`std`):
-            Defect name that will be used as file name.
+            mpl.figure.Figure object to save.
+        defect_name (:obj:`str`):
+            Defect name that will be used as file name and for identifying defect folder.
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the plot).
         save_format (:obj:`str`):
             Format to save the plot as, given as string.
+        verbose (:obj:`bool`, optional):
+            Whether to print information about the saved plot. Defaults to True.
 
     Returns:
         None
     """
-    wd = os.getcwd()
-    if not os.path.isdir(wd + "/distortion_plots/"):
-        os.mkdir(wd + "/distortion_plots/")
+    # Locate defect directory; either subfolder in output_path or cwd
+    defect_dir = os.path.join(output_path, defect_name)
+    if not os.path.isdir(defect_dir):
+        defect_dir = output_path
+
+    plot_filepath = f"{os.path.join(defect_dir, defect_name)}.{save_format}"
+    # If plot already exists, rename to <defect>_<datetime>.<format>
+    if os.path.exists(plot_filepath):
+        current_datetime = datetime.datetime.now().strftime(
+            "%Y-%m-%d-%H-%M"
+        )  # keep copy of old plot file
+        os.rename(
+            plot_filepath,
+            f"{os.path.join(defect_dir, defect_name)}_{current_datetime}.{save_format}",
+        )
+        if verbose:
+            print(
+                f"Previous version of {os.path.basename(plot_filepath)} found in "
+                f"output_path: '{os.path.basename(os.path.dirname(plot_filepath))}/'. Will rename "
+                f"old plot to {defect_name}_{current_datetime}.{save_format}."
+            )
+
     # use pycairo as backend if installed and save_format is pdf:
     backend = None
     if "pdf" in save_format:
@@ -548,15 +575,19 @@ def _save_plot(
                 "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
                 "`pip install pycairo` if you want ShakeNBreak's default font."
             )
+
     fig.savefig(
-        wd + "/distortion_plots/" + defect_name + f".{save_format}",
+        plot_filepath,
         format=save_format,
         transparent=True,
         bbox_inches="tight",
         backend=backend,
     )
     if verbose:
-        print(f"Plot saved to {wd}/distortion_plots/{defect_name}.{save_format}")
+        print(
+            f"Plot saved to {os.path.basename(os.path.dirname(plot_filepath))}"
+            f"/{os.path.basename(plot_filepath)}"
+        )
 
 
 def _format_tick_labels(
@@ -775,6 +806,7 @@ def plot_all_defects(
     add_title: Optional[bool] = True,
     save_plot: bool = True,
     save_format: str = "svg",
+    verbose: bool = True,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
@@ -785,7 +817,7 @@ def plot_all_defects(
             Dictionary matching defect names to lists of their charge states.
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations and
+            Path to top-level directory with your distorted defect calculations and
             distortion_metadata.json file.
             (Default: current directory)
         add_colorbar (:obj:`bool`):
@@ -823,6 +855,8 @@ def plot_all_defects(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plots (warnings and where they're saved).
 
     Returns:
         :obj:`dict`:
@@ -837,11 +871,12 @@ def plot_all_defects(
             output_path=output_path
         )
     except FileNotFoundError:
-        warnings.warn(
-            f"Path {output_path}/distortion_metadata.json does not exist. "
-            "Will not parse its contents (to specify which neighbour atoms were distorted in plot "
-            "text)."
-        )
+        if verbose:
+            warnings.warn(
+                f"Path {output_path}/distortion_metadata.json does not exist. "
+                "Will not parse its contents (to specify which neighbour atoms were distorted in "
+                "plot text)."
+            )
         distortion_metadata = None
         num_nearest_neighbours = None
         neighbour_atom = None
@@ -899,6 +934,7 @@ def plot_all_defects(
                     add_title=add_title,
                     save_plot=save_plot,
                     save_format=save_format,
+                    verbose=verbose,
                 )
 
     return figures
@@ -920,6 +956,7 @@ def plot_defect(
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
+    verbose: bool = True,
 ) -> Figure:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -932,8 +969,8 @@ def plot_defect(
             Dictionary matching distortion to final energy (eV), as produced by
             `_organize_data()` or `analysis.get_energies()`)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations (to
-            calculate structure comparisons)
+            Path to top-level directory with your distorted defect calculations
+            (to calculate structure comparisons and save plots)
             (Default: current directory)
         neighbour_atom (:obj:`str`):
             Name(s) of distorted neighbour atoms (e.g. 'Cd'). If not specified,
@@ -981,6 +1018,8 @@ def plot_defect(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: "svg")
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1012,11 +1051,11 @@ def plot_defect(
                     charge=defect_species.rsplit("_", 1)[1],
                 )
         except FileNotFoundError:
-            warnings.warn(
-                f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents (to specify which neighbour atoms were distorted in "
-                "plot text)."
-            )
+            if verbose:
+                warnings.warn(
+                    f"Path {output_path}/distortion_metadata.json does not exist. Will not parse "
+                    f"its contents (to specify which neighbour atoms were distorted in plot text)."
+                )
             pass
 
     energies_dict = _cast_energies_to_floats(
@@ -1077,7 +1116,9 @@ def plot_defect(
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 line_color=line_color,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
         else:
             fig = plot_datasets(
@@ -1091,7 +1132,9 @@ def plot_defect(
                 y_label=y_label,
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
     return fig
 
@@ -1108,9 +1151,11 @@ def plot_colorbar(
     metric: Optional[str] = "max_dist",
     max_energy_above_unperturbed: Optional[float] = 0.5,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
@@ -1159,12 +1204,18 @@ def plot_colorbar(
         save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         y_label (:obj:`str`):
             Y axis label
             (Default: 'Energy (eV)')
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1281,7 +1332,8 @@ def plot_colorbar(
                     cmap=colormap,
                     norm=norm,
                     alpha=1,
-                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state",
+                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                    f"charge state",
                 )
 
         # Plot reference energy
@@ -1332,7 +1384,9 @@ def plot_colorbar(
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig
 
@@ -1353,7 +1407,9 @@ def plot_datasets(
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -1406,9 +1462,15 @@ def plot_datasets(
         save_plot (:obj:`bool`):
             Whether to save the plots.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1431,10 +1493,11 @@ def plot_datasets(
         colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
         # colors to use for each dataset
     elif len(colors) < len(datasets):
-        warnings.warn(
-            f"Insufficient colors provided for {len(datasets)} datasets. "
-            "Using default colors."
-        )
+        if verbose:
+            warnings.warn(
+                f"Insufficient colors provided for {len(datasets)} datasets. "
+                "Using default colors."
+            )
         colors = _get_line_colors(number_of_colors=len(datasets))
     # Title and labels of axis
     if title:
@@ -1549,8 +1612,8 @@ def plot_datasets(
                             j
                         ],  # different markers for different charge states
                         alpha=1,
-                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
-                        f"state",
+                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                        f"charge state",
                     )
 
     datasets[0][
@@ -1613,6 +1676,8 @@ def plot_datasets(
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig

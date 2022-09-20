@@ -71,7 +71,6 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_-1",
             "vac_1_Cd_-2",
             "vac_1_Cd_0",
-            "distortion_plots",
         ]:
             if_present_rm(f"{fake_dir}")
         if os.path.exists("distortion_metadata.json"):
@@ -243,7 +242,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     # Now we test parsing of final energies and plotting
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_baseline_plots",
+        baseline_dir="data/remote_baseline_plots",
         filename="vac_1_Cd_-2.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
@@ -286,7 +285,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         return fig_dict["vac_1_Cd_-2"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_baseline_plots",
+        baseline_dir="data/remote_baseline_plots",
         filename="vac_1_Cd_-1.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
@@ -330,7 +329,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         return fig_dict["vac_1_Cd_-1"]
 
     @pytest.mark.mpl_image_compare(
-        baseline_dir="remote_baseline_plots",
+        baseline_dir="data/remote_baseline_plots",
         filename="vac_1_Cd_0.png",
         style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
