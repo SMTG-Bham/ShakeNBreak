@@ -1,5 +1,4 @@
 import unittest
-import warnings
 import os
 import pickle
 import copy
@@ -7,6 +6,7 @@ from unittest.mock import patch
 import shutil
 import numpy as np
 import json
+import datetime
 
 from pymatgen.core.structure import Structure, Composition, Element, PeriodicSite
 from pymatgen.io.vasp.inputs import Poscar
@@ -781,8 +781,7 @@ class InputTestCase(unittest.TestCase):
                 "oxidation_states"
             )
 
-    @patch("builtins.print")
-    def test_write_vasp_files(self, mock_print):
+    def test_write_vasp_files(self):
         """Test `write_vasp_files` methods"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
@@ -794,10 +793,11 @@ class InputTestCase(unittest.TestCase):
             local_rattle=False,
         )
         # Test `write_vasp_files` method
-        _, distortion_metadata = dist.write_vasp_files(
-            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-            verbose=False,
-        )
+        with patch("builtins.print") as mock_print:
+            _, distortion_metadata = dist.write_vasp_files(
+                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                verbose=False,
+            )
 
         # check if expected folders were created:
         self.assertTrue(set(self.cdte_defect_folders).issubset(set(os.listdir())))
@@ -1108,6 +1108,41 @@ class InputTestCase(unittest.TestCase):
             mock_Int_Cd_2_print.assert_any_call(
                 "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 1"
             )
+
+        # test renaming of old distortion_metadata.json file if present
+        dist = input.Distortions({"interstitials": [reduced_Int_Cd_2_dict]})
+        with patch("builtins.print") as mock_Int_Cd_2_print:
+            _, distortion_metadata = dist.write_vasp_files()
+        self.assertTrue(os.path.exists("distortion_metadata.json"))
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        current_datetime_minus1min = (
+            datetime.datetime.now() - datetime.timedelta(minutes=1)
+        ).strftime("%Y-%m-%d-%H-%M")
+        print(mock_Int_Cd_2_print.call_args_list)
+        self.assertTrue(
+            os.path.exists(f"./distortion_metadata_{current_datetime}.json")
+            or os.path.exists(
+                f"./distortion_metadata_{current_datetime_minus1min}.json"
+            )
+        )
+        self.assertTrue(
+            any(
+                [
+                    f"There is a previous version of distortion_metadata.json. Will rename old "
+                    f"metadata to distortion_metadata_{current_datetime}.json"
+                    in call[0][0]
+                    for call in mock_Int_Cd_2_print.call_args_list
+                ]
+            )
+            or any(
+                [
+                    f"There is a previous version of distortion_metadata.json. Will rename old "
+                    f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
+                    in call[0][0]
+                    for call in mock_Int_Cd_2_print.call_args_list
+                ]
+            )
+        )
 
         # test output_path parameter:
         for i in self.cdte_defect_folders:
