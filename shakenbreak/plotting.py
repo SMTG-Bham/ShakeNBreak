@@ -806,6 +806,7 @@ def plot_all_defects(
     add_title: Optional[bool] = True,
     save_plot: bool = True,
     save_format: str = "svg",
+    verbose: bool = True,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
@@ -854,6 +855,8 @@ def plot_all_defects(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plots (warnings and where they're saved).
 
     Returns:
         :obj:`dict`:
@@ -868,11 +871,12 @@ def plot_all_defects(
             output_path=output_path
         )
     except FileNotFoundError:
-        warnings.warn(
-            f"Path {output_path}/distortion_metadata.json does not exist. "
-            "Will not parse its contents (to specify which neighbour atoms were distorted in plot "
-            "text)."
-        )
+        if verbose:
+            warnings.warn(
+                f"Path {output_path}/distortion_metadata.json does not exist. "
+                "Will not parse its contents (to specify which neighbour atoms were distorted in "
+                "plot text)."
+            )
         distortion_metadata = None
         num_nearest_neighbours = None
         neighbour_atom = None
@@ -930,6 +934,7 @@ def plot_all_defects(
                     add_title=add_title,
                     save_plot=save_plot,
                     save_format=save_format,
+                    verbose=verbose,
                 )
 
     return figures
@@ -951,6 +956,7 @@ def plot_defect(
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
+    verbose: bool = True,
 ) -> Figure:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -1012,6 +1018,8 @@ def plot_defect(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: "svg")
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1043,11 +1051,11 @@ def plot_defect(
                     charge=defect_species.rsplit("_", 1)[1],
                 )
         except FileNotFoundError:
-            warnings.warn(
-                f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents (to specify which neighbour atoms were distorted in "
-                "plot text)."
-            )
+            if verbose:
+                warnings.warn(
+                    f"Path {output_path}/distortion_metadata.json does not exist. Will not parse "
+                    f"its contents (to specify which neighbour atoms were distorted in plot text)."
+                )
             pass
 
     energies_dict = _cast_energies_to_floats(
@@ -1110,6 +1118,7 @@ def plot_defect(
                 save_plot=save_plot,
                 output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
         else:
             fig = plot_datasets(
@@ -1125,6 +1134,7 @@ def plot_defect(
                 save_plot=save_plot,
                 output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
     return fig
 
@@ -1145,6 +1155,7 @@ def plot_colorbar(
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
@@ -1203,6 +1214,8 @@ def plot_colorbar(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1319,7 +1332,8 @@ def plot_colorbar(
                     cmap=colormap,
                     norm=norm,
                     alpha=1,
-                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state",
+                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                    f"charge state",
                 )
 
         # Plot reference energy
@@ -1372,6 +1386,7 @@ def plot_colorbar(
             defect_name=defect_species,
             output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig
 
@@ -1394,6 +1409,7 @@ def plot_datasets(
     save_plot: Optional[bool] = False,
     output_path: Optional[str] = ".",
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -1453,6 +1469,8 @@ def plot_datasets(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1475,10 +1493,11 @@ def plot_datasets(
         colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
         # colors to use for each dataset
     elif len(colors) < len(datasets):
-        warnings.warn(
-            f"Insufficient colors provided for {len(datasets)} datasets. "
-            "Using default colors."
-        )
+        if verbose:
+            warnings.warn(
+                f"Insufficient colors provided for {len(datasets)} datasets. "
+                "Using default colors."
+            )
         colors = _get_line_colors(number_of_colors=len(datasets))
     # Title and labels of axis
     if title:
@@ -1659,5 +1678,6 @@ def plot_datasets(
             defect_name=defect_species,
             output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig
