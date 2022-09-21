@@ -131,7 +131,8 @@ Acknowledgements
 
 ``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
 used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
-Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez and Sabrine Hachmiouane.
+Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and
+Chris Savory.
 Code to identify defect species from input supercell structures was written based on the implementation
 in `PyCDT <https://doi.org/10.1016/j.cpc.2018.01.004>`_ by Broberg *et al.*
 
