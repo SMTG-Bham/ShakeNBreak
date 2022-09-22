@@ -1,21 +1,22 @@
-import unittest
-import os
 import datetime
-import shutil
-import pickle
-import json
-import warnings
-from monty.serialization import loadfn
-import numpy as np
 import filecmp
+import json
+import os
+import pickle
+import shutil
 import subprocess
+import unittest
+import warnings
 
-# Pymatgen
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar, Incar
+import numpy as np
 
 # Click
 from click.testing import CliRunner
+from monty.serialization import loadfn
+
+# Pymatgen
+from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import Incar, Poscar
 
 from shakenbreak.cli import snb
 

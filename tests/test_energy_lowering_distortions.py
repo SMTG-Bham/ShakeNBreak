@@ -1,16 +1,16 @@
-import unittest
 import os
-from unittest.mock import patch, Mock
 import shutil
+import unittest
 import warnings
-from monty.serialization import dumpfn, loadfn
-import numpy as np
+from unittest.mock import Mock, patch
 
-from pymatgen.core.structure import Structure, Element
-from pymatgen.io.ase import AseAtomsAdaptor
 import ase
+import numpy as np
+from monty.serialization import dumpfn, loadfn
+from pymatgen.core.structure import Element, Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis, energy_lowering_distortions, io, distortions
+from shakenbreak import analysis, distortions, energy_lowering_distortions, io
 
 
 def if_present_rm(path):
