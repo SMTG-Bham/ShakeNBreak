@@ -1,17 +1,16 @@
 name: pip install ShakeNBreak
 
 on:
-  pull_request:
-    branches:
-       - main  # only test on main as develop updates not on PyPI
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  workflow_run:
+    workflows: ["Release and publish"]
+    branches: [main]
+    types:
+      - completed  # only test when new release has been deployed to PyPI
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     strategy:
       max-parallel: 5
 
