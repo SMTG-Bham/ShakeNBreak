@@ -28,7 +28,7 @@ def _install_custom_font():
 
             import matplotlib as mpl
             import matplotlib.font_manager
-        except:
+        except Exception:
             print("Cannot import matplotlib!")
 
         # Find where matplotlib stores its True Type fonts
@@ -46,7 +46,7 @@ def _install_custom_font():
                     print("Copying " + old_path + " -> " + new_path)
                 else:
                     print(f"No ttf fonts found in the {fonts_dir} directory.")
-        except:
+        except Exception:
             pass
 
         # Try to delete matplotlib's fontList cache
@@ -66,7 +66,7 @@ def _install_custom_font():
             matplotlib.font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
             print(f"Adding {font} font to matplotlib fonts.")
 
-    except:
+    except Exception:
         warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
             The widely available Helvetica font will be used instead."""
         warnings.warn(warning_msg)

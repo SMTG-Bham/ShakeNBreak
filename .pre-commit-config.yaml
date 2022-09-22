@@ -1,0 +1,34 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+exclude: ^(docs|tests|SnB_input_files|.github|shakenbreak/bash_scripts|CITATION*|MANIFEST*)
+repos:
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+
+#  - repo: https://github.com/pre-commit/mirrors-mypy
+#    rev: v0.971
+#    hooks:
+#      - id: mypy
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args: [--profile, black]
+
+  - repo: https://github.com/psf/black
+    rev: 22.6.0
+    hooks:
+      - id: black
+        args: [--line-length, "88", --color]
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 5.0.2
+    hooks:
+      - id: flake8
+        args: [--max-line-length, "107", "--ignore=E121,E123,E126,E203,E226,E24,E704,W503,W504,F401,E203"]
