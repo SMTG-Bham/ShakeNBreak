@@ -35,8 +35,13 @@ jobs:
           pip install pydocstyle
           pip install black
           pip install flake8
+          pip install isort
           pip install -e .
           pip install -e .[tests]
+
+      - name: sort imports
+        run:  |
+          isort . --atomic --profile black
 
       - name: check docstrings
         run:  |
