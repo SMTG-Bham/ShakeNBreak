@@ -1,15 +1,15 @@
-import unittest
 import os
-from unittest.mock import patch
 import shutil
+import unittest
 import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from monty.serialization import dumpfn, loadfn
 from pandas.core.frame import DataFrame
+from pymatgen.core.structure import Element, Structure
 
-from pymatgen.core.structure import Structure, Element
-from monty.serialization import loadfn, dumpfn
 from shakenbreak import analysis
 
 

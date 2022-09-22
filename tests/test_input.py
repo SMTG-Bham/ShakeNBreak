@@ -1,19 +1,18 @@
-import unittest
+import copy
+import datetime
+import json
 import os
 import pickle
-import copy
-from unittest.mock import patch
 import shutil
-import numpy as np
-import json
-import datetime
+import unittest
+from unittest.mock import patch
 
-from pymatgen.core.structure import Structure, Composition, Element, PeriodicSite
+import numpy as np
+from ase.calculators.aims import Aims
+from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar
 
-from ase.calculators.aims import Aims
-
-from shakenbreak import input, io, distortions, vasp
+from shakenbreak import distortions, input, io, vasp
 
 
 def if_present_rm(path):

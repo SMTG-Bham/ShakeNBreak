@@ -7,14 +7,13 @@ import os
 import shutil
 import warnings
 from typing import Optional
-import pandas as pd
 
+import pandas as pd
+from ase.io import write as ase_write
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from ase.io import write as ase_write
-
-from shakenbreak import io, analysis
+from shakenbreak import analysis, io
 
 aaa = AseAtomsAdaptor()
 

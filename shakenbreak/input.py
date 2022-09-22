@@ -3,28 +3,27 @@ Module containing functions to generate rattled and bond-distorted structures,
 as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 `Quantum-Espresso`, `FHI-aims` and `CASTEP`.
 """
-import os
 import copy
-import json
-import warnings
 import datetime
-from typing import Optional, Tuple
 import functools
-import numpy as np
-from monty.serialization import loadfn
+import json
+import os
+import warnings
+from typing import Optional, Tuple
 
 import ase
-from ase.calculators.espresso import Espresso
-from ase.calculators.castep import Castep
+import numpy as np
 from ase.calculators.aims import Aims
-
-from pymatgen.core.structure import Structure, Composition, Element
-from pymatgen.io.vasp.inputs import UnknownPotcarWarning
-from pymatgen.io.vasp.sets import BadInputSetWarning
+from ase.calculators.castep import Castep
+from ase.calculators.espresso import Espresso
+from monty.serialization import loadfn
+from pymatgen.core.structure import Composition, Element, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
+from pymatgen.io.vasp.inputs import UnknownPotcarWarning
+from pymatgen.io.vasp.sets import BadInputSetWarning
 
-from shakenbreak import analysis, distortions, vasp, io
+from shakenbreak import analysis, distortions, io, vasp
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 

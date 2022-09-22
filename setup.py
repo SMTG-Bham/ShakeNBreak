@@ -2,15 +2,16 @@
 """
 This is a setup.py script to install ShakeNBreak
 """
-from distutils.command import install_headers
 import os
-from setuptools import setup, find_packages
-from setuptools.command.install import install
+import warnings
+from distutils.cmd import Command
+from distutils.command import install_headers
+from distutils.command.build_py import build_py as _build_py
+
+from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
-from distutils.command.build_py import build_py as _build_py
-from distutils.cmd import Command
-import warnings
+from setuptools.command.install import install
 
 path_to_file = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,7 +23,9 @@ def _install_custom_font():
     # Try to install custom font
     try:
         try:
-            import os, shutil
+            import os
+            import shutil
+
             import matplotlib as mpl
             import matplotlib.font_manager
         except:
