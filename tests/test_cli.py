@@ -1,18 +1,18 @@
 import datetime
-import filecmp
 import json
 import os
 import pickle
 import shutil
-import subprocess
 import unittest
 import warnings
-
 import numpy as np
+import subprocess
+import yaml
 
 # Click
 from click.testing import CliRunner
 from monty.serialization import loadfn
+
 
 # Pymatgen
 from pymatgen.core.structure import Structure
@@ -1506,12 +1506,11 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        self.assertTrue(
-            filecmp.cmp(
-                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
-            )
-        )
+        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
+                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+            test_yaml = yaml.safe_load(test)
+            new_yaml = yaml.safe_load(new)
+        self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # CASTEP
@@ -1532,12 +1531,11 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        self.assertTrue(
-            filecmp.cmp(
-                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
-            )
-        )
+        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
+                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+            test_yaml = yaml.safe_load(test)
+            new_yaml = yaml.safe_load(new)
+        self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # Espresso
@@ -1558,12 +1556,11 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        self.assertTrue(
-            filecmp.cmp(
-                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
-            )
-        )
+        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
+                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+            test_yaml = yaml.safe_load(test)
+            new_yaml = yaml.safe_load(new)
+        self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
         # FHI-aims
@@ -1584,12 +1581,11 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        self.assertTrue(
-            filecmp.cmp(
-                f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
-                f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
-            )
-        )
+        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
+                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+            test_yaml = yaml.safe_load(test)
+            new_yaml = yaml.safe_load(new)
+        self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
     def test_analyse(self):
