@@ -1,23 +1,23 @@
 """ShakeNBreak command-line-interface (CLI)"""
+import fnmatch
 import os
 import pickle
-from copy import deepcopy
-import numpy as np
-import click
 import warnings
+from copy import deepcopy
 from subprocess import call
-import fnmatch
+
+import click
+import numpy as np
+from monty.json import MontyDecoder
 
 # Monty and pymatgen
 from monty.serialization import loadfn
-from monty.json import MontyDecoder
-
-from pymatgen.core.structure import Structure, Element
-from pymatgen.io.vasp.inputs import Incar
 from pymatgen.analysis.defects.core import Defect
+from pymatgen.core.structure import Element, Structure
+from pymatgen.io.vasp.inputs import Incar
 
 # ShakeNBreak
-from shakenbreak import io, input, analysis, plotting, energy_lowering_distortions
+from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
 
 
 def identify_defect(

@@ -1,19 +1,18 @@
 """Module containing functions for applying distortions to defect structures"""
-import sys
 import os
+import sys
 import warnings
 from typing import Optional
+
 import numpy as np
-
-from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.analysis.local_env import MinimumDistanceNN
-
 from ase.neighborlist import NeighborList
 from hiphive.structure_generation.rattle import (
-    generate_mc_rattled_structures,
     _probability_mc_rattle,
+    generate_mc_rattled_structures,
 )
+from pymatgen.analysis.local_env import MinimumDistanceNN
+from pymatgen.core.structure import Structure
+from pymatgen.io.ase import AseAtomsAdaptor
 
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):

@@ -1,20 +1,18 @@
-import unittest
-from unittest.mock import patch
+import datetime
 import os
 import shutil
+import unittest
 import warnings
 from copy import deepcopy
-import pytest
-import datetime
-
-import numpy as np
-from monty.serialization import loadfn, dumpfn
+from unittest.mock import patch
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+from monty.serialization import dumpfn, loadfn
 
-from shakenbreak import analysis
-from shakenbreak import plotting
+from shakenbreak import analysis, plotting
 
 
 def if_present_rm(path):

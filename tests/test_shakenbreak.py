@@ -1,19 +1,14 @@
-import unittest
 import os
-from unittest.mock import patch, call
-import shutil
 import pickle
+import shutil
+import unittest
+from unittest.mock import call, patch
+
 import pytest
-
-from pymatgen.core.structure import Structure
 from monty.serialization import dumpfn
-from shakenbreak import (
-    input,
-    energy_lowering_distortions,
-    plotting,
-    io,
-)
+from pymatgen.core.structure import Structure
 
+from shakenbreak import energy_lowering_distortions, input, io, plotting
 
 file_path = os.path.dirname(__file__)
 

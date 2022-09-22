@@ -2,18 +2,18 @@
 Module containing functions to plot distorted defect relaxation outputs and identify
 energy-lowering distortions.
 """
+import datetime
 import os
 import shutil
 import warnings
-import datetime
 from typing import Optional, Tuple
-import numpy as np
 
 import matplotlib as mpl
-from matplotlib import font_manager
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
 import seaborn as sns
+from matplotlib import font_manager
+from matplotlib.figure import Figure
 
 from shakenbreak import analysis
 
