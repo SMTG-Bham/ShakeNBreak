@@ -3,6 +3,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 [![status](https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25/status.svg)](https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25)
+[![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 <!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
 
 # `ShakeNBreak` (`SnB`)
