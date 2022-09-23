@@ -3,6 +3,8 @@
 exclude: ^(docs|tests|SnB_input_files|.github|shakenbreak/bash_scripts|CITATION*|MANIFEST*)
 repos:
 
+
+ # Remove trailing whitespace, leave empty line at end of file
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0
     hooks:
@@ -15,18 +17,28 @@ repos:
 #    hooks:
 #      - id: mypy
 
+# Sort/format imports
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
       - id: isort
         args: [--profile, black]
 
+# Check docstrings
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 4.0.0  # pick a git hash / tag to point to
+    hooks:
+      - id: pydocstyle
+        args: [-e, --count, "--convention=google", "--add-ignore=D107,D202,D400,D415,D212,D205,D417,D413"]
+
+# Code formatting
   - repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:
       - id: black
         args: [--line-length, "88", --color]
 
+# Check code formatting
   - repo: https://github.com/PyCQA/flake8
     rev: 5.0.2
     hooks:

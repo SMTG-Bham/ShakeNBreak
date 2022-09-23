@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-This is a setup.py script to install ShakeNBreak
-"""
+"""This is a setup.py script to install ShakeNBreak"""
+
 import os
 import warnings
 from distutils.cmd import Command
@@ -95,18 +93,31 @@ class PostDevelopCommand(develop):
     """Post-installation for development mode."""
 
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         develop.run(self)
         _install_custom_font()
 
 
 class CustomEggInfoCommand(egg_info):
+    """Post-installation"""
+
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         egg_info.run(self)
         _install_custom_font()
 
 
 # https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
 def package_files(directory):
+    """Include package data."""
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
@@ -168,6 +179,7 @@ setup(
             "sphinx",
             "sphinx-book-theme",
             "sphinx_click",
+            "sphinx_design",
         ],
         "pdf": [
             "pycairo",

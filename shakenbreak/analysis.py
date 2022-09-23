@@ -141,6 +141,7 @@ def _format_distortion_names(
     """
     Formats the distortion filename to the names used internally and for
     analysis. (i.e. 'Bond_Distortion_-50.0%' -> -0.5)
+
     Args:
         distortion_label (:obj:`str`):
             distortion label used for file names.

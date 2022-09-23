@@ -3,17 +3,15 @@ import json
 import os
 import pickle
 import shutil
+import subprocess
 import unittest
 import warnings
-import numpy as np
-import subprocess
-import yaml
 
+import numpy as np
+import yaml
 # Click
 from click.testing import CliRunner
 from monty.serialization import loadfn
-
-
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar
