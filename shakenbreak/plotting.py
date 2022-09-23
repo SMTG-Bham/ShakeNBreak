@@ -1292,7 +1292,11 @@ def plot_colorbar(
                 alpha=1,
             )
 
-        if len(sorted_distortions) > 1:  # more than just Rattled
+        if (
+            len(sorted_distortions) > 0
+            and len([key for key in energies_dict["distortions"] if key != "Rattled"])
+            > 0
+        ):  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
                     i
@@ -1600,7 +1604,10 @@ def plot_datasets(
                     label="Rattled",
                 )
 
-            if len(sorted_distortions) > 1:  # more that just rattled
+            if (
+                len(sorted_distortions) > 0
+                and len([key for key in dataset["distortions"] if key != "Rattled"]) > 0
+            ):  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
                         i
