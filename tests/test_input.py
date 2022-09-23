@@ -854,7 +854,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -865,7 +865,7 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2_Int_Cd_2",
+            "-60.0%__num_neighbours=2__Int_Cd_2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
@@ -895,7 +895,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             V_Cd_minus0pt5_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
 
         self.assertFalse(os.path.exists("vac_1_Cd_0/Rattled"))
