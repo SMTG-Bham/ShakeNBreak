@@ -69,6 +69,25 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         ]:
             if_present_rm(i)
 
+    def test__format_distortion_names(self):
+        self.assertEqual(
+            "Unperturbed", analysis._format_distortion_names("Unperturbed")
+        )
+        self.assertEqual("Rattled", analysis._format_distortion_names("Rattled"))
+        self.assertEqual(
+            0.3, analysis._format_distortion_names("Bond_Distortion_30.0%")
+        )
+        self.assertEqual(
+            "-20.0%_from_3",
+            analysis._format_distortion_names("Bond_Distortion_-20.0%_from_3"),
+        )
+        self.assertEqual(
+            "Rattled_from_-1", analysis._format_distortion_names("Rattled_from_-1")
+        )
+        self.assertEqual(
+            "Label_not_recognized", analysis._format_distortion_names("Wally_McDoodle")
+        )
+
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
         gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
