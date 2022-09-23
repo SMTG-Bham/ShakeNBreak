@@ -39,8 +39,8 @@ Analysis
 To analyse the structures obtained from the relaxations, we can use ``snb-analyse``.
 It will generate ``csv`` files for a given/all defects with the final energies
 and structural similarities between the final configurations and a reference one
-(by default the undistorted one). Structural similarity is measured with two metrics: 
-a) the sum of atomic displacements between matched sites and b) the maximum distance 
+(by default the undistorted one). Structural similarity is measured with two metrics:
+a) the sum of atomic displacements between matched sites and b) the maximum distance
 between matched sites. For instance, to analyse the results obtained with ``VASP``
 for the defect ``vac_1_Cd_0``, we can use:
 
@@ -48,11 +48,12 @@ for the defect ``vac_1_Cd_0``, we can use:
 
     $ snb-analyse --defect vac_1_Cd_0 --code vasp --path defects_folder
 
-Further analysis tools are provided through the python API. These are documented in
-the section :ref:`shakenbreak.analysis <api_analysis>`
-and exemplified in the
-`example notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_
-(Section 5: Analyse defect distortions).
+.. NOTE::
+    Further analysis tools are provided through the python API. These are documented in
+    the section :ref:`shakenbreak.analysis <api_analysis>`
+    and exemplified in the
+    `example notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_
+    (Section 5: Analyse defect distortions).
 
 Plotting
 -----------
@@ -79,7 +80,7 @@ similarity between the structures:
     $ snb-plot --defect vac_1_Cd_0 --path defects_folder --colorbar
 
 .. image:: ./vac_1_Cd_0_colorbar.svg
-    :width: 400px
+    :width: 450px
 
 ..
     data from example_results folder
