@@ -278,9 +278,9 @@ def _purge_data_dicts(
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
     To achieve this, it removes:
-    - Any data point from disp_dict if its energy is not in the energy dict \
+    - Any data point from disp_dict if its energy is not in the energy dict
         (this may be due to relaxation not converged).
-    - Any data point from energies_dict if its displacement is not in the disp_dict\
+    - Any data point from energies_dict if its displacement is not in the disp_dict
         (this might be due to the lattice matching algorithm failing).
 
     Args:
@@ -1294,7 +1294,9 @@ def plot_colorbar(
         else:
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
-                    i for i in range(len(sorted_distortions)) if i not in imported_indices.values()
+                    i
+                    for i in range(len(sorted_distortions))
+                    if i not in imported_indices.values()
                 ]
             else:
                 non_imported_sorted_indices = range(len(sorted_distortions))
@@ -1372,8 +1374,10 @@ def plot_colorbar(
             )
             # set xlim to distortion_range + 5% (matplotlib default padding)
             ax.set_xlim(
-                distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
-                distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[0]
+                - 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[1]
+                + 0.05 * (distortion_range[1] - distortion_range[0]),
             )
 
             # Formatting of tick labels.
@@ -1387,7 +1391,9 @@ def plot_colorbar(
                 ],
             )
 
-        plt.legend(frameon=True).set_zorder(100)  # make sure it's on top of the other points
+        plt.legend(frameon=True).set_zorder(
+            100
+        )  # make sure it's on top of the other points
 
         _ = _format_colorbar(
             fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
@@ -1595,8 +1601,9 @@ def plot_datasets(
             else:
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
-                        i for i in range(len(sorted_distortions)) if
-                        i not in imported_indices.values()
+                        i
+                        for i in range(len(sorted_distortions))
+                        if i not in imported_indices.values()
                     ]
                 else:
                     non_imported_sorted_indices = range(len(sorted_distortions))
@@ -1694,7 +1701,9 @@ def plot_datasets(
         ],
     )
 
-    ax.legend(frameon=True).set_zorder(100)  # show legend on top of all other datapoints
+    ax.legend(frameon=True).set_zorder(
+        100
+    )  # show legend on top of all other datapoints
 
     if save_plot:  # Save plot?
         _save_plot(
