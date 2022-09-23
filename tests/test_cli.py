@@ -9,9 +9,11 @@ import warnings
 
 import numpy as np
 import yaml
+
 # Click
 from click.testing import CliRunner
 from monty.serialization import loadfn
+
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar
