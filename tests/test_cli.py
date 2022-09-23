@@ -170,7 +170,7 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            "-50.0%__num_neighbours=2_Vac_Cd_mult32",
+            "-50.0%__num_neighbours=2__Vac_Cd_mult32",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
@@ -720,7 +720,7 @@ local_rattle: False
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            "-50.0%__num_neighbours=2_Wally_McDoodle",
+            "-50.0%__num_neighbours=2__Wally_McDoodle",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
@@ -2171,7 +2171,7 @@ local_rattle: True"""
             os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
             f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
             result.output,
         )
@@ -2202,7 +2202,7 @@ local_rattle: True"""
             )
         )
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
             f" {self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR",
             result.output,
         )
@@ -2240,7 +2240,7 @@ local_rattle: True"""
         result = runner.invoke(snb, ["groundstate"], catch_exceptions=False)
         self.assertTrue(os.path.exists("Groundstate/POSCAR"))
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
             f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
             result.output,
         )
@@ -2275,7 +2275,7 @@ local_rattle: True"""
         )
         self.assertTrue(os.path.exists("Groundstate/POSCAR"))
         self.assertIn(
-            f"{defect}: Gound state structure (found with -0.55 distortion) saved to"
+            f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
             f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
             result.output,
         )

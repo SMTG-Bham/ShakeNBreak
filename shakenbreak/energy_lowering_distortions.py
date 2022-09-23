@@ -25,6 +25,14 @@ def _format_distortion_directory_name(
     output_path: str,
 ) -> str:
     """Format name of distortion directory."""
+    if (
+        isinstance(distorted_distortion, str)
+        and "%" in distorted_distortion
+        and "Bond_Distortion_" not in distorted_distortion
+    ):
+        # if a string but not Unperturbed or Rattled, add "Bond_Distortion_" to the start
+        distorted_distortion = "Bond_Distortion_" + distorted_distortion
+
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
         distorted_dir = (
             f"{output_path}/{defect_species}/{distorted_distortion}_from"
@@ -1194,7 +1202,7 @@ def write_groundstate_structure(
             )
             if verbose:
                 print(
-                    f"{species}: Gound state structure (found with "
+                    f"{species}: Ground state structure (found with "
                     f"{gs_distortion} distortion) saved to {destination_path}"
                 )
         else:

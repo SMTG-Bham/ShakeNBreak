@@ -161,6 +161,18 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 -0.35, 7, "my_defect_species", "my_output_path"
             ),
         )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Bond_Distortion_35.0%_from_1",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "35.0%_from_1", 1, "my_defect_species", "my_output_path"
+            ),
+        )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Bond_Distortion_35.0%_from_2",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "35.0%", 2, "my_defect_species", "my_output_path"
+            ),
+        )
 
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
@@ -821,9 +833,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled/CONTCAR"),
         )
         shutil.copy(
-            os.path.join(
-                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR"
-            ),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR"),
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Unperturbed/CONTCAR"),
         )
 
@@ -838,7 +848,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         print(comparison_results[3])
         np.testing.assert_almost_equal(comparison_results[2], -0.15)
         self.assertEqual(comparison_results[3], "Rattled_from_1")
-
 
     def test_write_distorted_inputs(self):
         """Test write_distorted_inputs()."""
