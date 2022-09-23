@@ -668,9 +668,8 @@ def compare_struct_to_distortions(
             == "Unperturbed"  # if present, otherwise empty
         ]
         rattled_df = matching_sub_df[
-            matching_sub_df["Bond Distortion"]
-            == "Rattled"  # if present, otherwise empty
-        ]
+            matching_sub_df["Bond Distortion"].apply(lambda x: "Rattled" in str(x))
+        ]  # if present, otherwise empty
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(
                 lambda x: isinstance(x, float)
