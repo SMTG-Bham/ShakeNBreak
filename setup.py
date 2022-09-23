@@ -1,7 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-This is a setup.py script to install ShakeNBreak
-"""
+"""This is a setup.py script to install ShakeNBreak"""
+
 import os
 import warnings
 from distutils.cmd import Command
@@ -28,7 +26,7 @@ def _install_custom_font():
 
             import matplotlib as mpl
             import matplotlib.font_manager
-        except:
+        except Exception:
             print("Cannot import matplotlib!")
 
         # Find where matplotlib stores its True Type fonts
@@ -46,7 +44,7 @@ def _install_custom_font():
                     print("Copying " + old_path + " -> " + new_path)
                 else:
                     print(f"No ttf fonts found in the {fonts_dir} directory.")
-        except:
+        except Exception:
             pass
 
         # Try to delete matplotlib's fontList cache
@@ -66,7 +64,7 @@ def _install_custom_font():
             matplotlib.font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
             print(f"Adding {font} font to matplotlib fonts.")
 
-    except:
+    except Exception:
         warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
             The widely available Helvetica font will be used instead."""
         warnings.warn(warning_msg)
@@ -95,18 +93,31 @@ class PostDevelopCommand(develop):
     """Post-installation for development mode."""
 
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         develop.run(self)
         _install_custom_font()
 
 
 class CustomEggInfoCommand(egg_info):
+    """Post-installation"""
+
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         egg_info.run(self)
         _install_custom_font()
 
 
 # https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
 def package_files(directory):
+    """Include package data."""
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
@@ -168,6 +179,7 @@ setup(
             "sphinx",
             "sphinx-book-theme",
             "sphinx_click",
+            "sphinx_design",
         ],
         "pdf": [
             "pycairo",
