@@ -1266,7 +1266,6 @@ class Distortions:
         structures.
 
         Args:
-
             incar_settings (:obj:`dict`):
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults

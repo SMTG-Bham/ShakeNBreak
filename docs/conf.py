@@ -40,8 +40,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_click',
+    'sphinx_design',
     # 'sphinx_mdinclude',
-    "myst_nb",  # for jupyter notebooks
+    'myst_nb',  # for jupyter notebooks
     # 'myst_parser',
 ]
 
@@ -58,6 +59,9 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+myst_enable_extensions = [
+    "html_admonition",
+]
 
 # -- Options for HTML output -------------------------------------------------
 
