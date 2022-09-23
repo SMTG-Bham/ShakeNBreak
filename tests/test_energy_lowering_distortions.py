@@ -792,6 +792,54 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], set()
             )
 
+    def test_compare_struct_to_distortions(self):
+        # test case where matching distortion is "Rattled_from_..."
+        fake_energies_dict = {
+            "distortions": {
+                "Rattled_from_1": -205.950,
+                "Rattled": -205.500,
+            },  # rattled from 1 lowest energy
+            "Unperturbed": -205.800,
+        }
+        dumpfn(
+            fake_energies_dict,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.yaml"),
+        )
+        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_1"))
+        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled"))
+        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Unperturbed"))
+        shutil.copy(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+            ),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_1/CONTCAR"),
+        )
+        shutil.copy(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR"
+            ),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled/CONTCAR"),
+        )
+        shutil.copy(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR"
+            ),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Unperturbed/CONTCAR"),
+        )
+
+        comparison_results = energy_lowering_distortions.compare_struct_to_distortions(
+            distorted_struct=self.V_Cd_minus_0pt55_structure,
+            defect_species="vac_1_Cd_-1",
+            output_path=self.VASP_CDTE_DATA_DIR,
+        )
+        self.assertTrue(comparison_results[0])
+        self.assertEqual(comparison_results[1], self.V_Cd_minus_0pt55_structure)
+        print(comparison_results[2])
+        print(comparison_results[3])
+        np.testing.assert_almost_equal(comparison_results[2], -0.15)
+        self.assertEqual(comparison_results[3], "Rattled_from_1")
+
+
     def test_write_distorted_inputs(self):
         """Test write_distorted_inputs()."""
         for fake_distortion_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
