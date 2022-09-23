@@ -32,7 +32,7 @@ def _format_distortion_directory_name(
         )
     elif isinstance(distorted_distortion, str) and "_from_" in distorted_distortion:
         distorted_dir = (
-            f"{output_path}/{defect_species}/Bond_Distortion_" f"{distorted_distortion}"
+            f"{output_path}/{defect_species}/Bond_Distortion_{distorted_distortion}"
         )
     else:
         distorted_dir = (

@@ -31,8 +31,6 @@ def _warning_on_one_line(
     category,
     filename,
     lineno,
-    file=None,
-    line=None,
 ):
     """Format warnings output."""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
@@ -149,7 +147,7 @@ def _format_distortion_names(
     Returns:
         distortion (:obj:`float` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
-            "Unperturbed"/"Rattled"/"-60.0%_from_2")
+            "Unperturbed"/"Rattled"/"-60.0%_from_2"/"Rattled_from_-1")
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
@@ -167,6 +165,8 @@ def _format_distortion_names(
     ):
         # distortions from other charge state of the defect
         distortion = distortion_label.split("Bond_Distortion_")[-1]
+    elif "Rattled" in distortion_label and "_from_" in distortion_label:
+        distortion = distortion_label
     else:
         distortion = "Label_not_recognized"
     return distortion
