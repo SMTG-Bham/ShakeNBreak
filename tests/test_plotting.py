@@ -5,6 +5,7 @@ import unittest
 import warnings
 from copy import deepcopy
 from unittest.mock import patch
+from collections import OrderedDict
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -83,6 +84,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         for file in os.listdir(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0"):
             if file.endswith(".svg"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/{file}")
+        if_present_rm("Int_Se_1_6.png")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
@@ -482,7 +484,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
         # Saving to defect_dir subfolder in output_path
         fig, ax = plt.subplots(1, 1)
         defect_name = "vac_1_Cd_0"
-        if_present_rm(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
+        if_present_rm(
+            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+        )
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
             record=True
         ) as w:
@@ -662,6 +666,53 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="Int_Se_1_6.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_colorbar_with_rattled_and_imported(self):
+        """Test plot_colorbar() function with both rattled and imported charge states"""
+        energies_dict = OrderedDict(
+            [
+                ("Unperturbed", 0.0),
+                (
+                    "distortions",
+                    OrderedDict(
+                        [
+                            ("-10.0%_from_3", -0.11105410999999776),
+                            ("-10.0%_from_5", -0.1296013099999982),
+                            ("-30.0%_from_-1", -0.005485309999983201),
+                            ("40.0%_from_2", -0.16661439000000655),
+                            ("Rattled", -0.006377469999961249),
+                            ("Rattled_from_-2", 0.028722570000013548),
+                        ]
+                    ),
+                ),
+            ]
+        )
+
+        disp_dict = {
+            "-10.0%_from_3": 1.112352762765469,
+            "-10.0%_from_5": 1.171835067840965,
+            "Unperturbed": 3.1787764299674696e-15,
+            "Rattled_from_-2": 0.2929755991022341,
+            "40.0%_from_2": 1.9083985789588656,
+            "-30.0%_from_-1": 0.22806204637713037,
+            "Rattled": 0.245274020987905,
+        }
+
+        fig = plotting.plot_colorbar(
+            energies_dict=energies_dict,
+            disp_dict=disp_dict,
+            defect_species="Int_Se_1_6",
+            save_format="png",
+            save_plot=True,
+        )
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "Int_Se_1_6.png")))
+        return fig
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
         filename="vac_1_Cd_0_colors.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
@@ -683,7 +734,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
             colors=["green", "orange"],
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.VASP_CDTE_DATA_DIR,"vac_1_Cd_0/vac_1_Cd_0.png"))
+            os.path.exists(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.png")
+            )
         )
         return fig
 

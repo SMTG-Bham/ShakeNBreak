@@ -1291,7 +1291,8 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
-        else:
+
+        if len(sorted_distortions) > 1:  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
                     i
@@ -1313,15 +1314,17 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
-            ax.plot(  # Line connecting points
-                [sorted_distortions[i] for i in non_imported_sorted_indices],
-                [sorted_energies[i] for i in non_imported_sorted_indices],
-                ls="-",
-                markersize=1,
-                marker="o",
-                color=line_color,
-                label=legend_label,
-            )
+            if len(non_imported_sorted_indices) > 1:  # more than one point
+                # Plot line connecting points
+                ax.plot(
+                    [sorted_distortions[i] for i in non_imported_sorted_indices],
+                    [sorted_energies[i] for i in non_imported_sorted_indices],
+                    ls="-",
+                    markersize=1,
+                    marker="o",
+                    color=line_color,
+                    label=legend_label,
+                )
 
             # Datapoints from other charge states
             if imported_indices:
@@ -1352,44 +1355,42 @@ def plot_colorbar(
                         f"charge state",
                     )
 
-            # Plot reference energy
-            unperturbed_color = colormap(
-                0
-            )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
-            # respect to this structure)
-            ax.scatter(
-                0,
+        # Plot reference energy
+        unperturbed_color = colormap(
+            0
+        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
+        # respect to this structure)
+        ax.scatter(
+            0,
+            energies_dict["Unperturbed"],
+            color=unperturbed_color,
+            ls="None",
+            s=120,
+            marker="d",
+            label="Unperturbed",
+        )
+
+        # distortion_range is sorted_distortions range, including 0 if above/below this range
+        distortion_range = (
+            min(sorted_distortions + (0,)),
+            max(sorted_distortions + (0,)),
+        )
+        # set xlim to distortion_range + 5% (matplotlib default padding)
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
+
+        # Formatting of tick labels.
+        # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
+        # 2 if deltaE > 0.1 eV, otherwise 3.
+        ax = _format_tick_labels(
+            ax=ax,
+            energy_range=list(energies_dict["distortions"].values())
+            + [
                 energies_dict["Unperturbed"],
-                color=unperturbed_color,
-                ls="None",
-                s=120,
-                marker="d",
-                label="Unperturbed",
-            )
-
-            # distortion_range is sorted_distortions range, including 0 if above/below this range
-            distortion_range = (
-                min(sorted_distortions + (0,)),
-                max(sorted_distortions + (0,)),
-            )
-            # set xlim to distortion_range + 5% (matplotlib default padding)
-            ax.set_xlim(
-                distortion_range[0]
-                - 0.05 * (distortion_range[1] - distortion_range[0]),
-                distortion_range[1]
-                + 0.05 * (distortion_range[1] - distortion_range[0]),
-            )
-
-            # Formatting of tick labels.
-            # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
-            # 2 if deltaE > 0.1 eV, otherwise 3.
-            ax = _format_tick_labels(
-                ax=ax,
-                energy_range=list(energies_dict["distortions"].values())
-                + [
-                    energies_dict["Unperturbed"],
-                ],
-            )
+            ],
+        )
 
         plt.legend(frameon=True).set_zorder(
             100
@@ -1598,7 +1599,8 @@ def plot_datasets(
                     marker=default_style_settings["marker"],
                     label="Rattled",
                 )
-            else:
+
+            if len(sorted_distortions) > 1:  # more that just rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
                         i
@@ -1608,17 +1610,18 @@ def plot_datasets(
                 else:
                     non_imported_sorted_indices = range(len(sorted_distortions))
 
-                # Plot non-imported distortions
-                ax.plot(  # plot bond distortions
-                    [sorted_distortions[i] for i in non_imported_sorted_indices],
-                    [sorted_energies[i] for i in non_imported_sorted_indices],
-                    c=colors[dataset_number],
-                    markersize=default_style_settings["markersize"],
-                    marker=default_style_settings["marker"],
-                    linestyle=default_style_settings["linestyle"],
-                    label=dataset_labels[dataset_number],
-                    linewidth=default_style_settings["linewidth"],
-                )
+                if len(non_imported_sorted_indices) > 1:  # more than one point
+                    # Plot non-imported distortions
+                    ax.plot(  # plot bond distortions
+                        [sorted_distortions[i] for i in non_imported_sorted_indices],
+                        [sorted_energies[i] for i in non_imported_sorted_indices],
+                        c=colors[dataset_number],
+                        markersize=default_style_settings["markersize"],
+                        marker=default_style_settings["marker"],
+                        linestyle=default_style_settings["linestyle"],
+                        label=dataset_labels[dataset_number],
+                        linewidth=default_style_settings["linewidth"],
+                    )
 
             if imported_indices:
                 other_charges = len(
