@@ -1079,7 +1079,7 @@ class Distortions:
                     "num_nearest_neighbours"
                 ]
             )
-            + "_"
+            + "__"
             + defect_name
         )
         return poscar_comment
