@@ -130,6 +130,38 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                         )
                     )
 
+    def test__format_distortion_directory_name(self):
+        self.assertEqual(
+            "my_output_path/my_defect_species/Unperturbed_from_2",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "Unperturbed", 2, "my_defect_species", "my_output_path"
+            ),
+        )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Rattled_from_-2",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "Rattled", -2, "my_defect_species", "my_output_path"
+            ),
+        )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Unperturbed_from_3",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "Unperturbed_from_3", 2, "my_defect_species", "my_output_path"
+            ),
+        )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Rattled_from_-3",
+            energy_lowering_distortions._format_distortion_directory_name(
+                "Rattled_from_-3", -2, "my_defect_species", "my_output_path"
+            ),
+        )
+        self.assertEqual(
+            "my_output_path/my_defect_species/Bond_Distortion_-35.0%_from_7",
+            energy_lowering_distortions._format_distortion_directory_name(
+                -0.35, 7, "my_defect_species", "my_output_path"
+            ),
+        )
+
     def test_read_defects_directories(self):
         """Test reading defect directories and parsing to dictionaries"""
         for defect_dir in ["Int_Cd_2_1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
@@ -482,7 +514,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )  # same call as before, but with stol
             # self.assertEqual(
             #     len(w), 21
-            # )  # many warnings due to difficulty in structure matching (20), no data parsed from Int_Cd_2_1 (1)
+            # )  # many warnings due to difficulty in structure matching (20), no data parsed
+            # from Int_Cd_2_1 (1)
             # with small stol (confirming stol has been passed to compare_structures)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)

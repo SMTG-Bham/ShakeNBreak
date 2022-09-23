@@ -31,6 +31,8 @@ def _warning_on_one_line(
     category,
     filename,
     lineno,
+    file=None,  # pylint: disable=unused-argument  # required for warnings.formatwarning
+    line=None,  # pylint: disable=unused-argument
 ):
     """Format warnings output."""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"

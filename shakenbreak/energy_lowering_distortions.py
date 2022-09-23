@@ -27,13 +27,12 @@ def _format_distortion_directory_name(
     """Format name of distortion directory."""
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
         distorted_dir = (
-            f"{output_path}/{defect_species}/Bond_Distortion_"
-            f"{distorted_distortion}_from_{distorted_charge}"
+            f"{output_path}/{defect_species}/{distorted_distortion}_from"
+            f"_{distorted_charge}"
         )
+        # don't add "Bond_Distortion_" for "Unperturbed" or "Rattled"
     elif isinstance(distorted_distortion, str) and "_from_" in distorted_distortion:
-        distorted_dir = (
-            f"{output_path}/{defect_species}/Bond_Distortion_{distorted_distortion}"
-        )
+        distorted_dir = f"{output_path}/{defect_species}/{distorted_distortion}"
     else:
         distorted_dir = (
             f"{output_path}/{defect_species}/Bond_Distortion_"
