@@ -183,7 +183,11 @@ def identify_defect(
     return defect
 
 
-def generate_defect_dict(defect_object, charges, defect_name) -> dict:
+def generate_defect_dict(
+    defect_object: dict,
+    charges: list,
+    defect_name: str,
+) -> dict:
     """
     Create defect dictionary from a pymatgen Defect object.
 
