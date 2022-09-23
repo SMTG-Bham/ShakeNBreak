@@ -2,24 +2,74 @@
 Module containing functions to plot distorted defect relaxation outputs and identify
 energy-lowering distortions.
 """
+import datetime
 import os
+import shutil
 import warnings
 from typing import Optional, Tuple
-import numpy as np
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
+import numpy as np
 import seaborn as sns
+from matplotlib import font_manager
+from matplotlib.figure import Figure
 
 from shakenbreak import analysis
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def _install_custom_font():
+    """Check if SnB custom font has been installed, and install it otherwise."""
+    # Find where matplotlib stores its True Type fonts
+    mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
+    mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
+    custom_fonts = [
+        font
+        for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
+        if "montserrat" in font.lower()
+    ]
+    if not custom_fonts:  # If custom hasn't been installed, install it
+        print("Trying to install ShakeNBreak custom font...")
+        try:
+            # Copy the font file to matplotlib's True Type font directory
+            fonts_dir = f"{MODULE_DIR}/../fonts/"
+            try:
+                for file_name in os.listdir(fonts_dir):
+                    if ".ttf" in file_name:  # must be in ttf format for matplotlib
+                        old_path = os.path.join(fonts_dir, file_name)
+                        new_path = os.path.join(mpl_fonts_dir, file_name)
+                        shutil.copyfile(old_path, new_path)
+                        print("Copying " + old_path + " -> " + new_path)
+                    else:
+                        print(f"No ttf fonts found in the {fonts_dir} directory.")
+            except Exception:
+                pass
+
+            # Try to delete matplotlib's fontList cache
+            mpl_cache_dir = mpl.get_cachedir()
+            mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
+            if "fontList.cache" in mpl_cache_dir_ls:
+                fontList_path = os.path.join(mpl_cache_dir, "fontList.cache")
+                if fontList_path:
+                    os.remove(fontList_path)
+                    print("Deleted the matplotlib fontList.cache.")
+            else:
+                print("Couldn't find matplotlib cache, so will continue.")
+
+            # Add font to MAtplotlib Fontmanager
+            for font in os.listdir(fonts_dir):
+                font_manager._load_fontmanager(try_read_cache=False)
+                font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
+                print(f"Adding {font} font to matplotlib fonts.")
+        except Exception:
+            warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
+                The widely available Helvetica font will be used instead."""
+            warnings.warn(warning_msg)
+
+
 # Helper functions for formatting plots
-
-
 def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
@@ -113,7 +163,7 @@ def _format_defect_name(
         charge = "+" + str(charge)  # show positive charges with a + sign
     defect_type = defect_species.split("_")[0]  # vac, as or int
     if (
-        defect_type == "Int"
+        defect_type.capitalize() == "Int"
     ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
         site_element = defect_species.split("_")[1]
         site = defect_species.split("_")[2]
@@ -129,22 +179,22 @@ def _format_defect_name(
         site_element = defect_species.split("_")[2]  # element at defect site
 
     if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
             # double brackets to treat it literally (tex), then extra {} for
             # python str formatting
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError("Defect type not recognized. Please check spelling.")
     else:
-        if defect_type == "vac":
+        if defect_type.lower() == "vac":
             defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type in ["as", "sub"]:
+        elif defect_type.lower() in ["as", "sub"]:
             subs_element = defect_species.split("_")[4]
             defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type != "Int":
+        elif defect_type.capitalize() != "Int":
             raise ValueError(
                 f"Defect type {defect_type} not recognized. Please check spelling."
             )
@@ -228,9 +278,9 @@ def _purge_data_dicts(
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
     To achieve this, it removes:
-    - Any data point from disp_dict if its energy is not in the energy dict \
+    - Any data point from disp_dict if its energy is not in the energy dict
         (this may be due to relaxation not converged).
-    - Any data point from energies_dict if its displacement is not in the disp_dict\
+    - Any data point from energies_dict if its displacement is not in the disp_dict
         (this might be due to the lattice matching algorithm failing).
 
     Args:
@@ -400,9 +450,11 @@ def _format_datapoints_from_other_chargestates(
     # Store indices of imported structures ("X%_from_Y") to plot differently later
     # comparison
     imported_indices = []
+    imported_energies = []
     for i, entry in enumerate(energies_dict["distortions"].keys()):
         if isinstance(entry, str) and "_from_" in entry:
             imported_indices.append(i)
+            imported_energies.append(energies_dict["distortions"][entry])
 
     # Reformat any "X%_from_Y" or "Rattled_from_Y" distortions to corresponding
     # (X) distortion factor or 0.0 for "Rattled"
@@ -426,7 +478,7 @@ def _format_datapoints_from_other_chargestates(
             for k in energies_dict["distortions"].keys()
             if k in disp_dict.keys()
         ]
-        # Save the values of the displ. from *other charge states*
+        # Save the values of the displacements from *other charge states*
         # As the displacements will be re-sorted -> we'll need to
         # find the index of t
         disps_from_other_charges = (sorted_disp[i] for i in imported_indices)
@@ -457,6 +509,10 @@ def _format_datapoints_from_other_chargestates(
         sorted_distortions, sorted_energies = zip(
             *sorted(zip(keys, energies_dict["distortions"].values()))
         )
+        imported_indices = {  # unsorted_index: sorted_index
+            unsorted_index: sorted_energies.index(d)
+            for unsorted_index, d in zip(imported_indices, imported_energies)
+        }
         return imported_indices, keys, sorted_distortions, sorted_energies
     except ValueError:  # if keys and energies_dict["distortions"] are empty
         # (i.e. the only distortion is Rattled)
@@ -466,34 +522,78 @@ def _format_datapoints_from_other_chargestates(
 def _save_plot(
     fig: plt.Figure,
     defect_name: str,
+    output_path: str,
     save_format: str,
     verbose: bool = True,
 ) -> None:
     """
-    Save plot in directory `distortion_plots`.
+    Save plot in the defect directory. If defect directory not present/recognised, save to cwd.
+    If previous saved plots with the same name exist, rename to <defect>_<datetime>.<format> to
+    prevent overwriting.
 
     Args:
         fig (:obj:`mpl.figure.Figure`):
-            mpl.figure.Figure object to save
-        defect_name (:obj:`std`):
-            Defect name that will be used as file name.
+            mpl.figure.Figure object to save.
+        defect_name (:obj:`str`):
+            Defect name that will be used as file name and for identifying defect folder.
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the plot).
         save_format (:obj:`str`):
             Format to save the plot as, given as string.
+        verbose (:obj:`bool`, optional):
+            Whether to print information about the saved plot. Defaults to True.
 
     Returns:
         None
     """
-    wd = os.getcwd()
-    if not os.path.isdir(wd + "/distortion_plots/"):
-        os.mkdir(wd + "/distortion_plots/")
-    if verbose:
-        print(f"Plot saved to {wd}/distortion_plots/")
+    # Locate defect directory; either subfolder in output_path or cwd
+    defect_dir = os.path.join(output_path, defect_name)
+    if not os.path.isdir(defect_dir):
+        defect_dir = output_path
+
+    plot_filepath = f"{os.path.join(defect_dir, defect_name)}.{save_format}"
+    # If plot already exists, rename to <defect>_<datetime>.<format>
+    if os.path.exists(plot_filepath):
+        current_datetime = datetime.datetime.now().strftime(
+            "%Y-%m-%d-%H-%M"
+        )  # keep copy of old plot file
+        os.rename(
+            plot_filepath,
+            f"{os.path.join(defect_dir, defect_name)}_{current_datetime}.{save_format}",
+        )
+        if verbose:
+            print(
+                f"Previous version of {os.path.basename(plot_filepath)} found in "
+                f"output_path: '{os.path.basename(os.path.dirname(plot_filepath))}/'. Will rename "
+                f"old plot to {defect_name}_{current_datetime}.{save_format}."
+            )
+
+    # use pycairo as backend if installed and save_format is pdf:
+    backend = None
+    if "pdf" in save_format:
+        try:
+            import cairo
+
+            backend = "cairo"
+        except ImportError:
+            warnings.warn(
+                "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
+                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
+                "`pip install pycairo` if you want ShakeNBreak's default font."
+            )
+
     fig.savefig(
-        wd + "/distortion_plots/" + defect_name + f".{save_format}",
+        plot_filepath,
         format=save_format,
         transparent=True,
         bbox_inches="tight",
+        backend=backend,
     )
+    if verbose:
+        print(
+            f"Plot saved to {os.path.basename(os.path.dirname(plot_filepath))}"
+            f"/{os.path.basename(plot_filepath)}"
+        )
 
 
 def _format_tick_labels(
@@ -712,6 +812,7 @@ def plot_all_defects(
     add_title: Optional[bool] = True,
     save_plot: bool = True,
     save_format: str = "svg",
+    verbose: bool = True,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
@@ -722,7 +823,7 @@ def plot_all_defects(
             Dictionary matching defect names to lists of their charge states.
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations and
+            Path to top-level directory with your distorted defect calculations and
             distortion_metadata.json file.
             (Default: current directory)
         add_colorbar (:obj:`bool`):
@@ -760,6 +861,8 @@ def plot_all_defects(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plots (warnings and where they're saved).
 
     Returns:
         :obj:`dict`:
@@ -774,10 +877,12 @@ def plot_all_defects(
             output_path=output_path
         )
     except FileNotFoundError:
-        warnings.warn(
-            f"Path {output_path}/distortion_metadata.json does not exist. "
-            "Will not parse its contents."
-        )
+        if verbose:
+            warnings.warn(
+                f"Path {output_path}/distortion_metadata.json does not exist. "
+                "Will not parse its contents (to specify which neighbour atoms were distorted in "
+                "plot text)."
+            )
         distortion_metadata = None
         num_nearest_neighbours = None
         neighbour_atom = None
@@ -835,6 +940,7 @@ def plot_all_defects(
                     add_title=add_title,
                     save_plot=save_plot,
                     save_format=save_format,
+                    verbose=verbose,
                 )
 
     return figures
@@ -856,6 +962,7 @@ def plot_defect(
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
+    verbose: bool = True,
 ) -> Figure:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -868,8 +975,8 @@ def plot_defect(
             Dictionary matching distortion to final energy (eV), as produced by
             `_organize_data()` or `analysis.get_energies()`)
         output_path (:obj:`str`):
-            Path to directory with your distorted defect calculations (to
-            calculate structure comparisons)
+            Path to top-level directory with your distorted defect calculations
+            (to calculate structure comparisons and save plots)
             (Default: current directory)
         neighbour_atom (:obj:`str`):
             Name(s) of distorted neighbour atoms (e.g. 'Cd'). If not specified,
@@ -917,6 +1024,8 @@ def plot_defect(
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: "svg")
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -948,10 +1057,11 @@ def plot_defect(
                     charge=defect_species.rsplit("_", 1)[1],
                 )
         except FileNotFoundError:
-            warnings.warn(
-                f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents."
-            )
+            if verbose:
+                warnings.warn(
+                    f"Path {output_path}/distortion_metadata.json does not exist. Will not parse "
+                    f"its contents (to specify which neighbour atoms were distorted in plot text)."
+                )
             pass
 
     energies_dict = _cast_energies_to_floats(
@@ -1012,7 +1122,9 @@ def plot_defect(
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 line_color=line_color,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
         else:
             fig = plot_datasets(
@@ -1026,7 +1138,9 @@ def plot_defect(
                 y_label=y_label,
                 max_energy_above_unperturbed=max_energy_above_unperturbed,
                 save_plot=save_plot,
+                output_path=output_path,
                 save_format=save_format,
+                verbose=verbose,
             )
     return fig
 
@@ -1043,9 +1157,11 @@ def plot_colorbar(
     metric: Optional[str] = "max_dist",
     max_energy_above_unperturbed: Optional[float] = 0.5,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
@@ -1094,18 +1210,25 @@ def plot_colorbar(
         save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         y_label (:obj:`str`):
             Y axis label
             (Default: 'Energy (eV)')
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
             Energy vs distortion plot with colorbar for structural similarity,
             as a mpl.figure.Figure object
     """
+    _install_custom_font()
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         fig, ax = plt.subplots(1, 1, figsize=(6.5, 5))
 
@@ -1115,8 +1238,9 @@ def plot_colorbar(
         ax = _format_axis(
             ax=ax,
             y_label=y_label,
-            defect_name=_format_defect_name(defect_species,
-                                            include_site_num_in_name=include_site_num_in_name),
+            defect_name=_format_defect_name(
+                defect_species, include_site_num_in_name=include_site_num_in_name
+            ),
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
         )
@@ -1168,10 +1292,20 @@ def plot_colorbar(
                 alpha=1,
             )
         else:
+            if imported_indices:  # Exclude datapoints from other charge states
+                non_imported_sorted_indices = [
+                    i
+                    for i in range(len(sorted_distortions))
+                    if i not in imported_indices.values()
+                ]
+            else:
+                non_imported_sorted_indices = range(len(sorted_distortions))
+
+            # Plot non-imported distortions
             im = ax.scatter(  # Points for each distortion
-                sorted_distortions,
-                sorted_energies,
-                c=sorted_disp,
+                [sorted_distortions[i] for i in non_imported_sorted_indices],
+                [sorted_energies[i] for i in non_imported_sorted_indices],
+                c=[sorted_disp[i] for i in non_imported_sorted_indices],
                 ls="-",
                 s=50,
                 marker="o",
@@ -1180,8 +1314,8 @@ def plot_colorbar(
                 alpha=1,
             )
             ax.plot(  # Line connecting points
-                sorted_distortions,
-                sorted_energies,
+                [sorted_distortions[i] for i in non_imported_sorted_indices],
+                [sorted_energies[i] for i in non_imported_sorted_indices],
                 ls="-",
                 markersize=1,
                 marker="o",
@@ -1189,61 +1323,77 @@ def plot_colorbar(
                 label=legend_label,
             )
 
-        # Datapoints from other charge states
-        if imported_indices:
-            other_charges = len(
-                set(
-                    list(energies_dict["distortions"].keys())[i].split("_")[-1]
-                    for i in imported_indices.keys()
-                )
-            )  # number of other charge states whose distortions have been imported
-            for i, j in zip(imported_indices.keys(), range(other_charges)):
-                other_charge_state = int(
-                    list(energies_dict["distortions"].keys())[i].split("_")[-1]
-                )
-                sorted_i = imported_indices[i]  # index for the sorted dicts
-                ax.scatter(
-                    np.array(keys)[i],
-                    sorted_energies[sorted_i],
-                    c=sorted_disp[sorted_i],
-                    edgecolors="k",
-                    ls="-",
-                    s=50,
-                    marker=["s", "v", "<", ">", "^", "p", "X"][j],
-                    zorder=10,  # make sure it's on top of the other points
-                    cmap=colormap,
-                    norm=norm,
-                    alpha=1,
-                    label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state",
-                )
+            # Datapoints from other charge states
+            if imported_indices:
+                other_charges = len(
+                    set(
+                        list(energies_dict["distortions"].keys())[i].split("_")[-1]
+                        for i in imported_indices.keys()
+                    )
+                )  # number of other charge states whose distortions have been imported
+                for i, j in zip(imported_indices.keys(), range(other_charges)):
+                    other_charge_state = int(
+                        list(energies_dict["distortions"].keys())[i].split("_")[-1]
+                    )
+                    sorted_i = imported_indices[i]  # index for the sorted dicts
+                    ax.scatter(
+                        np.array(keys)[i],
+                        sorted_energies[sorted_i],
+                        c=sorted_disp[sorted_i],
+                        edgecolors="k",
+                        ls="-",
+                        s=50,
+                        marker=["s", "v", "<", ">", "^", "p", "X"][j],
+                        zorder=10,  # make sure it's on top of the other points
+                        cmap=colormap,
+                        norm=norm,
+                        alpha=1,
+                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                        f"charge state",
+                    )
 
-        # Plot reference energy
-        unperturbed_color = colormap(
-            0
-        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
-        # respect to this structure)
-        ax.scatter(
-            0,
-            energies_dict["Unperturbed"],
-            color=unperturbed_color,
-            ls="None",
-            s=120,
-            marker="d",
-            label="Unperturbed",
-        )
-
-        # Formatting of tick labels.
-        # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
-        # 2 if deltaE > 0.1 eV, otherwise 3.
-        ax = _format_tick_labels(
-            ax=ax,
-            energy_range=list(energies_dict["distortions"].values())
-            + [
+            # Plot reference energy
+            unperturbed_color = colormap(
+                0
+            )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
+            # respect to this structure)
+            ax.scatter(
+                0,
                 energies_dict["Unperturbed"],
-            ],
-        )
+                color=unperturbed_color,
+                ls="None",
+                s=120,
+                marker="d",
+                label="Unperturbed",
+            )
 
-        plt.legend(frameon=True)
+            # distortion_range is sorted_distortions range, including 0 if above/below this range
+            distortion_range = (
+                min(sorted_distortions + (0,)),
+                max(sorted_distortions + (0,)),
+            )
+            # set xlim to distortion_range + 5% (matplotlib default padding)
+            ax.set_xlim(
+                distortion_range[0]
+                - 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[1]
+                + 0.05 * (distortion_range[1] - distortion_range[0]),
+            )
+
+            # Formatting of tick labels.
+            # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
+            # 2 if deltaE > 0.1 eV, otherwise 3.
+            ax = _format_tick_labels(
+                ax=ax,
+                energy_range=list(energies_dict["distortions"].values())
+                + [
+                    energies_dict["Unperturbed"],
+                ],
+            )
+
+        plt.legend(frameon=True).set_zorder(
+            100
+        )  # make sure it's on top of the other points
 
         _ = _format_colorbar(
             fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
@@ -1254,7 +1404,9 @@ def plot_colorbar(
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig
 
@@ -1275,7 +1427,9 @@ def plot_datasets(
     markersize: Optional[float] = None,
     linewidth: Optional[float] = None,
     save_plot: Optional[bool] = False,
+    output_path: Optional[str] = ".",
     save_format: Optional[str] = "svg",
+    verbose: Optional[bool] = True,
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -1328,9 +1482,15 @@ def plot_datasets(
         save_plot (:obj:`bool`):
             Whether to save the plots.
             (Default: True)
+        output_path (:obj:`str`):
+            Path to top-level directory containing the defect directory (in which to save the
+            plot).
+            (Default: ".")
         save_format (:obj:`str`):
             Format to save the plot as.
             (Default: 'svg')
+        verbose (:obj:`bool`):
+            Whether to print information about the plot (warnings and where it's saved).
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1345,16 +1505,19 @@ def plot_datasets(
             f" {len(dataset_labels)} labels."
         )
 
+    _install_custom_font()
+    # Set up figure
     fig, ax = plt.subplots(1, 1)
     # Line colors
     if not colors:
         colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
         # colors to use for each dataset
     elif len(colors) < len(datasets):
-        warnings.warn(
-            f"Insufficient colors provided for {len(datasets)} datasets. "
-            "Using default colors."
-        )
+        if verbose:
+            warnings.warn(
+                f"Insufficient colors provided for {len(datasets)} datasets. "
+                "Using default colors."
+            )
         colors = _get_line_colors(number_of_colors=len(datasets))
     # Title and labels of axis
     if title:
@@ -1362,8 +1525,9 @@ def plot_datasets(
     ax = _format_axis(
         ax=ax,
         y_label=y_label,
-        defect_name=_format_defect_name(defect_species,
-                                        include_site_num_in_name=include_site_num_in_name),
+        defect_name=_format_defect_name(
+            defect_species, include_site_num_in_name=include_site_num_in_name
+        ),
         num_nearest_neighbours=num_nearest_neighbours,
         neighbour_atom=neighbour_atom,
     )
@@ -1435,9 +1599,19 @@ def plot_datasets(
                     label="Rattled",
                 )
             else:
+                if imported_indices:  # Exclude datapoints from other charge states
+                    non_imported_sorted_indices = [
+                        i
+                        for i in range(len(sorted_distortions))
+                        if i not in imported_indices.values()
+                    ]
+                else:
+                    non_imported_sorted_indices = range(len(sorted_distortions))
+
+                # Plot non-imported distortions
                 ax.plot(  # plot bond distortions
-                    sorted_distortions,
-                    sorted_energies,
+                    [sorted_distortions[i] for i in non_imported_sorted_indices],
+                    [sorted_energies[i] for i in non_imported_sorted_indices],
                     c=colors[dataset_number],
                     markersize=default_style_settings["markersize"],
                     marker=default_style_settings["marker"],
@@ -1445,6 +1619,7 @@ def plot_datasets(
                     label=dataset_labels[dataset_number],
                     linewidth=default_style_settings["linewidth"],
                 )
+
             if imported_indices:
                 other_charges = len(
                     set(
@@ -1468,8 +1643,8 @@ def plot_datasets(
                             j
                         ],  # different markers for different charge states
                         alpha=1,
-                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge "
-                        f"state",
+                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
+                        f"charge state",
                     )
 
     datasets[0][
@@ -1507,6 +1682,14 @@ def plot_datasets(
             label="Unperturbed",
         )
 
+    # distortion_range is sorted_distortions range, including 0 if above/below this range
+    distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
+    # set xlim to distortion_range + 5% (matplotlib default padding)
+    ax.set_xlim(
+        distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+        distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+    )
+
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E
     # > 0.4 eV, 3 if E < 0.1 eV, 2 otherwise
@@ -1518,12 +1701,16 @@ def plot_datasets(
         ],
     )
 
-    ax.legend(frameon=True)  # show legend
+    ax.legend(frameon=True).set_zorder(
+        100
+    )  # show legend on top of all other datapoints
 
     if save_plot:  # Save plot?
         _save_plot(
             fig=fig,
             defect_name=defect_species,
+            output_path=output_path,
             save_format=save_format,
+            verbose=verbose,
         )
     return fig

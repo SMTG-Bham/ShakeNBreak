@@ -1,22 +1,16 @@
 """Module to generate VASP input files for defect calculations"""
+import functools
 import os
+import warnings
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
 from typing import TYPE_CHECKING
-import warnings
-import functools
+
 import numpy as np
-
 from monty.io import zopen
-from monty.serialization import loadfn
 from monty.os.path import zpath
-
+from monty.serialization import loadfn
 from pymatgen.io.vasp import Incar, Kpoints
-from pymatgen.io.vasp.inputs import (
-    PotcarSingle,
-    Potcar,
-    incar_params,
-    BadIncarWarning,
-)
+from pymatgen.io.vasp.inputs import BadIncarWarning, Potcar, PotcarSingle, incar_params
 from pymatgen.io.vasp.sets import BadInputSetWarning, MPRelaxSet
 
 if TYPE_CHECKING:
@@ -27,7 +21,9 @@ if TYPE_CHECKING:
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakenBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml"))
+default_incar_settings = loadfn(
+    os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml")
+)
 
 
 def _check_psp_dir():  # Provided by Katarina Brlec, from github.com/SMTG-UCL/surfaxe

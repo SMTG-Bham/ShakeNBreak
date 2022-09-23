@@ -6,21 +6,20 @@ structure relaxations
 import json
 import os
 import sys
+import warnings
 from copy import deepcopy
 from typing import Optional, Union
-import warnings
-import pandas as pd
+
 import numpy as np
-
+import pandas as pd
 from monty.serialization import loadfn
-
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core.periodic_table import Element
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.outputs import Outcar
-from pymatgen.core.periodic_table import Element
 
-from shakenbreak import io, input
+from shakenbreak import input, io
 
 crystalNN = CrystalNN(
     distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0
@@ -142,6 +141,7 @@ def _format_distortion_names(
     """
     Formats the distortion filename to the names used internally and for
     analysis. (i.e. 'Bond_Distortion_-50.0%' -> -0.5)
+
     Args:
         distortion_label (:obj:`str`):
             distortion label used for file names.

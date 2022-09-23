@@ -2,6 +2,7 @@ sphinx
 myst-nb
 sphinx-book-theme
 sphinx_click
+sphinx_design
 numpy
 pymatgen<2022.8.23
 ase

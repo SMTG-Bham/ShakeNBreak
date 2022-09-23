@@ -1,15 +1,15 @@
-import unittest
 import os
-from unittest.mock import patch
 import shutil
+import unittest
 import warnings
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+from monty.serialization import dumpfn, loadfn
 from pandas.core.frame import DataFrame
+from pymatgen.core.structure import Element, Structure
 
-from pymatgen.core.structure import Structure, Element
-from monty.serialization import loadfn, dumpfn
 from shakenbreak import analysis
 
 
@@ -31,7 +31,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.organized_V_Cd_distortion_data_no_unperturbed = loadfn(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml",
             )
         )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
@@ -62,7 +63,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml"),
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.yaml"),
         )
-        for i in ["fake_file.yaml", os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json")]:
+        for i in [
+            "fake_file.yaml",
+            os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"),
+        ]:
             if_present_rm(i)
 
     def test_get_gs_distortion(self):
@@ -102,7 +106,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test verbose = False
         with patch("builtins.print") as mock_not_verbose_print:
             sorted_V_Cd_distortion_data = analysis._sort_data(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml"),
+                os.path.join(
+                    self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml"
+                ),
                 verbose=False,
             )
             self.assertEqual(
@@ -159,7 +165,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(output, (None, None, None))
 
         with warnings.catch_warnings(record=True) as w:
-            dumpfn({"Unperturbed":-378.66236832, "distortions": {}},"fake_file.yaml")
+            dumpfn({"Unperturbed": -378.66236832, "distortions": {}}, "fake_file.yaml")
             output = analysis._sort_data("fake_file.yaml")
             warning_message = (
                 "No distortion results parsed from fake_file.yaml, returning None"
@@ -177,7 +183,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 self.V_Cd_minus0pt5_struc_rattled, name="Test pop", vac_site=[0, 0, 0]
             )
             # mock_print.assert_any_call("==> ", "Test pop structural analysis ", " <==")
-            mock_print.assert_any_call("\033[1m" + "Test pop structural analysis " + "\033[0m")
+            mock_print.assert_any_call(
+                "\033[1m" + "Test pop structural analysis " + "\033[0m"
+            )
             self.assertEqual(
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("V"))
             )
@@ -229,7 +237,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 site_num=65,
             )
             # mock_print.assert_any_call("==> ", "Int_Cd_2 structural analysis ", " <==")
-            mock_print.assert_any_call("\033[1m" + "Int_Cd_2 structural analysis " + "\033[0m")
+            mock_print.assert_any_call(
+                "\033[1m" + "Int_Cd_2 structural analysis " + "\033[0m"
+            )
             self.assertEqual(
                 mock_print.call_args_list[1][0][:2], ("Analysing site", Element("Cd"))
             )
@@ -405,7 +415,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test if 'Unperturbed' is not present:
         shutil.copy(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml"
+                self.VASP_CDTE_DATA_DIR,
+                "CdTe_vac_1_Cd_0_stdev_0.25_no_unperturbed.yaml",
             ),
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.yaml"),
         )
@@ -666,7 +677,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 struct_comparison_df.iloc[8].to_list(), [-0.4, 8.31, 0.808, -0.75]
             )
             self.assertEqual(
-                struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 0.000, 0.000, 0.00]
+                struct_comparison_df.iloc[-1].to_list(),
+                ["Unperturbed", 0.000, 0.000, 0.00],
             )
             self.assertEqual(
                 struct_comparison_df.columns.to_list(),
@@ -850,8 +862,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # Without defect site and with orbital projections
         with warnings.catch_warnings(record=True) as w:
             # copy distortion_metadata.json without TiO2 data into folder, to check warning
-            shutil.copyfile(os.path.join(self.VASP_CDTE_DATA_DIR, "distortion_metadata.json"),
-                            os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"))
+            shutil.copyfile(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "distortion_metadata.json"),
+                os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"),
+            )
             mags = analysis.get_site_magnetizations(
                 defect_species="vac_1_Ti_0",
                 output_path=os.path.join(self.DATA_DIR, "vasp"),
