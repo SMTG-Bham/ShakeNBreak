@@ -691,11 +691,15 @@ def compare_struct_to_distortions(
             # convert "X%_from_Y" strings to floats and then sort
             # needs to be done this way because 'key' in pd.sort_values()
             # needs to be vectorised...
-            s = imported_sorted_distorted_df["Bond Distortion"].str.slice(0, 3)
-            s = s.astype(float)
-            imported_sorted_distorted_df = imported_sorted_distorted_df.loc[
-                s.sort_values(key=lambda x: abs(x)).index
-            ]
+            # if '%' in key then convert to float, else convert to 0 (for Rattled or Unperturbed)
+            imported_sorted_distorted_df[
+                "Bond Distortion"
+            ] = imported_sorted_distorted_df["Bond Distortion"].apply(
+                lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0
+            )
+            imported_sorted_distorted_df = imported_sorted_distorted_df.sort_values(
+                by="Bond Distortion", key=abs
+            )
 
         # first unperturbed, then rattled, then distortions sorted by
         # initial distortion magnitude from low to high (if present)
