@@ -12,7 +12,9 @@
 #
 import os
 import sys
+
 from recommonmark.transform import AutoStructify
+
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -23,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0.0'
+release = '22.9.21'
 
 
 # -- General configuration ---------------------------------------------------
@@ -38,8 +40,9 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx_click',
+    'sphinx_design',
     # 'sphinx_mdinclude',
-    "myst_nb",  # for jupyter notebooks
+    'myst_nb',  # for jupyter notebooks
     # 'myst_parser',
 ]
 
@@ -56,6 +59,9 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+myst_enable_extensions = [
+    "html_admonition",
+]
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -110,6 +116,12 @@ intersphinx_mapping = {
     "matplotlib": ("http://matplotlib.org", None),
 }
 
+# -- Options for autodoc -----------------------------------------------------
+autoclass_content="both"
+
+# -- Options for nb extension -----------------------------------------------
+nb_execution_mode = "off"
+nb_render_image_options = {"height": "300",}  # Reduce plots size
 #myst_render_markdown_format = "gfm"
 myst_heading_anchors = 2
 github_doc_root = 'https://github.com/executablebooks/MyST-Parser/tree/master/docs/'

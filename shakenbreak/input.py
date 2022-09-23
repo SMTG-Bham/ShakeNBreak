@@ -3,28 +3,27 @@ Module containing functions to generate rattled and bond-distorted structures,
 as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 `Quantum-Espresso`, `FHI-aims` and `CASTEP`.
 """
-import os
 import copy
-import json
-import warnings
 import datetime
-from typing import Optional, Tuple
 import functools
-import numpy as np
-from monty.serialization import loadfn
+import json
+import os
+import warnings
+from typing import Optional, Tuple
 
 import ase
-from ase.calculators.espresso import Espresso
-from ase.calculators.castep import Castep
+import numpy as np
 from ase.calculators.aims import Aims
-
-from pymatgen.core.structure import Structure, Composition, Element
-from pymatgen.io.vasp.inputs import UnknownPotcarWarning
-from pymatgen.io.vasp.sets import BadInputSetWarning
+from ase.calculators.castep import Castep
+from ase.calculators.espresso import Espresso
+from monty.serialization import loadfn
+from pymatgen.core.structure import Composition, Element, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
+from pymatgen.io.vasp.inputs import UnknownPotcarWarning
+from pymatgen.io.vasp.sets import BadInputSetWarning
 
-from shakenbreak import analysis, distortions, vasp, io
+from shakenbreak import analysis, distortions, io, vasp
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -92,9 +91,7 @@ def _write_distortion_metadata(
         )  # keep copy of old metadata file
         os.rename(
             filepath,
-            os.path.join(
-                output_path, f"distortion_metadata" f"_{current_datetime}.json"
-            ),
+            os.path.join(output_path, f"distortion_metadata_{current_datetime}.json"),
         )
         print(
             f"There is a previous version of {filename}. Will rename old metadata to "
@@ -742,7 +739,7 @@ class Distortions:
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
         bond_distortions: Optional[list] = None,
-        local_rattle: bool = True,
+        local_rattle: bool = False,
         stdev: float = 0.25,
         distorted_elements: Optional[dict] = None,
         **kwargs,  # for mc rattle
@@ -776,10 +773,10 @@ class Distortions:
                 (Default: None)
             local_rattle (:obj:`bool`):
                 Whether to apply random displacements that tail off as we move
-                away from the defect site. Recommended as it is often faster than
-                the full rattle (requires less ionic relaxation steps). If False,
-                all supercell sites are rattled with the same amplitude (full ratlle).
-                (Default: True)
+                away from the defect site. Not recommended as typically worsens
+                performance. If False (default), all supercell sites are rattled
+                with the same amplitude (full rattle).
+                (Default: False)
             stdev (:obj:`float`):
                 Standard deviation (in Angstroms) of the Gaussian distribution
                 from which random atomic displacement distances are drawn during
@@ -823,37 +820,60 @@ class Distortions:
         self.stdev = stdev
         self.local_rattle = local_rattle
 
-        if oxidation_states is None:
-            if "bulk" in self.defects_dict:
-                bulk_comp = self.defects_dict["bulk"]["supercell"][
-                    "structure"
-                ].composition
-                self.oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        # check if all expected oxidation states are provided
+        if "bulk" in self.defects_dict:
+            bulk_comp = self.defects_dict["bulk"]["supercell"]["structure"].composition
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
-            else:  # determine bulk composition from first defect in dict
-                defect_subdict = list(self.defects_dict.values())[0][0]
-                bulk_comp = _get_bulk_comp(defect_subdict)
-                self.oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        else:  # determine bulk composition from first defect in dict
+            defect_subdict = list(self.defects_dict.values())[0][0]
+            bulk_comp = _get_bulk_comp(defect_subdict)
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
-            if "substitutions" in self.defects_dict:
-                for substitution in self.defects_dict["substitutions"]:
-                    if (
-                        substitution["defect_type"] == "substitution"
-                        and substitution["bulk_supercell_site"].specie.symbol
-                        not in self.oxidation_states
-                    ):
-                        # substituting species not in bulk composition
-                        substitution_specie = substitution["substitution_specie"]
-                        likely_substitution_oxi = _most_common_oxi(substitution_specie)
-                        self.oxidation_states[
-                            substitution_specie
-                        ] = likely_substitution_oxi
+        if "substitutions" in self.defects_dict:
+            for substitution in self.defects_dict["substitutions"]:
+                if (
+                    substitution["defect_type"] == "substitution"
+                    and substitution["bulk_supercell_site"].specie.symbol
+                    not in guessed_oxidation_states
+                ):
+                    # extrinsic substituting species not in bulk composition
+                    extrinsic_specie = substitution["bulk_supercell_site"].specie.symbol
+                    likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
+                    guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
+        if "interstitials" in self.defects_dict:
+            for interstitial in self.defects_dict["interstitials"]:
+                if (
+                    interstitial["bulk_supercell_site"].specie.symbol
+                    not in guessed_oxidation_states
+                ):
+                    # extrinsic species not in bulk composition
+                    extrinsic_specie = interstitial["bulk_supercell_site"].specie.symbol
+                    likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
+                    guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
+
+        if self.oxidation_states is None:
             print(
                 f"Oxidation states were not explicitly set, thus have been "
-                f"guessed as {self.oxidation_states}. If this is unreasonable "
+                f"guessed as {guessed_oxidation_states}. If this is unreasonable "
                 f"you should manually set oxidation_states"
             )
+            self.oxidation_states = guessed_oxidation_states
+
+        elif not guessed_oxidation_states.keys() <= self.oxidation_states.keys():
+            # some oxidation states are missing, so use guessed versions for these and inform user
+            missing_oxidation_states = {
+                k: v
+                for k, v in sorted(guessed_oxidation_states.items(), key=lambda x: x[0])
+                if k in (guessed_oxidation_states.keys() - self.oxidation_states.keys())
+            }  # missing oxidation states in sorted dict for clean printing
+            print(
+                f"Oxidation states for {[k for k in missing_oxidation_states.keys()]} were not "
+                f"explicitly set, thus have been guessed as {missing_oxidation_states}. "
+                f"If this is unreasonable you should manually set oxidation_states"
+            )
+            self.oxidation_states.update(missing_oxidation_states)
 
         if bond_distortions:
             self.distortion_increment = None  # user specified
@@ -1066,25 +1086,20 @@ class Distortions:
 
     def _setup_distorted_defect_dict(
         self,
-        defect_name: str,
         defect: dict,
-        distorted_defects_dict: dict,
     ) -> dict:
         """
-        Add defect information to `distorted_defects_dict`.
+        Setup `distorted_defect_dict` with info for `defect`.
 
         Args:
-            defect_name (:obj:`str`):
-                Name of the defect to use as key in the `distorted_defects_dict`.
             defect (:obj:`dict`):
-                Defect dictionary to add to `distorted_defects_dict`.
-            distorted_defects_dict (:obj:`dict`):
-                Full dictionary of distorted defects.
+                Defect dictionary to generate `distorted_defect_dict` from.
 
         Returns:
             :obj:`dict`
+                Dictionary with information for `defect`.
         """
-        distorted_defects_dict[defect_name] = {
+        distorted_defect_dict = {
             "defect_type": defect["name"],
             "defect_site": defect["unique_site"],
             "defect_supercell_site": defect["bulk_supercell_site"],
@@ -1097,8 +1112,8 @@ class Distortions:
             "substituting_specie",
         ]:  # substitutions and antisites
             if key in defect:
-                distorted_defects_dict[defect_name][key] = defect[key]
-        return distorted_defects_dict
+                distorted_defect_dict[key] = defect[key]
+        return distorted_defect_dict
 
     def write_distortion_metadata(
         self,
@@ -1187,10 +1202,8 @@ class Distortions:
                 "charges": {},
             }
 
-            distorted_defects_dict = self._setup_distorted_defect_dict(
-                distorted_defects_dict=distorted_defects_dict,
-                defect_name=defect_name,
-                defect=defect,
+            distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
+                defect
             )
 
             for charge in defect["charges"]:  # loop for each charge state of defect
@@ -1253,7 +1266,6 @@ class Distortions:
         structures.
 
         Args:
-
             incar_settings (:obj:`dict`):
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
@@ -1300,10 +1312,10 @@ class Distortions:
             dict_transf = {
                 k: v for k, v in defect_dict.items() if k != "charges"
             }  # Single defect dict
-            charged_defect = {}
 
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
+                charged_defect = {}
 
                 for key_distortion, struct in zip(
                     [

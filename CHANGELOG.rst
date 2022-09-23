@@ -1,6 +1,49 @@
 Change Log
 ==========
 
+v22.9.21
+--------
+
+Main changes:
+
+- Fonts now included in `package_data` so can be installed with `pip` from `PyPI`
+- Refactoring `distortion_plots` plot saving to saving to defect directories, and preventing overwriting of previous plots
+- Miscellaneous tests and fixes
+- Add summary GIF to docs and README
+- Handling for partial oxidation state input
+- Setting `EDIFFG = -0.01` and `local_rattle = False` as default
+
+
+v22.9.2
+--------
+
+Main changes:
+
+- Update CLI commands (snb-parse, analyse, plot and groundstate can all now be run with no arguments within a defect folder)
+- Update custom font
+- Update groundstate() tests
+- Update plotting
+
+
+v22.9.1
+--------
+
+Main changes:
+
+- Test for pip install
+- Automatic release and upload to pypi
+- Add ShakeNBreak custom font, and automatise its installation
+- Update ShakeNBreak default INCAR for VASP relaxations
+- Formatting
+
+v1.0.1
+------
+
+Main changes:
+
+- Docs formatting
+- Update pymatgen version to v2022.7.25, while refactoring to be compatible with v2022.8.23 takes place.
+
 v1.0
 ------
 
