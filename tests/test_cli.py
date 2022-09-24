@@ -9,9 +9,11 @@ import warnings
 
 import numpy as np
 import yaml
+
 # Click
 from click.testing import CliRunner
 from monty.serialization import loadfn
+
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar
@@ -1504,8 +1506,9 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
-                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+        with open(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r"
+        ) as test, open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r") as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
@@ -1529,8 +1532,9 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
-                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+        with open(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r"
+        ) as test, open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r") as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
@@ -1554,8 +1558,9 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
-                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+        with open(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r"
+        ) as test, open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r") as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
@@ -1579,8 +1584,9 @@ local_rattle: True"""
         self.assertTrue(
             os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
         )
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", 'r') as test, \
-                open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", 'r') as new:
+        with open(
+            f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r"
+        ) as test, open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r") as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
@@ -2284,6 +2290,21 @@ local_rattle: True"""
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # test error when no defect folders found
+        self.tearDown()
+        result = runner.invoke(
+            snb,
+            ["groundstate"],  # use cwd which has no defect directories
+            catch_exceptions=True,
+        )
+        self.assertIsInstance(result.exception, FileNotFoundError)
+        self.assertIn(
+            f"No folders with valid defect names (should end with charge e.g. 'vac_1_Cd_-2') "
+            f"found in output_path: '{os.path.abspath('.')}'. Please check the path "
+            f"and try again.",
+            str(result.exception),
+        )
 
 
 if __name__ == "__main__":

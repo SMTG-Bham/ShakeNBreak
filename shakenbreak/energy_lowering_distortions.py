@@ -1215,6 +1215,12 @@ def write_groundstate_structure(
 
     if all:
         defect_charges_dict = read_defects_directories(output_path=output_path)
+        if len(defect_charges_dict) == 0:
+            raise FileNotFoundError(
+                f"No folders with valid defect names (should end with charge e.g. 'vac_1_Cd_-2') "
+                f"found in output_path: '{os.path.abspath(output_path)}'. Please check the path "
+                f"and try again."
+            )
         for defect, charges in defect_charges_dict.items():
             for charge in charges:
                 _write_single_groundstate(
