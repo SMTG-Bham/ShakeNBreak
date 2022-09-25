@@ -233,6 +233,36 @@ def _get_bulk_comp(defect_object) -> Composition:
     return bulk_structure.composition
 
 
+def _get_bulk_defect_site(defect_object):
+    """Get defect site in the bulk structure (e.g.
+    for a P substitution on Si, get the original Si site).
+    """
+    defect_type = defect_object.as_dict()["@class"].lower()
+    if defect_type in ["antisite", "substitution"]:
+        # get bulk_site
+        poss_deflist = sorted(
+            defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
+                defect_object.site.coords, 0.01, include_index=True
+            ),
+            key=lambda x: x[1],
+        )
+        if not poss_deflist:
+            raise ValueError(
+                "Error in defect object generation; could not find substitution "
+                f"site inside bulk structure for {defect_object.name}"
+            )
+        defindex = poss_deflist[0][2]
+        sub_site_in_bulk = defect_object.structure[
+            defindex
+        ]  # bulk site of substitution
+
+        unique_site = sub_site_in_bulk
+
+    else:
+        unique_site = defect_object.site
+    return unique_site
+
+
 def _most_common_oxi(element) -> int:
     """
     Convenience function to get the most common oxidation state of an element, using pymatgen's
@@ -300,22 +330,10 @@ def _calc_number_electrons(
 
     elif defect_type in ["antisite", "substitution"]:
         # get bulk_site
-        poss_deflist = sorted(
-            defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
-                defect_object.site.coords, 0.01, include_index=True
-            ),
-            key=lambda x: x[1],
-        )
-        if not poss_deflist:
-            raise ValueError(
-                "Error in defect object generation; could not find substitution "
-                f"site inside bulk structure for {defect_name}"
-            )
-        defindex = poss_deflist[0][2]
-        sub_site_in_bulk = defect_object.structure[
-            defindex
-        ]  # bulk site of substitution
-        site_specie = sub_site_in_bulk.specie.symbol  # Species occuping *bulk* site
+        sub_site_in_bulk = _get_bulk_defect_site(
+            defect_object
+        )  # bulk site of substitution
+        site_specie = sub_site_in_bulk.specie.symbol  # Species occuping the *bulk* site
         substituting_specie = str(
             defect_object.site.specie.symbol
         )  # Current species occupying the defect site (e.g. the substitution)
@@ -363,8 +381,9 @@ def _calc_number_neighbours(num_electrons: int) -> int:
 
 # Main functions
 
+# refactored
 # Input arguments have beeen refactored to take Defect() object
-# No we need to refactor the output dictionary (and for that the distort() function)
+# No we need to refactor the output dictionary
 def _apply_rattle_bond_distortions(
     defect_object: Defect,
     num_nearest_neighbours: int,
@@ -384,7 +403,7 @@ def _apply_rattle_bond_distortions(
             - defect site index (other defect types).
 
     Args:
-        defect_object (:obj:`dict`):
+        defect_object (:obj:`Defect`):
             pymatgen.analysis.defects.core.Defect()
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to.
@@ -449,6 +468,7 @@ def _apply_rattle_bond_distortions(
     defect_type = str(defect_object.as_dict()["@class"].lower())
     bulk_supercell_site = defect_object.site
     defect_structure = defect_object.defect_structure
+
     if defect_type == "vacancy":  # for vacancies, we need to use fractional coordinates
         # (no atom site in structure!)
         frac_coords = bulk_supercell_site.frac_coords
@@ -460,7 +480,8 @@ def _apply_rattle_bond_distortions(
             frac_coords=frac_coords,
             distorted_element=distorted_element,
             verbose=verbose,
-        )
+        )  # Dict with distorted struct, undistorted struct,
+        # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
     else:
         defect_site_index = defect_object.defect_site_index
         frac_coords = None  # only for vacancies
@@ -565,8 +586,9 @@ def _apply_rattle_bond_distortions(
     return bond_distorted_defect
 
 
+# refactored
 def apply_snb_distortions(
-    defect_dict: dict,
+    defect_object: dict,
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
@@ -581,9 +603,8 @@ def apply_snb_distortions(
     unperturbed defect structure (in `defect_dict`).
 
     Args:
-        defect_dict (:obj:`dict`):
-            Defect dictionary in the format of
-            `doped.vasp_input.prepare_vasp_defect_dict`
+        defect_object (:obj:`Defect`):
+            pymatgen.analysis.defects.core.Defect() object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -638,10 +659,16 @@ def apply_snb_distortions(
             parameters.
     """
     distorted_defect_dict = {
-        "Unperturbed": defect_dict,
+        "Unperturbed": defect_object,
         "distortions": {},
         "distortion_parameters": {},
     }
+
+    defect_type = str(defect_object.as_dict()["@class"].lower())
+    defect_structure = defect_object.defect_structure
+    # Get defect site
+    bulk_supercell_site = _get_bulk_defect_site(defect_object)  # bulk site
+    defect_site_index = defect_object.defect_site_index
 
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
@@ -652,7 +679,7 @@ def apply_snb_distortions(
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
             bond_distorted_defect = _apply_rattle_bond_distortions(
-                defect_dict=defect_dict,
+                defect_object=defect_object,
                 num_nearest_neighbours=num_nearest_neighbours,
                 distortion_factor=distortion_factor,
                 local_rattle=local_rattle,
@@ -666,7 +693,7 @@ def apply_snb_distortions(
                 analysis._get_distortion_filename(distortion)
             ] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"] = {
-                "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
+                "unique_site": bulk_supercell_site.frac_coords,
                 "num_distorted_neighbours": num_nearest_neighbours,
                 "distorted_atoms": bond_distorted_defect["distorted_atoms"],
             }
@@ -681,16 +708,14 @@ def apply_snb_distortions(
         num_nearest_neighbours == 0
     ):  # when no extra/missing electrons, just rattle the structure.
         # Likely to be a shallow defect.
-        if defect_dict["defect_type"] == "vacancy":
+        if defect_type == "vacancy":
             defect_site_index = None
-            frac_coords = defect_dict["bulk_supercell_site"].frac_coords
+            frac_coords = bulk_supercell_site.frac_coords
         else:
             frac_coords = None  # only for vacancies!
-            defect_site_index = len(
-                defect_dict["supercell"]["structure"]
-            )  # defect atom comes last in structure
+            defect_site_index = defect_object.defect_site_index
         if not d_min:
-            defect_supercell = defect_dict["supercell"]["structure"]
+            defect_supercell = defect_structure
             sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
             d_min = (
                 0.8 * sorted_distances[len(defect_supercell) + 20]
@@ -707,7 +732,7 @@ def apply_snb_distortions(
                 d_min = 2.25
         if local_rattle:
             perturbed_structure = distortions.local_mc_rattle(
-                defect_dict["supercell"]["structure"],
+                defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
                 stdev=stdev,
@@ -716,14 +741,14 @@ def apply_snb_distortions(
             )
         else:
             perturbed_structure = distortions.rattle(
-                defect_dict["supercell"]["structure"],
+                defect_structure,
                 stdev=stdev,
                 d_min=d_min,
                 **kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
-            "unique_site": defect_dict["bulk_supercell_site"].frac_coords,
+            "unique_site": bulk_supercell_site.frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
             "distorted_atoms": None,
         }

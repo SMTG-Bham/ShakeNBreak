@@ -264,7 +264,7 @@ def _local_mc_rattle_displacements(
     active_atoms=None,
     nbr_cutoff=None,
     seed=42,
-):
+) -> np.ndarray:
     # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
     """
     Generate displacements using the Monte Carlo rattle method.
