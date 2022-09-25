@@ -237,7 +237,7 @@ def _get_bulk_defect_site(defect_object):
     """Get defect site in the bulk structure (e.g.
     for a P substitution on Si, get the original Si site).
     """
-    defect_type = defect_object.as_dict()["@class"].lower()
+    defect_type = str(defect_object.as_dict()["@class"].lower())
     if defect_type in ["antisite", "substitution"]:
         # get bulk_site
         poss_deflist = sorted(
@@ -761,12 +761,15 @@ def apply_snb_distortions(
 
 # TODO: As discussed, need to refactor Distortions() to take a dictionary of Defect() objects
 # rather than a dict of (doped/pmg/pycdt) defect_dict
+# We need a way to store the defect charge states defined by the user though, as with
+# the get_charge_states() method we need to give the padding
+# a)
 
 
 class Distortions:
     """
     Class to apply rattle and bond distortion to all defects in `defects_dict`
-    (in `doped` `ChargedDefectsStructures()` format).
+    (each defect as a pymatgen.analysis.defects.core.Defect() object).
     """
 
     def __init__(
@@ -784,7 +787,12 @@ class Distortions:
         """
         Args:
             defects_dict (:obj:`dict`):
-                Dictionary of pymatgen-analysis-defects.core.Defect() objects
+                Dictionary of pymatgen.analysis.defects.core.Defect() objects.
+                E.g.: {
+                    "vacancies": [Vacancy(), ...],
+                    "interstitials": [Interstitial(), ...],
+                    "substitutions": [Substitution(), ...],
+                }
             oxidation_states (:obj:`dict`):
                 Dictionary of oxidation states for species in your material,
                 used to determine the number of defect neighbours to distort
@@ -858,34 +866,39 @@ class Distortions:
 
         # check if all expected oxidation states are provided
         if "bulk" in self.defects_dict:
-            bulk_comp = self.defects_dict["bulk"]["supercell"]["structure"].composition
+            bulk_comp = self.defects_dict[
+                "bulk"
+            ].structure.composition  # TODO: check this after doped is updated
             guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
-        else:  # determine bulk composition from first defect in dict
-            defect_subdict = list(self.defects_dict.values())[0][0]
-            bulk_comp = _get_bulk_comp(defect_subdict)
+        else:  # determine bulk composition from first Defect in dict
+            defect_object = list(self.defects_dict.values())[0][
+                0
+            ]  # TODO: check this after doped is updated
+            bulk_comp = _get_bulk_comp(defect_object)
             guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         if "substitutions" in self.defects_dict:
             for substitution in self.defects_dict["substitutions"]:
+                defect_type = str(substitution.as_dict()["@class"].lower())
                 if (
-                    substitution["defect_type"] == "substitution"
+                    defect_type == "substitution"
                     and substitution["bulk_supercell_site"].specie.symbol
                     not in guessed_oxidation_states
                 ):
                     # extrinsic substituting species not in bulk composition
-                    extrinsic_specie = substitution["bulk_supercell_site"].specie.symbol
+                    extrinsic_specie = substitution.defect_site.specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
         if "interstitials" in self.defects_dict:
             for interstitial in self.defects_dict["interstitials"]:
                 if (
-                    interstitial["bulk_supercell_site"].specie.symbol
+                    interstitial.defect_site.specie.symbol
                     not in guessed_oxidation_states
                 ):
                     # extrinsic species not in bulk composition
-                    extrinsic_specie = interstitial["bulk_supercell_site"].specie.symbol
+                    extrinsic_specie = interstitial.defect_site.specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
@@ -984,7 +997,7 @@ class Distortions:
         defect_name: str,
         oxidation_states: dict,
         dict_number_electrons_user: dict,
-        defect: dict,
+        defect: Defect,
     ) -> int:
         """
         Parse or calculate the number of extra/missing electrons
@@ -1005,7 +1018,7 @@ class Distortions:
                 extra/missing electrons.
             defect (:obj:`dict`):
                 Defect entry in dictionary of defects. Must be a
-                pymatgen-analysis-defects.core.Defect object.
+                pymatgen.analysis.defects.core.Defect() object.
 
         Returns:
             :obj:`int`:
@@ -1122,26 +1135,30 @@ class Distortions:
 
     def _setup_distorted_defect_dict(
         self,
-        defect: dict,
+        defect: Defect,
     ) -> dict:
         """
         Setup `distorted_defect_dict` with info for `defect`.
 
         Args:
-            defect (:obj:`dict`):
-                Defect dictionary to generate `distorted_defect_dict` from.
+            defect (:obj:`pymatgen.analysis.defects.core.Defect()`):
+                Defect object to generate `distorted_defect_dict` from.
 
         Returns:
             :obj:`dict`
                 Dictionary with information for `defect`.
         """
+        # Refactor this to create a DistortedDefect() object
+        # We need a class property to store charge states though. Not currently implemented
+        # in pymatgen.analysis.defects.core.Defect
         distorted_defect_dict = {
-            "defect_type": defect["name"],
-            "defect_site": defect["unique_site"],
-            "defect_supercell_site": defect["bulk_supercell_site"],
-            "defect_multiplicity": defect["site_multiplicity"],
-            "supercell": defect["supercell"]["size"],
+            "defect_type": defect.name,
+            "defect_site": _get_bulk_defect_site(defect),
+            "defect_supercell_site": _get_bulk_defect_site(defect),
+            "defect_multiplicity": defect.get_multiplicity(),
+            # "supercell": defect["supercell"]["size"],
             "charges": {charge: {} for charge in defect["charges"]},
+            # TODO: Here we need a way to store the charge states of the defect
         }  # General info about (neutral) defect
         for key in [
             "substitution_specie",
@@ -1216,8 +1233,7 @@ class Distortions:
             [self.defects_dict[key] for key in self.defects_dict if key != "bulk"],
         )
 
-        for defect in comb_defs:  # loop for each defect
-            defect_object = None  # for now
+        for defect_object in comb_defs:  # loop for each defect
             defect_name = defect_object.name  # name without charge state
             bulk_supercell_site = defect_object.site
 
@@ -1231,7 +1247,7 @@ class Distortions:
                 defect_name=defect_name,
                 oxidation_states=self.oxidation_states,
                 dict_number_electrons_user=self.dict_number_electrons_user,
-                defect=defect,
+                defect=defect_object,
             )
 
             self.distortion_metadata["defects"][defect_name] = {
@@ -1240,10 +1256,14 @@ class Distortions:
             }
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
-                defect
+                defect_object
             )
 
-            for charge in defect["charges"]:  # loop for each charge state of defect
+            # TODO: refactor this. Either add charges property to Defect() class
+            # or add input parameter to specify charge states padding
+            for charge in defect_object[
+                "charges"
+            ]:  # loop for each charge state of defect
                 num_nearest_neighbours = self._get_number_distorted_neighbours(
                     defect_name=defect_name,
                     number_electrons=number_electrons,
@@ -1251,7 +1271,7 @@ class Distortions:
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
-                    defect_dict=defect,
+                    defect_dict=defect_object,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
                     local_rattle=self.local_rattle,
@@ -1829,3 +1849,21 @@ class Distortions:
                         )  # write parameters file
 
         return distorted_defects_dict, self.distortion_metadata
+
+
+# Option 1: new class inhereting from Defect()
+# class DistortedDefect(Defect):
+#     """Class representing a DistortedDefect"""
+
+#     def __init__(self, charges: list, defect_type: str):
+#         self.charges = charges
+#         self.defect_type = defect_type
+
+#     def charges(self):
+#         return self.charges
+
+#     def bulk_site(self):
+#         return _get_bulk_defect_site(self)
+
+#     def defect_type(self):
+#         return self.defect_type
