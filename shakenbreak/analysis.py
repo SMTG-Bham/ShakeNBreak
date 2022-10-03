@@ -485,48 +485,50 @@ def get_structures(
                 f"{defect_species}"
             )
         for distortion_subdirectory in distortion_subdirectories:
-            distortion = _format_distortion_names(
-                distortion_label=distortion_subdirectory
-            )  # From subdirectory name, get the distortion label used for analysis
-            # e.g. from 'Bond_Distortion_-10.0% -> -0.1
-            if (
-                distortion != "Label_not_recognized"
-            ):  # If the subdirectory name is recognised
-                try:
-                    defect_structures_dict[distortion] = io.parse_structure(
-                        code=code,
-                        structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
-                        structure_filename=structure_filename,
-                    )
-                except Exception:
-                    warnings.warn(
-                        f"Unable to parse structure at {output_path}/"
-                        f"{defect_species}/{structure_filename}"
-                        f"/{distortion_subdirectory}/, storing as 'Not converged'"
-                    )
-                    defect_structures_dict[distortion] = "Not converged"
+            if "High_Energy" not in distortion_subdirectory:
+                distortion = _format_distortion_names(
+                    distortion_label=distortion_subdirectory
+                )  # From subdirectory name, get the distortion label used for analysis
+                # e.g. from 'Bond_Distortion_-10.0% -> -0.1
+                if (
+                    distortion != "Label_not_recognized"
+                ):  # If the subdirectory name is recognised
+                    try:
+                        defect_structures_dict[distortion] = io.parse_structure(
+                            code=code,
+                            structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
+                            structure_filename=structure_filename,
+                        )
+                    except Exception:
+                        warnings.warn(
+                            f"Unable to parse structure at {output_path}/"
+                            f"{defect_species}/{structure_filename}"
+                            f"/{distortion_subdirectory}/, storing as 'Not converged'"
+                        )
+                        defect_structures_dict[distortion] = "Not converged"
     else:
         if "Unperturbed" not in bond_distortions:
             bond_distortions.append(
                 "Unperturbed"
             )  # always include unperturbed structure
         for distortion in bond_distortions:
-            distortion_label = _get_distortion_filename(distortion)  # get filename
-            if (
-                distortion_label != "Distortion_not_recognized"
-            ):  # If the distortion label is recognised
-                try:
-                    defect_structures_dict[distortion] = io.parse_structure(
-                        code=code,
-                        structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
-                        structure_filename=structure_filename,
-                    )
-                except Exception:
-                    warnings.warn(
-                        f"Unable to parse structure at {output_path}/{defect_species}"
-                        f"/{distortion_label}/, storing as 'Not converged'"
-                    )
-                    defect_structures_dict[distortion] = "Not converged"
+            if not (isinstance(distortion, str) and "High_Energy" in distortion):
+                distortion_label = _get_distortion_filename(distortion)  # get filename
+                if (
+                    distortion_label != "Distortion_not_recognized"
+                ):  # If the distortion label is recognised
+                    try:
+                        defect_structures_dict[distortion] = io.parse_structure(
+                            code=code,
+                            structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
+                            structure_filename=structure_filename,
+                        )
+                    except Exception:
+                        warnings.warn(
+                            f"Unable to parse structure at {output_path}/{defect_species}"
+                            f"/{distortion_label}/, storing as 'Not converged'"
+                        )
+                        defect_structures_dict[distortion] = "Not converged"
 
     return (
         defect_structures_dict  # now contains the distortions from other charge states
