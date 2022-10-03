@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import call, patch
 
 import pytest
-from monty.serialization import dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 
 from shakenbreak import energy_lowering_distortions, input, io, plotting
@@ -248,6 +248,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         os.mkdir(defect_dir)
         for dist, energy in {  # Fake energies
             "Bond_Distortion_-35.0%": -205.7,
+            "Bond_Distortion_-77.0%_High_Energy": 1000.0,  # positive energy
             "Bond_Distortion_-50.0%_from_0": -206.5,
             "Bond_Distortion_0.0%": -205.6,
             "Unperturbed": -205.4,
@@ -272,6 +273,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # Parse final energies from OUTCAR files and write them to yaml files
         io.parse_energies(defect=defect_dir, path="./")
         self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))
+        energies = loadfn(f"{defect_dir}/{defect_dir}.yaml")
+        self.assertTrue(-0.35 in energies["distortions"])
+        self.assertFalse(-0.77 in energies["distortions"])
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
