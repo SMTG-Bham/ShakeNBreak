@@ -1595,6 +1595,34 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         )
         os.chdir(file_path)
 
+        # test ignoring "*High_Energy*" folder(s)
+        defect = "vac_1_Ti_0"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy",
+        )
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+            catch_exceptions=False,
+        )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        self.assertEqual(test_energies, energies)  # no Bond_Distortion_-20.0% results
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+        shutil.rmtree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy"
+        )
+
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""
         runner = CliRunner()
