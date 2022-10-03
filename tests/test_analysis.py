@@ -367,6 +367,34 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertIn(wrong_path_error, e.exception)
 
+        # test V_Cd_0 with ignoring High_Energy folder
+        shutil.copytree(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-40.0%"),
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            ),
+        )
+        defect_structures_dict = analysis.get_structures(
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
+        )
+        self.assertEqual(len(defect_structures_dict), 26)
+        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        self.assertEqual(
+            set(defect_structures_dict.keys()), set(bond_distortions + ["Unperturbed"])
+        )
+        relaxed_0pt5_V_Cd_structure = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
+            )
+        )
+        self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
+        shutil.rmtree(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            )
+        )
+
     def test_get_energies(self):
         """Test get_energies() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0/vac_1_Cd_0.yaml`):
