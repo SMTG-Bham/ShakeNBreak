@@ -110,6 +110,26 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
 
+        # Remove re-generated files
+        folder = "Bond_Distortion_-60.0%_from_0"
+        for charge in [-1, -2]:
+            if os.path.exists(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+            ):
+                shutil.rmtree(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                )
+        folder = "Bond_Distortion_20.0%_from_-1"
+        for charge in [0, -2]:
+            if os.path.exists(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+            ):
+                shutil.rmtree(
+                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                )
+        if_present_rm(os.path.join(self.EXAMPLE_RESULTS,
+                                     "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"))
+
     def test_snb_generate(self):
         runner = CliRunner()
         result = runner.invoke(
@@ -2280,24 +2300,44 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
             f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
-        # Remove generated files
-        folder = "Bond_Distortion_-60.0%_from_0"
-        for charge in [-1, -2]:
-            if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
-            ):
-                shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
-                )
-        folder = "Bond_Distortion_20.0%_from_-1"
-        for charge in [0, -2]:
-            if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
-            ):
-                shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
-                )
-        self.tearDown()
+        self.tearDown()  # Remove generated files
+
+        # test "*High_Energy*" ignored and doesn't cause errors
+        shutil.copytree(os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-60.0%"),
+                        os.path.join(self.EXAMPLE_RESULTS,
+                                     "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"))
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "regenerate",
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        if w:
+            self.assertTrue(any([war.category == UserWarning for war in w]))
+        self.assertIn(
+            "Comparing structures to specified ref_structure (Cd31 Te32)...",
+            result.output,
+        )
+        self.assertIn(
+            "Comparing and pruning defect structures across charge states...",
+            result.output,
+        )
+        self.assertIn(
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            result.output,
+        )
+        self.assertIn(
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
+            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            result.output,
+        )
+        self.assertFalse("High_Energy" in result.output)
+
 
     def test_groundstate(self):
         """Test groundstate() function"""
@@ -2445,6 +2485,30 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
             f"and try again.",
             str(result.exception),
         )
+
+        # test "*High_Energy*" ignored and doesn't cause errors
+        defect = "vac_1_Cd_0"
+        shutil.copytree(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-60.0%"),
+                        os.path.join(self.EXAMPLE_RESULTS,
+                                     f"{defect}/Bond_Distortion_-48.0%_High_Energy"))
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
+        )
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+        self.assertFalse("High_Energy" in result.output)
 
 
 if __name__ == "__main__":
