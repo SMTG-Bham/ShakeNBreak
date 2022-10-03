@@ -76,6 +76,7 @@ class CLITestCase(unittest.TestCase):
             "parsed_defects_dict.pickle",
             "distortion_metadata.json",
             "test_config.yml",
+            "job_file"
         ]:
             if_present_rm(i)
 
@@ -1256,6 +1257,108 @@ local_rattle: True"""
             "current directory",
             out,
         )
+
+        # test ignoring and renaming when positive energies present in OUTCAR
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        positive_energies_outcar_string = f"""
+energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
+energy  without entropy=     2923.36313118  energy(sigma->0) =     2923.36252910
+energy  without entropy=     3785.53283598  energy(sigma->0) =     3785.53033686
+energy  without entropy=     2944.54877982  energy(sigma->0) =     2944.54877982
+energy  without entropy=     5882.47593917  energy(sigma->0) =     5882.47494166
+energy  without entropy=      762.73605542  energy(sigma->0) =      762.73605542
+energy  without entropy=      675.21988502  energy(sigma->0) =      675.21988502
+energy  without entropy=      661.30956300  energy(sigma->0) =      661.30956300
+energy  without entropy=        9.90115363  energy(sigma->0) =        9.90115363
+energy  without entropy=        9.11186084  energy(sigma->0) =        9.11186084
+energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
+"""
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(positive_energies_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+        if_present_rm("job_file")
+        if_present_rm("Bond_Distortion_10.0%_High_Energy/job_file")
+        if_present_rm("Bond_Distortion_10.0%_High_Energy/OUTCAR")
+
+        # run again to test ignoring *High_Energy* folder(s)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertFalse("High_Energy" in out)
+        self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+        # don't need to remove any files as Bond_Distortion_10.0%_High_Energy has been ignored
+        os.rename("Bond_Distortion_10.0%_High_Energy", "Bond_Distortion_10.0%")
+
+        # test runs fine when only positive for first 3
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        positive_energies_outcar_string = f"""
+        energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
+        energy  without entropy=     2923.36313118  energy(sigma->0) =     2923.36252910
+        energy  without entropy=     3785.53283598  energy(sigma->0) =     3785.53033686
+        energy  without entropy=     2944.54877982  energy(sigma->0) =     -2944.54877982
+        energy  without entropy=     5882.47593917  energy(sigma->0) =     -5882.47494166
+        energy  without entropy=      762.73605542  energy(sigma->0) =      -762.73605542
+        energy  without entropy=      675.21988502  energy(sigma->0) =      -675.21988502
+        """
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(positive_energies_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
+        self.assertIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 2)
+        self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
+        os.remove("Bond_Distortion_10.0%/OUTCAR")
+        os.remove("Bond_Distortion_10.0%/POSCAR")
+        if_present_rm("job_file")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
 
     def test_parse(self):
         """Test parse() function.
