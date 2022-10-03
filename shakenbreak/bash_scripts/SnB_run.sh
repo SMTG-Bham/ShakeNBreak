@@ -42,6 +42,10 @@ SnB_run_loop () {
         then echo "No distortion folders found in current directory"
         break  # exit if no distortion folders found
       fi
+      # if "_High_Energy" is in the folder name, skip it
+      if [[ "$i" == *"_High_Energy"* ]]
+        then continue
+      fi
       if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR; # check calculation fully relaxed and finished
         then
         builtin cd "$i" || return
@@ -49,7 +53,17 @@ SnB_run_loop () {
           then "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || "cp" ../"${job_filepath}" "./${job_filename}" || return
         fi
         if [ -f OUTCAR ]  # if OUTCAR exists so rerunning rather than 1st run
-          then echo "${i%?} not (fully) relaxed, saving files and rerunning"
+          then
+          # count number of ionic steps with positive energies, after the first 5 ionic steps
+          pos_energies=$( grep entropy= OUTCAR | awk 'FNR>5 && $NF !~ /^-/{print $0}' | wc -l )
+          if (( pos_energies > 0 ))
+            then
+            echo "Positive energies encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
+            builtin cd .. || return
+            mv "${i%/}" "${i%/}_High_Energy"
+            continue
+          fi
+          echo "${i%?} not (fully) relaxed, saving files and rerunning"
           # shellcheck disable=SC2093
           bash "${DIR}"/save_vasp_files.sh
           "cp" CONTCAR POSCAR
