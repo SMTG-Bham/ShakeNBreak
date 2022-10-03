@@ -56,9 +56,10 @@ SnB_run_loop () {
           then
           # count number of ionic steps with positive energies, after the first 5 ionic steps
           pos_energies=$( grep entropy= OUTCAR | awk 'FNR>5 && $NF !~ /^-/{print $0}' | wc -l )
-          if (( pos_energies > 0 ))
+          errors=$(grep -Ec "(EDDDAV|ZHEGV|sick job|SICK JOB|CNORMN|ZPOTRF|ZTRTRI|SICK JOB)" OUTCAR)
+          if (( pos_energies > 0 )) ||  (( errors > 0 ))  # if there are positive energies or errors in OUTCAR
             then
-            echo "Positive energies encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
+            echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
             builtin cd .. || return
             mv "${i%/}" "${i%/}_High_Energy"
             continue

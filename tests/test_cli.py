@@ -114,7 +114,7 @@ class CLITestCase(unittest.TestCase):
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
                     os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
@@ -122,13 +122,16 @@ class CLITestCase(unittest.TestCase):
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
             if os.path.exists(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
                     os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
                 )
-        if_present_rm(os.path.join(self.EXAMPLE_RESULTS,
-                                     "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"))
+        if_present_rm(
+            os.path.join(
+                self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            )
+        )
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -1271,7 +1274,6 @@ local_rattle: True"""
             ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out = str(proc.communicate()[0])
-        print(out)
         self.assertIn(
             "No defect folders (with names ending in a number (charge state)) found in "
             "current directory",
@@ -1309,13 +1311,12 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
         self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertIn(
-            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "Positive energies or forces error encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
             out,
         )
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
-        if_present_rm("job_file")
         if_present_rm("Bond_Distortion_10.0%_High_Energy/job_file")
         if_present_rm("Bond_Distortion_10.0%_High_Energy/OUTCAR")
 
@@ -1332,7 +1333,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
         self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertNotIn(
-            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "Positive energies or forces encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
             out,
         )
@@ -1342,9 +1343,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         # don't need to remove any files as Bond_Distortion_10.0%_High_Energy has been ignored
         os.rename("Bond_Distortion_10.0%_High_Energy", "Bond_Distortion_10.0%")
 
-        # test runs fine when only positive for first 3
-        with open("job_file", "w") as fp:
-            fp.write("Test pop")
+        # test runs fine when only positive energies for first 3 ionic steps
         positive_energies_outcar_string = f"""
         energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
         energy  without entropy=     2923.36313118  energy(sigma->0) =     2923.36252910
@@ -1368,7 +1367,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertNotIn(
-            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "Positive energies or forces error encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
             out,
         )
@@ -1386,8 +1385,58 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         os.remove("Bond_Distortion_10.0%/POSCAR")
-        if_present_rm("job_file")
         if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test ignoring and renaming when forces error in OUTCAR
+        def _test_OUTCAR_error(error_string):
+            negative_energies_w_error_outcar_string = f"""
+energy  without entropy=     -1156.08478433  energy(sigma->0) =     -1156.08478433
+energy  without entropy=     -2923.36313118  energy(sigma->0) =     -2923.36252910
+energy  without entropy=     -3785.53283598  energy(sigma->0) =     -3785.53033686
+energy  without entropy=     -2944.54877982  energy(sigma->0) =     -2944.54877982
+energy  without entropy=     -5882.47593917  energy(sigma->0) =     -5882.47494166
+energy  without entropy=      -762.73605542  energy(sigma->0) =     -762.73605542
+Chosen VASP error message: {error_string}
+"""
+            with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+                fp.write(negative_energies_w_error_outcar_string)
+            proc = subprocess.Popen(
+                ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )  # setting 'job command' to 'echo' to
+            out = str(proc.communicate()[0])
+            self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+            self.assertIn("Unperturbed fully relaxed", out)
+            self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+            self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
+            self.assertNotIn(
+                "this vac_1_Ti_0_10.0% job_file", out
+            )  # job submit command
+            self.assertIn(
+                "Positive energies or forces error encountered for Bond_Distortion_10.0%, "
+                "ignoring and renaming to Bond_Distortion_10.0%_High_Energy",
+                out,
+            )
+            self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
+            self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+            if_present_rm("job_file")
+            if_present_rm("Bond_Distortion_10.0%_High_Energy/job_file")
+            if_present_rm("Bond_Distortion_10.0%_High_Energy/OUTCAR")
+            os.rename("Bond_Distortion_10.0%_High_Energy", "Bond_Distortion_10.0%")
+
+        for error in [
+            "EDDDAV",
+            "ZHEGV",
+            "sick job",
+            "SICK JOB",
+            "CNORMN",
+            "ZPOTRF",
+            "ZTRTRI",
+            "SICK JOB",
+        ]:
+            print(error)
+            _test_OUTCAR_error(error)
 
     def test_parse(self):
         """Test parse() function.
@@ -2303,9 +2352,12 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.tearDown()  # Remove generated files
 
         # test "*High_Energy*" ignored and doesn't cause errors
-        shutil.copytree(os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-60.0%"),
-                        os.path.join(self.EXAMPLE_RESULTS,
-                                     "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"))
+        shutil.copytree(
+            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-60.0%"),
+            os.path.join(
+                self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            ),
+        )
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -2337,7 +2389,6 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)
-
 
     def test_groundstate(self):
         """Test groundstate() function"""
@@ -2488,9 +2539,12 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
 
         # test "*High_Energy*" ignored and doesn't cause errors
         defect = "vac_1_Cd_0"
-        shutil.copytree(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-60.0%"),
-                        os.path.join(self.EXAMPLE_RESULTS,
-                                     f"{defect}/Bond_Distortion_-48.0%_High_Energy"))
+        shutil.copytree(
+            os.path.join(self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-60.0%"),
+            os.path.join(
+                self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-48.0%_High_Energy"
+            ),
+        )
         result = runner.invoke(
             snb,
             [
