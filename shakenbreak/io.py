@@ -205,11 +205,14 @@ def parse_energies(
             dir
             for dir in os.listdir(defect_dir)
             if os.path.isdir(os.path.join(defect_dir, dir))
-            and any(
-                [
-                    substring in dir
-                    for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
-                ]
+            and (
+                any(
+                    [
+                        substring in dir
+                        for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
+                    ]
+                )
+                and "High_Energy" not in dir
             )
         ]  # parse distortion directories
 
