@@ -76,7 +76,7 @@ class CLITestCase(unittest.TestCase):
             "parsed_defects_dict.pickle",
             "distortion_metadata.json",
             "test_config.yml",
-            "job_file"
+            "job_file",
         ]:
             if_present_rm(i)
 
@@ -1288,8 +1288,11 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
         self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
-        self.assertIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
-                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertIn(
+            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "renaming to Bond_Distortion_10.0%_High_Energy",
+            out,
+        )
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
         if_present_rm("job_file")
@@ -1308,8 +1311,11 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
         self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
-        self.assertNotIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
-                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertNotIn(
+            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "renaming to Bond_Distortion_10.0%_High_Energy",
+            out,
+        )
         self.assertFalse("High_Energy" in out)
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
@@ -1341,8 +1347,11 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
-        self.assertNotIn("Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
-                      "renaming to Bond_Distortion_10.0%_High_Energy", out)
+        self.assertNotIn(
+            "Positive energies encountered for Bond_Distortion_10.0%, ignoring and "
+            "renaming to Bond_Distortion_10.0%_High_Energy",
+            out,
+        )
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
         self.assertIn(
