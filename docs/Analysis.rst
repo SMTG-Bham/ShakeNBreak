@@ -74,8 +74,8 @@ Again if we want to analyse the results for **all** defects present in a given/c
     Further analysis tools are provided through the python API. These are documented in
     the section :ref:`shakenbreak.analysis <api_analysis>`
     and exemplified in the
-    `example notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_
-    (Section 5: Analyse defect distortions).
+    `Analysis section <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html#optional-analyse-the-defect-distortions-found-with-snb>`_
+    of the Python API tutorial.
 
 Plotting
 -----------
