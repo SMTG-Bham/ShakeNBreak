@@ -1083,8 +1083,8 @@ def parse(defect, all, path, code):
     "--ref_struct",
     "-ref",
     help="Structure to use as a reference for comparison "
-    "(to compute atomic displacements). Given as a key from"
-    "`defect_structures_dict`.",
+    "(to compute atomic displacements). Given as a key from "
+    "`defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%').",
     type=str,
     default="Unperturbed",
     show_default=True,

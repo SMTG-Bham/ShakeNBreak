@@ -668,8 +668,9 @@ def calculate_struct_comparison(
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` or a pymatgen Structure object (to
-            compare with a specific external structure).
+            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
+             or a pymatgen Structure object (to compare with a specific external
+             structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via
@@ -779,8 +780,9 @@ def compare_structures(
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` or a pymatgen Structure object (to
-            compare with a specific external structure).
+            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
+            or a pymatgen Structure object (to compare with a specific external
+            structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via
