@@ -1,18 +1,24 @@
 .. _tutorial_generation:
 
-Structure generation
+Structure Generation
 =====================
 
 For a single defect
 -------------------
-To generate the distorted structures for a specific defect in a range of charge states, we need to specify
-the structure for the bulk material (with ``--bulk`` flag), the defect structure (``--defect``) and the charge
-states (either with ``--min-charge`` and ``--max-charge`` to specify a range of charge states or with ``-charge``
-for a single charge state):
+To generate the distorted structures for a specific defect in a range of charge states, we need to specify the structure
+for the bulk material (with ``--bulk`` flag) and the defect structure (``--defect``):
 
 .. code:: bash
 
-    $ snb-generate --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR --min-charge -2 --max-charge 0 --code VASP
+    $ snb-generate --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR
+
+Here if you don't specify the charge states, :code:`ShakeNBreak` will assume a default charge range of -2 to +2. To
+specify the defect charge states, we can use ``--min-charge`` and ``--max-charge`` (to specify a range of charge states)
+or ``--charge`` (for a single charge state):
+
+.. code:: bash
+
+    $ snb-generate --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR --min-charge -2 --max-charge 0
 
 The code will try to automatically identify the defect site in the structure. If the site is not found,
 we'll get a warning and we'll need to specify the defect site with the ``--defect-index`` or ``--defect-coords`` flag:
@@ -50,6 +56,11 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
 
 
+.. NOTE::
+    By default, :code:`ShakeNBreak` generates input files for the :code:`VASP` code, but this can be controlled with the
+    ``--code`` flag.
+
+
 .. TIP::
     To display additional information about the generated distortions we can set the ``--verbose`` flag.
 
@@ -63,7 +74,7 @@ to the top-level directory containing the defect structures/folders with the ``-
 
 .. code:: bash
 
-    $ snb-generate-all --bulk bulk_structure.cif --defects defects_folder --code VASP
+    $ snb-generate-all --bulk bulk_structure.cif --defects defects_folder
 
 By default, the code will look for the structure files
 (in ``cif`` or ``POSCAR`` format) present in the specified defects directory or in the immediate subdirectories. For example,
@@ -157,11 +168,19 @@ To submit all defects present in the current directory:
 
 .. code:: bash
 
-    $ snb-run --job-script my_job_script.sh --all
+    $ snb-run -a
 
-This assumes that our HPC has the ``SGE`` queuing system. If instead it relies on ``SLURM``,
-we can use the ``--submit-command`` flag:
+This assumes the ``SGE`` queuing system (i.e. ``qsub`` = job submission command) for the HPC and a job script name of
+``job`` by default, but again can be controlled with the ``--submit-command`` and ``--job-script`` flags
+(as well as other options, see ``snb-run -h``). For example, if we are using the ``SLURM`` queuing system and a job
+script file name of ``my_job_script.sh``, we would use:
 
 .. code:: bash
 
     $ snb-run --submit-command sbatch --job-script my_job_script.sh --all
+
+To submit a single defect, we can simply run the command :code:`snb-run` within the defect folder:
+
+.. code:: bash
+
+    $ snb-run
