@@ -551,9 +551,11 @@ def get_energy_lowering_distortions(
                 warnings.warn(
                     f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
                     f"than unperturbed, indicating problems with the relaxations. You should "
-                    f"firstly check the calculations finished ok for this defect species, "
-                    f"and if so, you likely need to adjust the `std_dev` rattling parameter ("
-                    f"can occur for hard/ionic/close-packed materials); see "
+                    f"first check if the calculations finished ok for this defect species and "
+                    f"if this defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    f"materials); see "
                     f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
                 )
 

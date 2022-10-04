@@ -642,10 +642,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
             warning_message = (
                 "All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
-                "unperturbed, indicating problems with the relaxations. You should firstly check "
-                "the calculations finished ok for this defect species, and if so, you likely "
-                "need to adjust the `std_dev` rattling parameter (can occur for "
-                "hard/ionic/close-packed materials); see "
+                "unperturbed, indicating problems with the relaxations. You should "
+                "first check if the calculations finished ok for this defect species and "
+                "if this defect charge state is reasonable (often this is the result of an "
+                "unreasonable charge state). If both checks pass, you likely need to adjust "
+                "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                "materials); see "
                 "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
             )
             self.assertTrue(
