@@ -69,6 +69,11 @@ class CLITestCase(unittest.TestCase):
         ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+        self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
+            )
+        )
 
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
@@ -151,7 +156,7 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Auto site-matching identified {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
-            f"to be type Vacancy with site [0. 0. 0.] Cd",
+            f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
             result.output,
         )
         self.assertIn(
@@ -223,7 +228,7 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn(
             f"Auto site-matching identified"
             f" {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
-            f"to be type Vacancy with site [0. 0. 0.] Cd",
+            f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
             result.output,
         )
         self.assertIn(
@@ -353,7 +358,8 @@ class CLITestCase(unittest.TestCase):
             metadata = json.load(metadata_file)
         np.testing.assert_equal(metadata, wrong_site_V_Cd_dict)
 
-        # test warning with defect_coords option but wrong site:
+        # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
+        # using Int_Cd because V_Cd is at (0,0,0) so fractional and Cartesian coordinates the same
         self.tearDown()
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
@@ -362,73 +368,44 @@ class CLITestCase(unittest.TestCase):
                 [
                     "generate",
                     "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
                     "-b",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                     "-c",
                     "0",
                     "--defect-coords",
-                    0.5,
-                    0.5,
-                    0.5,
+                    0.0,  # 0.8125,  # actual Int_Cd_2 site
+                    0.0,  # 0.1875,
+                    0.0,  # 0.8125,
                     "-v",
                 ],
                 catch_exceptions=False,
             )
             self.assertEqual(result.exit_code, 0)
             warning_message = (
-                "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) "
-                "vacancy defect, but could not find it in bulk structure (found 0 "
-                "possible defect sites). Will attempt auto site-matching instead."
+                "Coordinates (0.0, 0.0, 0.0) were specified for (auto-determined) interstitial "
+                "defect, but there are no extra/missing/different species within a 1 Å sphere of "
+                "this site when comparing bulk and defect structures. If you are trying to "
+                "generate non-defect polaronic distortions, please use the distort() and rattle() "
+                "functions in shakenbreak.distortions via the Python API. Reverting to auto-site "
+                "matching instead."
             )
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            self.assertTrue(any(warning.category == UserWarning for warning in w))
+            self.assertTrue(any(str(warning.message) == warning_message for warning in w))
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
-                f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-                + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                f"\tDefect Site Index / Frac Coords: 65\n"
+                + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+                + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
                 result.output,
             )
-
+            self.assertEqual(Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
+                             self.Int_Cd_2_minus0pt6_struc_rattled)
         self.tearDown()
-        runner = CliRunner()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.5,
-                    0.5,
-                    0.5,
-                    "-v",
-                ],
-                catch_exceptions=False,
-            )
-            self.assertEqual(result.exit_code, 0)
-            warning_message = (
-                "Coordinates (0.5, 0.5, 0.5) were specified for (auto-determined) "
-                "vacancy defect, but could not find it in bulk structure (found 0 "
-                "possible defect sites). Will attempt auto site-matching instead."
-            )
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
-            self.assertIn("--Distortion -60.0%", result.output)
-            self.assertIn(
-                f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-                + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
-                result.output,
-            )
 
-        # test defect_coords working:
+        # test defect_coords working even when slightly off correct site and using slightly rattled
+        # bulk
+        # TODO: ...
         self.tearDown()
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
