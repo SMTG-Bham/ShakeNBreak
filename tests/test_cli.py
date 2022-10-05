@@ -41,6 +41,9 @@ class CLITestCase(unittest.TestCase):
         self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
+        self.CdTe_bulk_struc = Structure.from_file(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Bulk_Supercell_POSCAR")
+        )
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR,
@@ -453,13 +456,57 @@ class CLITestCase(unittest.TestCase):
                 self.Int_Cd_2_minus0pt6_struc_rattled,
             )
 
+            # test defect_coords working even when significantly off (~2.2 Å) correct site,
+            # with rattled bulk
+            self.tearDown()
+            with warnings.catch_warnings(record=True) as w:
+                rattled_bulk = rattle(self.CdTe_bulk_struc)
+                rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
+                result = runner.invoke(
+                    snb,
+                    [
+                        "generate",
+                        "-d",
+                        f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                        "-b",
+                        f"Rattled_Bulk_CdTe_POSCAR",
+                        "-c",
+                        "0",
+                        "--defect-coords",
+                        0.9,  # 0.8125,  # actual Int_Cd_2 site
+                        0.3,  # 0.1875,
+                        0.9,  # 0.8125,
+                        "-v",
+                    ],
+                    catch_exceptions=False,
+                )
+                self.assertEqual(result.exit_code, 0)
+                if w:
+                    # Check no problems in identifying the defect site
+                    # Note this also gives the following UserWarning:
+                    # Bond_Distortion_-60.0% for defect Int_Cd_mult1 gives an interatomic
+                    # distance less than 1.0 Å (1.0 Å), which is likely to give explosive forces.
+                    # Omitting this distortion.
+                    self.assertFalse(
+                        any("Coordinates" in str(warning.message) for warning in w)
+                    )
+
+                self.assertNotIn(f"Auto site-matching", result.output)
+                self.assertIn("--Distortion -60.0%", result.output)
+
+                self.assertIn(
+                    f"\tDefect Site Index / Frac Coords: 65\n"
+                    + "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, "
+                      "'Cd')]\n"
+                    + "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, "
+                      "'Cd')]",
+                    result.output,
+                )
+
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            bulk = Structure.from_file(
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR"
-            )
-            rattled_bulk = rattle(bulk)
+            rattled_bulk = rattle(self.CdTe_bulk_struc)
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
                 snb,
