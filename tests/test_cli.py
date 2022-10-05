@@ -384,7 +384,7 @@ class CLITestCase(unittest.TestCase):
             self.assertEqual(result.exit_code, 0)
             warning_message = (
                 "Coordinates (0.0, 0.0, 0.0) were specified for (auto-determined) interstitial "
-                "defect, but there are no extra/missing/different species within a 1 Å sphere of "
+                "defect, but there are no extra/missing/different species within a 2.5 Å radius of "
                 "this site when comparing bulk and defect structures. If you are trying to "
                 "generate non-defect polaronic distortions, please use the distort() and rattle() "
                 "functions in shakenbreak.distortions via the Python API. Reverting to auto-site "
@@ -484,7 +484,6 @@ class CLITestCase(unittest.TestCase):
             # Check no problems in identifying the defect site
             self.assertNotIn("Coordinates", str(w[0].message))
         self.assertIn("--Distortion -60.0%", result.output)
-        print(result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: [0.015687 0.01685  0.001366]\n"  # rattled position
             + "            Original Neighbour Distances: [(2.33, 42, 'Te'), (2.73, 33, 'Te')]\n"
@@ -1500,7 +1499,6 @@ Chosen VASP error message: {error_string}
             "ZTRTRI",
             "SICK JOB",
         ]:
-            print(error)
             _test_OUTCAR_error(error)
 
     def test_parse(self):

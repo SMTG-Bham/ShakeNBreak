@@ -57,12 +57,13 @@ def identify_defect(
         if defect_index is None:
             bulk_lattice = bulk_structure.lattice
             site_displacement_tol = (
-                0.1  # distance tolerance for site matching to identify defect
+                0.01  # distance tolerance for site matching to identify defect, increases in
+                # jumps of 0.1 Å
             )
             max_possible_defect_sites_in_bulk_struc = sorted(
                 bulk_structure.get_sites_in_sphere(
                     bulk_lattice.get_cartesian_coords(defect_coords),
-                    1,
+                    2.5,
                     include_index=True,
                 ),
                 key=lambda x: x[1],
@@ -70,7 +71,7 @@ def identify_defect(
             max_possible_defect_sites_in_defect_struc = sorted(
                 defect_structure.get_sites_in_sphere(
                     bulk_lattice.get_cartesian_coords(defect_coords),
-                    1,
+                    2.5,
                     include_index=True,
                 ),
                 key=lambda x: x[1],
@@ -103,7 +104,8 @@ def identify_defect(
                 warnings.warn(
                     f"Coordinates {defect_coords} were specified for (auto-determined) "
                     f"{defect_type} defect, but there are no extra/missing/different species "
-                    f"within a 1 Å sphere of this site when comparing bulk and defect structures. "
+                    f"within a 2.5 Å radius of this site when comparing bulk and defect "
+                    f"structures. "
                     f"If you are trying to generate non-defect polaronic distortions, please use "
                     f"the distort() and rattle() functions in shakenbreak.distortions via the "
                     f"Python API. "
@@ -113,7 +115,7 @@ def identify_defect(
             else:
                 searched = "bulk or defect"
                 possible_defects = []
-                while site_displacement_tol < 0.8:  # loop over distance tolerances
+                while site_displacement_tol < 2.5:  # loop over distance tolerances
                     possible_defect_sites_in_bulk_struc = sorted(
                         bulk_structure.get_sites_in_sphere(
                             bulk_lattice.get_cartesian_coords(defect_coords),
@@ -154,9 +156,9 @@ def identify_defect(
 
                 if defect_index is None:
                     warnings.warn(
-                        f"Coordinates {defect_coords} were specified for (auto-determined) "
-                        f"{defect_type} defect, but could not find it in {searched} structure "
-                        f"(found {len(possible_defects)} possible defect sites). "
+                        f"Could not locate (auto-determined) {defect_type} defect site within a "
+                        f"2.5 Å radius of specified coordinates {defect_coords} in {searched} "
+                        f"structure (found {len(possible_defects)} possible defect sites). "
                         "Will attempt auto site-matching instead."
                     )
 
