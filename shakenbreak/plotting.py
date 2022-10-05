@@ -181,57 +181,6 @@ def _format_defect_name(
         if dummy_h.is_valid_symbol(two_char_string)
     ]
 
-    pre_vacancy_strings = [
-        "V",
-        "v",
-        "V_",
-        "v_",
-        "Vac",
-        "vac",
-        "Vac_",
-        "vac_",
-        "Va",
-        "va",
-        "Va_",
-        "va_",
-    ]
-    post_vacancy_strings = [
-        "_v",  # but not '_V' as could be vanadium
-        "v",  # but not 'V' as could be vanadium
-        "_vac",
-        "_Vac",
-        "vac",
-        "Vac",
-        "va",
-        "Va",
-        "_va",
-        "_Va",
-    ]
-    pre_interstitial_strings = [
-        "i",  # but not 'I' as could be iodine
-        "i_",  # but not 'I_' as could be iodine
-        "Int",
-        "int",
-        "Int_",
-        "int_",
-        "Inter",
-        "inter",
-        "Inter_",
-        "inter_",
-    ]
-    post_interstitial_strings = [
-        "_i",  # but not '_I' as could be iodine
-        "i",  # but not 'I' as could be iodine
-        "_int",
-        "_Int",
-        "int",
-        "Int",
-        "inter",
-        "Inter",
-        "_inter",
-        "_Inter",
-    ]
-
     def _check_matching_defect_format(
         element, name, pre_def_type_list, post_def_type_list
     ):
@@ -278,77 +227,192 @@ def _format_defect_name(
         else:
             return False, None
 
-    if len(possible_two_character_elements) > 0:
-        if len(possible_two_character_elements) == 1:
-            # vacancy?
-            poss_element = possible_two_character_elements[0]
-            if _check_matching_defect_format(
-                poss_element, pre_charge_name, pre_vacancy_strings, post_vacancy_strings
-            ):
-                defect_name = f"V$_{{{poss_element}}}^{{{charge}}}$"
-            elif _check_matching_defect_format(
-                poss_element,
-                pre_charge_name,
-                pre_interstitial_strings,
-                post_interstitial_strings,
-            ):
-                defect_name = f"{poss_element}$_i^{{{charge}}}$"
+    def _try_vacancy_interstitial_match(element, name):
+        defect_name = None
+        pre_vacancy_strings = [
+            "V",
+            "v",
+            "V_",
+            "v_",
+            "Vac",
+            "vac",
+            "Vac_",
+            "vac_",
+            "Va",
+            "va",
+            "Va_",
+            "va_",
+        ]
+        post_vacancy_strings = [
+            "_v",  # but not '_V' as could be vanadium
+            "v",  # but not 'V' as could be vanadium
+            "_vac",
+            "_Vac",
+            "vac",
+            "Vac",
+            "va",
+            "Va",
+            "_va",
+            "_Va",
+        ]
+        pre_interstitial_strings = [
+            "i",  # but not 'I' as could be iodine
+            "i_",  # but not 'I_' as could be iodine
+            "Int",
+            "int",
+            "Int_",
+            "int_",
+            "Inter",
+            "inter",
+            "Inter_",
+            "inter_",
+        ]
+        post_interstitial_strings = [
+            "_i",  # but not '_I' as could be iodine
+            "i",  # but not 'I' as could be iodine
+            "_int",
+            "_Int",
+            "int",
+            "Int",
+            "inter",
+            "Inter",
+            "_inter",
+            "_Inter",
+        ]
+        if _check_matching_defect_format(
+            element, name, pre_vacancy_strings, post_vacancy_strings
+        ):
+            defect_name = f"V$_{{{element}}}^{{{charge}}}$"
+        elif _check_matching_defect_format(
+            element,
+            name,
+            pre_interstitial_strings,
+            post_interstitial_strings,
+        ):
+            defect_name = f"{element}$_i^{{{charge}}}$"
+        else:
+            match_found, site_num = _check_matching_defect_format_with_site_num(
+                element,
+                name,
+                pre_vacancy_strings,
+                post_vacancy_strings,
+            )
+            if match_found:
+                defect_name = f"V$_{{{element}_{site_num}}}^{{{charge}}}$"
             else:
                 match_found, site_num = _check_matching_defect_format_with_site_num(
-                    poss_element,
-                    pre_charge_name,
-                    pre_vacancy_strings,
-                    post_vacancy_strings,
+                    element,
+                    name,
+                    pre_interstitial_strings,
+                    post_interstitial_strings,
                 )
                 if match_found:
-                    defect_name = f"V$_{{{poss_element}_{site_num}}}^{{{charge}}}$"
-                else:
-                    match_found, site_num = _check_matching_defect_format_with_site_num(
-                        poss_element,
-                        pre_charge_name,
-                        pre_interstitial_strings,
-                        post_interstitial_strings,
-                    )
-                    if match_found:
-                        defect_name = f"{poss_element}$_{{i_{site_num}}}^{{{charge}}}$"
+                    defect_name = f"{element}$_{{i_{site_num}}}^{{{charge}}}$"
 
-    defect_type = defect_species.split("_")[0]  # vac, as or int
-    if (
-        defect_type.capitalize() == "Int"
-    ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
-        site_element = defect_species.split("_")[1]
-        site = defect_species.split("_")[2]
-        if include_site_num_in_name:
-            # by default include defect site in defect name for interstitials
-            defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
-        else:
-            defect_name = f"{site_element}$_i^{{{charge}}}$"
-    else:
-        site = defect_species.split("_")[
-            1
-        ]  # number indicating defect site (from doped)
-        site_element = defect_species.split("_")[2]  # element at defect site
+        return defect_name
 
-    if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type.lower() == "vac":
-            defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
-            # double brackets to treat it literally (tex), then extra {} for
-            # python str formatting
-        elif defect_type.lower() in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type.capitalize() != "Int":
-            raise ValueError("Defect type not recognized. Please check spelling.")
-    else:
-        if defect_type.lower() == "vac":
-            defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type.lower() in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type.capitalize() != "Int":
-            raise ValueError(
-                f"Defect type {defect_type} not recognized. Please check spelling."
+    def _try_substitution_match(substituting_element, orig_site_element, name):
+        defect_name = None
+        if any(f"{substituting_element}_{orig_site_element}" in pre_charge_name):
+            defect_name = (
+                f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
             )
+        elif any(f"{substituting_element}_on_{orig_site_element}" in pre_charge_name):
+            defect_name = (
+                f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
+            )
+
+        return defect_name
+
+    def _defect_name_from_matching_elements(element_matches, name):
+        defect_name = None
+        if len(element_matches) == 1:  # vacancy or interstitial?
+            defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+        elif len(element_matches) == 2:
+            # try substitution/antisite match, if not try vacancy/interstitial with first element
+            defect_name = _try_substitution_match(
+                element_matches[0], element_matches[1], name
+            )
+            if defect_name is None:
+                defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+        else:
+            # try use first match and see if we match vacancy or interstitial format
+            # if not, try first and second matches and see if we match substitution format
+            # otherwise fail
+            defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+            if defect_name is None:
+                defect_name = _try_substitution_match(
+                    element_matches[0], element_matches[1], name
+                )
+
+        return defect_name
+
+    if len(possible_two_character_elements) > 0:
+        defect_name = _defect_name_from_matching_elements(
+            possible_two_character_elements, pre_charge_name
+        )
+
+    if defect_name is None:
+        # try single-character element match
+        possible_one_character_elements = [
+            character
+            for character in pre_charge_name
+            if dummy_h.is_valid_symbol(character)
+        ]
+        if len(possible_one_character_elements) > 0:
+            defect_name = _defect_name_from_matching_elements(
+                possible_one_character_elements, pre_charge_name
+            )
+
+    if defect_name is None:
+        # try matching to PyCDT/doped style:
+        try:
+            defect_type = defect_species.split("_")[0]  # vac, as or int
+            if (
+                defect_type.capitalize() == "Int"
+            ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
+                site_element = defect_species.split("_")[1]
+                site = defect_species.split("_")[2]
+                if include_site_num_in_name:
+                    # by default include defect site in defect name for interstitials
+                    defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
+                else:
+                    defect_name = f"{site_element}$_i^{{{charge}}}$"
+            else:
+                site = defect_species.split("_")[
+                    1
+                ]  # number indicating defect site (from doped)
+                site_element = defect_species.split("_")[2]  # element at defect site
+
+            if (
+                include_site_num_in_name
+            ):  # whether to include the site number in defect name
+                if defect_type.lower() == "vac":
+                    defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
+                    # double brackets to treat it literally (tex), then extra {} for
+                    # python str formatting
+                elif defect_type.lower() in ["as", "sub"]:
+                    subs_element = defect_species.split("_")[4]
+                    defect_name = (
+                        f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
+                    )
+                elif defect_type.capitalize() != "Int":
+                    raise ValueError(
+                        "Defect type not recognized. Please check spelling."
+                    )
+            else:
+                if defect_type.lower() == "vac":
+                    defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
+                elif defect_type.lower() in ["as", "sub"]:
+                    subs_element = defect_species.split("_")[4]
+                    defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
+                elif defect_type.capitalize() != "Int":
+                    raise ValueError(
+                        f"Defect type {defect_type} not recognized. Please check spelling."
+                    )
+        except Exception:
+            defect_name = None
+
     return defect_name
 
 
