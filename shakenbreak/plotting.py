@@ -4,6 +4,7 @@ energy-lowering distortions.
 """
 import datetime
 import os
+import re
 import shutil
 import warnings
 from typing import Optional, Tuple
@@ -14,6 +15,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib import font_manager
 from matplotlib.figure import Figure
+from pymatgen.core.periodic_table import Element
 
 from shakenbreak import analysis
 
@@ -154,13 +156,162 @@ def _format_defect_name(
     except ValueError:
         raise (
             ValueError(
-                f"Problem reading defect name {defect_species}. "
-                "It should include the charge state (i.e `vac_1_Cd_0`)."
+                f"Problem reading defect name {defect_species}, should end with charge state "
+                f"after underscore (e.g. vac_1_Cd_0)"
             )
         )
     # Format defect name for title/axis labels
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
+
+    defect_name = ""
+    dummy_h = Element("H")
+    pre_charge_name = defect_species.rsplit("_", 1)[
+        0
+    ]  # defect name without charge state
+
+    two_character_pairs_in_name = [
+        pre_charge_name[i : i + 2]
+        for i in range(0, len(pre_charge_name), 1)
+        if pre_charge_name[i : i + 3] != "Int" and len(pre_charge_name[i : i + 2]) == 2
+    ]  # need to avoid "Int" giving "In" as valid element
+    possible_two_character_elements = [
+        two_char_string
+        for two_char_string in two_character_pairs_in_name
+        if dummy_h.is_valid_symbol(two_char_string)
+    ]
+
+    pre_vacancy_strings = [
+        "V",
+        "v",
+        "V_",
+        "v_",
+        "Vac",
+        "vac",
+        "Vac_",
+        "vac_",
+        "Va",
+        "va",
+        "Va_",
+        "va_",
+    ]
+    post_vacancy_strings = [
+        "_v",  # but not '_V' as could be vanadium
+        "v",  # but not 'V' as could be vanadium
+        "_vac",
+        "_Vac",
+        "vac",
+        "Vac",
+        "va",
+        "Va",
+        "_va",
+        "_Va",
+    ]
+    pre_interstitial_strings = [
+        "i",  # but not 'I' as could be iodine
+        "i_",  # but not 'I_' as could be iodine
+        "Int",
+        "int",
+        "Int_",
+        "int_",
+        "Inter",
+        "inter",
+        "Inter_",
+        "inter_",
+    ]
+    post_interstitial_strings = [
+        "_i",  # but not '_I' as could be iodine
+        "i",  # but not 'I' as could be iodine
+        "_int",
+        "_Int",
+        "int",
+        "Int",
+        "inter",
+        "Inter",
+        "_inter",
+        "_Inter",
+    ]
+
+    def _check_matching_defect_format(
+        element, name, pre_def_type_list, post_def_type_list
+    ):
+        if any(
+            f"{pre_def_type}{element}" in name for pre_def_type in pre_def_type_list
+        ):
+            return True
+        elif any(
+            f"{element}{post_def_type}" in name for post_def_type in post_def_type_list
+        ):
+            return True
+        else:
+            return False
+
+    def _check_matching_defect_format_with_site_num(
+        element, name, pre_def_type_list, post_def_type_list
+    ):
+        match = re.match(r"([a-z]+)([0-9]+)", name, re.I)
+        if match:
+            items = match.groups()
+            if any(
+                (
+                    f"{pre_def_type}{items[1]}{element}" in name
+                    for pre_def_type in pre_def_type_list
+                )
+                or (
+                    f"{pre_def_type}{items[1]}_{element}" in name
+                    for pre_def_type in pre_def_type_list
+                )
+            ):
+                return True, items[1]
+            elif any(
+                (
+                    f"{element}{items[1]}{post_def_type}" in pre_charge_name
+                    for post_def_type in post_def_type_list
+                )
+                or (
+                    f"{element}{items[1]}_{post_def_type}" in pre_charge_name
+                    for post_def_type in post_def_type_list
+                )
+            ):
+                return True, items[1]
+
+        else:
+            return False, None
+
+    if len(possible_two_character_elements) > 0:
+        if len(possible_two_character_elements) == 1:
+            # vacancy?
+            poss_element = possible_two_character_elements[0]
+            if _check_matching_defect_format(
+                poss_element, pre_charge_name, pre_vacancy_strings, post_vacancy_strings
+            ):
+                defect_name = f"V$_{{{poss_element}}}^{{{charge}}}$"
+            elif _check_matching_defect_format(
+                poss_element,
+                pre_charge_name,
+                pre_interstitial_strings,
+                post_interstitial_strings,
+            ):
+                defect_name = f"{poss_element}$_i^{{{charge}}}$"
+            else:
+                match_found, site_num = _check_matching_defect_format_with_site_num(
+                    poss_element,
+                    pre_charge_name,
+                    pre_vacancy_strings,
+                    post_vacancy_strings,
+                )
+                if match_found:
+                    defect_name = f"V$_{{{poss_element}_{site_num}}}^{{{charge}}}$"
+                else:
+                    match_found, site_num = _check_matching_defect_format_with_site_num(
+                        poss_element,
+                        pre_charge_name,
+                        pre_interstitial_strings,
+                        post_interstitial_strings,
+                    )
+                    if match_found:
+                        defect_name = f"{poss_element}$_{{i_{site_num}}}^{{{charge}}}$"
+
     defect_type = defect_species.split("_")[0]  # vac, as or int
     if (
         defect_type.capitalize() == "Int"

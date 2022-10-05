@@ -70,8 +70,6 @@ class _HiddenPrints:
 
 
 # Helper functions
-
-
 def _read_distortion_metadata(output_path: str) -> dict:
     """
     Parse distortion_metadata.json file
