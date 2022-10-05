@@ -138,6 +138,7 @@ class CLITestCase(unittest.TestCase):
                 self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             )
         )
+        if_present_rm("Rattled_Bulk_CdTe_POSCAR")
 
     def test_snb_generate(self):
         runner = CliRunner()
@@ -455,7 +456,9 @@ class CLITestCase(unittest.TestCase):
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            bulk = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR")
+            bulk = Structure.from_file(
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR"
+            )
             rattled_bulk = rattle(bulk)
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
@@ -520,7 +523,7 @@ class CLITestCase(unittest.TestCase):
                 f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
                 + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
                 + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, "
-                  "'Te')]",
+                "'Te')]",
                 result.output,
             )
             self.assertNotIn(f"Auto site-matching", result.output)
