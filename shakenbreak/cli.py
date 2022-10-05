@@ -174,9 +174,10 @@ def identify_defect(
 
     if defect_index is None:
         site_displacement_tol = (
-            0.1  # distance tolerance for site matching to identify defect
+            0.01  # distance tolerance for site matching to identify defect, increases in
+            # jumps of 0.1 Å
         )
-        while site_displacement_tol < 0.8:  # loop over distance tolerances
+        while site_displacement_tol < 1.5:  # loop over distance tolerances
             bulk_sites = [site.frac_coords for site in bulk_structure]
             defect_sites = [site.frac_coords for site in defect_structure]
             dist_matrix = defect_structure.lattice.get_all_distances(
@@ -237,9 +238,10 @@ def identify_defect(
 
         if defect_index is None:
             raise ValueError(
-                "Defect coordinates could not be identified from site-matching. "
+                "Defect coordinates could not be identified from auto site-matching. "
                 f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
-                "structures correspond to the same supercell"
+                "structures correspond to the same supercell and/or specify defect site with "
+                "--defect-coords or --defect-index."
             )
 
     if defect_type == "vacancy":
