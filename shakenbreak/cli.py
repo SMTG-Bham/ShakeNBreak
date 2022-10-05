@@ -172,11 +172,15 @@ def identify_defect(
                 "just defect_index will be used to determine the defect site"
             )
 
-    if defect_index is None:
-        site_displacement_tol = (
-            0.01  # distance tolerance for site matching to identify defect, increases in
-            # jumps of 0.1 Å
-        )
+    # if defect_index is None:
+    # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
+    # so we can warn user if manual specification and auto site-matching give conflicting results
+    site_displacement_tol = (
+        0.01  # distance tolerance for site matching to identify defect, increases in
+        # jumps of 0.1 Å
+    )
+    auto_matching_defect_index = None
+    try:
         while site_displacement_tol < 1.5:  # loop over distance tolerances
             bulk_sites = [site.frac_coords for site in bulk_structure]
             defect_sites = [site.frac_coords for site in defect_structure]
@@ -231,23 +235,57 @@ def identify_defect(
                 )
 
             if len(possible_defects) == 1:
-                defect_index = possible_defects[0][0]
+                auto_matching_defect_index = possible_defects[0][0]
                 break
 
             site_displacement_tol += 0.1
+    except Exception:
+        pass  # failed auto-site matching, rely on user input or raise error if no user input
 
-        if defect_index is None:
-            raise ValueError(
-                "Defect coordinates could not be identified from auto site-matching. "
-                f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
-                "structures correspond to the same supercell and/or specify defect site with "
-                "--defect-coords or --defect-index."
-            )
+    if defect_index is None and auto_matching_defect_index is None:
+        raise ValueError(
+            "Defect coordinates could not be identified from auto site-matching. "
+            f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
+            "structures correspond to the same supercell and/or specify defect site with "
+            "--defect-coords or --defect-index."
+        )
+    elif defect_index is None and auto_matching_defect_index is not None:
+        defect_index = auto_matching_defect_index
 
     if defect_type == "vacancy":
         defect_site = bulk_structure[defect_index]
     else:
         defect_site = defect_structure[defect_index]
+
+    if defect_index is not None and auto_matching_defect_index is not None:
+        if defect_index != auto_matching_defect_index:
+            if defect_type == "vacancy":
+                auto_matching_defect_site = bulk_structure[auto_matching_defect_index]
+            else:
+                auto_matching_defect_site = defect_structure[auto_matching_defect_index]
+
+            def _site_info(site):
+                return (
+                    f"{site.species_string} at [{site._frac_coords[0]:.3f},"
+                    f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
+                )
+
+            if defect_coords is not None:
+                warnings.warn(
+                    f"Note that specified coordinates {defect_coords} for (auto-determined)"
+                    f" {defect_type} defect gave a match to defect site:"
+                    f" {_site_info(defect_site)} in {searched} structure, but auto site-matching "
+                    f"predicted a different defect site: {_site_info(auto_matching_defect_site)}. "
+                    f"Will use user-specified site: {_site_info(defect_site)}."
+                )
+            else:
+                warnings.warn(
+                    f"Note that specified defect index {defect_index} for (auto-determined)"
+                    f" {defect_type} defect gives defect site: {_site_info(defect_site)}, "
+                    f"but auto site-matching predicted a different defect site:"
+                    f" {_site_info(auto_matching_defect_site)}. "
+                    f"Will use user-specified site: {_site_info(defect_site)}."
+                )
 
     for_monty_defect = {
         "@module": "pymatgen.analysis.defects.core",
