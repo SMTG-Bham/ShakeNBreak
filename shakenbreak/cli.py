@@ -55,41 +55,96 @@ def identify_defect(
 
     if defect_coords is not None:
         if defect_index is None:
+            bulk_lattice = bulk_structure.lattice
             site_displacement_tol = (
                 0.1  # distance tolerance for site matching to identify defect
             )
-            while site_displacement_tol < 0.8:  # loop over distance tolerances
-                if defect_type == "vacancy":
-                    possible_defects = sorted(
-                        bulk_structure.get_sites_in_sphere(
-                            defect_coords, site_displacement_tol, include_index=True
-                        ),
-                        key=lambda x: x[1],
-                    )
-                    searched = "bulk"
-                else:
-                    possible_defects = sorted(
-                        defect_structure.get_sites_in_sphere(
-                            defect_coords, site_displacement_tol, include_index=True
-                        ),
-                        key=lambda x: x[1],
-                    )
-                    searched = "defect"
+            max_possible_defect_sites_in_bulk_struc = sorted(
+                bulk_structure.get_sites_in_sphere(
+                    bulk_lattice.get_cartesian_coords(defect_coords),
+                    1,
+                    include_index=True,
+                ),
+                key=lambda x: x[1],
+            )
+            max_possible_defect_sites_in_defect_struc = sorted(
+                defect_structure.get_sites_in_sphere(
+                    bulk_lattice.get_cartesian_coords(defect_coords),
+                    1,
+                    include_index=True,
+                ),
+                key=lambda x: x[1],
+            )
 
-                if len(possible_defects) == 1:
-                    defect_index = possible_defects[0][2]
-                    break
+            # there should be one site (including specie identity) which does not match between
+            # bulk and defect structures
+            for defect_site in list(max_possible_defect_sites_in_defect_struc):
+                for bulk_site in list(max_possible_defect_sites_in_bulk_struc):
+                    if (
+                        defect_site.distance(bulk_site) < 0.5
+                        and defect_site.specie == bulk_site.specie
+                    ):
+                        if bulk_site in max_possible_defect_sites_in_bulk_struc:
+                            max_possible_defect_sites_in_bulk_struc.remove(bulk_site)
+                        if defect_site in max_possible_defect_sites_in_defect_struc:
+                            max_possible_defect_sites_in_defect_struc.remove(
+                                defect_site
+                            )
 
-                site_displacement_tol += 0.1
-
-            if defect_index is None:
+            if (
+                len(max_possible_defect_sites_in_bulk_struc) == 0
+                and len(max_possible_defect_sites_in_defect_struc) == 0
+            ):
                 warnings.warn(
                     f"Coordinates {defect_coords} were specified for (auto-determined) "
-                    f"{defect_type} "
-                    f"defect, but could not find it in {searched} structure "
-                    f"(found {len(possible_defects)} possible defect sites). "
-                    "Will attempt auto site-matching instead."
+                    f"{defect_type} defect, but there are no extra/missing/different species "
+                    f"within a 1 Å sphere of this site when comparing bulk and defect structures. "
+                    f"If you are trying to generate non-defect polaronic distortions, please use "
+                    f"the distort() and rattle() functions in shakenbreak.distortions via the "
+                    f"Python API. "
+                    f"Reverting to auto-site matching instead."
                 )
+
+            else:
+                while site_displacement_tol < 0.8:  # loop over distance tolerances
+                    possible_defect_sites_in_bulk_struc = sorted(
+                        bulk_structure.get_sites_in_sphere(
+                            bulk_lattice.get_cartesian_coords(defect_coords),
+                            site_displacement_tol,
+                            include_index=True,
+                        ),
+                        key=lambda x: x[1],
+                    )
+                    possible_defect_sites_in_defect_struc = sorted(
+                        defect_structure.get_sites_in_sphere(
+                            bulk_lattice.get_cartesian_coords(defect_coords),
+                            site_displacement_tol,
+                            include_index=True,
+                        ),
+                        key=lambda x: x[1],
+                    )
+                    if (
+                        defect_type == "vacancy"
+                    ):  # defect site should be in bulk structure
+                        possible_defects = possible_defect_sites_in_bulk_struc
+                        searched = "bulk"
+                    else:
+                        possible_defects = possible_defect_sites_in_defect_struc
+                        searched = "defect"
+
+                    if len(possible_defects) == 1:
+                        defect_index = possible_defects[0][2]
+                        break
+
+                    site_displacement_tol += 0.1
+
+                if defect_index is None:
+                    warnings.warn(
+                        f"Coordinates {defect_coords} were specified for (auto-determined) "
+                        f"{defect_type} defect, but could not find it in {searched} structure "
+                        f"(found {len(possible_defects)} possible defect sites). "
+                        "Will attempt auto site-matching instead."
+                    )
 
         else:  # both defect_coords and defect_index given
             warnings.warn(
@@ -474,10 +529,15 @@ def generate(
         defect_coords=defect_coords,
     )
     if verbose and defect_index is None and defect_coords is None:
+        site = defect_object.site
+        site_info = (
+            f"{site.species_string} at [{site._frac_coords[0]:.3f},"
+            f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
+        )
         click.echo(
             f"Auto site-matching identified {defect} to be "
             f"type {defect_object.as_dict()['@class']} "
-            f"with site {defect_object.site}"
+            f"with site {site_info}"
         )
 
     if charge is not None:
@@ -810,10 +870,15 @@ def generate_all(
             defect_coords=defect_coords,
         )
         if verbose:
+            site = defect_object.site
+            site_info = (
+                f"{site.species_string} at [{site._frac_coords[0]:.3f},"
+                f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
+            )
             click.echo(
                 f"Auto site-matching identified {defect} to be "
                 f"type {defect_object.as_dict()['@class']} "
-                f"with site {defect_object.site}"
+                f"with site {site_info}"
             )
 
         defect_dict = generate_defect_dict(defect_object, charges, defect_name)
