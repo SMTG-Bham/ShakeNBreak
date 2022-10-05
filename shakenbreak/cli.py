@@ -55,45 +55,59 @@ def identify_defect(
 
     if defect_coords is not None:
         if defect_index is None:
-            bulk_lattice = bulk_structure.lattice
             site_displacement_tol = (
                 0.01  # distance tolerance for site matching to identify defect, increases in
                 # jumps of 0.1 Å
             )
-            max_possible_defect_sites_in_bulk_struc = sorted(
-                bulk_structure.get_sites_in_sphere(
-                    bulk_lattice.get_cartesian_coords(defect_coords),
-                    2.5,
-                    include_index=True,
-                ),
-                key=lambda x: x[1],
+
+            def _possible_sites_in_sphere(structure, frac_coords, tol):
+                """Find possible sites in sphere of radius tol."""
+                return sorted(
+                    structure.get_sites_in_sphere(
+                        structure.lattice.get_cartesian_coords(frac_coords),
+                        tol,
+                        include_index=True,
+                    ),
+                    key=lambda x: x[1],
+                )
+
+            max_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                bulk_structure, defect_coords, 2.5
             )
-            max_possible_defect_sites_in_defect_struc = sorted(
-                defect_structure.get_sites_in_sphere(
-                    bulk_lattice.get_cartesian_coords(defect_coords),
-                    2.5,
-                    include_index=True,
-                ),
-                key=lambda x: x[1],
+            max_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                defect_structure, defect_coords, 2.5
+            )
+            expanded_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                bulk_structure, defect_coords, 3.0
+            )
+            expanded_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                defect_structure, defect_coords, 3.0
             )
 
             # there should be one site (including specie identity) which does not match between
             # bulk and defect structures
-            def _remove_matching_sites(bulk_sites, defect_sites):
-                for defect_site in list(defect_sites):
-                    for bulk_site in list(bulk_sites):
+            def _remove_matching_sites(bulk_site_list, defect_site_list):
+                """Remove matching sites from bulk and defect structures."""
+                bulk_sites_list = list(bulk_site_list)
+                defect_sites_list = list(defect_site_list)
+                for defect_site in defect_sites_list:
+                    for bulk_site in bulk_sites_list:
                         if (
                             defect_site.distance(bulk_site) < 0.5
                             and defect_site.specie == bulk_site.specie
                         ):
-                            if bulk_site in bulk_sites:
-                                bulk_sites.remove(bulk_site)
-                            if defect_site in defect_sites:
-                                defect_sites.remove(defect_site)
-                return bulk_sites, defect_sites
+                            if bulk_site in bulk_sites_list:
+                                bulk_sites_list.remove(bulk_site)
+                            if defect_site in defect_sites_list:
+                                defect_sites_list.remove(defect_site)
+                return bulk_sites_list, defect_sites_list
 
-            non_matching_bulk_sites, non_matching_defect_sites = _remove_matching_sites(
+            non_matching_bulk_sites, _ = _remove_matching_sites(
                 max_possible_defect_sites_in_bulk_struc,
+                expanded_possible_defect_sites_in_defect_struc,
+            )
+            _, non_matching_defect_sites = _remove_matching_sites(
+                expanded_possible_defect_sites_in_bulk_struc,
                 max_possible_defect_sites_in_defect_struc,
             )
 
@@ -116,34 +130,24 @@ def identify_defect(
                 searched = "bulk or defect"
                 possible_defects = []
                 while site_displacement_tol < 2.5:  # loop over distance tolerances
-                    possible_defect_sites_in_bulk_struc = sorted(
-                        bulk_structure.get_sites_in_sphere(
-                            bulk_lattice.get_cartesian_coords(defect_coords),
-                            site_displacement_tol,
-                            include_index=True,
-                        ),
-                        key=lambda x: x[1],
+                    possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                        bulk_structure, defect_coords, site_displacement_tol
                     )
-                    possible_defect_sites_in_defect_struc = sorted(
-                        defect_structure.get_sites_in_sphere(
-                            bulk_lattice.get_cartesian_coords(defect_coords),
-                            site_displacement_tol,
-                            include_index=True,
-                        ),
-                        key=lambda x: x[1],
+                    possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                        defect_structure, defect_coords, site_displacement_tol
                     )
                     if (
                         defect_type == "vacancy"
                     ):  # defect site should be in bulk structure but not defect structure
                         possible_defects, _ = _remove_matching_sites(
                             possible_defect_sites_in_bulk_struc,
-                            max_possible_defect_sites_in_defect_struc,
+                            expanded_possible_defect_sites_in_defect_struc,
                         )
                         searched = "bulk"
                     else:
                         # defect site should be in defect structure but not bulk structure
                         _, possible_defects = _remove_matching_sites(
-                            max_possible_defect_sites_in_bulk_struc,
+                            expanded_possible_defect_sites_in_bulk_struc,
                             possible_defect_sites_in_defect_struc,
                         )
                         searched = "defect"
