@@ -180,6 +180,7 @@ def identify_defect(
         # jumps of 0.1 Å
     )
     auto_matching_defect_index = None
+    possible_defects = []
     try:
         while site_displacement_tol < 1.5:  # loop over distance tolerances
             bulk_sites = [site.frac_coords for site in bulk_structure]
@@ -197,7 +198,6 @@ def identify_defect(
             ]  # list of [min dist, bulk ind, defect ind]
 
             site_matching_indices = []
-            possible_defects = []
             if defect_type in ["vacancy", "interstitial"]:
                 for mindist, bulk_index, def_struc_index in min_dist_with_index:
                     if mindist < site_displacement_tol:
@@ -249,7 +249,7 @@ def identify_defect(
             "structures correspond to the same supercell and/or specify defect site with "
             "--defect-coords or --defect-index."
         )
-    elif defect_index is None and auto_matching_defect_index is not None:
+    if defect_index is None and auto_matching_defect_index is not None:
         defect_index = auto_matching_defect_index
 
     if defect_type == "vacancy":
