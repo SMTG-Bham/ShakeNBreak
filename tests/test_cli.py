@@ -19,6 +19,7 @@ from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Poscar
 
 from shakenbreak.cli import snb
+from shakenbreak.distortions import rattle
 
 file_path = os.path.dirname(__file__)
 
@@ -271,7 +272,6 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -361,7 +361,6 @@ class CLITestCase(unittest.TestCase):
         # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
         # using Int_Cd because V_Cd is at (0,0,0) so fractional and Cartesian coordinates the same
         self.tearDown()
-        runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -398,20 +397,101 @@ class CLITestCase(unittest.TestCase):
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: 65\n"
                 + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-                + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
+                + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, "
+                "'Cd')]",
                 result.output,
             )
             self.assertEqual(
                 Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
                 self.Int_Cd_2_minus0pt6_struc_rattled,
             )
-        self.tearDown()
 
-        # test defect_coords working even when slightly off correct site and using slightly rattled
-        # bulk
-        # TODO: ...
+        # test defect_coords working even when slightly off correct site
         self.tearDown()
-        runner = CliRunner()
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c",
+                    "0",
+                    "--defect-coords",
+                    0.8,  # 0.8125,  # actual Int_Cd_2 site
+                    0.15,  # 0.1875,
+                    0.85,  # 0.8125,
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+            self.assertEqual(result.exit_code, 0)
+            if w:
+                # Check no problems in identifying the defect site
+                self.assertFalse(any(warning.category == UserWarning for warning in w))
+                self.assertFalse(
+                    any(str(warning.message) == warning_message for warning in w)
+                )
+                self.assertFalse(
+                    any("Coordinates" in str(warning.message) for warning in w)
+                )
+
+            self.assertNotIn(f"Auto site-matching", result.output)
+            self.assertIn("--Distortion -60.0%", result.output)
+            self.assertIn(
+                f"\tDefect Site Index / Frac Coords: 65\n"
+                + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+                + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, "
+                "'Cd')]",
+                result.output,
+            )
+            self.assertEqual(
+                Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
+                self.Int_Cd_2_minus0pt6_struc_rattled,
+            )
+
+        # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
+        self.tearDown()
+        with warnings.catch_warnings(record=True) as w:
+            bulk = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR")
+            rattled_bulk = rattle(bulk)
+            rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"Rattled_Bulk_CdTe_POSCAR",
+                    "-c",
+                    "0",
+                    "--defect-coords",
+                    0.025,
+                    0.025,
+                    0.025,  # close just not quite 0,0,0
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertEqual(result.exit_code, 0)
+        if w:
+            # Check no problems in identifying the defect site
+            self.assertNotIn("Coordinates", str(w[0].message))
+        self.assertIn("--Distortion -60.0%", result.output)
+        print(result.output)
+        self.assertIn(
+            f"\tDefect Site Index / Frac Coords: [0.015687 0.01685  0.001366]\n"  # rattled position
+            + "            Original Neighbour Distances: [(2.33, 42, 'Te'), (2.73, 33, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(0.93, 42, 'Te'), (1.09, 33, 'Te')]",
+            result.output,
+        )
+        self.assertNotIn(f"Auto site-matching", result.output)
+
+        # test distortion dict info with defect_coords slightly off correct site with V_Cd
+        if_present_rm("distortion_metadata.json")
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -424,9 +504,9 @@ class CLITestCase(unittest.TestCase):
                     "-c",
                     "0",
                     "--defect-coords",
-                    0.1,
-                    0.1,
-                    0.1,  # close just not quite 0,0,0
+                    0.025,
+                    0.025,
+                    0.025,  # close just not quite 0,0,0
                     "-v",
                 ],
                 catch_exceptions=False,
@@ -439,73 +519,74 @@ class CLITestCase(unittest.TestCase):
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
                 + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+                + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, "
+                  "'Te')]",
                 result.output,
             )
             self.assertNotIn(f"Auto site-matching", result.output)
-            spec_coords_V_Cd_dict = {
-                "distortion_parameters": {
-                    "distortion_increment": 0.1,
-                    "bond_distortions": [
-                        -0.6,
-                        -0.5,
-                        -0.4,
-                        -0.3,
-                        -0.2,
-                        -0.1,
+        spec_coords_V_Cd_dict = {
+            "distortion_parameters": {
+                "distortion_increment": 0.1,
+                "bond_distortions": [
+                    -0.6,
+                    -0.5,
+                    -0.4,
+                    -0.3,
+                    -0.2,
+                    -0.1,
+                    0.0,
+                    0.1,
+                    0.2,
+                    0.3,
+                    0.4,
+                    0.5,
+                    0.6,
+                ],
+                "rattle_stdev": 0.25,
+                "local_rattle": False,
+            },
+            "defects": {
+                "Vac_Cd_mult32": {
+                    "unique_site": [
                         0.0,
-                        0.1,
-                        0.2,
-                        0.3,
-                        0.4,
-                        0.5,
-                        0.6,
-                    ],
-                    "rattle_stdev": 0.25,
-                    "local_rattle": False,
-                },
-                "defects": {
-                    "Vac_Cd_mult32": {
-                        "unique_site": [
-                            0.0,
-                            0.0,
-                            0.0,
-                        ],  # matching final site not slightly-off
-                        # user input
-                        "charges": {
-                            "0": {  # json converts integer strings to keys
-                                "num_nearest_neighbours": 2,
-                                "distorted_atoms": [
-                                    [33, "Te"],
-                                    [42, "Te"],
+                        0.0,
+                        0.0,
+                    ],  # matching final site not slightly-off
+                    # user input
+                    "charges": {
+                        "0": {  # json converts integer strings to keys
+                            "num_nearest_neighbours": 2,
+                            "distorted_atoms": [
+                                [33, "Te"],
+                                [42, "Te"],
+                            ],
+                            "distortion_parameters": {
+                                "bond_distortions": [
+                                    -0.6,
+                                    -0.5,
+                                    -0.4,
+                                    -0.3,
+                                    -0.2,
+                                    -0.1,
+                                    0.0,
+                                    0.1,
+                                    0.2,
+                                    0.3,
+                                    0.4,
+                                    0.5,
+                                    0.6,
                                 ],
-                                "distortion_parameters": {
-                                    "bond_distortions": [
-                                        -0.6,
-                                        -0.5,
-                                        -0.4,
-                                        -0.3,
-                                        -0.2,
-                                        -0.1,
-                                        0.0,
-                                        0.1,
-                                        0.2,
-                                        0.3,
-                                        0.4,
-                                        0.5,
-                                        0.6,
-                                    ],
-                                    "rattle_stdev": 0.25,
-                                },
+                                "rattle_stdev": 0.25,
                             },
                         },
-                    }
-                },
-            }
-            # check defects from old metadata file are in new metadata file
-            with open(f"distortion_metadata.json", "r") as metadata_file:
-                metadata = json.load(metadata_file)
-            np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
+                    },
+                }
+            },
+        }
+        # check defects from old metadata file are in new metadata file
+        with open(f"distortion_metadata.json", "r") as metadata_file:
+            metadata = json.load(metadata_file)
+        np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
 
     def test_snb_generate_config(self):
         # test config file:
