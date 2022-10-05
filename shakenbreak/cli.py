@@ -276,7 +276,6 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
     """
     single_defect_dict = {
         "name": defect_name,
-        "bulk_supercell_site": defect_object.site,
         "defect_type": defect_object.as_dict()["@class"].lower(),
         "site_multiplicity": defect_object.multiplicity,
         "supercell": {
@@ -286,7 +285,23 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
         "charges": charges,
     }
 
-    if "Substitution" in str(type(defect_object)):
+    if single_defect_dict["defect_type"] != "vacancy":
+        # redefine bulk supercell site to ensure it exactly matches defect dict structure,
+        # in case defect_object.generate_defect_structure() redefines coordinates using periodic
+        # images (e.g. moving (0, 0.5, 0) to (1, 0.5, 1))
+        bulk_supercell_site = sorted(
+            single_defect_dict["supercell"]["structure"].get_sites_in_sphere(
+                defect_object.site.coords, 0.01, include_index=True, include_image=True
+            ),
+            key=lambda x: x[1],
+        )[0][0].to_unit_cell()
+
+        single_defect_dict["bulk_supercell_site"] = bulk_supercell_site
+
+    else:  # if vacancy, defect site doesn't exist in generated defect structure
+        single_defect_dict["bulk_supercell_site"] = defect_object.site
+
+    if single_defect_dict["defect_type"] in ["substitution", "antisite"]:
         # get bulk_site
         poss_deflist = sorted(
             defect_object.bulk_structure.get_sites_in_sphere(
