@@ -313,11 +313,11 @@ def _format_defect_name(
 
     def _try_substitution_match(substituting_element, orig_site_element, name):
         defect_name = None
-        if any(f"{substituting_element}_{orig_site_element}" in pre_charge_name):
+        if f"{substituting_element}_{orig_site_element}" in pre_charge_name:
             defect_name = (
                 f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
             )
-        elif any(f"{substituting_element}_on_{orig_site_element}" in pre_charge_name):
+        elif f"{substituting_element}_on_{orig_site_element}" in pre_charge_name:
             defect_name = (
                 f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
             )
@@ -359,6 +359,7 @@ def _format_defect_name(
             for character in pre_charge_name
             if dummy_h.is_valid_symbol(character)
         ]
+        print("possible_one_character_elements", possible_one_character_elements)
         if len(possible_one_character_elements) > 0:
             defect_name = _defect_name_from_matching_elements(
                 possible_one_character_elements, pre_charge_name
@@ -1298,7 +1299,7 @@ def plot_defect(
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
 
-    defect_name = _format_defect_name(
+    defect_name = _format_defect_name(  # TODO: Try except this and other uses? So just no name if it fails
         defect_species=defect_species,
         include_site_num_in_name=include_site_num_in_name,
     )  # Format defect name for title and axis labels
