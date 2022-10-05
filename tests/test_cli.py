@@ -391,7 +391,9 @@ class CLITestCase(unittest.TestCase):
                 "matching instead."
             )
             self.assertTrue(any(warning.category == UserWarning for warning in w))
-            self.assertTrue(any(str(warning.message) == warning_message for warning in w))
+            self.assertTrue(
+                any(str(warning.message) == warning_message for warning in w)
+            )
             self.assertIn("--Distortion -60.0%", result.output)
             self.assertIn(
                 f"\tDefect Site Index / Frac Coords: 65\n"
@@ -399,8 +401,10 @@ class CLITestCase(unittest.TestCase):
                 + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
                 result.output,
             )
-            self.assertEqual(Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
-                             self.Int_Cd_2_minus0pt6_struc_rattled)
+            self.assertEqual(
+                Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
+                self.Int_Cd_2_minus0pt6_struc_rattled,
+            )
         self.tearDown()
 
         # test defect_coords working even when slightly off correct site and using slightly rattled
