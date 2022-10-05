@@ -282,7 +282,7 @@ def _format_defect_name(
         if _check_matching_defect_format(
             element, name, pre_vacancy_strings, post_vacancy_strings
         ):
-            defect_name = f"V$_{{{element}}}^{{{charge}}}$"
+            defect_name = f"$V_{{{element}}}^{{{charge}}}$"
         elif _check_matching_defect_format(
             element,
             name,
@@ -298,7 +298,7 @@ def _format_defect_name(
                 post_vacancy_strings,
             )
             if match_found:
-                defect_name = f"V$_{{{element}_{site_num}}}^{{{charge}}}$"
+                defect_name = f"$V_{{{element}_{site_num}}}^{{{charge}}}$"
             else:
                 match_found, site_num = _check_matching_defect_format_with_site_num(
                     element,
@@ -389,7 +389,7 @@ def _format_defect_name(
                 include_site_num_in_name
             ):  # whether to include the site number in defect name
                 if defect_type.lower() == "vac":
-                    defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
+                    defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
                     # double brackets to treat it literally (tex), then extra {} for
                     # python str formatting
                 elif defect_type.lower() in ["as", "sub"]:
@@ -403,7 +403,7 @@ def _format_defect_name(
                     )
             else:
                 if defect_type.lower() == "vac":
-                    defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
+                    defect_name = f"$V_{{{site_element}}}^{{{charge}}}$"
                 elif defect_type.lower() in ["as", "sub"]:
                     subs_element = defect_species.split("_")[4]
                     defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
