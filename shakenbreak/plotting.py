@@ -135,7 +135,8 @@ def _format_defect_name(
     include_site_num_in_name: bool,
 ) -> str:
     """
-    Format defect name for plot titles. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
+    Format defect name for plot titles. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$).
+    Note this assumes "V_" means vacancy not Vanadium.
 
     Args:
         defect_species (:obj:`str`):
@@ -164,22 +165,72 @@ def _format_defect_name(
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
 
-    defect_name = ""
-    dummy_h = Element("H")
-    pre_charge_name = defect_species.rsplit("_", 1)[
-        0
-    ]  # defect name without charge state
-
-    two_character_pairs_in_name = [
-        pre_charge_name[i : i + 2]
-        for i in range(0, len(pre_charge_name), 1)
-        if pre_charge_name[i : i + 3] != "Int" and len(pre_charge_name[i : i + 2]) == 2
-    ]  # need to avoid "Int" giving "In" as valid element
-    possible_two_character_elements = [
-        two_char_string
-        for two_char_string in two_character_pairs_in_name
-        if dummy_h.is_valid_symbol(two_char_string)
-    ]
+    recognised_pre_vacancy_strings = sorted(
+        [
+            "V",
+            "v",
+            "V_",
+            "v_",
+            "Vac",
+            "vac",
+            "Vac_",
+            "vac_",
+            "Va",
+            "va",
+            "Va_",
+            "va_",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_post_vacancy_strings = sorted(
+        [
+            "_v",  # but not '_V' as could be vanadium
+            "v",  # but not 'V' as could be vanadium
+            "_vac",
+            "_Vac",
+            "vac",
+            "Vac",
+            "va",
+            "Va",
+            "_va",
+            "_Va",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_pre_interstitial_strings = sorted(
+        [
+            "i",  # but not 'I' as could be iodine
+            "i_",  # but not 'I_' as could be iodine
+            "Int",
+            "int",
+            "Int_",
+            "int_",
+            "Inter",
+            "inter",
+            "Inter_",
+            "inter_",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_post_interstitial_strings = sorted(
+        [
+            "_i",  # but not '_I' as could be iodine
+            "i",  # but not 'I' as could be iodine
+            "_int",
+            "_Int",
+            "int",
+            "Int",
+            "inter",
+            "Inter",
+            "_inter",
+            "_Inter",
+        ],
+        key=len,
+        reverse=True,
+    )
 
     def _check_matching_defect_format(
         element, name, pre_def_type_list, post_def_type_list
@@ -214,71 +265,38 @@ def _format_defect_name(
                 return True, items[1]
             elif any(
                 (
-                    f"{element}{items[1]}{post_def_type}" in pre_charge_name
+                    f"{element}{items[1]}{post_def_type}" in name
                     for post_def_type in post_def_type_list
                 )
                 or (
-                    f"{element}{items[1]}_{post_def_type}" in pre_charge_name
+                    f"{element}{items[1]}_{post_def_type}" in name
                     for post_def_type in post_def_type_list
                 )
             ):
                 return True, items[1]
+            else:
+                return False, None
 
         else:
             return False, None
 
-    def _try_vacancy_interstitial_match(element, name):
+    def _try_vacancy_interstitial_match(
+        element,
+        name,
+        pre_vacancy_strings=None,
+        post_vacancy_strings=None,
+        pre_interstitial_strings=None,
+        post_interstitial_strings=None,
+    ):
+        if pre_vacancy_strings is None:
+            pre_vacancy_strings = recognised_pre_vacancy_strings
+        if post_vacancy_strings is None:
+            post_vacancy_strings = recognised_post_vacancy_strings
+        if pre_interstitial_strings is None:
+            pre_interstitial_strings = recognised_pre_interstitial_strings
+        if post_interstitial_strings is None:
+            post_interstitial_strings = recognised_post_interstitial_strings
         defect_name = None
-        pre_vacancy_strings = [
-            "V",
-            "v",
-            "V_",
-            "v_",
-            "Vac",
-            "vac",
-            "Vac_",
-            "vac_",
-            "Va",
-            "va",
-            "Va_",
-            "va_",
-        ]
-        post_vacancy_strings = [
-            "_v",  # but not '_V' as could be vanadium
-            "v",  # but not 'V' as could be vanadium
-            "_vac",
-            "_Vac",
-            "vac",
-            "Vac",
-            "va",
-            "Va",
-            "_va",
-            "_Va",
-        ]
-        pre_interstitial_strings = [
-            "i",  # but not 'I' as could be iodine
-            "i_",  # but not 'I_' as could be iodine
-            "Int",
-            "int",
-            "Int_",
-            "int_",
-            "Inter",
-            "inter",
-            "Inter_",
-            "inter_",
-        ]
-        post_interstitial_strings = [
-            "_i",  # but not '_I' as could be iodine
-            "i",  # but not 'I' as could be iodine
-            "_int",
-            "_Int",
-            "int",
-            "Int",
-            "inter",
-            "Inter",
-            "_inter",
-            "_Inter",
-        ]
         if _check_matching_defect_format(
             element, name, pre_vacancy_strings, post_vacancy_strings
         ):
@@ -313,11 +331,11 @@ def _format_defect_name(
 
     def _try_substitution_match(substituting_element, orig_site_element, name):
         defect_name = None
-        if f"{substituting_element}_{orig_site_element}" in pre_charge_name:
+        if f"{substituting_element}_{orig_site_element}" in name:
             defect_name = (
                 f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
             )
-        elif f"{substituting_element}_on_{orig_site_element}" in pre_charge_name:
+        elif f"{substituting_element}_on_{orig_site_element}" in name:
             defect_name = (
                 f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
             )
@@ -347,22 +365,60 @@ def _format_defect_name(
 
         return defect_name
 
+    defect_name = None
+    dummy_h = Element("H")
+    pre_charge_name = defect_species.rsplit("_", 1)[
+        0
+    ]  # defect name without charge state
+
+    # trim any matching pre or post vacancy/interstitial strings from defect name
+    trimmed_pre_charge_name = pre_charge_name
+    for substring in (
+        recognised_pre_vacancy_strings
+        + recognised_post_vacancy_strings
+        + recognised_pre_interstitial_strings
+        + recognised_post_interstitial_strings
+    ):
+        if substring in trimmed_pre_charge_name and not (
+            substring.endswith("i") or substring.startswith("i")
+        ):
+            trimmed_pre_charge_name = trimmed_pre_charge_name.replace(substring, "")
+
+    two_character_pairs_in_name = [
+        trimmed_pre_charge_name[
+            i : i + 2
+        ]  # trimmed_pre_charge_name name for finding elements,
+        # pre_charge_name for matching defect format
+        for i in range(0, len(trimmed_pre_charge_name), 1)
+        if len(trimmed_pre_charge_name[i : i + 2]) == 2
+    ]
+    possible_two_character_elements = [
+        two_char_string
+        for two_char_string in two_character_pairs_in_name
+        if dummy_h.is_valid_symbol(two_char_string)
+    ]
+
     if len(possible_two_character_elements) > 0:
         defect_name = _defect_name_from_matching_elements(
-            possible_two_character_elements, pre_charge_name
+            possible_two_character_elements,
+            pre_charge_name  # trimmed_pre_charge_name name for
+            # finding elements, pre_charge_name for matching defect format
         )
 
     if defect_name is None:
         # try single-character element match
         possible_one_character_elements = [
             character
-            for character in pre_charge_name
+            for character in trimmed_pre_charge_name  # trimmed_pre_charge_name name for finding
+            # elements, pre_charge_name for matching defect format
             if dummy_h.is_valid_symbol(character)
         ]
-        print("possible_one_character_elements", possible_one_character_elements)
+
         if len(possible_one_character_elements) > 0:
             defect_name = _defect_name_from_matching_elements(
-                possible_one_character_elements, pre_charge_name
+                possible_one_character_elements,
+                pre_charge_name  # trimmed_pre_charge_name name
+                # for finding elements, pre_charge_name for matching defect format
             )
 
     if defect_name is None:
