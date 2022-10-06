@@ -323,6 +323,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(formatted_name, "$V_{Cd}^{0}$")
 
+        # test substitution with site number
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_Ni_on_Li_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "Ni$_{Li_1}^{0}$")
+
         # check exceptions raised: invalid charge or defect_species
         # test error catching:
         with self.assertRaises(ValueError) as e:
