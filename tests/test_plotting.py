@@ -330,8 +330,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 "Problem reading defect name vac_1_Cd_a, should end with charge state after "
                 "underscore (e.g. vac_1_Cd_0)"
             )
-            plotting._format_defect_name(defect_species = "vac_1_Cd_a", include_site_num_in_name
-            = True)
+            plotting._format_defect_name(
+                defect_species="vac_1_Cd_a", include_site_num_in_name=True
+            )
             self.assertIn(wrong_charge_error, e.exception)
 
         self.assertRaises(
@@ -340,12 +341,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species=2,
             include_site_num_in_name=True,
         )
-        # check invalid defect type
-        self.assertRaises(
-            ValueError,
-            plotting._format_defect_name,
-            defect_species="kk_Cd_1_0",
-            include_site_num_in_name=True,
+        # check invalid defect type returns None
+        self.assertIsNone(
+            plotting._format_defect_name(
+                defect_species="kk_Cd_1_0",
+                include_site_num_in_name=True,
+            )
         )
 
         defect_species_name_dict = {
