@@ -249,31 +249,51 @@ def _format_defect_name(
     def _check_matching_defect_format_with_site_num(
         element, name, pre_def_type_list, post_def_type_list
     ):
-        match = re.match(r"([a-z]+)([0-9]+)", name, re.I)
+        match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
         if match:
             items = match.groups()
-            if any(
+            for match_generator in [
                 (
                     f"{pre_def_type}{items[1]}{element}" in name
                     for pre_def_type in pre_def_type_list
-                )
-                or (
+                ),
+                (
                     f"{pre_def_type}{items[1]}_{element}" in name
                     for pre_def_type in pre_def_type_list
-                )
-            ):
-                return True, items[1]
-            elif any(
+                ),
+                (
+                    f"{pre_def_type}{element}{items[1]}" in name
+                    for pre_def_type in pre_def_type_list
+                ),
+                (
+                    f"{pre_def_type}{element}_{items[1]}" in name
+                    for pre_def_type in pre_def_type_list
+                ),
+            ]:
+                if any(match_generator):
+                    return True, items[1]
+
+            for match_generator in [
                 (
                     f"{element}{items[1]}{post_def_type}" in name
                     for post_def_type in post_def_type_list
-                )
-                or (
+                ),
+                (
                     f"{element}{items[1]}_{post_def_type}" in name
                     for post_def_type in post_def_type_list
-                )
-            ):
-                return True, items[1]
+                ),
+                (
+                    f"{items[1]}{element}{post_def_type}" in name
+                    for post_def_type in post_def_type_list
+                ),
+                (
+                    f"{items[1]}_{element}{post_def_type}" in name
+                    for post_def_type in post_def_type_list
+                ),
+            ]:
+                if any(match_generator):
+                    return True, items[1]
+
             else:
                 return False, None
 
@@ -283,6 +303,7 @@ def _format_defect_name(
     def _try_vacancy_interstitial_match(
         element,
         name,
+        include_site_num_in_name,
         pre_vacancy_strings=None,
         post_vacancy_strings=None,
         pre_interstitial_strings=None,
@@ -297,18 +318,8 @@ def _format_defect_name(
         if post_interstitial_strings is None:
             post_interstitial_strings = recognised_post_interstitial_strings
         defect_name = None
-        if _check_matching_defect_format(
-            element, name, pre_vacancy_strings, post_vacancy_strings
-        ):
-            defect_name = f"$V_{{{element}}}^{{{charge}}}$"
-        elif _check_matching_defect_format(
-            element,
-            name,
-            pre_interstitial_strings,
-            post_interstitial_strings,
-        ):
-            defect_name = f"{element}$_i^{{{charge}}}$"
-        else:
+
+        if include_site_num_in_name:
             match_found, site_num = _check_matching_defect_format_with_site_num(
                 element,
                 name,
@@ -317,6 +328,7 @@ def _format_defect_name(
             )
             if match_found:
                 defect_name = f"$V_{{{element}_{site_num}}}^{{{charge}}}$"
+
             else:
                 match_found, site_num = _check_matching_defect_format_with_site_num(
                     element,
@@ -326,6 +338,24 @@ def _format_defect_name(
                 )
                 if match_found:
                     defect_name = f"{element}$_{{i_{site_num}}}^{{{charge}}}$"
+
+        if (
+            _check_matching_defect_format(
+                element, name, pre_vacancy_strings, post_vacancy_strings
+            )
+            and defect_name is None
+        ):
+            defect_name = f"$V_{{{element}}}^{{{charge}}}$"
+        elif (
+            _check_matching_defect_format(
+                element,
+                name,
+                pre_interstitial_strings,
+                post_interstitial_strings,
+            )
+            and defect_name is None
+        ):
+            defect_name = f"{element}$_i^{{{charge}}}$"
 
         return defect_name
 
@@ -342,22 +372,30 @@ def _format_defect_name(
 
         return defect_name
 
-    def _defect_name_from_matching_elements(element_matches, name):
+    def _defect_name_from_matching_elements(
+        element_matches, name, include_site_num_in_name
+    ):
         defect_name = None
         if len(element_matches) == 1:  # vacancy or interstitial?
-            defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+            defect_name = _try_vacancy_interstitial_match(
+                element_matches[0], name, include_site_num_in_name
+            )
         elif len(element_matches) == 2:
             # try substitution/antisite match, if not try vacancy/interstitial with first element
             defect_name = _try_substitution_match(
                 element_matches[0], element_matches[1], name
             )
             if defect_name is None:
-                defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+                defect_name = _try_vacancy_interstitial_match(
+                    element_matches[0], name, include_site_num_in_name
+                )
         else:
             # try use first match and see if we match vacancy or interstitial format
             # if not, try first and second matches and see if we match substitution format
             # otherwise fail
-            defect_name = _try_vacancy_interstitial_match(element_matches[0], name)
+            defect_name = _try_vacancy_interstitial_match(
+                element_matches[0], name, include_site_num_in_name
+            )
             if defect_name is None:
                 defect_name = _try_substitution_match(
                     element_matches[0], element_matches[1], name
@@ -401,8 +439,9 @@ def _format_defect_name(
     if len(possible_two_character_elements) > 0:
         defect_name = _defect_name_from_matching_elements(
             possible_two_character_elements,
-            pre_charge_name  # trimmed_pre_charge_name name for
-            # finding elements, pre_charge_name for matching defect format
+            pre_charge_name,  # trimmed_pre_charge_name name for finding elements, pre_charge_name
+            # for matching defect format
+            include_site_num_in_name,
         )
 
     if defect_name is None:
@@ -417,8 +456,9 @@ def _format_defect_name(
         if len(possible_one_character_elements) > 0:
             defect_name = _defect_name_from_matching_elements(
                 possible_one_character_elements,
-                pre_charge_name  # trimmed_pre_charge_name name
-                # for finding elements, pre_charge_name for matching defect format
+                pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
+                # pre_charge_name for matching defect format
+                include_site_num_in_name,
             )
 
     if defect_name is None:
