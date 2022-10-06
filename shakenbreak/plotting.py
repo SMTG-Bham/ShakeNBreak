@@ -1338,7 +1338,7 @@ def plot_defect(
             formatted defect name (i.e. V$_{Cd}^{0}$).
             (Default: True)
         line_color (:obj:`str`):
-            Color of the line conneting points.
+            Color of the line connecting points.
             (Default: ShakeNBreak base style)
         save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
@@ -1405,10 +1405,13 @@ def plot_defect(
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
 
-    defect_name = _format_defect_name(  # TODO: Try except this and other uses? So just no name if it fails
-        defect_species=defect_species,
-        include_site_num_in_name=include_site_num_in_name,
-    )  # Format defect name for title and axis labels
+    try:
+        defect_name = _format_defect_name(
+            defect_species=defect_species,
+            include_site_num_in_name=include_site_num_in_name,
+        )  # Format defect name for title and axis labels
+    except Exception:  # if formatting fails, just use the defect_species name
+        defect_name = defect_species
 
     if units == "meV":
         (
@@ -1557,12 +1560,18 @@ def plot_colorbar(
         # Title and format axis labels and locators
         if title:
             ax.set_title(title)
+
+        try:
+            formatted_defect_name = _format_defect_name(
+                defect_species, include_site_num_in_name=include_site_num_in_name
+            )
+        except Exception:
+            formatted_defect_name = "defect"  # TODO: Add test for plot with this!
+
         ax = _format_axis(
             ax=ax,
             y_label=y_label,
-            defect_name=_format_defect_name(
-                defect_species, include_site_num_in_name=include_site_num_in_name
-            ),
+            defect_name=formatted_defect_name,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
         )
@@ -1849,12 +1858,18 @@ def plot_datasets(
     # Title and labels of axis
     if title:
         ax.set_title(title)
+
+    try:
+        formatted_defect_name = _format_defect_name(
+            defect_species, include_site_num_in_name=include_site_num_in_name
+        )
+    except Exception:
+        formatted_defect_name = "defect"  # TODO: Add test for plot with this!
+
     ax = _format_axis(
         ax=ax,
         y_label=y_label,
-        defect_name=_format_defect_name(
-            defect_species, include_site_num_in_name=include_site_num_in_name
-        ),
+        defect_name=formatted_defect_name,
         num_nearest_neighbours=num_nearest_neighbours,
         neighbour_atom=neighbour_atom,
     )
