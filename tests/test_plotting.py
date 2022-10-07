@@ -954,7 +954,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             energies_dict=self.V_Cd_energies_dict,
         )
         # Test fake defect_species runs fine:
-        plotting.plot_defect(output_path=self.VASP_CDTE_DATA_DIR,
+        plotting.plot_defect(
+            output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="fake_defect",
             energies_dict=self.V_Cd_energies_dict,
         )
