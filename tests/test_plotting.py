@@ -84,6 +84,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
         for file in os.listdir(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0"):
             if file.endswith(".svg"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/{file}")
+        for file in os.listdir(self.VASP_CDTE_DATA_DIR):
+            if file.endswith(".svg"):
+                os.remove(f"{self.VASP_CDTE_DATA_DIR}/{file}")
         if_present_rm("Int_Se_1_6.png")
 
     def test_verify_data_directories_exist(self):
@@ -1005,6 +1008,38 @@ class PlottingDefectsTestCase(unittest.TestCase):
             add_colorbar=False,
             num_nearest_neighbours=2,
             neighbour_atom="Te",
+        )
+        return fig
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_plot_defect_with_unrecognised_name.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_unrecognised_name(self):
+        """Test plot_defect() function when the name cannot be formatted (e.g. if parsing and
+        plotting from a renamed folder)"""
+        with warnings.catch_warnings(record=True) as w:
+            fig = plotting.plot_defect(  # note this also implicitly tests that we can use
+                # `plot_defect` with a `defect_species` that is not found in the `output_path` (but
+                # is present in the `energies_dict`)
+                output_path=self.VASP_CDTE_DATA_DIR,
+                defect_species="vac_1_Cd_no_charge",
+                energies_dict=self.V_Cd_energies_dict,
+                add_colorbar=True,
+                num_nearest_neighbours=2,
+                neighbour_atom="Te",
+            )
+        self.assertTrue(
+            any(
+                [
+                    f"Cannot add colorbar to plot for vac_1_Cd_no_charge as"
+                    f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_no_charge cannot be found."
+                    in str(warning.message)
+                    for warning in w
+                ]
+            )
         )
         return fig
 

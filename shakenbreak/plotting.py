@@ -1354,9 +1354,17 @@ def plot_defect(
             Energy vs distortion plot, as a mpl.figure.Figure object
     """
     # Ensure necessary directories exist, and raise error if not
-    _verify_data_directories_exist(
-        output_path=output_path, defect_species=defect_species
-    )
+    try:
+        _verify_data_directories_exist(
+            output_path=output_path, defect_species=defect_species
+        )
+    except FileNotFoundError:
+        if add_colorbar:
+            warnings.warn(
+                f"Cannot add colorbar to plot for {defect_species} as {output_path}/"
+                f"{defect_species} cannot be found."
+            )
+            add_colorbar = False
 
     if "Unperturbed" not in energies_dict.keys():
         # check if unperturbed energies exist
@@ -1566,7 +1574,7 @@ def plot_colorbar(
                 defect_species, include_site_num_in_name=include_site_num_in_name
             )
         except Exception:
-            formatted_defect_name = "defect"  # TODO: Add test for plot with this!
+            formatted_defect_name = "defect"
 
         ax = _format_axis(
             ax=ax,
@@ -1864,7 +1872,7 @@ def plot_datasets(
             defect_species, include_site_num_in_name=include_site_num_in_name
         )
     except Exception:
-        formatted_defect_name = "defect"  # TODO: Add test for plot with this!
+        formatted_defect_name = "defect"
 
     ax = _format_axis(
         ax=ax,
