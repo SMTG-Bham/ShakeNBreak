@@ -150,7 +150,7 @@ def _format_defect_name(
             formatted defect name
     """
     if not isinstance(defect_species, str):  # Check inputs
-        raise (TypeError(f"`defect_species` {defect_species} must be a string"))
+        raise (TypeError(f"`defect_species` {defect_species} should be a string"))
     try:
         charge = defect_species.split("_")[-1]  # charge comes last
         charge = int(charge)
