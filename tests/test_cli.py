@@ -434,7 +434,9 @@ class CLITestCase(unittest.TestCase):
             # self.assertFalse(any(warning.category == UserWarning for warning in w))
             # This is raising a UserWarning on GH Actions but not locally, so adding print
             # statement to debug and will remove after:
-            print([warning.message for warning in w if warning.category == UserWarning])  # TODO: Rm
+            for warning in w:
+                if warning.category == UserWarning:
+                    warnings.warn(warning.message)  # TODO: Rm
             self.assertFalse(
                 any(str(warning.message) == warning_message for warning in w)
             )
