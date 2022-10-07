@@ -945,8 +945,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
 
     def test_plot_defect_fake_output_directories(self):
-        """Test plot_defect() function when either directory `output_path` does not exist
-        or directory `output_path/defect_species` does not exist"""
+        """Test plot_defect() function when directory `output_path` does not exist"""
         self.assertRaises(
             FileNotFoundError,
             plotting.plot_defect,
@@ -954,13 +953,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
         )
-        self.assertRaises(
-            FileNotFoundError,
-            plotting.plot_defect,
-            output_path=self.VASP_CDTE_DATA_DIR,
+        # Test fake defect_species runs fine:
+        plotting.plot_defect(output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="fake_defect",
             energies_dict=self.V_Cd_energies_dict,
         )
+        os.remove(f"{self.VASP_CDTE_DATA_DIR}/fake_defect.svg")
 
     def test_plot_defect_missing_unperturbed_energy(self):
         with warnings.catch_warnings(record=True) as w:
