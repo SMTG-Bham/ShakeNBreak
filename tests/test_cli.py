@@ -1303,7 +1303,7 @@ local_rattle: True"""
         )
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
@@ -1327,7 +1327,7 @@ local_rattle: True"""
         )
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
