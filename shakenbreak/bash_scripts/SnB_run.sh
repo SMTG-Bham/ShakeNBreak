@@ -67,7 +67,10 @@ SnB_run_loop () {
           echo "${i%?} not (fully) relaxed, saving files and rerunning"
           # shellcheck disable=SC2093
           bash "${DIR}"/save_vasp_files.sh
-          "cp" CONTCAR POSCAR
+          if [ -s CONTCAR ]  # CONTCAR not empty (i.e. at least one ionic step made), cp to POSCAR
+            then
+            "cp" CONTCAR POSCAR
+          fi
           # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
         fi
         if [ -f "./${job_filename}" ]
