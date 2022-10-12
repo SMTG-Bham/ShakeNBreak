@@ -1200,10 +1200,18 @@ def write_groundstate_structure(
         verbose,
     ):
         energies_file = f"{output_path}/{species}/{species}.yaml"
+
         # Get ground state distortion
         _, _, gs_distortion = analysis._sort_data(
             energies_file=energies_file, verbose=False
         )
+        if gs_distortion is None:
+            warnings.warn(
+                f"Energies file {energies_file} could not be parsed for {species}, "
+                f"skipping this defect species"
+            )
+            return
+
         bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
         # Origin path
