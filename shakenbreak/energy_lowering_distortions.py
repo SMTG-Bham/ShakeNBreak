@@ -697,18 +697,21 @@ def compare_struct_to_distortions(
             )
         ]
 
-        if not imported_sorted_distorted_df.empty:
+        imported_sorted_distorted_float_df = imported_sorted_distorted_df.copy()
+        if not imported_sorted_distorted_float_df.empty:
             # convert "X%_from_Y" strings to floats and then sort
             # needs to be done this way because 'key' in pd.sort_values()
             # needs to be vectorised...
             # if '%' in key then convert to float, else convert to 0 (for Rattled or Unperturbed)
-            imported_sorted_distorted_df[
+            imported_sorted_distorted_float_df[
                 "Bond Distortion"
             ] = imported_sorted_distorted_df["Bond Distortion"].apply(
                 lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0
             )
-            imported_sorted_distorted_df = imported_sorted_distorted_df.sort_values(
-                by="Bond Distortion", key=abs
+            imported_sorted_distorted_float_df = (
+                imported_sorted_distorted_float_df.sort_values(
+                    by="Bond Distortion", key=abs
+                )
             )
 
         # first unperturbed, then rattled, then distortions sorted by
@@ -718,13 +721,14 @@ def compare_struct_to_distortions(
                 unperturbed_df,
                 rattled_df,
                 sorted_distorted_df,
-                imported_sorted_distorted_df,
+                imported_sorted_distorted_float_df,
             ]
         )
 
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0
         ]  # first matching structure
+
         if struc_key == "Unperturbed":
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
@@ -733,6 +737,22 @@ def compare_struct_to_distortions(
                 struc_key,
             )
         else:
+            # check if struc_key is in defect_structures_dict (corresponding to match in
+            # unperturbed_df, rattled_df or sorted_distorted_df but not
+            # imported_sorted_distorted_df
+            # as keys have been reformatted to floats rather than strings for this)
+            if struc_key in defect_structures_dict:
+                return (  # T/F, matching structure, energy_diff, distortion factor
+                    True,
+                    defect_structures_dict[struc_key],
+                    defect_energies_dict["distortions"][struc_key],
+                    struc_key,
+                )
+
+            # else struc_key corresponds to reformatted float-from-string from imported distortion
+            struc_key = imported_sorted_distorted_df["Bond Distortion"].iloc[
+                0
+            ]  # first matching structure
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
                 defect_structures_dict[struc_key],
