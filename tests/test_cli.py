@@ -1531,12 +1531,9 @@ Chosen VASP error message: {error_string}
         for error in [
             "EDDDAV",
             "ZHEGV",
-            "sick job",
-            "SICK JOB",
             "CNORMN",
             "ZPOTRF",
             "ZTRTRI",
-            "SICK JOB",
         ]:
             _test_OUTCAR_error(error)
 
