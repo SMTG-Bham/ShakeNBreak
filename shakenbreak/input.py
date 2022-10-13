@@ -27,7 +27,7 @@ from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
 
-from shakenbreak import analysis, distortions, io, vasp
+from shakenbreak import analysis, cli, distortions, io, vasp
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1152,24 +1152,35 @@ class Distortions:
             :obj:`dict`
                 Dictionary with information for `defect`.
         """
-        # Refactor this to create a DistortedDefect() object
-        # We need a class property to store charge states though. Not currently implemented
-        # in pymatgen.analysis.defects.core.Defect
+        # Check if user specified charge states
+        if defect.user_charges:
+            user_charges = defect.user_charges
+        else:
+            padding = 1
+            user_charges = defect.get_charge_states(padding=padding)
+            warnings.warn(
+                f"As charge states have not been specified for defect {defect.name},"
+                f" a padding of {padding} will be used on either sides of 0 and the"
+                " oxidation state value."
+            )
+        # TODO: Allow user to specify charge states or padding for each defect?
+
         distorted_defect_dict = {
-            "defect_type": defect.name,
+            "defect_type": str(defect.as_dict()["@class"].lower()),
             "defect_site": _get_bulk_defect_site(defect),
             "defect_supercell_site": _get_bulk_defect_site(defect),
             "defect_multiplicity": defect.get_multiplicity(),
             # "supercell": defect["supercell"]["size"],
-            "charges": {charge: {} for charge in defect["charges"]},
-            # TODO: Here we need a way to store the charge states of the defect
+            "charges": {charge: {} for charge in user_charges},
         }  # General info about (neutral) defect
-        for key in [
-            "substitution_specie",
-            "substituting_specie",
-        ]:  # substitutions and antisites
-            if key in defect:
-                distorted_defect_dict[key] = defect[key]
+        if (
+            str(defect.as_dict()["@class"].lower()) == "substitution"
+        ):  # substitutions and antisites
+            sub_site_in_bulk = cli._get_substituted_site(defect, defect.name)
+            distorted_defect_dict[
+                "substitution_specie"
+            ] = sub_site_in_bulk.specie.symbol
+            distorted_defect_dict["substituting_specie"] = defect.site.specie.symbol
         return distorted_defect_dict
 
     def write_distortion_metadata(
@@ -1263,9 +1274,7 @@ class Distortions:
                 defect_object
             )
 
-            # TODO: refactor this. Either add charges property to Defect() class
-            # or add input parameter to specify charge states padding
-            for charge in defect_object[
+            for charge in distorted_defects_dict[defect_name][
                 "charges"
             ]:  # loop for each charge state of defect
                 num_nearest_neighbours = self._get_number_distorted_neighbours(
@@ -1855,19 +1864,5 @@ class Distortions:
         return distorted_defects_dict, self.distortion_metadata
 
 
-# Option 1: new class inhereting from Defect()
-# class DistortedDefect(Defect):
-#     """Class representing a DistortedDefect"""
-
-#     def __init__(self, charges: list, defect_type: str):
-#         self.charges = charges
-#         self.defect_type = defect_type
-
-#     def charges(self):
-#         return self.charges
-
-#     def bulk_site(self):
-#         return _get_bulk_defect_site(self)
-
-#     def defect_type(self):
-#         return self.defect_type
+# TODO: Add from_dicts() method to generate distortions from doped/Pycdt defect dicts,
+# as well as from_structures()
