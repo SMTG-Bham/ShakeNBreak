@@ -3,6 +3,9 @@
 Structure Generation
 =====================
 
+For a brief overview of the CLI operation of `ShakeNBreak`, see the summary GIF in the
+`CLI section <https://shakenbreak.readthedocs.io/en/latest/index.html#command-line-interface>`_ of the Welcome page.
+
 For a single defect
 -------------------
 To generate the distorted structures for a specific defect in a range of charge states, we need to specify the structure
