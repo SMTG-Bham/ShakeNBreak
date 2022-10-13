@@ -183,6 +183,27 @@ def identify_defect(
     return defect
 
 
+def _get_substituted_site(defect_object: Defect, defect_name: str):
+    """Get the site in the pristine structure that has been
+    substituted in the defect structure.
+    """
+    # get bulk_site
+    poss_deflist = sorted(
+        defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
+            defect_object.site.coords, 0.01, include_index=True
+        ),
+        key=lambda x: x[1],
+    )
+    if not poss_deflist:
+        raise ValueError(
+            "Error in defect object generation; could not find substitution "
+            f"site inside bulk structure for {defect_name}"
+        )
+    defindex = poss_deflist[0][2]
+    sub_site_in_bulk = defect_object.structure[defindex]  # bulk site of substitution
+    return sub_site_in_bulk
+
+
 def generate_defect_dict(
     defect_object: dict,
     charges: list,
@@ -215,21 +236,10 @@ def generate_defect_dict(
 
     if "Substitution" in str(type(defect_object)):
         # get bulk_site
-        poss_deflist = sorted(
-            defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
-                defect_object.site.coords, 0.01, include_index=True
-            ),
-            key=lambda x: x[1],
+        sub_site_in_bulk = _get_substituted_site(
+            defect_object=defect_object,
+            defect_name=defect_name,
         )
-        if not poss_deflist:
-            raise ValueError(
-                "Error in defect object generation; could not find substitution "
-                f"site inside bulk structure for {defect_name}"
-            )
-        defindex = poss_deflist[0][2]
-        sub_site_in_bulk = defect_object.structure[
-            defindex
-        ]  # bulk site of substitution
 
         single_defect_dict["unique_site"] = sub_site_in_bulk
         single_defect_dict["site_specie"] = sub_site_in_bulk.specie.symbol
