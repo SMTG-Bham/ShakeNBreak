@@ -865,9 +865,7 @@ class Distortions:
         self.local_rattle = local_rattle
 
         # check if all expected oxidation states are provided
-        defect_object = list(self.defects_dict.values())[0][
-            0
-        ]  # TODO: check this after doped is updated
+        defect_object = list(self.defects_dict.values())[0][0]
         bulk_comp = defect_object.structure.composition
         guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
@@ -903,7 +901,7 @@ class Distortions:
             )
             self.oxidation_states = guessed_oxidation_states
 
-        elif not guessed_oxidation_states.keys() <= self.oxidation_states.keys():
+        elif guessed_oxidation_states.keys() > self.oxidation_states.keys():
             # some oxidation states are missing, so use guessed versions for these and inform user
             missing_oxidation_states = {
                 k: v
@@ -917,6 +915,7 @@ class Distortions:
             )
             self.oxidation_states.update(missing_oxidation_states)
 
+        # Setup distortion parameters
         if bond_distortions:
             self.distortion_increment = None  # user specified
             #  bond_distortions, so no increment
@@ -981,6 +980,18 @@ class Distortions:
                     + "elements to distort.",
                 )
                 distorted_element = None
+            else:
+                # Check distorted element is a valid element symbol
+                try:
+                    Element(distorted_element)
+                except ValueError:
+                    warnings.warn(
+                        "Problem reading the keys in distorted_elements.",
+                        "Are they correct element symbols?",
+                        "Proceeding without discriminating which neighbour "
+                        + "elements to distort.",
+                    )
+                    distorted_element = None
         else:
             distorted_element = None
         return distorted_element
