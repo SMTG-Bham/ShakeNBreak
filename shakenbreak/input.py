@@ -865,18 +865,11 @@ class Distortions:
         self.local_rattle = local_rattle
 
         # check if all expected oxidation states are provided
-        if "bulk" in self.defects_dict:
-            bulk_comp = self.defects_dict[
-                "bulk"
-            ].structure.composition  # TODO: check this after doped is updated
-            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
-
-        else:  # determine bulk composition from first Defect in dict
-            defect_object = list(self.defects_dict.values())[0][
-                0
-            ]  # TODO: check this after doped is updated
-            bulk_comp = _get_bulk_comp(defect_object)
-            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        defect_object = list(self.defects_dict.values())[0][
+            0
+        ]  # TODO: check this after doped is updated
+        bulk_comp = defect_object.structure.composition
+        guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         if "substitutions" in self.defects_dict:
             for substitution in self.defects_dict["substitutions"]:
