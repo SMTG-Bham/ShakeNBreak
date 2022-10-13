@@ -1,20 +1,20 @@
 
-import unittest
 import os
+import unittest
 import warnings
 
 from pymatgen.core.structure import Structure
 
+from shakenbreak.analysis import _calculate_atomic_disp
 from shakenbreak.io import (
-    read_vasp_structure,
-    read_espresso_structure,
+    parse_fhi_aims_input,
+    parse_qe_input,
     read_castep_structure,
     read_cp2k_structure,
+    read_espresso_structure,
     read_fhi_aims_structure,
-    parse_qe_input,
-    parse_fhi_aims_input,
+    read_vasp_structure,
 )
-from shakenbreak.analysis import _calculate_atomic_disp
 
 
 class IoTestCase(unittest.TestCase):

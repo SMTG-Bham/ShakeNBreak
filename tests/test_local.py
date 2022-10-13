@@ -4,28 +4,27 @@ set up. This cannot be run on GitHub actions as it does not have the POTCARs, pr
 and INCAR files from being written.
 """
 
-import unittest
+import copy
+import json
 import os
 import pickle
-import json
-import copy
-from unittest.mock import patch
 import shutil
+import unittest
 import warnings
+from unittest.mock import patch
 
 import numpy as np
-from matplotlib.testing.compare import compare_images
 
 # Click
 from click.testing import CliRunner
-
-from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Incar, Poscar, Kpoints
-from monty.serialization import dumpfn
 from doped import vasp_input
+from matplotlib.testing.compare import compare_images
+from monty.serialization import dumpfn
+from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
-from shakenbreak.cli import snb
 from shakenbreak import input, vasp
+from shakenbreak.cli import snb
 
 _file_path = os.path.dirname(__file__)
 _DATA_DIR = os.path.join(_file_path, "data")

@@ -21,6 +21,10 @@ Commands
 ``snb-parse``, ``snb-analyse``, ``snb-plot``, ``snb-regenerate`` and ``snb-groundstate``.
 Their functionality and options are described below.
 
+See the `Structure generation <https://shakenbreak.readthedocs.io/en/latest/Generation.html>`_ and
+`Analysis & plotting <https://shakenbreak.readthedocs.io/en/latest/Analysis.html>`_ Tutorials pages for an overview of
+their usage.
+
 
 .. click:: shakenbreak.cli:snb
    :prog: snb
