@@ -6,21 +6,29 @@ Analysis & plotting
 Parsing
 ----------
 
-To parse the final energies of the geometry optimisations for a specific defect:
+To parse the final energies of the geometry optimisations for a specific defect, we can simply run the command
+:code:`snb-parse` within the defect folder:
 
 .. code:: bash
 
-    $ snb-parse --code vasp --defect vac_1_Cd_0 --path defects_folder
+    $ snb-parse
 
-Where ``defects_folder`` is the path to the top level directory containing the defect folder,
-and is only required if different from the current directory.
+Alternatively, we can run from a different directory and specify the defect to parse (as well as other options, see
+``snb-parse -h``):
+
+.. code:: bash
+
+    $ snb-parse --defect vac_1_Cd_0 --path defects_folder --code FHI-aims
+
+Where ``defects_folder`` is the path to the top level directory containing the defect folder, and is only required if
+different from the current directory.
 
 Instead of a single defect, we can parse the results for **all** defects present
-in a given/current directory using:
+in a given/current directory using the ``-a``/``--all`` flag:
 
 .. code:: bash
 
-    $ snb-parse --all --code vasp --path defects_folder
+    $ snb-parse -a
 
 This generates a ``yaml`` file for each defect, mapping each distortion to the
 final energy of the relaxed structures (in eV). These files are saved to the
@@ -39,29 +47,46 @@ Analysis
 To analyse the structures obtained from the relaxations, we can use ``snb-analyse``.
 It will generate ``csv`` files for a given/all defects with the final energies
 and structural similarities between the final configurations and a reference one
-(by default the undistorted one). Structural similarity is measured with two metrics: 
-a) the sum of atomic displacements between matched sites and b) the maximum distance 
-between matched sites. For instance, to analyse the results obtained with ``VASP``
-for the defect ``vac_1_Cd_0``, we can use:
+(by default the undistorted one). Structural similarity is measured with two metrics:
+a) the sum of atomic displacements between matched sites and b) the maximum distance
+between matched sites. For instance, to analyse the results obtained with ``VASP`` for a specific defect, we can simply
+run the command ``snb-analyse`` from within the defect directory:
 
 .. code:: bash
 
-    $ snb-analyse --defect vac_1_Cd_0 --code vasp --path defects_folder
+    $ snb-analyse
 
-Further analysis tools are provided through the python API. These are documented in
-the section :ref:`shakenbreak.analysis <api_analysis>`
-and exemplified in the
-`example notebook <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/tutorials/ShakeNBreak_Example_Workflow.ipynb>`_
-(Section 5: Analyse defect distortions).
+Again we can alternatively run the command from a different directory and specify which defect to analyse, which code
+was used (if not :code:`VASP`) and which reference structure to use (default = ``Unperturbed``):
+
+.. code:: bash
+
+    $ snb-analyse --defect vac_1_Cd_0 --code FHI-aims --path defects_folder --ref_struct -0.4 --verbose
+
+Again if we want to analyse the results for **all** defects present in a given/current directory, we can use the
+``-a``/``--all`` flag:
+
+.. code:: bash
+
+    $ snb-analyse -a
+
+.. NOTE::
+    Further analysis tools are provided through the python API. These are documented in
+    the section :ref:`shakenbreak.analysis <api_analysis>`
+    and exemplified in the
+    `Analysis section <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html#optional-analyse-the-defect-distortions-found-with-snb>`_
+    of the Python API tutorial.
 
 Plotting
 -----------
 Energy lowering distortions can be quickly identified by plotting the final energies
-of the relaxed structures versus the distortion factor, using ``snb-plot``:
+of the relaxed structures versus the distortion factor, using ``snb-plot``.
+To plot the results obtained with ``VASP`` for a specific defect, we can simply run the command ``snb-plot`` from within
+the defect directory:
 
 .. code:: bash
 
-    $ snb-plot --defect vac_1_Cd_0 --path defects_folder
+    $ snb-plot
 
 which will generate a figure like the one below:
 
@@ -71,18 +96,32 @@ which will generate a figure like the one below:
 ..
     data from example_results folder
 
-We can make these plots more informative by adding a colorbar measuring the structural
-similarity between the structures:
+We can make these plots more informative by adding a colorbar measuring the structural similarity between the
+structures, using the ``-cb``/``--colorbar`` flag:
 
 .. code:: bash
 
-    $ snb-plot --defect vac_1_Cd_0 --path defects_folder --colorbar
+    $ snb-plot -cb
 
 .. image:: ./vac_1_Cd_0_colorbar.svg
-    :width: 400px
+    :width: 450px
 
 ..
     data from example_results folder
+
+Again we can alternatively run the command from a different directory and specify which defect to plot, which code
+was used (if not :code:`VASP`) and other options (what ``metric`` to use for colorbar etc – see ``snb-plot -h``):
+
+.. code:: bash
+
+    $ snb-plot --defect vac_1_Cd_0 --code FHI-aims --path defects_folder --colorbar -0.4 --metric disp --units meV --verbose
+
+Again if we want to plot the results for **all** defects present in a given/current directory, we can use the
+``-a``/``--all`` flag:
+
+.. code:: bash
+
+    $ snb-plot -a
 
 Second round of structure searching
 ---------------------------------------
@@ -120,10 +159,10 @@ indeed different and, if so, generate the input files for both of them.
 
 .. code:: bash
 
-    $ snb-regenerate --path ./defects_folder --code vasp
+    $ snb-regenerate
 
 As a result, two new distortion folders are generated, with the relaxation input files
-for the code specified with the flag ``--code``.
+for the code specified with the flag ``--code`` (default = :code:`VASP`).
 
 .. code:: bash
 
@@ -144,12 +183,19 @@ for the code specified with the flag ``--code``.
             |
             |--- Bond_Distortion_-30.0%_from_0 <-- Distortion from the neutral charge state
 
+See ``snb-regenerate -h`` for details on the options available for this command.
+
 Saving the ground state structures
 ---------------------------------------
 
-Finally, to continue our defect workflow, it can be useful to save the ground state defect structures.
-Using the ``snb-groundstate`` command, we can generate a ``Groundstate`` folder for each defect
+Finally, to continue our defect workflow, we want to save the ground state defect structures to continue our calculations
+with these structures. Using the ``snb-groundstate`` command, we can generate a ``Groundstate`` folder for each defect
 with its ground state structure.
+
+.. code:: bash
+
+    $ snb-groundstate
+
 The name of the ground state directory and of the structure file can be customised with the
 ``--directory`` and ``--groundstate_filename`` flags, respectively:
 
@@ -179,3 +225,6 @@ This command will generate a ``Groundstate`` directory within each defect folder
             |
             |--- Groundstate
                     |--- POSCAR <-- Ground state structure
+
+
+See ``snb-groundstate -h`` for details on the options available for this command.

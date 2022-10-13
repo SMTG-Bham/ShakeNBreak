@@ -2,27 +2,24 @@
 Module to parse input and output files for VASP, Quantum Espresso,
 FHI-aims, CASTEP and CP2K.
 """
+import datetime
 import os
 import warnings
 from typing import TYPE_CHECKING, Optional, Union
-import datetime
-
-from monty.serialization import loadfn, dumpfn
-from monty.re import regrep
-
-from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.core.units import Energy
 
 import ase
 from ase.atoms import Atoms
+from monty.re import regrep
+from monty.serialization import dumpfn, loadfn
+from pymatgen.core.structure import Structure
+from pymatgen.core.units import Energy
+from pymatgen.io.ase import AseAtomsAdaptor
 
 if TYPE_CHECKING:
     import pymatgen.core.periodic_table
     import pymatgen.core.structure
 
 from shakenbreak import analysis
-
 
 aaa = AseAtomsAdaptor()
 
@@ -208,11 +205,14 @@ def parse_energies(
             dir
             for dir in os.listdir(defect_dir)
             if os.path.isdir(os.path.join(defect_dir, dir))
-            and any(
-                [
-                    substring in dir
-                    for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
-                ]
+            and (
+                any(
+                    [
+                        substring in dir
+                        for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
+                    ]
+                )
+                and "High_Energy" not in dir
             )
         ]  # parse distortion directories
 

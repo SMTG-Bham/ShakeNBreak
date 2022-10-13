@@ -1,16 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-This is a setup.py script to install ShakeNBreak
-"""
-from distutils.command import install_headers
+"""This is a setup.py script to install ShakeNBreak"""
+
 import os
-from setuptools import setup, find_packages
-from setuptools.command.install import install
+import warnings
+from distutils.cmd import Command
+from distutils.command import install_headers
+from distutils.command.build_py import build_py as _build_py
+
+from setuptools import find_packages, setup
 from setuptools.command.develop import develop
 from setuptools.command.egg_info import egg_info
-from distutils.command.build_py import build_py as _build_py
-from distutils.cmd import Command
-import warnings
+from setuptools.command.install import install
 
 path_to_file = os.path.dirname(os.path.abspath(__file__))
 
@@ -22,10 +21,12 @@ def _install_custom_font():
     # Try to install custom font
     try:
         try:
-            import os, shutil
+            import os
+            import shutil
+
             import matplotlib as mpl
             import matplotlib.font_manager
-        except:
+        except Exception:
             print("Cannot import matplotlib!")
 
         # Find where matplotlib stores its True Type fonts
@@ -43,7 +44,7 @@ def _install_custom_font():
                     print("Copying " + old_path + " -> " + new_path)
                 else:
                     print(f"No ttf fonts found in the {fonts_dir} directory.")
-        except:
+        except Exception:
             pass
 
         # Try to delete matplotlib's fontList cache
@@ -63,7 +64,7 @@ def _install_custom_font():
             matplotlib.font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
             print(f"Adding {font} font to matplotlib fonts.")
 
-    except:
+    except Exception:
         warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
             The widely available Helvetica font will be used instead."""
         warnings.warn(warning_msg)
@@ -92,18 +93,31 @@ class PostDevelopCommand(develop):
     """Post-installation for development mode."""
 
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         develop.run(self)
         _install_custom_font()
 
 
 class CustomEggInfoCommand(egg_info):
+    """Post-installation"""
+
     def run(self):
+        """
+        Performs the usual install process and then copies the True Type fonts
+        that come with SnB into matplotlib's True Type font directory,
+        and deletes the matplotlib fontList.cache.
+        """
         egg_info.run(self)
         _install_custom_font()
 
 
 # https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
 def package_files(directory):
+    """Include package data."""
     paths = []
     for (path, directories, filenames) in os.walk(directory):
         for filename in filenames:
@@ -117,7 +131,7 @@ fonts = package_files("fonts/")
 
 setup(
     name="shakenbreak",
-    version="22.9.21",
+    version="22.10.13",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "
@@ -165,6 +179,7 @@ setup(
             "sphinx",
             "sphinx-book-theme",
             "sphinx_click",
+            "sphinx_design",
         ],
         "pdf": [
             "pycairo",

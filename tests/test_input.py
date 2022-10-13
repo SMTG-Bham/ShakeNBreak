@@ -1,19 +1,19 @@
-import unittest
+import copy
+import datetime
+import json
 import os
 import pickle
-import copy
-from unittest.mock import patch
 import shutil
-import numpy as np
-import json
-import datetime
+import unittest
+import warnings
+from unittest.mock import patch
 
-from pymatgen.core.structure import Structure, Composition, Element, PeriodicSite
+import numpy as np
+from ase.calculators.aims import Aims
+from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar
 
-from ase.calculators.aims import Aims
-
-from shakenbreak import input, io, distortions, vasp
+from shakenbreak import distortions, input, vasp
 
 
 def if_present_rm(path):
@@ -855,7 +855,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -866,7 +866,7 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2_Int_Cd_2",
+            "-60.0%__num_neighbours=2__Int_Cd_2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
@@ -896,7 +896,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             V_Cd_minus0pt5_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
 
         self.assertFalse(os.path.exists("vac_1_Cd_0/Rattled"))
@@ -1487,8 +1487,7 @@ class InputTestCase(unittest.TestCase):
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
 
-    @patch("builtins.print")
-    def test_apply_distortions(self, mock_print):
+    def test_apply_distortions(self):
         """Test method apply_distortions"""
         # check files are not written if `apply_distortions()` method is used
         for i in self.cdte_defect_folders:
@@ -1506,6 +1505,126 @@ class InputTestCase(unittest.TestCase):
             verbose=False,
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
+
+        # test bond distortions with interatomic distances less than 1 Angstrom are omitted,
+        # unless hydrogen involved
+        with warnings.catch_warnings(record=True) as w:
+            bond_distortions = list(np.arange(-1.0, 0.01, 0.05))
+            dist = input.Distortions(
+                {"vacancies": [reduced_V_Cd_dict]},
+                bond_distortions=bond_distortions,
+            )
+            distortion_defect_dict, distortion_metadata = dist.apply_distortions(
+                verbose=True
+            )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 5
+        )
+        message_1 = (
+            "Bond_Distortion_-100.0% for defect vac_1_Cd gives an interatomic "
+            "distance less than 1.0 Å (0.0 Å), which is likely to give explosive "
+            "forces. Omitting this distortion."
+        )
+        message_2 = (
+            "Bond_Distortion_-95.0% for defect vac_1_Cd gives an interatomic "
+            "distance less than 1.0 Å (0.23 Å), which is likely to give explosive "
+            "forces. Omitting this distortion."
+        )
+        message_3 = (
+            "Bond_Distortion_-90.0% for defect vac_1_Cd gives an interatomic "
+            "distance less than 1.0 Å (0.46 Å), which is likely to give explosive "
+            "forces. Omitting this distortion."
+        )
+        message_4 = (
+            "Bond_Distortion_-85.0% for defect vac_1_Cd gives an interatomic "
+            "distance less than 1.0 Å (0.69 Å), which is likely to give explosive "
+            "forces. Omitting this distortion."
+        )
+        message_5 = (
+            "Bond_Distortion_-80.0% for defect vac_1_Cd gives an interatomic "
+            "distance less than 1.0 Å (0.93 Å), which is likely to give explosive "
+            "forces. Omitting this distortion."
+        )
+        self.assertTrue(
+            all(
+                [
+                    any([message == str(warning.message) for warning in w])
+                    for message in [
+                        message_1,
+                        message_2,
+                        message_3,
+                        message_4,
+                        message_5,
+                    ]
+                ]
+            )
+        )
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
+            "distortions"]
+        self.assertEqual(len(V_Cd_distortions_dict), 16)
+        self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
+        self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
+
+        # test no warning when verbose=False (default)
+        with warnings.catch_warnings(record=True) as w:
+            distortion_defect_dict, distortion_metadata = dist.apply_distortions()
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 0  # no warnings
+        )
+        self.assertFalse(
+            any(
+                [
+                    any([message == str(warning.message) for warning in w])
+                    for message in [
+                        message_1,
+                        message_2,
+                        message_3,
+                        message_4,
+                        message_5,
+                    ]
+                ]
+            )
+        )
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
+            "distortions"]
+        self.assertEqual(len(V_Cd_distortions_dict), 16)
+        self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
+        self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
+
+        # test short interatomic distance distortions not omitted when Hydrogen knocking about
+        fake_hydrogen_V_Cd_dict = reduced_V_Cd_dict.copy()
+        fake_hydrogen_V_Cd_dict["supercell"]["structure"][0].species = "H"
+        dist = input.Distortions(
+            {"vacancies": [fake_hydrogen_V_Cd_dict]},
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+        )
+        distortion_defect_dict, distortion_metadata = dist.apply_distortions(verbose=True)
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 0  # no warnings
+        )
+        self.assertFalse(
+            any(
+                [
+                    any([message == str(warning.message) for warning in w])
+                    for message in [
+                    message_1,
+                    message_2,
+                    message_3,
+                    message_4,
+                    message_5,
+                ]
+                ]
+            )
+        )
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
+            "distortions"]
+        self.assertEqual(len(V_Cd_distortions_dict), 21)
+        self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
+        self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
     def test_local_rattle(
         self,

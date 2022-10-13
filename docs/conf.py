@@ -12,7 +12,9 @@
 #
 import os
 import sys
+
 from recommonmark.transform import AutoStructify
+
 sys.path.insert(0, os.path.abspath('..'))
 
 
@@ -23,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '22.9.21'
+release = '22.10.13'
 
 
 # -- General configuration ---------------------------------------------------
@@ -37,9 +39,11 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
     'sphinx_click',
+    'sphinx_design',
     # 'sphinx_mdinclude',
-    "myst_nb",  # for jupyter notebooks
+    'myst_nb',  # for jupyter notebooks
     # 'myst_parser',
 ]
 
@@ -56,6 +60,9 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
+myst_enable_extensions = [
+    "html_admonition",
+]
 
 # -- Options for HTML output -------------------------------------------------
 

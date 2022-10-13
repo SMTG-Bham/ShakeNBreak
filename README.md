@@ -3,6 +3,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 [![status](https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25/status.svg)](https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25)
+[![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 <!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
 
 # `ShakeNBreak` (`SnB`)
@@ -58,7 +59,10 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 `ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://readthedocs.org/projects/shakenbreak).
 
 ### Command line interface
-Alternatively, the code can be used via the command line. The functions provided include:
+Alternatively, the code can be used via the command line:
+![ShakeNBreak CLI](docs/SnB_CLI.gif)
+
+The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
 * [`snb-generate_all`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all): Generate distorted structures for all defects present in the specified/current directory
 * [`snb-run`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-run): Submit geometry relaxations to the HPC scheduler
@@ -87,7 +91,7 @@ Unit tests are in the `tests` directory and can be run from the top directory us
 Automatic testing is run on the master and develop branches using Github Actions. Please run tests and add new tests for any new features whenever submitting pull requests.
 
 ## Acknowledgements
-`ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires and Sabrine Hachmiouane.
+`ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and Chris Savory.
 Code to identify defect species from input supercell structures was written based on the implementation in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
 
 ## License
