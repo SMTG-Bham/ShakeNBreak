@@ -112,7 +112,14 @@ Python API
 Command line interface
 -------------------------
 
-Alternatively, the code can be used via the command line. The functions provided include:
+Alternatively, the code can be used via the command line.
+
+|
+.. image:: SnB_CLI.gif
+   :width: 800px
+|
+
+The functions provided include:
 
 * ``snb-generate``: Generate distorted structures for a given defect
 * ``snb-generate_all``: Generate distorted structures for all defects present int the specified/current directory
