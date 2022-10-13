@@ -59,7 +59,10 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 `ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://readthedocs.org/projects/shakenbreak).
 
 ### Command line interface
-Alternatively, the code can be used via the command line. The functions provided include:
+Alternatively, the code can be used via the command line:
+![ShakeNBreak CLI](docs/SnB_CLI.gif)
+
+The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
 * [`snb-generate_all`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all): Generate distorted structures for all defects present in the specified/current directory
 * [`snb-run`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-run): Submit geometry relaxations to the HPC scheduler
