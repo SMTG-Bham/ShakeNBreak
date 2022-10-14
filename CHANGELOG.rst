@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v22.10.14
+--------
+
+Just bumping version number to test updated GH Actions pip-install-test workflow.
+
 v22.10.13
 --------
 
