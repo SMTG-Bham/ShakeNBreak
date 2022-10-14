@@ -123,6 +123,10 @@ Again if we want to plot the results for **all** defects present in a given/curr
 
     $ snb-plot -a
 
+.. TIP::
+    See ``snb-plot -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_
+    for details on the options available for this command.
+
 Second round of structure searching
 ---------------------------------------
 After the defects undergoing energy lowering distortions have been identified,
@@ -183,7 +187,9 @@ for the code specified with the flag ``--code`` (default = :code:`VASP`).
             |
             |--- Bond_Distortion_-30.0%_from_0 <-- Distortion from the neutral charge state
 
-See ``snb-regenerate -h`` for details on the options available for this command.
+.. TIP::
+    See ``snb-regenerate -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate>`_
+    for details on the options available for this command.
 
 Saving the ground state structures
 ---------------------------------------
@@ -226,5 +232,6 @@ This command will generate a ``Groundstate`` directory within each defect folder
             |--- Groundstate
                     |--- POSCAR <-- Ground state structure
 
-
-See ``snb-groundstate -h`` for details on the options available for this command.
+.. TIP::
+    See ``snb-groundstate -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
+    for details on the options available for this command.
