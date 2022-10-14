@@ -9,9 +9,9 @@ from typing import Optional
 
 import click
 import numpy as np
-from monty.json import MontyDecoder
 
 # Monty and pymatgen
+from monty.json import MontyDecoder
 from monty.serialization import loadfn
 from pymatgen.analysis.defects.core import Defect
 from pymatgen.core.structure import Element, Structure
@@ -19,6 +19,9 @@ from pymatgen.io.vasp.inputs import Incar
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
+
+# TODO: Update defect naming so that symmetry inequivalent defects are named
+# different
 
 
 def identify_defect(
@@ -182,7 +185,6 @@ def identify_defect(
         "structure": bulk_structure,
         "site": defect_site,
     }
-
     defect = MontyDecoder().process_decoded(for_monty_defect)
     return defect
 
@@ -208,7 +210,7 @@ def _get_substituted_site(defect_object: Defect, defect_name: str):
     return sub_site_in_bulk
 
 
-def generate_defect_dict(
+def _generate_defect_dict(
     defect_object: dict,
     charges: list,
     defect_name: str,
@@ -327,6 +329,23 @@ def _parse_defect_dirs(path) -> list:
             ]
         )  # only parse defect directories that contain distortion folders
     ]
+
+
+def _get_defect_type_plural(defect: Defect):
+    """Generate the defect type (in plural, e.g. vacancies)
+    for a given Defect object.
+
+    Args:
+        defect (:obj: Defect): Defect object
+    """
+    defect_type = str(defect.as_dict()["@class"].lower())
+    if defect_type == "vacancy":
+        defect_type_plural = "vacancies"
+    elif defect_type == "substitution":
+        defect_type_plural = "substitutions"
+    elif defect_type == "interstitial":
+        defect_type_plural = "interstitials"
+    return defect_type_plural
 
 
 def CommandWithConfigFile(
@@ -563,11 +582,22 @@ def generate(
     if name is None:
         name = (
             defect_object.name
-        )  # Va_X, X_i or X_Y for vacancies, interstitials, substitutions
+        )  # v_X, X_i or X_Y for vacancies, interstitials, substitutions
 
-    defects_dict = generate_defect_dict(defect_object, charges, name)
+    # Update charge states
+    defect_object.user_charges = charges
+    defect_type_plural = _get_defect_type_plural(defect_object)
 
-    Dist = input.Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(
+        defects_dict={
+            defect_type_plural: {
+                name: defect_object,  # So that user can specify defect name.
+                # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
+                # names would be the same)
+            }
+        },
+        **user_settings,
+    )
     if code.lower() == "vasp":
         if input_file:
             incar = Incar.from_file(input_file)
@@ -595,14 +625,12 @@ def generate(
         "quantum-espresso",
         "quantumespresso",
     ]:
-        print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
                 input_file=input_file,
             )
         else:
-            print("Writting espresso input files")
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
             )
@@ -627,7 +655,7 @@ def generate(
                 verbose=verbose,
             )
     with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(defects_dict, fp)
+        pickle.dump(defect_object, fp)
 
 
 @snb.command(
@@ -885,16 +913,17 @@ def generate_all(
                 f"with site {defect_object.site}"
             )
 
-        defect_dict = generate_defect_dict(defect_object, charges, defect_name)
+        # Update charges and defect name
+        defect_object.user_charges = charges
 
-        # Add defect entry to full defect_dict
-        defect_type = str(list(defect_dict.keys())[0])
-        if defect_type in defects_dict:  # vacancies, antisites or interstitials
-            defects_dict[defect_type] += deepcopy(defect_dict[defect_type][0])
+        # Add defect entry to full defects_dict
+        defect_type_plural = _get_defect_type_plural(defect_object)
+        if defect_type_plural in defects_dict:  # vacancies, antisites or interstitials
+            defects_dict[defect_type_plural] += {defect_name: deepcopy(defect_object)}
         else:
             defects_dict.update(
                 {
-                    defect_type: deepcopy(defect_dict[defect_type]),
+                    defect_type_plural: {defect_name: deepcopy(defect_object)},
                 }
             )
 
@@ -928,7 +957,6 @@ def generate_all(
         "quantum-espresso",
         "quantumespresso",
     ]:
-        print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
@@ -936,7 +964,6 @@ def generate_all(
                 input_file=input_file,
             )
         else:
-            print("Writting espresso input files")
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
                 pseudopotentials=pseudopotentials,

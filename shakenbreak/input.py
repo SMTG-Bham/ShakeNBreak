@@ -12,6 +12,7 @@ import functools
 import json
 import os
 import warnings
+from collections import Counter
 from typing import Optional, Tuple
 
 import ase
@@ -786,6 +787,14 @@ class Distortions:
                     "interstitials": [Interstitial(), ...],
                     "substitutions": [Substitution(), ...],
                 }
+                In this case, folders will be name with the Defect.name() property.
+                Alternatively, if specific defect/folder names are desired, these can be
+                given as keys:
+                {
+                    "vacancies": {"vac_name": Vacancy(), "vac_2_name": Vacancy()},
+                    "interstitials": {"int_name": Interstitial(), ...},
+                    "substitutions": {"sub_name": Substitution(), ...},
+                }
             oxidation_states (:obj:`dict`):
                 Dictionary of oxidation states for species in your material,
                 used to determine the number of defect neighbours to distort
@@ -858,7 +867,10 @@ class Distortions:
         self.local_rattle = local_rattle
 
         # check if all expected oxidation states are provided
-        defect_object = list(self.defects_dict.values())[0][0]
+        if isinstance(list(self.defects_dict.values())[0], list):
+            defect_object = list(self.defects_dict.values())[0][0]
+        else:
+            defect_object = list(list(self.defects_dict.values())[0].values())[0]
         bulk_comp = defect_object.structure.composition
         guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
@@ -1240,9 +1252,24 @@ class Distortions:
             lambda x, y: x + y,
             [self.defects_dict[key] for key in self.defects_dict if key != "bulk"],
         )
+        # To allow user to specify defect names (with CLI), defect_dict can be either
+        # a dict of lists or a dict of dicts (e.g. {"vacancies": {"name_1": Vacancy()}})
+        # To account for this, here we refactor the list into a dict
+        # if isinstance(comb_defs, list):
+        # Check if defect names are repeated
+        # names = [defect.name for defect in comb_defs]
+        # counter = Counter(names)
+        # if any([value > 1 for value in counter.values()]):
+        #     # Give different names to symmetry inequivalent defects
+        #     comb_defs_dict = {}
+        #     # for defect in comb_defs:
+        #     # if counter[defect] > 1:
+        #     # assign different name
 
-        for defect_object in comb_defs:  # loop for each defect
-            defect_name = defect_object.name  # name without charge state
+        # else:
+        #     comb_defs = {defect.name: defect for defect in comb_defs}
+
+        for defect_name, defect_object in comb_defs.items():  # loop for each defect
             bulk_supercell_site = defect_object.site
 
             # Parse distortion specifications given by user for neutral
