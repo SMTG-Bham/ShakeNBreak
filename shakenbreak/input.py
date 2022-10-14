@@ -1277,7 +1277,7 @@ class Distortions:
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
-                    defect_dict=defect_object,
+                    defect_object=defect_object,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
                     local_rattle=self.local_rattle,
@@ -1289,9 +1289,9 @@ class Distortions:
 
                 # Add distorted structures to dictionary
                 distorted_defects_dict[defect_name]["charges"][charge]["structures"] = {
-                    "Unperturbed": defect_distorted_structures["Unperturbed"][
-                        "supercell"
-                    ]["structure"],
+                    "Unperturbed": defect_distorted_structures[
+                        "Unperturbed"
+                    ].defect_structure,
                     "distortions": {
                         dist: struct
                         for dist, struct in defect_distorted_structures[
