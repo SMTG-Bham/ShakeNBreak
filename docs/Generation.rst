@@ -43,8 +43,8 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
         # General/Distortion section
         oxidation_states:  # If not specified, the code will determine them
-        Cd: 2
-        Te: -2
+            Cd: 2
+            Te: -2
         distortion_increment: 0.1  # Bond distortion increment
         distorted_elements:  # (Default = None, distorts nearest neighbours)
             vac_Cd_1:
@@ -120,12 +120,12 @@ the following directory structures will be parsed correctly:
 
         # Defects section: to specify charge states and defect index/frac coords
         defects:
-        vac_1_Cd:  # Name should match your defect structure file/folder
-            charges: [0, -1, -2]  # List of charge states
-            defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
-        Int_Cd_2:
-            charges: [0, +1, +2]
-            defect_index: -1  # Lattice site of the interstitial
+            vac_1_Cd:  # Name should match your defect structure file/folder
+                charges: [0, -1, -2]  # List of charge states
+                defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
+            Int_Cd_2:
+                charges: [0, +1, +2]
+                defect_index: -1  # Lattice site of the interstitial
 
         # Distortion section
         distortion_increment: 0.1 # Increment for distortion range
