@@ -759,13 +759,6 @@ def apply_snb_distortions(
     return distorted_defect_dict
 
 
-# TODO: As discussed, need to refactor Distortions() to take a dictionary of Defect() objects
-# rather than a dict of (doped/pmg/pycdt) defect_dict
-# We need a way to store the defect charge states defined by the user though, as with
-# the get_charge_states() method we need to give the padding
-# a)
-
-
 class Distortions:
     """
     Class to apply rattle and bond distortion to all defects in `defects_dict`
@@ -1862,6 +1855,129 @@ class Distortions:
                         )  # write parameters file
 
         return distorted_defects_dict, self.distortion_metadata
+
+    @classmethod
+    def from_dict(
+        cls,
+        doped_defects_dict: dict,
+        oxidation_states: Optional[dict] = None,
+        dict_number_electrons_user: Optional[dict] = None,
+        distortion_increment: float = 0.1,
+        bond_distortions: Optional[list] = None,
+        local_rattle: bool = False,
+        stdev: float = 0.25,
+        distorted_elements: Optional[dict] = None,
+        **kwargs,  # for mc rattle
+    ) -> None:
+        """
+        Initialise Distortion() class using a dictionary of DOPED/PyCDT defect dicts
+        (instead of pymatgen-analysis-defects Defect() objects).
+
+        Args:
+            defects_dict (:obj:`dict`):
+                Dictionary of DOPED/pyCDT defect dictionaries.
+            oxidation_states (:obj:`dict`):
+                Dictionary of oxidation states for species in your material,
+                used to determine the number of defect neighbours to distort
+                (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
+                states will be guessed based on the bulk composition and most
+                common oxidation states of any extrinsic species.
+            dict_number_electrons_user (:obj:`dict`):
+                Optional argument to set the number of extra/missing charge
+                (negative of electron count change) for the input defects
+                in their neutral state, as a dictionary with format
+                {'defect_name': charge_change} where charge_change is the
+                negative of the number of extra/missing electrons.
+                (Default: None)
+            distortion_increment (:obj:`float`):
+                Bond distortion increment. Distortion factors will range from
+                0 to +/-0.6, in increments of `distortion_increment`.
+                Recommended values: 0.1-0.3
+                (Default: 0.1)
+            bond_distortions (:obj:`list`):
+                List of bond distortions to apply to nearest neighbours,
+                instead of the default set (e.g. [-0.5, 0.5]).
+                (Default: None)
+            local_rattle (:obj:`bool`):
+                Whether to apply random displacements that tail off as we move
+                away from the defect site. Not recommended as typically worsens
+                performance. If False (default), all supercell sites are rattled
+                with the same amplitude (full rattle).
+                (Default: False)
+            stdev (:obj:`float`):
+                Standard deviation (in Angstroms) of the Gaussian distribution
+                from which random atomic displacement distances are drawn during
+                rattling. Recommended values: 0.25, or 0.15 for strongly-bound
+                /ionic materials.
+                (Default: 0.25)
+            distorted_elements (:obj:`dict`):
+                Optional argument to specify the neighbouring elements to
+                distort for each defect, in the form of a dictionary with
+                format {'defect_name': ['element1', 'element2', ...]}
+                (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
+                the defect are chosen.
+                (Default: None)
+            **kwargs:
+                Additional keyword arguments to pass to `hiphive`'s
+                `mc_rattle` function. These include:
+                - d_min (:obj:`float`):
+                    Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                    moves that put atoms at distances less than this will be heavily
+                    penalised.
+                    (Default: 2.25)
+                - max_disp (:obj:`float`):
+                    Maximum atomic displacement (in Angstroms) during Monte Carlo
+                    rattling. Rarely occurs and is used primarily as a safety net.
+                    (Default: 2.0)
+                - max_attempts (:obj:`int`):
+                    Limit for how many attempted rattle moves are allowed a single atom.
+                - active_atoms (:obj:`list`):
+                    List of the atomic indices which should undergo Monte
+                    Carlo rattling. By default, all atoms are rattled.
+                    (Default: None)
+                - seed (:obj:`int`):
+                    Seed for setting up NumPy random state from which random
+                    numbers are generated.
+
+        """
+
+        # Transform DOPED/PyCDT defect_dict to dictionary of Defect() objects
+        pymatgen_defects_dict = {
+            key: [] for key in doped_defects_dict.keys() if key != "bulk"
+        }
+        for (
+            key
+        ) in pymatgen_defects_dict:  # loop for vacancies, antisites and interstitials
+            for defect_dict in doped_defects_dict[key]:  # loop for each defect
+                # transform defect_dict to Defect object
+                if "bulk" in doped_defects_dict:
+                    pymatgen_defects_dict[key].append(
+                        cli.generate_defect_object(
+                            single_defect_dict=defect_dict,
+                            bulk_dict=doped_defects_dict["bulk"],
+                        )
+                    )
+                else:
+                    # No bulk entry - ask user to provide it
+                    # TODO: Determine bulk structure by comparing defect_structure and
+                    # defect_site?
+                    warnings.warn(
+                        """No bulk entry in defects_dict. Please try again
+                          providing a `bulk` entry in `defect_dict`."""
+                    )
+                    return
+
+        return cls(
+            defects_dict=pymatgen_defects_dict,
+            oxidation_states=oxidation_states,
+            dict_number_electrons_user=dict_number_electrons_user,
+            distortion_increment=distortion_increment,
+            bond_distortions=bond_distortions,
+            local_rattle=local_rattle,
+            stdev=stdev,
+            distorted_elements=distorted_elements,
+            **kwargs,
+        )
 
 
 # TODO: Add from_dicts() method to generate distortions from doped/Pycdt defect dicts,

@@ -138,7 +138,10 @@ dmypy.json
 # Affinity Designer
 Affinity/
 .vscode/settings.json
+
+# Misscellaneous
 shakenbreak/.vscode/settings.json
+snb_test.ipynb
 
 # Sourcery
 .sourcery.yaml
