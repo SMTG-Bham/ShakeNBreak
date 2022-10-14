@@ -15,7 +15,8 @@ jobs:
       max-parallel: 5
 
       matrix:
-        python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22 which is incompatible with Python 3.10, should be fixed soon...
+        python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22
+        # (because of numba) which is incompatible with Python 3.10, should be fixed soon...
 
     name: Python ${{ matrix.python-version }} pip install
 
@@ -28,6 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sleep 10m  # wait 10 minutes for PyPI to update with the new release
           python -m pip install --upgrade pip
           pip install shakenbreak  # install only from PyPI
           pip install shakenbreak[tests]
