@@ -5,6 +5,7 @@ import pickle
 import warnings
 from copy import deepcopy
 from subprocess import call
+from typing import Optional
 
 import click
 import numpy as np
@@ -31,10 +32,13 @@ def identify_defect(
     Args:
         defect_structure (:obj:`Structure`):
             defect structure
+        bulk_structure (:obj:`Structure`):
+            bulk structure
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
             Index of the defect site in the supercell.
+
     Returns: :obj:`Defect`
     """
     natoms_defect = len(defect_structure)
@@ -269,6 +273,45 @@ def generate_defect_dict(
         }
 
     return defects_dict
+
+
+def generate_defect_object(
+    single_defect_dict: dict,
+    bulk_dict: dict,
+    charges: Optional[list] = None,
+) -> Defect:
+    """
+    Create Defect() object from a DOPED/PyCDT single_defect_dict.
+
+    Args:
+        single_defect_dict (:obj:`dict`):
+            DOPED/PyCDT defect dictionary.
+        bulk_dict (:obj:`dict`):
+            DOPED/PyCDT entry for bulk in the defects dictionary,
+            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
+        charges (:obj:`list`):
+            List of charge states for the defect.
+
+    Returns: :obj:`Defect`
+    """
+    defect_type = single_defect_dict["defect_type"]
+    # Get bulk structure
+    bulk_structure = bulk_dict["supercell"]["structure"]
+    # Get defect site
+    defect_site = single_defect_dict["bulk_supercell_site"]
+    for_monty_defect = {
+        "@module": "pymatgen.analysis.defects.core",
+        "@class": defect_type.capitalize(),
+        "structure": bulk_structure,
+        "site": defect_site,
+    }
+    defect = MontyDecoder().process_decoded(for_monty_defect)
+    # Specify defect charge states
+    if "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
+    elif isinstance(charges, list):
+        defect.user_charges = charges
+    return defect
 
 
 def _parse_defect_dirs(path) -> list:
