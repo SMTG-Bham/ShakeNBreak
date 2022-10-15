@@ -424,6 +424,10 @@ def generate_defect_object(
     Returns: :obj:`Defect`
     """
     defect_type = single_defect_dict["defect_type"]
+    if defect_type == "antisite":
+        defect_type = (
+            "substitution"  # antisites are represented with Substitution class
+        )
     # Get bulk structure
     bulk_structure = bulk_dict["supercell"]["structure"]
     # Get defect site
