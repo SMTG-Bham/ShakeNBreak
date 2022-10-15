@@ -4,6 +4,7 @@ energy-lowering distortions.
 """
 import datetime
 import os
+import re
 import shutil
 import warnings
 from typing import Optional, Tuple
@@ -14,6 +15,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib import font_manager
 from matplotlib.figure import Figure
+from pymatgen.core.periodic_table import Element
 
 from shakenbreak import analysis
 
@@ -133,7 +135,8 @@ def _format_defect_name(
     include_site_num_in_name: bool,
 ) -> str:
     """
-    Format defect name for plot titles. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$)
+    Format defect name for plot titles. (i.e. from vac_1_Cd_0 to $V_{Cd}^{0}$).
+    Note this assumes "V_" means vacancy not Vanadium.
 
     Args:
         defect_species (:obj:`str`):
@@ -147,57 +150,376 @@ def _format_defect_name(
             formatted defect name
     """
     if not isinstance(defect_species, str):  # Check inputs
-        raise (TypeError(f"`defect_species` {defect_species} must be a string"))
+        raise (TypeError(f"`defect_species` {defect_species} should be a string"))
     try:
         charge = defect_species.split("_")[-1]  # charge comes last
         charge = int(charge)
     except ValueError:
         raise (
             ValueError(
-                f"Problem reading defect name {defect_species}. "
-                "It should include the charge state (i.e `vac_1_Cd_0`)."
+                f"Problem reading defect name {defect_species}, should end with charge state "
+                f"after underscore (e.g. vac_1_Cd_0)"
             )
         )
     # Format defect name for title/axis labels
     if charge > 0:
         charge = "+" + str(charge)  # show positive charges with a + sign
-    defect_type = defect_species.split("_")[0]  # vac, as or int
-    if (
-        defect_type.capitalize() == "Int"
-    ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
-        site_element = defect_species.split("_")[1]
-        site = defect_species.split("_")[2]
-        if include_site_num_in_name:
-            # by default include defect site in defect name for interstitials
-            defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
-        else:
-            defect_name = f"{site_element}$_i^{{{charge}}}$"
-    else:
-        site = defect_species.split("_")[
-            1
-        ]  # number indicating defect site (from doped)
-        site_element = defect_species.split("_")[2]  # element at defect site
 
-    if include_site_num_in_name:  # whether to include the site number in defect name
-        if defect_type.lower() == "vac":
-            defect_name = f"V$_{{{site_element}_{site}}}^{{{charge}}}$"
-            # double brackets to treat it literally (tex), then extra {} for
-            # python str formatting
-        elif defect_type.lower() in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
-        elif defect_type.capitalize() != "Int":
-            raise ValueError("Defect type not recognized. Please check spelling.")
-    else:
-        if defect_type.lower() == "vac":
-            defect_name = f"V$_{{{site_element}}}^{{{charge}}}$"
-        elif defect_type.lower() in ["as", "sub"]:
-            subs_element = defect_species.split("_")[4]
-            defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
-        elif defect_type.capitalize() != "Int":
-            raise ValueError(
-                f"Defect type {defect_type} not recognized. Please check spelling."
+    recognised_pre_vacancy_strings = sorted(
+        [
+            "V",
+            "v",
+            "V_",
+            "v_",
+            "Vac",
+            "vac",
+            "Vac_",
+            "vac_",
+            "Va",
+            "va",
+            "Va_",
+            "va_",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_post_vacancy_strings = sorted(
+        [
+            "_v",  # but not '_V' as could be vanadium
+            "v",  # but not 'V' as could be vanadium
+            "_vac",
+            "_Vac",
+            "vac",
+            "Vac",
+            "va",
+            "Va",
+            "_va",
+            "_Va",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_pre_interstitial_strings = sorted(
+        [
+            "i",  # but not 'I' as could be iodine
+            "i_",  # but not 'I_' as could be iodine
+            "Int",
+            "int",
+            "Int_",
+            "int_",
+            "Inter",
+            "inter",
+            "Inter_",
+            "inter_",
+        ],
+        key=len,
+        reverse=True,
+    )
+    recognised_post_interstitial_strings = sorted(
+        [
+            "_i",  # but not '_I' as could be iodine
+            "i",  # but not 'I' as could be iodine
+            "_int",
+            "_Int",
+            "int",
+            "Int",
+            "inter",
+            "Inter",
+            "_inter",
+            "_Inter",
+        ],
+        key=len,
+        reverse=True,
+    )
+
+    def _check_matching_defect_format(
+        element, name, pre_def_type_list, post_def_type_list
+    ):
+        if any(
+            f"{pre_def_type}{element}" in name for pre_def_type in pre_def_type_list
+        ) or any(
+            f"{element}{post_def_type}" in name for post_def_type in post_def_type_list
+        ):
+            return True
+        else:
+            return False
+
+    def _check_matching_defect_format_with_site_num(
+        element, name, pre_def_type_list, post_def_type_list
+    ):
+        match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
+        if match:
+            items = match.groups()
+            for match_generator in [
+                (
+                    fstring in name
+                    for pre_def_type in pre_def_type_list
+                    for fstring in [
+                        f"{pre_def_type}{items[1]}{element}",
+                        f"{pre_def_type}{element}{items[1]}",
+                        f"{pre_def_type}{items[1]}_{element}",
+                        f"{pre_def_type}{element}_{items[1]}",
+                    ]
+                ),
+            ]:
+                if any(match_generator):
+                    return True, items[1]
+
+            for match_generator in [
+                (
+                    fstring in name
+                    for post_def_type in post_def_type_list
+                    for fstring in [
+                        f"{element}{items[1]}{post_def_type}",
+                        f"{items[1]}{element}{post_def_type}",
+                        f"{element}{items[1]}_{post_def_type}",
+                        f"{items[1]}_{element}{post_def_type}",
+                    ]
+                ),
+            ]:
+                if any(match_generator):
+                    return True, items[1]
+
+            else:
+                return False, None
+
+        else:
+            return False, None
+
+    def _try_vacancy_interstitial_match(
+        element,
+        name,
+        include_site_num_in_name,
+        pre_vacancy_strings=None,
+        post_vacancy_strings=None,
+        pre_interstitial_strings=None,
+        post_interstitial_strings=None,
+    ):
+        if pre_vacancy_strings is None:
+            pre_vacancy_strings = recognised_pre_vacancy_strings
+        if post_vacancy_strings is None:
+            post_vacancy_strings = recognised_post_vacancy_strings
+        if pre_interstitial_strings is None:
+            pre_interstitial_strings = recognised_pre_interstitial_strings
+        if post_interstitial_strings is None:
+            post_interstitial_strings = recognised_post_interstitial_strings
+        defect_name = None
+
+        if include_site_num_in_name:
+            match_found, site_num = _check_matching_defect_format_with_site_num(
+                element,
+                name,
+                pre_vacancy_strings,
+                post_vacancy_strings,
             )
+            if match_found:
+                defect_name = f"$V_{{{element}_{site_num}}}^{{{charge}}}$"
+
+            else:
+                match_found, site_num = _check_matching_defect_format_with_site_num(
+                    element,
+                    name,
+                    pre_interstitial_strings,
+                    post_interstitial_strings,
+                )
+                if match_found:
+                    defect_name = f"{element}$_{{i_{site_num}}}^{{{charge}}}$"
+
+        if (
+            _check_matching_defect_format(
+                element, name, pre_vacancy_strings, post_vacancy_strings
+            )
+            and defect_name is None
+        ):
+            defect_name = f"$V_{{{element}}}^{{{charge}}}$"
+        elif (
+            _check_matching_defect_format(
+                element,
+                name,
+                pre_interstitial_strings,
+                post_interstitial_strings,
+            )
+            and defect_name is None
+        ):
+            defect_name = f"{element}$_i^{{{charge}}}$"
+
+        return defect_name
+
+    def _try_substitution_match(
+        substituting_element, orig_site_element, name, include_site_num_in_name
+    ):
+        defect_name = None
+        if (
+            f"{substituting_element}_{orig_site_element}" in name
+            or f"{substituting_element}_on_{orig_site_element}" in name
+        ):
+            defect_name = (
+                f"{substituting_element}$_{{{orig_site_element}}}^{{{charge}}}$"
+            )
+
+        if (
+            defect_name and include_site_num_in_name
+        ):  # if we have a match, check if we can add the site number
+            match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
+            if match:
+                items = match.groups()
+                if any(
+                    fstring in name
+                    for fstring in [
+                        f"{items[1]}_{substituting_element}_{orig_site_element}",
+                        f"{substituting_element}_{orig_site_element}_{items[1]}",
+                        f"{items[1]}_{substituting_element}_on_{orig_site_element}",
+                        f"{substituting_element}_on_{orig_site_element}_{items[1]}",
+                    ]
+                ):
+                    defect_name = (
+                        f"{substituting_element}$_{{{orig_site_element}_{items[1]}}}^"
+                        f"{{{charge}}}$"
+                    )
+
+        return defect_name
+
+    def _defect_name_from_matching_elements(
+        element_matches, name, include_site_num_in_name
+    ):
+        defect_name = None
+        if len(element_matches) == 1:  # vacancy or interstitial?
+            defect_name = _try_vacancy_interstitial_match(
+                element_matches[0], name, include_site_num_in_name
+            )
+        elif len(element_matches) == 2:
+            # try substitution/antisite match, if not try vacancy/interstitial with first element
+            defect_name = _try_substitution_match(
+                element_matches[0], element_matches[1], name, include_site_num_in_name
+            )
+            if defect_name is None:
+                defect_name = _try_vacancy_interstitial_match(
+                    element_matches[0], name, include_site_num_in_name
+                )
+        else:
+            # try use first match and see if we match vacancy or interstitial format
+            # if not, try first and second matches and see if we match substitution format
+            # otherwise fail
+            defect_name = _try_vacancy_interstitial_match(
+                element_matches[0], name, include_site_num_in_name
+            )
+            if defect_name is None:
+                defect_name = _try_substitution_match(
+                    element_matches[0],
+                    element_matches[1],
+                    name,
+                    include_site_num_in_name,
+                )
+
+        return defect_name
+
+    defect_name = None
+    dummy_h = Element("H")
+    pre_charge_name = defect_species.rsplit("_", 1)[
+        0
+    ]  # defect name without charge state
+
+    # trim any matching pre or post vacancy/interstitial strings from defect name
+    trimmed_pre_charge_name = pre_charge_name
+    for substring in (
+        recognised_pre_vacancy_strings
+        + recognised_post_vacancy_strings
+        + recognised_pre_interstitial_strings
+        + recognised_post_interstitial_strings
+    ):
+        if substring in trimmed_pre_charge_name and not (
+            substring.endswith("i") or substring.startswith("i")
+        ):
+            trimmed_pre_charge_name = trimmed_pre_charge_name.replace(substring, "")
+
+    two_character_pairs_in_name = [
+        trimmed_pre_charge_name[
+            i : i + 2
+        ]  # trimmed_pre_charge_name name for finding elements,
+        # pre_charge_name for matching defect format
+        for i in range(0, len(trimmed_pre_charge_name), 1)
+        if len(trimmed_pre_charge_name[i : i + 2]) == 2
+    ]
+    possible_two_character_elements = [
+        two_char_string
+        for two_char_string in two_character_pairs_in_name
+        if dummy_h.is_valid_symbol(two_char_string)
+    ]
+
+    if len(possible_two_character_elements) > 0:
+        defect_name = _defect_name_from_matching_elements(
+            possible_two_character_elements,
+            pre_charge_name,  # trimmed_pre_charge_name name for finding elements, pre_charge_name
+            # for matching defect format
+            include_site_num_in_name,
+        )
+
+    if defect_name is None:
+        # try single-character element match
+        possible_one_character_elements = [
+            character
+            for character in trimmed_pre_charge_name  # trimmed_pre_charge_name name for finding
+            # elements, pre_charge_name for matching defect format
+            if dummy_h.is_valid_symbol(character)
+        ]
+
+        if len(possible_one_character_elements) > 0:
+            defect_name = _defect_name_from_matching_elements(
+                possible_one_character_elements,
+                pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
+                # pre_charge_name for matching defect format
+                include_site_num_in_name,
+            )
+
+    if defect_name is None:
+        # try matching to PyCDT/doped style:
+        try:
+            defect_type = defect_species.split("_")[0]  # vac, as or int
+            if (
+                defect_type.capitalize() == "Int"
+            ):  # for interstitials, name formatting is different (eg Int_Cd_1 vs vac_1_Cd)
+                site_element = defect_species.split("_")[1]
+                site = defect_species.split("_")[2]
+                if include_site_num_in_name:
+                    # by default include defect site in defect name for interstitials
+                    defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
+                else:
+                    defect_name = f"{site_element}$_i^{{{charge}}}$"
+            else:
+                site = defect_species.split("_")[
+                    1
+                ]  # number indicating defect site (from doped)
+                site_element = defect_species.split("_")[2]  # element at defect site
+
+            if (
+                include_site_num_in_name
+            ):  # whether to include the site number in defect name
+                if defect_type.lower() == "vac":
+                    defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
+                    # double brackets to treat it literally (tex), then extra {} for
+                    # python str formatting
+                elif defect_type.lower() in ["as", "sub"]:
+                    subs_element = defect_species.split("_")[4]
+                    defect_name = (
+                        f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
+                    )
+                elif defect_type.capitalize() != "Int":
+                    raise ValueError(
+                        "Defect type not recognized. Please check spelling."
+                    )
+            else:
+                if defect_type.lower() == "vac":
+                    defect_name = f"$V_{{{site_element}}}^{{{charge}}}$"
+                elif defect_type.lower() in ["as", "sub"]:
+                    subs_element = defect_species.split("_")[4]
+                    defect_name = f"{site_element}$_{{{subs_element}}}^{{{charge}}}$"
+                elif defect_type.capitalize() != "Int":
+                    raise ValueError(
+                        f"Defect type {defect_type} not recognized. Please check spelling."
+                    )
+        except Exception:
+            defect_name = None
+
     return defect_name
 
 
@@ -1016,7 +1338,7 @@ def plot_defect(
             formatted defect name (i.e. V$_{Cd}^{0}$).
             (Default: True)
         line_color (:obj:`str`):
-            Color of the line conneting points.
+            Color of the line connecting points.
             (Default: ShakeNBreak base style)
         save_plot (:obj:`bool`):
             Whether to save the plot as an SVG file.
@@ -1032,9 +1354,17 @@ def plot_defect(
             Energy vs distortion plot, as a mpl.figure.Figure object
     """
     # Ensure necessary directories exist, and raise error if not
-    _verify_data_directories_exist(
-        output_path=output_path, defect_species=defect_species
-    )
+    try:
+        _verify_data_directories_exist(
+            output_path=output_path, defect_species=defect_species
+        )
+    except FileNotFoundError:
+        if add_colorbar:
+            warnings.warn(
+                f"Cannot add colorbar to plot for {defect_species} as {output_path}/"
+                f"{defect_species} cannot be found."
+            )
+            add_colorbar = False
 
     if "Unperturbed" not in energies_dict.keys():
         # check if unperturbed energies exist
@@ -1083,10 +1413,13 @@ def plot_defect(
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
 
-    defect_name = _format_defect_name(
-        defect_species=defect_species,
-        include_site_num_in_name=include_site_num_in_name,
-    )  # Format defect name for title and axis labels
+    try:
+        defect_name = _format_defect_name(
+            defect_species=defect_species,
+            include_site_num_in_name=include_site_num_in_name,
+        )  # Format defect name for title and axis labels
+    except Exception:  # if formatting fails, just use the defect_species name
+        defect_name = defect_species
 
     if units == "meV":
         (
@@ -1235,12 +1568,18 @@ def plot_colorbar(
         # Title and format axis labels and locators
         if title:
             ax.set_title(title)
+
+        try:
+            formatted_defect_name = _format_defect_name(
+                defect_species, include_site_num_in_name=include_site_num_in_name
+            )
+        except Exception:
+            formatted_defect_name = "defect"
+
         ax = _format_axis(
             ax=ax,
             y_label=y_label,
-            defect_name=_format_defect_name(
-                defect_species, include_site_num_in_name=include_site_num_in_name
-            ),
+            defect_name=formatted_defect_name,
             num_nearest_neighbours=num_nearest_neighbours,
             neighbour_atom=neighbour_atom,
         )
@@ -1291,7 +1630,12 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
-        else:
+
+        if (
+            len(sorted_distortions) > 0
+            and len([key for key in energies_dict["distortions"] if key != "Rattled"])
+            > 0
+        ):  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
                     i
@@ -1313,15 +1657,17 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
-            ax.plot(  # Line connecting points
-                [sorted_distortions[i] for i in non_imported_sorted_indices],
-                [sorted_energies[i] for i in non_imported_sorted_indices],
-                ls="-",
-                markersize=1,
-                marker="o",
-                color=line_color,
-                label=legend_label,
-            )
+            if len(non_imported_sorted_indices) > 1:  # more than one point
+                # Plot line connecting points
+                ax.plot(
+                    [sorted_distortions[i] for i in non_imported_sorted_indices],
+                    [sorted_energies[i] for i in non_imported_sorted_indices],
+                    ls="-",
+                    markersize=1,
+                    marker="o",
+                    color=line_color,
+                    label=legend_label,
+                )
 
             # Datapoints from other charge states
             if imported_indices:
@@ -1352,44 +1698,42 @@ def plot_colorbar(
                         f"charge state",
                     )
 
-            # Plot reference energy
-            unperturbed_color = colormap(
-                0
-            )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
-            # respect to this structure)
-            ax.scatter(
-                0,
+        # Plot reference energy
+        unperturbed_color = colormap(
+            0
+        )  # get color of unperturbed structure (corresponding to 0 as disp is calculated with
+        # respect to this structure)
+        ax.scatter(
+            0,
+            energies_dict["Unperturbed"],
+            color=unperturbed_color,
+            ls="None",
+            s=120,
+            marker="d",
+            label="Unperturbed",
+        )
+
+        # distortion_range is sorted_distortions range, including 0 if above/below this range
+        distortion_range = (
+            min(sorted_distortions + (0,)),
+            max(sorted_distortions + (0,)),
+        )
+        # set xlim to distortion_range + 5% (matplotlib default padding)
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
+
+        # Formatting of tick labels.
+        # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
+        # 2 if deltaE > 0.1 eV, otherwise 3.
+        ax = _format_tick_labels(
+            ax=ax,
+            energy_range=list(energies_dict["distortions"].values())
+            + [
                 energies_dict["Unperturbed"],
-                color=unperturbed_color,
-                ls="None",
-                s=120,
-                marker="d",
-                label="Unperturbed",
-            )
-
-            # distortion_range is sorted_distortions range, including 0 if above/below this range
-            distortion_range = (
-                min(sorted_distortions + (0,)),
-                max(sorted_distortions + (0,)),
-            )
-            # set xlim to distortion_range + 5% (matplotlib default padding)
-            ax.set_xlim(
-                distortion_range[0]
-                - 0.05 * (distortion_range[1] - distortion_range[0]),
-                distortion_range[1]
-                + 0.05 * (distortion_range[1] - distortion_range[0]),
-            )
-
-            # Formatting of tick labels.
-            # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
-            # 2 if deltaE > 0.1 eV, otherwise 3.
-            ax = _format_tick_labels(
-                ax=ax,
-                energy_range=list(energies_dict["distortions"].values())
-                + [
-                    energies_dict["Unperturbed"],
-                ],
-            )
+            ],
+        )
 
         plt.legend(frameon=True).set_zorder(
             100
@@ -1522,12 +1866,18 @@ def plot_datasets(
     # Title and labels of axis
     if title:
         ax.set_title(title)
+
+    try:
+        formatted_defect_name = _format_defect_name(
+            defect_species, include_site_num_in_name=include_site_num_in_name
+        )
+    except Exception:
+        formatted_defect_name = "defect"
+
     ax = _format_axis(
         ax=ax,
         y_label=y_label,
-        defect_name=_format_defect_name(
-            defect_species, include_site_num_in_name=include_site_num_in_name
-        ),
+        defect_name=formatted_defect_name,
         num_nearest_neighbours=num_nearest_neighbours,
         neighbour_atom=neighbour_atom,
     )
@@ -1598,7 +1948,11 @@ def plot_datasets(
                     marker=default_style_settings["marker"],
                     label="Rattled",
                 )
-            else:
+
+            if (
+                len(sorted_distortions) > 0
+                and len([key for key in dataset["distortions"] if key != "Rattled"]) > 0
+            ):  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
                         i
@@ -1608,17 +1962,18 @@ def plot_datasets(
                 else:
                     non_imported_sorted_indices = range(len(sorted_distortions))
 
-                # Plot non-imported distortions
-                ax.plot(  # plot bond distortions
-                    [sorted_distortions[i] for i in non_imported_sorted_indices],
-                    [sorted_energies[i] for i in non_imported_sorted_indices],
-                    c=colors[dataset_number],
-                    markersize=default_style_settings["markersize"],
-                    marker=default_style_settings["marker"],
-                    linestyle=default_style_settings["linestyle"],
-                    label=dataset_labels[dataset_number],
-                    linewidth=default_style_settings["linewidth"],
-                )
+                if len(non_imported_sorted_indices) > 1:  # more than one point
+                    # Plot non-imported distortions
+                    ax.plot(  # plot bond distortions
+                        [sorted_distortions[i] for i in non_imported_sorted_indices],
+                        [sorted_energies[i] for i in non_imported_sorted_indices],
+                        c=colors[dataset_number],
+                        markersize=default_style_settings["markersize"],
+                        marker=default_style_settings["marker"],
+                        linestyle=default_style_settings["linestyle"],
+                        label=dataset_labels[dataset_number],
+                        linewidth=default_style_settings["linewidth"],
+                    )
 
             if imported_indices:
                 other_charges = len(

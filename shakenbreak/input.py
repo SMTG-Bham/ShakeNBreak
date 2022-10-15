@@ -411,7 +411,7 @@ def _apply_rattle_bond_distortions(
         distortion_factor (:obj:`float`):
             The distortion factor to apply to the bond distance between
             the defect and nearest neighbours. Typical choice is between
-            0.4 (-60%) and 1.4 (+60%).
+            0.4 (-60%) and 1.6 (+60%).
         local_rattle (:obj:`bool`):
             Whether to apply random displacements that tail off as we move
             away from the defect site. If False, all supercell sites are
@@ -503,7 +503,7 @@ def _apply_rattle_bond_distortions(
             0.8 * sorted_distances[len(defect_supercell) + 20]
         )  # ignoring interstitials by
         # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
-        if d_min < 1:
+        if d_min < 1.0:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of "
                 f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
@@ -1137,7 +1137,7 @@ class Distortions:
                     "num_nearest_neighbours"
                 ]
             )
-            + "_"
+            + "__"
             + defect_name
         )
         return poscar_comment
@@ -1317,6 +1317,25 @@ class Distortions:
                     verbose=verbose,
                     **self._mc_rattle_kwargs,
                 )
+
+                # Remove distortions with interatomic distances less than 1 Angstrom if Hydrogen
+                # not present
+                for dist, struct in list(
+                    defect_distorted_structures["distortions"].items()
+                ):
+                    sorted_distances = np.sort(struct.distance_matrix.flatten())
+                    shortest_interatomic_distance = sorted_distances[len(struct)]
+                    if shortest_interatomic_distance < 1.0 and not any(
+                        [el.symbol == "H" for el in struct.composition.elements]
+                    ):
+                        if verbose:
+                            warnings.warn(
+                                f"{dist} for defect {defect_name} gives an interatomic distance "
+                                f"less than 1.0 Å ({shortest_interatomic_distance:.2} Å), "
+                                f"which is likely to give explosive forces. Omitting this "
+                                f"distortion."
+                            )
+                        defect_distorted_structures["distortions"].pop(dist)
 
                 # Add distorted structures to dictionary
                 distorted_defects_dict[defect_name]["charges"][charge]["structures"] = {

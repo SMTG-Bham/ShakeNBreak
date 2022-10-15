@@ -5,7 +5,13 @@ Tutorials
 
 Python API
 ----------
-Usage of ShakeNBreak from a Python API is exemplified in the `SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_.
+Usage of ShakeNBreak from a Python API is exemplified in the
+`SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_, which includes:
+
+.. toctree::
+   :maxdepth: 2
+
+   ShakeNBreak_Example_Workflow
 
 
 Command line interface (CLI)
@@ -34,7 +40,6 @@ and their use is exemplified in the following pages:
 .. toctree::
    :maxdepth: 2
 
-   ShakeNBreak_Example_Workflow
    Generation
    Analysis
 

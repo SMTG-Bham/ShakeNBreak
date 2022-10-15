@@ -15,7 +15,8 @@ jobs:
       max-parallel: 5
 
       matrix:
-        python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22 which is incompatible with Python 3.10, should be fixed soon...
+        python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22
+        # (because of numba) which is incompatible with Python 3.10, should be fixed soon...
 
     name: Python ${{ matrix.python-version }} pip install
 
@@ -28,13 +29,18 @@ jobs:
 
       - name: Install dependencies
         run: |
+          sleep 10m  # wait 10 minutes for PyPI to update with the new release
           python -m pip install --upgrade pip
           pip install shakenbreak  # install only from PyPI
           pip install shakenbreak[tests]
 
       - name: Test
         run:  |
-          pytest --ignore=tests/test_local.py  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
+          for test in tests/test_*py
+            do if [[ "$test" != *"test_local"* ]]
+              then pytest $test
+            fi
+          done  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
           pytest --mpl tests/test_shakenbreak.py  # test output plots
           pytest --mpl tests/test_plotting.py  # test output plots
           # pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # generate output plots

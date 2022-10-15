@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+v22.10.13
+--------
+
+Main changes:
+
+- Updated defect name handling to work for all conventions
+- More robust `snb-generate` and plotting behaviour
+- Add CLI summary GIF to docs and README
+- Updated `snb-run` behaviour to catch high-energies and forces error to improve efficiency
+- Many miscellaneous tests and fixes
+- Docs updates
+
 v22.9.21
 --------
 

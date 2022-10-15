@@ -25,15 +25,22 @@ def _format_distortion_directory_name(
     output_path: str,
 ) -> str:
     """Format name of distortion directory."""
+    if (
+        isinstance(distorted_distortion, str)
+        and "%" in distorted_distortion
+        and "Bond_Distortion_" not in distorted_distortion
+    ):
+        # if a string but not Unperturbed or Rattled, add "Bond_Distortion_" to the start
+        distorted_distortion = "Bond_Distortion_" + distorted_distortion
+
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
         distorted_dir = (
-            f"{output_path}/{defect_species}/Bond_Distortion_"
-            f"{distorted_distortion}_from_{distorted_charge}"
+            f"{output_path}/{defect_species}/{distorted_distortion}_from"
+            f"_{distorted_charge}"
         )
+        # don't add "Bond_Distortion_" for "Unperturbed" or "Rattled"
     elif isinstance(distorted_distortion, str) and "_from_" in distorted_distortion:
-        distorted_dir = (
-            f"{output_path}/{defect_species}/Bond_Distortion_" f"{distorted_distortion}"
-        )
+        distorted_dir = f"{output_path}/{defect_species}/{distorted_distortion}"
     else:
         distorted_dir = (
             f"{output_path}/{defect_species}/Bond_Distortion_"
@@ -544,9 +551,11 @@ def get_energy_lowering_distortions(
                 warnings.warn(
                     f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
                     f"than unperturbed, indicating problems with the relaxations. You should "
-                    f"firstly check the calculations finished ok for this defect species, "
-                    f"and if so, you likely need to adjust the `std_dev` rattling parameter ("
-                    f"can occur for hard/ionic/close-packed materials); see "
+                    f"first check if the calculations finished ok for this defect species and "
+                    f"if this defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    f"materials); see "
                     f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
                 )
 
@@ -669,9 +678,8 @@ def compare_struct_to_distortions(
             == "Unperturbed"  # if present, otherwise empty
         ]
         rattled_df = matching_sub_df[
-            matching_sub_df["Bond Distortion"]
-            == "Rattled"  # if present, otherwise empty
-        ]
+            matching_sub_df["Bond Distortion"].apply(lambda x: "Rattled" in str(x))
+        ]  # if present, otherwise empty
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(
                 lambda x: isinstance(x, float)
@@ -689,15 +697,22 @@ def compare_struct_to_distortions(
             )
         ]
 
-        if not imported_sorted_distorted_df.empty:
+        imported_sorted_distorted_float_df = imported_sorted_distorted_df.copy()
+        if not imported_sorted_distorted_float_df.empty:
             # convert "X%_from_Y" strings to floats and then sort
             # needs to be done this way because 'key' in pd.sort_values()
             # needs to be vectorised...
-            s = imported_sorted_distorted_df["Bond Distortion"].str.slice(0, 3)
-            s = s.astype(float)
-            imported_sorted_distorted_df = imported_sorted_distorted_df.loc[
-                s.sort_values(key=lambda x: abs(x)).index
-            ]
+            # if '%' in key then convert to float, else convert to 0 (for Rattled or Unperturbed)
+            imported_sorted_distorted_float_df[
+                "Bond Distortion"
+            ] = imported_sorted_distorted_df["Bond Distortion"].apply(
+                lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0
+            )
+            imported_sorted_distorted_float_df = (
+                imported_sorted_distorted_float_df.sort_values(
+                    by="Bond Distortion", key=abs
+                )
+            )
 
         # first unperturbed, then rattled, then distortions sorted by
         # initial distortion magnitude from low to high (if present)
@@ -706,13 +721,14 @@ def compare_struct_to_distortions(
                 unperturbed_df,
                 rattled_df,
                 sorted_distorted_df,
-                imported_sorted_distorted_df,
+                imported_sorted_distorted_float_df,
             ]
         )
 
         struc_key = sorted_matching_df["Bond Distortion"].iloc[
             0
         ]  # first matching structure
+
         if struc_key == "Unperturbed":
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
@@ -721,6 +737,22 @@ def compare_struct_to_distortions(
                 struc_key,
             )
         else:
+            # check if struc_key is in defect_structures_dict (corresponding to match in
+            # unperturbed_df, rattled_df or sorted_distorted_df but not
+            # imported_sorted_distorted_df
+            # as keys have been reformatted to floats rather than strings for this)
+            if struc_key in defect_structures_dict:
+                return (  # T/F, matching structure, energy_diff, distortion factor
+                    True,
+                    defect_structures_dict[struc_key],
+                    defect_energies_dict["distortions"][struc_key],
+                    struc_key,
+                )
+
+            # else struc_key corresponds to reformatted float-from-string from imported distortion
+            struc_key = imported_sorted_distorted_df["Bond Distortion"].iloc[
+                0
+            ]  # first matching structure
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
                 defect_structures_dict[struc_key],
@@ -1168,10 +1200,18 @@ def write_groundstate_structure(
         verbose,
     ):
         energies_file = f"{output_path}/{species}/{species}.yaml"
+
         # Get ground state distortion
         _, _, gs_distortion = analysis._sort_data(
             energies_file=energies_file, verbose=False
         )
+        if gs_distortion is None:
+            warnings.warn(
+                f"Energies file {energies_file} could not be parsed for {species}, "
+                f"skipping this defect species"
+            )
+            return
+
         bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
         # Origin path
@@ -1192,7 +1232,7 @@ def write_groundstate_structure(
             )
             if verbose:
                 print(
-                    f"{species}: Gound state structure (found with "
+                    f"{species}: Ground state structure (found with "
                     f"{gs_distortion} distortion) saved to {destination_path}"
                 )
         else:
@@ -1205,6 +1245,12 @@ def write_groundstate_structure(
 
     if all:
         defect_charges_dict = read_defects_directories(output_path=output_path)
+        if len(defect_charges_dict) == 0:
+            raise FileNotFoundError(
+                f"No folders with valid defect names (should end with charge e.g. 'vac_1_Cd_-2') "
+                f"found in output_path: '{os.path.abspath(output_path)}'. Please check the path "
+                f"and try again."
+            )
         for defect, charges in defect_charges_dict.items():
             for charge in charges:
                 _write_single_groundstate(

@@ -31,8 +31,8 @@ def _warning_on_one_line(
     category,
     filename,
     lineno,
-    file=None,
-    line=None,
+    file=None,  # pylint: disable=unused-argument  # required for warnings.formatwarning
+    line=None,  # pylint: disable=unused-argument
 ):
     """Format warnings output."""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
@@ -70,8 +70,6 @@ class _HiddenPrints:
 
 
 # Helper functions
-
-
 def _read_distortion_metadata(output_path: str) -> dict:
     """
     Parse distortion_metadata.json file
@@ -149,7 +147,7 @@ def _format_distortion_names(
     Returns:
         distortion (:obj:`float` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
-            "Unperturbed"/"Rattled"/"-60.0%_from_2")
+            "Unperturbed"/"Rattled"/"-60.0%_from_2"/"Rattled_from_-1")
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
@@ -167,6 +165,8 @@ def _format_distortion_names(
     ):
         # distortions from other charge state of the defect
         distortion = distortion_label.split("Bond_Distortion_")[-1]
+    elif "Rattled" in distortion_label and "_from_" in distortion_label:
+        distortion = distortion_label
     else:
         distortion = "Label_not_recognized"
     return distortion
@@ -483,48 +483,50 @@ def get_structures(
                 f"{defect_species}"
             )
         for distortion_subdirectory in distortion_subdirectories:
-            distortion = _format_distortion_names(
-                distortion_label=distortion_subdirectory
-            )  # From subdirectory name, get the distortion label used for analysis
-            # e.g. from 'Bond_Distortion_-10.0% -> -0.1
-            if (
-                distortion != "Label_not_recognized"
-            ):  # If the subdirectory name is recognised
-                try:
-                    defect_structures_dict[distortion] = io.parse_structure(
-                        code=code,
-                        structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
-                        structure_filename=structure_filename,
-                    )
-                except Exception:
-                    warnings.warn(
-                        f"Unable to parse structure at {output_path}/"
-                        f"{defect_species}/{structure_filename}"
-                        f"/{distortion_subdirectory}/, storing as 'Not converged'"
-                    )
-                    defect_structures_dict[distortion] = "Not converged"
+            if "High_Energy" not in distortion_subdirectory:
+                distortion = _format_distortion_names(
+                    distortion_label=distortion_subdirectory
+                )  # From subdirectory name, get the distortion label used for analysis
+                # e.g. from 'Bond_Distortion_-10.0% -> -0.1
+                if (
+                    distortion != "Label_not_recognized"
+                ):  # If the subdirectory name is recognised
+                    try:
+                        defect_structures_dict[distortion] = io.parse_structure(
+                            code=code,
+                            structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
+                            structure_filename=structure_filename,
+                        )
+                    except Exception:
+                        warnings.warn(
+                            f"Unable to parse structure at {output_path}/"
+                            f"{defect_species}/{structure_filename}"
+                            f"/{distortion_subdirectory}/, storing as 'Not converged'"
+                        )
+                        defect_structures_dict[distortion] = "Not converged"
     else:
         if "Unperturbed" not in bond_distortions:
             bond_distortions.append(
                 "Unperturbed"
             )  # always include unperturbed structure
         for distortion in bond_distortions:
-            distortion_label = _get_distortion_filename(distortion)  # get filename
-            if (
-                distortion_label != "Distortion_not_recognized"
-            ):  # If the distortion label is recognised
-                try:
-                    defect_structures_dict[distortion] = io.parse_structure(
-                        code=code,
-                        structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
-                        structure_filename=structure_filename,
-                    )
-                except Exception:
-                    warnings.warn(
-                        f"Unable to parse structure at {output_path}/{defect_species}"
-                        f"/{distortion_label}/, storing as 'Not converged'"
-                    )
-                    defect_structures_dict[distortion] = "Not converged"
+            if not (isinstance(distortion, str) and "High_Energy" in distortion):
+                distortion_label = _get_distortion_filename(distortion)  # get filename
+                if (
+                    distortion_label != "Distortion_not_recognized"
+                ):  # If the distortion label is recognised
+                    try:
+                        defect_structures_dict[distortion] = io.parse_structure(
+                            code=code,
+                            structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
+                            structure_filename=structure_filename,
+                        )
+                    except Exception:
+                        warnings.warn(
+                            f"Unable to parse structure at {output_path}/{defect_species}"
+                            f"/{distortion_label}/, storing as 'Not converged'"
+                        )
+                        defect_structures_dict[distortion] = "Not converged"
 
     return (
         defect_structures_dict  # now contains the distortions from other charge states
@@ -664,8 +666,9 @@ def calculate_struct_comparison(
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` or a pymatgen Structure object (to
-            compare with a specific external structure).
+            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
+             or a pymatgen Structure object (to compare with a specific external
+             structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via
@@ -775,8 +778,9 @@ def compare_structures(
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` or a pymatgen Structure object (to
-            compare with a specific external structure).
+            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
+            or a pymatgen Structure object (to compare with a specific external
+            structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via

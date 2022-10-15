@@ -17,6 +17,9 @@
 
 .. image:: https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25/status.svg
  :target: https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25
+
+.. image:: https://img.shields.io/pypi/dm/shakenbreak
+ :target: https://shakenbreak.readthedocs.io/en/latest/
 |
 
 Welcome to ShakeNBreak!
@@ -109,7 +112,14 @@ Python API
 Command line interface
 -------------------------
 
-Alternatively, the code can be used via the command line. The functions provided include:
+Alternatively, the code can be used via the command line.
+
+|
+.. image:: SnB_CLI.gif
+   :width: 800px
+|
+
+The functions provided include:
 
 * ``snb-generate``: Generate distorted structures for a given defect
 * ``snb-generate_all``: Generate distorted structures for all defects present int the specified/current directory
