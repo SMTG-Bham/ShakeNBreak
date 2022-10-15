@@ -16,9 +16,9 @@ from monty.serialization import loadfn
 
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Incar, Poscar
+from pymatgen.io.vasp.inputs import Poscar
 
-from shakenbreak.cli import snb
+from shakenbreak.cli import generate_defect_object, snb
 from shakenbreak.distortions import rattle
 
 file_path = os.path.dirname(__file__)
@@ -142,6 +142,15 @@ class CLITestCase(unittest.TestCase):
             )
         )
         if_present_rm("Rattled_Bulk_CdTe_POSCAR")
+
+    def test_generate_defect_object(self):
+        defect = generate_defect_object(
+            single_defect_dict=self.Int_Cd_2_dict,
+            bulk_dict=self.cdte_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, self.Int_Cd_2_dict["charges"])
+        self.assertEqual(list(defect.site.frac_coords), list(self.Int_Cd_2_dict["bulk_supercell_site"].frac_coords))
+        self.assertEqual(str(defect.as_dict()["@class"].lower()), self.Int_Cd_2_dict["defect_type"])
 
     def test_snb_generate(self):
         runner = CliRunner()

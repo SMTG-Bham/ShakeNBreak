@@ -433,6 +433,7 @@ def generate_defect_object(
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
         "site": defect_site,
+        # "user_charges": single_defect_dict["charges"]  # doesn't work
     }
     defect = MontyDecoder().process_decoded(for_monty_defect)
     # Specify defect charge states
