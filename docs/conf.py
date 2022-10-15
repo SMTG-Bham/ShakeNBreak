@@ -25,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '22.9.21'
+release = '22.10.13'
 
 
 # -- General configuration ---------------------------------------------------
@@ -39,6 +39,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
+    'sphinx.ext.autosectionlabel',
     'sphinx_click',
     'sphinx_design',
     # 'sphinx_mdinclude',

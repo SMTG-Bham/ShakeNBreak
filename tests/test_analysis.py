@@ -69,6 +69,25 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         ]:
             if_present_rm(i)
 
+    def test__format_distortion_names(self):
+        self.assertEqual(
+            "Unperturbed", analysis._format_distortion_names("Unperturbed")
+        )
+        self.assertEqual("Rattled", analysis._format_distortion_names("Rattled"))
+        self.assertEqual(
+            0.3, analysis._format_distortion_names("Bond_Distortion_30.0%")
+        )
+        self.assertEqual(
+            "-20.0%_from_3",
+            analysis._format_distortion_names("Bond_Distortion_-20.0%_from_3"),
+        )
+        self.assertEqual(
+            "Rattled_from_-1", analysis._format_distortion_names("Rattled_from_-1")
+        )
+        self.assertEqual(
+            "Label_not_recognized", analysis._format_distortion_names("Wally_McDoodle")
+        )
+
     def test_get_gs_distortion(self):
         """Test get_gs_distortion() function."""
         gs_distortion = analysis.get_gs_distortion(self.organized_V_Cd_distortion_data)
@@ -347,6 +366,34 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_species="vac_1_Cd_0", output_path="wrong_path"
             )
             self.assertIn(wrong_path_error, e.exception)
+
+        # test V_Cd_0 with ignoring High_Energy folder
+        shutil.copytree(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-40.0%"),
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            ),
+        )
+        defect_structures_dict = analysis.get_structures(
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
+        )
+        self.assertEqual(len(defect_structures_dict), 26)
+        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        self.assertEqual(
+            set(defect_structures_dict.keys()), set(bond_distortions + ["Unperturbed"])
+        )
+        relaxed_0pt5_V_Cd_structure = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR,
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
+            )
+        )
+        self.assertEqual(defect_structures_dict[-0.5], relaxed_0pt5_V_Cd_structure)
+        shutil.rmtree(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            )
+        )
 
     def test_get_energies(self):
         """Test get_energies() function."""
