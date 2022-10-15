@@ -144,6 +144,8 @@ class CLITestCase(unittest.TestCase):
         if_present_rm("Rattled_Bulk_CdTe_POSCAR")
 
     def test_generate_defect_object(self):
+        """Test generate_defect_object"""
+        # Test interstitial
         defect = generate_defect_object(
             single_defect_dict=self.Int_Cd_2_dict,
             bulk_dict=self.cdte_defect_dict["bulk"],
@@ -151,6 +153,24 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(defect.user_charges, self.Int_Cd_2_dict["charges"])
         self.assertEqual(list(defect.site.frac_coords), list(self.Int_Cd_2_dict["bulk_supercell_site"].frac_coords))
         self.assertEqual(str(defect.as_dict()["@class"].lower()), self.Int_Cd_2_dict["defect_type"])
+        # Test vacancy
+        vacancy = self.cdte_defect_dict["vacancies"][0]
+        defect = generate_defect_object(
+            single_defect_dict=vacancy,
+            bulk_dict=self.cdte_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, vacancy["charges"])
+        self.assertEqual(list(defect.site.frac_coords), list(vacancy["bulk_supercell_site"].frac_coords))
+        self.assertEqual(str(defect.as_dict()["@class"].lower()), vacancy["defect_type"])
+        # Test substitution
+        subs = self.cdte_defect_dict["substitutions"][0]
+        defect = generate_defect_object(
+            single_defect_dict=subs,
+            bulk_dict=self.cdte_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, subs["charges"])
+        self.assertEqual(list(defect.site.frac_coords), list(subs["bulk_supercell_site"].frac_coords))
+        self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
     def test_snb_generate(self):
         runner = CliRunner()
