@@ -1168,7 +1168,6 @@ class Distortions:
                 f" a padding of {padding} will be used on either sides of 0 and the"
                 " oxidation state value."
             )
-        # TODO: Allow user to specify charge states or padding for each defect?
 
         distorted_defect_dict = {
             "defect_type": str(defect.as_dict()["@class"].lower()),
@@ -1255,19 +1254,24 @@ class Distortions:
         # To allow user to specify defect names (with CLI), defect_dict can be either
         # a dict of lists or a dict of dicts (e.g. {"vacancies": {"name_1": Vacancy()}})
         # To account for this, here we refactor the list into a dict
-        # if isinstance(comb_defs, list):
-        # Check if defect names are repeated
-        # names = [defect.name for defect in comb_defs]
-        # counter = Counter(names)
-        # if any([value > 1 for value in counter.values()]):
-        #     # Give different names to symmetry inequivalent defects
-        #     comb_defs_dict = {}
-        #     # for defect in comb_defs:
-        #     # if counter[defect] > 1:
-        #     # assign different name
-
-        # else:
-        #     comb_defs = {defect.name: defect for defect in comb_defs}
+        if isinstance(comb_defs, list):
+            # Check if defect names are repeated
+            names = [defect.name for defect in comb_defs]
+            counter = Counter(names)
+            if any([value > 1 for value in counter.values()]):
+                # Give different names to symmetry inequivalent defects.
+                # Naming convention is f"{defectname}_s{siteindex}" (e.g. v_Cd_s0)
+                comb_defs = {
+                    f"{defect.name}_s{defect.defect_site_index}": defect
+                    for defect in comb_defs
+                }
+                print(
+                    "There are symmetry inequivalent defects."
+                    " To avoid using the same name for them, the names will be refactored"
+                    " as {defect_name}_s{defect_site_index} (e.g. v_Cd_s0)"
+                )
+            else:
+                comb_defs = {defect.name: defect for defect in comb_defs}
 
         for defect_name, defect_object in comb_defs.items():  # loop for each defect
             bulk_supercell_site = defect_object.site

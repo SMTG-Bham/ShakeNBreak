@@ -20,9 +20,6 @@ from pymatgen.io.vasp.inputs import Incar
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
 
-# TODO: Update defect naming so that symmetry inequivalent defects are named
-# different
-
 
 def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
@@ -534,7 +531,8 @@ def generate(
         ]
         for key in func_args:
             if key in user_settings:
-                user_settings.pop(key, None)
+                user_settings.pop(key, None)  # remove key from config dict
+                # as these can't be fed into Distortions()
         for key in list(user_settings.keys()):
             # remove non-sense keys from user_settings
             if key not in valid_args:
