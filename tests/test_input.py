@@ -64,6 +64,23 @@ class InputTestCase(unittest.TestCase):
             "rb",
         ) as fp:
             self.cdte_extrinsic_defects_dict = pickle.load(fp)
+        # Refactor doped defect dict to dict of Defect() objects
+        self.cdte_defects = {
+            defect_type: [
+                cli.generate_defect_object(defect_dict, self.cdte_defect_dict["bulk"])
+                for defect_dict
+                in self.cdte_defect_dict[defect_type]
+            ] for defect_type in self.cdte_defect_dict.keys() if defect_type != "bulk"
+        }
+
+        self.CdTe_extrinsic_defects = {
+            defect_type: [
+                cli.generate_defect_object(defect_dict, self.cdte_defect_dict["bulk"])
+                for defect_dict
+                in self.cdte_extrinsic_defects_dict[defect_type]
+            ] for defect_type in self.cdte_extrinsic_defects_dict.keys() if defect_type != "bulk"
+        }
+
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
@@ -728,9 +745,8 @@ class InputTestCase(unittest.TestCase):
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
         for defect_dict in [
-            self.cdte_defect_dict,
-            {"vacancies": [self.V_Cd_dict]},
-            {"interstitials": [self.Int_Cd_2_dict]},
+            {"vacancies": [self.V_Cd,]},
+            {"interstitials": [self.Int_Cd_2,]},
         ]:
             with patch("builtins.print") as mock_print:
                 # transform defect_dict to Defect object
@@ -745,10 +761,27 @@ class InputTestCase(unittest.TestCase):
                 )
                 self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
-        # test extrinsic defects
+        # Test all intrinsic defects.
+        # Test that different names are given to symmetry inequivalent defects
+        with patch("builtins.print") as mock_print:
+                # transform defect_dict to Defect object
+                defects = [
+                    cli.generate
+                ]
+                dist = input.Distortions(self.cdte_defects)
+                # mock_print.assert_called_with(
+                #     "There are symmetry inequivalent defects. To avoid using the same name for them, the names will be refactored as {defect_name}_s{defect_site_index} (e.g. v_Cd_s0)"
+                # )  # 3 Cd interstitials & 3 Te interstitials # TODO: fix this!
+                mock_print.assert_called_with(
+                    "Oxidation states were not explicitly set, thus have been guessed as "
+                    "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                    "oxidation_states"
+                )
+                self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
+        # Test extrinsic defects
         with patch("builtins.print") as mock_print:
             extrinsic_dist = input.Distortions(
-                self.cdte_extrinsic_defects_dict,
+                self.CdTe_extrinsic_defects,
             )
             self.assertDictEqual(
                 extrinsic_dist.oxidation_states,
@@ -772,7 +805,7 @@ class InputTestCase(unittest.TestCase):
         # are not overridden:
         with patch("builtins.print") as mock_print:
             extrinsic_dist = input.Distortions(
-                self.cdte_extrinsic_defects_dict,
+                self.CdTe_extrinsic_defects,
                 oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
             )
             self.assertDictEqual(
@@ -820,13 +853,21 @@ class InputTestCase(unittest.TestCase):
             "unique_site"
         ] = fake_extrinsic_interstitial_site
         fake_extrinsic_interstitial_subdict["name"] = "Int_Li_1"
-        fake_extrinsic_interstitial_dict = self.cdte_defect_dict.copy()
+        fake_extrinsic_interstitial_dict = self.cdte_defects.copy()
         fake_extrinsic_interstitial_dict["interstitials"][
             0
-        ] = fake_extrinsic_interstitial_subdict
+        ] = cli.generate_defect_object(
+            fake_extrinsic_interstitial_subdict,
+            self.cdte_defect_dict["bulk"]
+        )
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(fake_extrinsic_interstitial_dict)
-            mock_print.assert_called_once_with(
+            # mock_print.assert_called_with(
+            #     "There are symmetry inequivalent defects."
+            #     " To avoid using the same name for them, the names will be refactored"
+            #     " as {defect_name}_s{defect_site_index} (e.g. v_Cd_s0)."
+            # )  # 3 Cd interstitials & 3 Te interstitials # TODO: fix this!
+            mock_print.assert_called_with(
                 "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2.0, "
                 "'Te': -2.0, 'Li': 1}. If this is unreasonable you should manually set "
                 "oxidation_states"
@@ -838,7 +879,7 @@ class InputTestCase(unittest.TestCase):
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
         dist = input.Distortions(
-            self.cdte_defect_dict,
+            self.cdte_defects,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
