@@ -253,20 +253,25 @@ class InputTestCase(unittest.TestCase):
                 if defect_type != "bulk":
                     for i in defect_list:
                         if i["name"] == defect:
+                            defect_object = cli.generate_defect_object(
+                                i,
+                                self.cdte_defect_dict["bulk"]
+                            )
                             self.assertEqual(
                                 input._calc_number_electrons(
-                                    i,
+                                    defect_object,
                                     oxidation_states,
                                     verbose=False,  # test non-verbose
                                 ),
                                 -electron_change,  # returns negative of electron change
                             )
                             input._calc_number_electrons(
-                                i, oxidation_states, verbose=True
+                                defect_object, oxidation_states, verbose=True
                             )
+                            pmg_defect_name = defect_object.name
                             mock_print.assert_called_with(
                                 f"Number of extra/missing electrons of "
-                                f"defect {defect}: {electron_change} "
+                                f"defect {pmg_defect_name}: {electron_change} "
                                 f"-> Δq = {-electron_change}"
                             )
 
