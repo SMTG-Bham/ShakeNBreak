@@ -878,8 +878,24 @@ class InputTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
+        # Use customised names for defects
+        cdte_defects = {
+            "vacancies": {
+                "vac_1_Cd": self.cdte_defects["vacancies"][0],
+                "vac_2_Te": self.cdte_defects["vacancies"][1],
+            },
+            "substitutions": {
+                "as_1_Cd_on_Te": self.cdte_defects["substitutions"][0],
+                "as_2_Te_on_Cd": self.cdte_defects["substitutions"][1],
+            },
+            "interstitials": {
+                "Int_Cd_1": self.cdte_defects["interstitials"][0],
+                "Int_Te_1": self.cdte_defects["interstitials"][3],
+            },
+        }
+
         dist = input.Distortions(
-            self.cdte_defects,
+            cdte_defects,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
