@@ -443,10 +443,10 @@ def generate_defect_object(
     }
     defect = MontyDecoder().process_decoded(for_monty_defect)
     # Specify defect charge states
-    if "charges" in single_defect_dict.keys():
-        defect.user_charges = single_defect_dict["charges"]
-    elif isinstance(charges, list):
+    if isinstance(charges, list):  # Priority to charges argument
         defect.user_charges = charges
+    elif "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
     return defect
 
 
