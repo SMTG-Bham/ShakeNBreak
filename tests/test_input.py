@@ -1293,9 +1293,9 @@ class InputTestCase(unittest.TestCase):
 
         Dist = input.Distortions(
             {
-                "vacancies": [
-                    self.V_Cd_dict,
-                ]
+                "vacancies": {
+                    "vac_1_Cd": self.V_Cd,
+                }
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -1374,9 +1374,9 @@ class InputTestCase(unittest.TestCase):
 
         Dist = input.Distortions(
             {
-                "vacancies": [
-                    self.V_Cd_dict,
-                ]
+                "vacancies": {
+                    "vac_1_Cd": self.V_Cd,
+                }
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -1399,15 +1399,13 @@ class InputTestCase(unittest.TestCase):
             generated_input = f.read()
         self.assertEqual(test_input, generated_input)
         # Test input structure file
-        with open(
-            os.path.join(
+        generated_input_struct = Structure.from_file("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")
+        test_input_struct = Structure.from_file(os.path.join(
                 self.CP2K_DATA_DIR,
                 "vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif",
             )
-        ) as f:
-            test_input_struct = f.read()
-        with open("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif") as f:
-            generated_input_struct = f.read()
+        )
+        generated_input_struct.remove_oxidation_states()
         self.assertEqual(test_input_struct, generated_input_struct)
 
         # Test parameter file not written if write_structures_only = True
@@ -1450,9 +1448,9 @@ class InputTestCase(unittest.TestCase):
 
         Dist = input.Distortions(
             {
-                "vacancies": [
-                    self.V_Cd_dict,
-                ]
+                "vacancies": {
+                    "vac_1_Cd": self.V_Cd,
+                }
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -1525,9 +1523,9 @@ class InputTestCase(unittest.TestCase):
 
         Dist = input.Distortions(
             {
-                "vacancies": [
-                    self.V_Cd_dict,
-                ]
+                "vacancies": {
+                    "vac_1_Cd": self.V_Cd,
+                }
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
@@ -1600,12 +1598,12 @@ class InputTestCase(unittest.TestCase):
         # check files are not written if `apply_distortions()` method is used
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders
-        reduced_V_Cd_dict = self.V_Cd_dict.copy()
-        reduced_V_Cd_dict["charges"] = [0]
+        reduced_V_Cd = self.V_Cd.copy()
+        reduced_V_Cd.user_charges = [0]
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
         dist = input.Distortions(
-            {"vacancies": [reduced_V_Cd_dict]},
+            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
@@ -1619,7 +1617,7 @@ class InputTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             bond_distortions = list(np.arange(-1.0, 0.01, 0.05))
             dist = input.Distortions(
-                {"vacancies": [reduced_V_Cd_dict]},
+                {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
                 bond_distortions=bond_distortions,
             )
             distortion_defect_dict, distortion_metadata = dist.apply_distortions(
@@ -1705,8 +1703,12 @@ class InputTestCase(unittest.TestCase):
         # test short interatomic distance distortions not omitted when Hydrogen knocking about
         fake_hydrogen_V_Cd_dict = reduced_V_Cd_dict.copy()
         fake_hydrogen_V_Cd_dict["supercell"]["structure"][0].species = "H"
+        fake_hydrogen_V_Cd = cli.generate_defect_object(
+            fake_hydrogen_V_Cd_dict,
+            self.cdte_defect_dict["bulk"]
+        )
         dist = input.Distortions(
-            {"vacancies": [fake_hydrogen_V_Cd_dict]},
+            {"vacancies": {"vac_1_Cd": fake_hydrogen_V_Cd}},
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
@@ -1738,11 +1740,11 @@ class InputTestCase(unittest.TestCase):
         self,
     ):
         """ "Test option local_rattle of Distortions class"""
-        reduced_V_Cd_dict = self.V_Cd_dict.copy()
-        reduced_V_Cd_dict["charges"] = [0]
+        reduced_V_Cd_dict = self.V_Cd.copy()
+        reduced_V_Cd_dict.user_charges = [0]
         oxidation_states = {"Cd": +2, "Te": -2}
         dist = input.Distortions(
-            {"vacancies": [reduced_V_Cd_dict]},
+            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3],
             local_rattle=True,  # default
@@ -1762,11 +1764,11 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(metadata_dict["distortion_parameters"]["local_rattle"])
 
         # Check interstitial (internally uses defect_index rather fractional coords)
-        int_Cd_2 = self.Int_Cd_2_dict.copy()
-        int_Cd_2["charges"] = [+2]
+        int_Cd_2 = self.Int_Cd_2.copy()
+        int_Cd_2.user_charges = [+2]
         oxidation_states = {"Cd": +2, "Te": -2}
         dist = input.Distortions(
-            {"interstitials": [int_Cd_2]},
+            {"interstitials": {"Int_Cd_2": int_Cd_2}},
             oxidation_states=oxidation_states,
             bond_distortions=[
                 -0.3,
