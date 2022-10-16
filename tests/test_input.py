@@ -13,7 +13,7 @@ from ase.calculators.aims import Aims
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar
 
-from shakenbreak import distortions, input, vasp
+from shakenbreak import distortions, input, vasp, cli
 
 
 def if_present_rm(path):
@@ -65,7 +65,10 @@ class InputTestCase(unittest.TestCase):
             self.cdte_extrinsic_defects_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
-
+        # Refactor to Defect() objects
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
+        self.Int_Cd_2 = cli.generate_defect_object(self.Int_Cd_2_dict, self.cdte_defect_dict["bulk"])
+        # Setup structures
         self.V_Cd_struc = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
@@ -202,10 +205,12 @@ class InputTestCase(unittest.TestCase):
         if_present_rm("test_path")  # remove test_path if present
 
     def test_get_bulk_comp(self):
-        V_Cd_comp = input._get_bulk_comp(self.V_Cd_dict)
+        V_Cd_comp = input._get_bulk_comp(self.V_Cd)
+        V_Cd_comp = V_Cd_comp.remove_charges()
         self.assertEqual(V_Cd_comp, Composition("Cd32Te32"))
 
-        Int_Cd_comp = input._get_bulk_comp(self.Int_Cd_2_dict)
+        Int_Cd_comp = input._get_bulk_comp(self.Int_Cd_2)
+        Int_Cd_comp = Int_Cd_comp.remove_charges()
         self.assertEqual(Int_Cd_comp, Composition("Cd32Te32"))
 
     def test_most_common_oxi(self):
@@ -686,6 +691,10 @@ class InputTestCase(unittest.TestCase):
             {"interstitials": [self.Int_Cd_2_dict]},
         ]:
             with patch("builtins.print") as mock_print:
+                # transform defect_dict to Defect object
+                defects = [
+                    cli.generate
+                ]
                 dist = input.Distortions(defect_dict)
                 mock_print.assert_called_once_with(
                     "Oxidation states were not explicitly set, thus have been guessed as "
