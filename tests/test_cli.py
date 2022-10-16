@@ -742,7 +742,7 @@ oxidation_states:
             result.output,
         )
         V_Cd_ox3_POSCAR = Poscar.from_file(
-            f"{defect_name}_3/Bond_Distortion_-50.0%/POSCAR"
+            f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertNotEqual(
             V_Cd_ox3_POSCAR.structure, self.V_Cd_minus0pt5_struc_local_rattled
@@ -812,10 +812,10 @@ local_rattle: False
                         "1": {  # json converts integer strings to keys
                             "num_nearest_neighbours": 4,
                             "distorted_atoms": [
-                                [10, "Cd"],
-                                [22, "Cd"],
-                                [29, "Cd"],
-                                [1, "Cd"],
+                                [11, "Cd"],
+                                [23, "Cd"],
+                                [30, "Cd"],
+                                [2, "Cd"],
                             ],
                             "distortion_parameters": {
                                 "bond_distortions": [
@@ -829,7 +829,7 @@ local_rattle: False
                             },
                         },
                     },
-                    "defect_site_index": 65,
+                    "defect_site_index": 1,
                 }
             },
         }
@@ -967,17 +967,23 @@ local_rattle: False
         # test parsed defects pickle
         with open("./parsed_defects_dict.pickle", "rb") as fp:
             parsed_defects_dict = pickle.load(fp)
-        for key in [
-            "name",
-            "defect_type",
-            "site_multiplicity",
-            "site_specie",
-            "unique_site",
-        ]:
-            self.assertEqual(
-                parsed_defects_dict["vacancies"][0][key],
-                self.cdte_defect_dict["vacancies"][0][key],
-            )
+        vac = generate_defect_object(
+                self.cdte_defect_dict["vacancies"][0],
+                self.cdte_defect_dict["bulk"],
+                charges=[0,],  # CLI charge
+        )  # Vacancy object
+        self.assertEqual(
+            parsed_defects_dict.defect_site_index,
+            vac.defect_site_index,
+        )
+        self.assertEqual(
+            parsed_defects_dict.user_charges,
+            vac.user_charges,
+        )
+        self.assertEqual(
+            list(parsed_defects_dict.defect_site.frac_coords),
+            list(vac.defect_site.frac_coords),
+        )
 
         # Test non-sense key in config - should be ignored
         # and not feed into Distortions()
