@@ -484,16 +484,20 @@ def _apply_rattle_bond_distortions(
         )  # Dict with distorted struct, undistorted struct,
         # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
     else:
-        defect_site_index = defect_object.defect_site_index
+        # .distort() assumes VASP indexing (starting at 1)
+        defect_site_index = defect_object.defect_site_index + 1
         frac_coords = None  # only for vacancies
-        bond_distorted_defect = distortions.distort(
-            structure=defect_structure,
-            num_nearest_neighbours=num_nearest_neighbours,
-            distortion_factor=distortion_factor,
-            site_index=defect_site_index,
-            distorted_element=distorted_element,
-            verbose=verbose,
-        )
+        if defect_site_index is not None:  # TODO: remove this line
+            bond_distorted_defect = distortions.distort(
+                structure=defect_structure,
+                num_nearest_neighbours=num_nearest_neighbours,
+                distortion_factor=distortion_factor,
+                site_index=defect_site_index,
+                distorted_element=distorted_element,
+                verbose=verbose,
+            )
+        else:  # TODO: remove
+            raise ValueError("Defect lacks defect_site_index!")  # TODO: remove
 
     # Apply rattle to the bond distorted structure
     if not d_min:
@@ -875,12 +879,11 @@ class Distortions:
         guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         if "substitutions" in self.defects_dict:
-            for substitution in self.defects_dict["substitutions"]:
+            for substitution in self.defects_dict["substitutions"].values():
                 defect_type = str(substitution.as_dict()["@class"].lower())
                 if (
                     defect_type == "substitution"
-                    and substitution["bulk_supercell_site"].specie.symbol
-                    not in guessed_oxidation_states
+                    and substitution.site.specie.symbol not in guessed_oxidation_states
                 ):
                     # extrinsic substituting species not in bulk composition
                     extrinsic_specie = substitution.defect_site.specie.symbol
@@ -888,13 +891,10 @@ class Distortions:
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
         if "interstitials" in self.defects_dict:
-            for interstitial in self.defects_dict["interstitials"]:
-                if (
-                    interstitial.defect_site.specie.symbol
-                    not in guessed_oxidation_states
-                ):
+            for interstitial in self.defects_dict["interstitials"].values():
+                if interstitial.site.specie.symbol not in guessed_oxidation_states:
                     # extrinsic species not in bulk composition
-                    extrinsic_specie = interstitial.defect_site.specie.symbol
+                    extrinsic_specie = interstitial.site.specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
@@ -1168,15 +1168,25 @@ class Distortions:
                 f" a padding of {padding} will be used on either sides of 0 and the"
                 " oxidation state value."
             )
-
-        distorted_defect_dict = {
-            "defect_type": str(defect.as_dict()["@class"].lower()),
-            "defect_site": _get_bulk_defect_site(defect),
-            "defect_supercell_site": _get_bulk_defect_site(defect),
-            "defect_multiplicity": defect.get_multiplicity(),
-            # "supercell": defect["supercell"]["size"],
-            "charges": {charge: {} for charge in user_charges},
-        }  # General info about (neutral) defect
+        try:
+            distorted_defect_dict = {
+                "defect_type": str(defect.as_dict()["@class"].lower()),
+                "defect_site": defect.site,  # _get_bulk_defect_site(defect),
+                "defect_supercell_site": _get_bulk_defect_site(defect),
+                "defect_multiplicity": defect.get_multiplicity(),
+                # "supercell": defect["supercell"]["size"],
+                "charges": {charge: {} for charge in user_charges},
+            }  # General info about (neutral) defect
+        except NotImplementedError:
+            distorted_defect_dict = {
+                "defect_type": str(defect.as_dict()["@class"].lower()),
+                "defect_site": defect.site,  # _get_bulk_defect_site(defect),
+                "defect_supercell_site": _get_bulk_defect_site(defect),
+                # "defect_multiplicity": defect.get_multiplicity(),
+                # Problem determining multiplicity # TODO: Fix this!
+                # "supercell": defect["supercell"]["size"],
+                "charges": {charge: {} for charge in user_charges},
+            }  # General info about (neutral) defect
         if (
             str(defect.as_dict()["@class"].lower()) == "substitution"
         ):  # substitutions and antisites
@@ -2030,5 +2040,4 @@ class Distortions:
         )
 
 
-# TODO: Add from_dicts() method to generate distortions from doped/Pycdt defect dicts,
-# as well as from_structures()
+# TODO: Add from_structures() method to generate distortions from defect structures

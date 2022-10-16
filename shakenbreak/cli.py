@@ -259,6 +259,7 @@ def identify_defect(
     if defect_type == "vacancy":
         defect_site = bulk_structure[defect_index]
     else:
+        # print(f"Defect is {defect_type}")  # TODO: remove
         defect_site = defect_structure[defect_index]
 
     if defect_index is not None and auto_matching_defect_index is not None:
@@ -298,6 +299,7 @@ def identify_defect(
         "site": defect_site,
     }
     defect = MontyDecoder().process_decoded(for_monty_defect)
+    # print("Defect site index", defect.defect_site_index)  # TODO: Remove
     return defect
 
 
@@ -683,6 +685,8 @@ def generate(
         defect_coords=defect_coords,
     )
     if verbose and defect_index is None and defect_coords is None:
+        # TODO: better to always print this when verbose = True
+        # in case user gives wrong defect position
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -693,6 +697,7 @@ def generate(
             f"type {defect_object.as_dict()['@class']} "
             f"with site {site_info}"
         )
+        # print("Defect site index: ", defect_object.defect_site_index) # TODO: remove
 
     if charge is not None:
         charges = [
@@ -1044,6 +1049,7 @@ def generate_all(
             defect_index=defect_index,
             defect_coords=defect_coords,
         )
+        # print("Defect site:", defect_object.site) # TODO: remove line
         if verbose:
             site = defect_object.site
             site_info = (
