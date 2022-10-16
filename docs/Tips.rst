@@ -31,28 +31,31 @@ minima on the PES). :code:`ShakeNBreak` will print a warning in these cases, wit
 not the case and the charge state is reasonable.
 
 
-Hard/Ionic Materials
+Hard/Ionic/Magnetic Materials
 ---------------------
 
 The default bond distortion range of -60% to +60%, and the default rattling standard deviation of 0.25 Å, can be too
 extreme in the case of hard/ionic/oxide materials which typically yield larger forces in response to bond distortion.
 If this is the case for your material, it will manifest in the form of:
 
+- If the rattle standard deviation is too large, it may result in high energies for each distorted & rattled structure
+  (consistently higher energy than the unperturbed structure). As mentioned in :ref:`Tricky Relaxations` above,
+  :code:`ShakeNBreak` will print a warning in these cases, and often it is the result of unreasonable defect charge
+  states. If the calculations have finished ok and the defect charge states are reasonable, then you likely need to
+  reduce the rattle standard deviation (:code:`stdev`) to 0.15 Å (or 0.05 Å if this still causes higher energies) to
+  avoid this. Typically the largest rattle standard deviation for which the relaxations run without issue is best for
+  performance in terms of finding groundstate structures.
+    - Note that strongly-correlated / magnetic materials in particular can be extremely sensitive to large structural
+      noise, and so these typically require rattle standard deviations (:code:`stdev`) ≤ 0.05 Å.
+
 - High energies / non-converging calculations for the ±60% endpoints. As mentioned in :ref:`Tricky Relaxations` above,
   these are automatically handled by :code:`snb-run` for :code:`VASP`, but for other codes you should rename the
   folder(s) to :code:`Bond_Distortion_X_High_Energy` and :code:`ShakeNBreak` will subsequently ignore them.
 .. Here you should adjust the distortion range to exclude these points (e.g. :code:`bond_distortions = np.arange(-0.5, 0.501, 0.1)`), or just ignore these calculations.
 
-- If the rattle standard deviation is too large, it may result in high energies for each distorted & rattled structure
-  (consistently higher energy than the unperturbed structure). As mentioned in :ref:`Tricky Relaxations` above,
-  :code:`ShakeNBreak` will print a warning in these cases, and often it is the result of unreasonable defect charge
-  states. If the calculations have finished ok and the defect charge states are reasonable, then you likely need to
-  reduce the rattle standard deviation to 0.15 Å (or 0.075 Å if this still causes higher energies) to avoid this.
-  Typically the largest rattle standard deviation for which the relaxations run without issue is best for performance
-  in terms of finding groundstate structures.
-
-If you are unsure but suspect this could be an issue for your material, the best strategy is typically to begin with the
-default settings, and then :code:`ShakeNBreak` will warn you if this occurs – if not, all good!
+If you are unsure but suspect this could be an issue for your material, the best strategy is typically to begin the
+calculations with the default settings for one defect, then parse the results and :code:`ShakeNBreak` will warn you if
+this issue is occurring – if not, all good!
 
 
 Polarons
