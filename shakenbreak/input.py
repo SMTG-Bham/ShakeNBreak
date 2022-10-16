@@ -216,7 +216,6 @@ def _create_vasp_input(
         )
 
 
-# refactored
 def _get_bulk_comp(defect_object) -> Composition:
     """
     Convenience function to determine the chemical composition of the bulk
@@ -286,7 +285,6 @@ def _most_common_oxi(element) -> int:
     return most_common.oxi_state
 
 
-# refactored
 def _calc_number_electrons(
     defect_object: Defect,
     oxidation_states: dict,
@@ -382,9 +380,7 @@ def _calc_number_neighbours(num_electrons: int) -> int:
 
 # Main functions
 
-# refactored
-# Input arguments have beeen refactored to take Defect() object
-# No we need to refactor the output dictionary
+
 def _apply_rattle_bond_distortions(
     defect_object: Defect,
     num_nearest_neighbours: int,
@@ -591,7 +587,6 @@ def _apply_rattle_bond_distortions(
     return bond_distorted_defect
 
 
-# refactored
 def apply_snb_distortions(
     defect_object: dict,
     num_nearest_neighbours: int,
@@ -863,30 +858,55 @@ class Distortions:
                     numbers are generated.
 
         """
-        self.defects_dict = defects_dict
         self.oxidation_states = oxidation_states
         self.distorted_elements = distorted_elements
         self.dict_number_electrons_user = dict_number_electrons_user
         self.stdev = stdev
         self.local_rattle = local_rattle
 
-        # check if all expected oxidation states are provided
-        if isinstance(list(self.defects_dict.values())[0], list):
-            defect_object = list(self.defects_dict.values())[0][0]
+        # To allow user to specify defect names (with CLI), defect_dict can be either
+        # a dict of lists or a dict of dicts (e.g. {"vacancies": {"name_1": Vacancy()}})
+        # To account for this, here we refactor the list into a dict
+        if isinstance(list(defects_dict.values())[0], list):
+            comb_defs = functools.reduce(
+                lambda x, y: x + y,
+                [defects_dict[key] for key in defects_dict if key != "bulk"],
+            )
+            counter = Counter([defect.name for defect in comb_defs])
+            self.defects_dict = {defect_type: {} for defect_type in defects_dict}
+            if any([value > 1 for value in counter.values()]):
+                print(
+                    "There are symmetry inequivalent defects."
+                    " To avoid using the same name for them, the names will be refactored"
+                    " as {defect_name}_s{defect_site_index} (e.g. v_Cd_s0)."
+                )
+                for defect_type in defects_dict:
+                    self.defects_dict[defect_type] = {
+                        f"{defect.name}_s{defect.defect_site_index}": defect
+                        for defect in defects_dict[defect_type]
+                    }
+            else:
+                for defect_type in defects_dict:
+                    self.defects_dict[defect_type] = {
+                        defect.name: defect for defect in defects_dict[defect_type]
+                    }
         else:
-            defect_object = list(list(self.defects_dict.values())[0].values())[0]
+            self.defects_dict = defects_dict
+
+        # Check if all expected oxidation states are provided
+        defect_object = list(list(self.defects_dict.values())[0].values())[0]
         bulk_comp = defect_object.structure.composition
         guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         if "substitutions" in self.defects_dict:
             for substitution in self.defects_dict["substitutions"].values():
-                defect_type = str(substitution.as_dict()["@class"].lower())
+                defect_type = type(substitution).__name__.lower()
                 if (
                     defect_type == "substitution"
                     and substitution.site.specie.symbol not in guessed_oxidation_states
                 ):
                     # extrinsic substituting species not in bulk composition
-                    extrinsic_specie = substitution.defect_site.specie.symbol
+                    extrinsic_specie = substitution.site.specie.symbol
                     likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
                     guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
