@@ -190,7 +190,7 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Auto site-matching identified {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
-            f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
+            f"to be type Vacancy with site Cd2+ at [0.000, 0.000, 0.000]",
             result.output,
         )
         self.assertIn(
@@ -206,10 +206,11 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        defect_name = "v_Cd"
+        self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         self.assertIn("--Distortion -60.0%", result.output)
@@ -228,14 +229,14 @@ class CLITestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "Vac_Cd_mult32_0/Bond_Distortion_-50.0%"
+        V_Cd_Bond_Distortion_folder = f"{defect_name}_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(
             V_Cd_Bond_Distortion_folder + "/POSCAR"
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            "-50.0%__num_neighbours=2__Vac_Cd_mult32",
+            f"-50.0%__num_neighbours=2__{defect_name}",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
@@ -243,7 +244,7 @@ class CLITestCase(unittest.TestCase):
         )
 
         # Test recognises distortion_metadata.json:
-        if_present_rm("Vac_Cd_mult32_0")  # but distortion_metadata.json still present
+        if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
         runner = CliRunner()
         result = runner.invoke(
             snb,
@@ -262,7 +263,7 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn(
             f"Auto site-matching identified"
             f" {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
-            f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
+            f"to be type Vacancy with site Cd2+ at [0.000, 0.000, 0.000]",
             result.output,
         )
         self.assertIn(
@@ -277,10 +278,10 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         self.assertNotIn("--Distortion -60.0%", result.output)
@@ -325,10 +326,10 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn(f"Auto site-matching", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
         self.assertIn("Applying ShakeNBreak...", result.output)
-        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
 
@@ -354,7 +355,7 @@ class CLITestCase(unittest.TestCase):
                 "local_rattle": False,
             },
             "defects": {
-                "Vac_Cd_mult32": {
+                defect_name: {
                     "unique_site": [0.5, 0.0, 0.0],
                     "charges": {
                         "0": {  # json converts integer strings to keys
@@ -425,14 +426,16 @@ class CLITestCase(unittest.TestCase):
         self.assertTrue(any(warning.category == UserWarning for warning in w))
         self.assertTrue(any(str(warning.message) == warning_message for warning in w))
         self.assertIn("--Distortion -60.0%", result.output)
+        defect_site_index = 1
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: 65\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
+            f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
+            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
+        defect_name = "Cd_i"
         self.assertEqual(
-            Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
+            Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
         )
 
@@ -470,13 +473,13 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn(f"Auto site-matching", result.output)
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: 65\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
+            f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
+            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
         self.assertEqual(
-            Structure.from_file("Int_Cd_mult128_0/Bond_Distortion_-60.0%/POSCAR"),
+            Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
         )
 
@@ -519,9 +522,9 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
 
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: 65\n"
-            + "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, 'Cd')]",
+            f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
+            + "            Original Neighbour Distances: [(2.49, 11, 'Cd'), (2.59, 23, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.0, 11, 'Cd'), (1.04, 23, 'Cd')]",
             result.output,
         )
 
@@ -554,7 +557,7 @@ class CLITestCase(unittest.TestCase):
             self.assertNotIn("Coordinates", str(w[0].message))
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: [0.015687 0.01685  0.001366]\n"  # rattled position
+            f"\tDefect Site Index / Frac Coords: [0.01568712 0.01684992 0.00136596]\n" #[0.015687 0.01685  0.001366]\n"  # rattled position
             + "            Original Neighbour Distances: [(2.33, 42, 'Te'), (2.73, 33, 'Te')]\n"
             + "            Distorted Neighbour Distances:\n\t[(0.93, 42, 'Te'), (1.09, 33, 'Te')]",
             result.output,
@@ -582,6 +585,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
+        defect_name = "v_Cd"
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -616,7 +620,7 @@ class CLITestCase(unittest.TestCase):
                 "local_rattle": False,
             },
             "defects": {
-                "Vac_Cd_mult32": {
+                defect_name: {
                     "unique_site": [
                         0.0,
                         0.0,
@@ -690,9 +694,10 @@ local_rattle: False"""
             ],
             catch_exceptions=False,
         )
+        defect_name = "v_Cd"
         self.assertEqual(result.exit_code, 0)
         V_Cd_kwarged_POSCAR = Poscar.from_file(
-            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+            f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
@@ -729,14 +734,15 @@ oxidation_states:
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        self.assertIn("Defect: Vac_Cd_mult32", result.output)
+        defect_name = "v_Cd"
+        self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: 0. Number of distorted neighbours: 3",
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 3",
             result.output,
         )
         V_Cd_ox3_POSCAR = Poscar.from_file(
-            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+            f"{defect_name}_3/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertNotEqual(
             V_Cd_ox3_POSCAR.structure, self.V_Cd_minus0pt5_struc_local_rattled
@@ -772,6 +778,7 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
+        defect_name = "Int_Cd_2"
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn(f"Auto site-matching identified", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
@@ -780,10 +787,10 @@ local_rattle: False
             "'-0.25', '0.0', '0.25', '0.5']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        self.assertIn("Defect: Int_Cd_2", result.output)
+        self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
-            "Defect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 4",
+            f"Defect {defect_name} in charge state: +1. Number of distorted neighbours: 4",
             result.output,
         )
 
@@ -797,7 +804,7 @@ local_rattle: False
                 "local_rattle": False,
             },
             "defects": {
-                "Int_Cd_2": {
+                defect_name: {
                     "unique_site": reduced_Int_Cd_2_dict["bulk_supercell_site"]
                     .frac_coords.round(4)
                     .tolist(),
@@ -908,27 +915,28 @@ local_rattle: False
             ],
             catch_exceptions=False,
         )
+        defect_name = "v_Cd"
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: -7. Number of distorted neighbours: 3",
+            f"Defect {defect_name} in charge state: -7. Number of distorted neighbours: 3",
             result.output,
         )
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: -6. Number of distorted neighbours: 4",
+            f"Defect {defect_name} in charge state: -6. Number of distorted neighbours: 4",
             result.output,
         )
         self.assertIn(
-            "Defect Vac_Cd_mult32 in charge state: -5. Number of distorted neighbours: 3",
+            f"Defect {defect_name} in charge state: -5. Number of distorted neighbours: 3",
             result.output,
         )
-        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: -4", result.output)
-        self.assertNotIn("Defect Vac_Cd_mult32 in charge state: 0", result.output)
-        self.assertTrue(os.path.exists("Vac_Cd_mult32_-7"))
-        self.assertTrue(os.path.exists("Vac_Cd_mult32_-6"))
-        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5"))
-        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5/Unperturbed"))
-        self.assertTrue(os.path.exists("Vac_Cd_mult32_-5/Bond_Distortion_40.0%"))
-        self.assertFalse(os.path.exists("Vac_Cd_mult32_-4"))
+        self.assertNotIn(f"Defect {defect_name} in charge state: -4", result.output)
+        self.assertNotIn(f"Defect {defect_name} in charge state: 0", result.output)
+        self.assertTrue(os.path.exists(f"{defect_name}_-7"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-6"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-5"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-5/Unperturbed"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-5/Bond_Distortion_40.0%"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-4"))
 
         # test priority (CLI > config)
         self.tearDown()

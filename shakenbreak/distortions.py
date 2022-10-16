@@ -65,7 +65,7 @@ def distort(
     aaa = AseAtomsAdaptor()
     input_structure_ase = aaa.get_atoms(structure)
 
-    if site_index:
+    if site_index is not None:  # site_index can be 0
         atom_number = site_index - 1  # Align atom number with python 0-indexing
     elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy
