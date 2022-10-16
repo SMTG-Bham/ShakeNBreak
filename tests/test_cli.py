@@ -98,6 +98,8 @@ class CLITestCase(unittest.TestCase):
                 or "Wally_McDoodle" in i
                 or "pesky_defects" in i
                 or "vac_1_Cd_0" in i
+                or "v_Cd" in i
+                or "Cd_i" in i
             ):
                 shutil.rmtree(i)
 
