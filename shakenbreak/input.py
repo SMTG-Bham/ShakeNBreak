@@ -1,6 +1,3 @@
-# TODO: Adding a "# refactored" decorator to methods/functions that
-# have been refactored to the Defect class
-
 """
 Module containing functions to generate rattled and bond-distorted structures,
 as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
@@ -20,9 +17,9 @@ import numpy as np
 from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
-from monty.serialization import loadfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Composition, Element, Structure
+from pymatgen.core.structure import Composition, Element
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
@@ -161,8 +158,7 @@ def _write_distortion_metadata(
                 f"There was a problem when combining old and new metadata files! Will only write "
                 f"new metadata to {filepath}."
             )
-    with open(filepath, "w") as new_metadata_file:
-        new_metadata_file.write(json.dumps(new_metadata, indent=4))
+    dumpfn(obj=new_metadata, fn=filepath, indent=4)
 
 
 def _create_vasp_input(
@@ -207,7 +203,6 @@ def _create_vasp_input(
             potcar_settings
         )  # files empties `potcar_settings dict` (via pop()), so make a
         # deepcopy each time
-        # TODO: refactor vasp.write_vasp_gam_files
         vasp.write_vasp_gam_files(
             single_defect_dict=single_defect_dict,
             input_dir=f"{output_path}/{defect_name}/{distortion}",
@@ -1468,7 +1463,7 @@ class Distortions:
                     }
                     charged_defect[key_distortion]["Transformation Dict"].update(
                         {"charge": charge}
-                    )
+                    )  # Add charge state to transformation dict
 
                 _create_vasp_input(
                     defect_name=f"{defect_name}_{charge}",

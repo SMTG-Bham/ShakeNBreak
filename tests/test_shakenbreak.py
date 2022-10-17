@@ -1,3 +1,4 @@
+import copy
 import os
 import pickle
 import shutil
@@ -8,7 +9,7 @@ import pytest
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 
-from shakenbreak import energy_lowering_distortions, input, io, plotting
+from shakenbreak import energy_lowering_distortions, input, io, plotting, cli
 
 file_path = os.path.dirname(__file__)
 
@@ -27,6 +28,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
@@ -78,11 +80,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         then reparsed and plotted successfully
         """
         oxidation_states = {"Cd": +2, "Te": -2}
-        reduced_V_Cd_dict = self.V_Cd_dict.copy()
-        reduced_V_Cd_dict["charges"] = [-2, -1, 0]
+        reduced_V_Cd = copy.copy(self.V_Cd)
+        reduced_V_Cd.user_charges = [-2, -1, 0]
 
         dist = input.Distortions(
-            {"vacancies": [reduced_V_Cd_dict]},
+            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
@@ -139,15 +141,19 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             )
 
         # test correct structures written
+        gen_struc = Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR")
+        gen_struc.remove_oxidation_states()
         self.assertEqual(
             self.V_Cd_minus_0pt55_structure,
-            Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"),
+            gen_struc,
         )
+        gen_struc = Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR")
+        gen_struc.remove_oxidation_states()
         self.assertEqual(
             Structure.from_file(
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
             ),
-            Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
+            gen_struc,
         )
 
         V_Cd_m1_dict_w_distortion = {
