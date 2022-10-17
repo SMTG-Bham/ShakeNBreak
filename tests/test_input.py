@@ -230,6 +230,8 @@ class InputTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders if present
+        for charge in range(-2, 5):
+            if_present_rm(f"as_2_Te_on_Cd_{charge}")
         for fname in os.listdir("./"):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
@@ -874,7 +876,7 @@ class InputTestCase(unittest.TestCase):
             )
 
     def test_write_vasp_files(self):
-        """Test `write_vasp_files` methods"""
+        """Test `write_vasp_files` method"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
@@ -886,11 +888,15 @@ class InputTestCase(unittest.TestCase):
             },
             "substitutions": {
                 "as_1_Cd_on_Te": self.cdte_defects["substitutions"][0],
-                "as_2_Te_on_Cd": self.cdte_defects["substitutions"][1],
+                "as_1_Te_on_Cd": self.cdte_defects["substitutions"][1],
             },
             "interstitials": {
                 "Int_Cd_1": self.cdte_defects["interstitials"][0],
+                "Int_Cd_2": self.cdte_defects["interstitials"][1],
+                "Int_Cd_3": self.cdte_defects["interstitials"][2],
                 "Int_Te_1": self.cdte_defects["interstitials"][3],
+                "Int_Te_2": self.cdte_defects["interstitials"][4],
+                "Int_Te_3": self.cdte_defects["interstitials"][5],
             },
         }
 
@@ -900,7 +906,6 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=bond_distortions,
             local_rattle=False,
         )
-        # Test `write_vasp_files` method
         with patch("builtins.print") as mock_print:
             _, distortion_metadata = dist.write_vasp_files(
                 incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
