@@ -235,7 +235,10 @@ class InputTestCase(unittest.TestCase):
             if_present_rm(f"v_Cd_{charge}")
         if_present_rm(f"v_Te_0")
         for fname in os.listdir("./"):
-            if fname.startswith("distortion_metadata"):
+            if (
+                fname.startswith("distortion_metadata")
+                or fname.startswith("distorted_defects_dict")
+            ):
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
 
@@ -1891,8 +1894,6 @@ class InputTestCase(unittest.TestCase):
             dumpfn(dist_defects_dict, "distorted_defects_dict.json")
             test_dist_dict = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_defect_dict.json")
             self.assertDictEqual(test_dist_dict, loadfn("distorted_defects_dict.json"))
-            if os.path.exists("distorted_defects_dict.json"):
-                os.remove(("distorted_defects_dict.json"))
 
 if __name__ == "__main__":
     unittest.main()
