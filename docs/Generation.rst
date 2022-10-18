@@ -32,7 +32,7 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     To specify additional distortion parameters, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_config.yaml>`_
+    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
     file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
     A detailed description of all the parameters is available in the Python API section
     (:ref:`shakenbreak.input.Distortions class <api_input>`).
@@ -43,8 +43,8 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
         # General/Distortion section
         oxidation_states:  # If not specified, the code will determine them
-        Cd: 2
-        Te: -2
+            Cd: 2
+            Te: -2
         distortion_increment: 0.1  # Bond distortion increment
         distorted_elements:  # (Default = None, distorts nearest neighbours)
             vac_Cd_1:
@@ -61,7 +61,11 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     By default, :code:`ShakeNBreak` generates input files for the :code:`VASP` code, but this can be controlled with the
-    ``--code`` flag.
+    ``--code`` flag. For instance, to use ``CP2K``:
+
+    .. code:: bash
+
+        $ snb-generate --code cp2k --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR --defect-coords 0 0 0
 
 
 .. TIP::
@@ -106,7 +110,7 @@ the following directory structures will be parsed correctly:
 
 .. NOTE::
     To specify the charge state range for each defect, as well as other optional arguments, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_all_config.yaml>`_ file
+    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
     like the one below. A detailed description of all the parameters is available in the
     Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
 
@@ -116,12 +120,12 @@ the following directory structures will be parsed correctly:
 
         # Defects section: to specify charge states and defect index/frac coords
         defects:
-        vac_1_Cd:  # Name should match your defect structure file/folder
-            charges: [0, -1, -2]  # List of charge states
-            defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
-        Int_Cd_2:
-            charges: [0, +1, +2]
-            defect_index: -1  # Lattice site of the interstitial
+            vac_1_Cd:  # Name should match your defect structure file/folder
+                charges: [0, -1, -2]  # List of charge states
+                defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
+            Int_Cd_2:
+                charges: [0, +1, +2]
+                defect_index: -1  # Lattice site of the interstitial
 
         # Distortion section
         distortion_increment: 0.1 # Increment for distortion range
@@ -162,6 +166,10 @@ distortion folders with the relaxation input files and structures. If using ``VA
             |        | ...
             | ...
 
+.. TIP::
+    See ``snb-generate_all -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all>`_
+    for details on the options available for this command.
+
 Submitting the geometry optimisations
 =======================================
 
@@ -181,6 +189,7 @@ script file name of ``my_job_script.sh``, we would use:
 .. code:: bash
 
     $ snb-run --submit-command sbatch --job-script my_job_script.sh --all
+
 
 To submit a single defect, we can simply run the command :code:`snb-run` within the defect folder:
 
