@@ -20,10 +20,11 @@ from click.testing import CliRunner
 from doped import vasp_input
 from matplotlib.testing.compare import compare_images
 from monty.serialization import dumpfn
+from pymatgen.analysis.defects.core import StructureMatcher
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
-from shakenbreak import input, vasp
+from shakenbreak import input, vasp, cli
 from shakenbreak.cli import snb
 
 _file_path = os.path.dirname(__file__)
@@ -73,8 +74,38 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
         ) as fp:
             self.cdte_defect_dict = pickle.load(fp)
+        # Refactor doped defect dict to dict of Defect() objects
+        self.cdte_defects = {
+            defect_type: [
+                cli.generate_defect_object(defect_dict, self.cdte_defect_dict["bulk"])
+                for defect_dict
+                in self.cdte_defect_dict[defect_type]
+            ] for defect_type in self.cdte_defect_dict.keys() if defect_type != "bulk"
+        }
+        # Use custom names (similar to DOPED/PyCDT)
+        self.cdte_named_defects = {
+            "vacancies": {
+                "vac_1_Cd": self.cdte_defects["vacancies"][0],
+                "vac_2_Te": self.cdte_defects["vacancies"][1],
+            },
+            "substitutions": {
+                "as_1_Cd_on_Te": self.cdte_defects["substitutions"][0],
+                "as_1_Te_on_Cd": self.cdte_defects["substitutions"][1],
+            },
+            "interstitials": {
+                "Int_Cd_1": self.cdte_defects["interstitials"][0],
+                "Int_Cd_2": self.cdte_defects["interstitials"][1],
+                "Int_Cd_3": self.cdte_defects["interstitials"][2],
+                "Int_Te_1": self.cdte_defects["interstitials"][3],
+                "Int_Te_2": self.cdte_defects["interstitials"][4],
+                "Int_Te_3": self.cdte_defects["interstitials"][5],
+            },
+        }
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+        # Refactor to Defect() objects
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
+        self.Int_Cd_2 = cli.generate_defect_object(self.Int_Cd_2_dict, self.cdte_defect_dict["bulk"])
 
         self.V_Cd_struc = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
@@ -233,8 +264,12 @@ class DistortionLocalTestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
+            if ".png" in i:
+                os.remove(i)
             elif (
                 "Vac_Cd" in i
+                or "v_Cd" in i
+                or "vac_1_Cd" in i
                 or "Int_Cd" in i
                 or "Wally_McDoodle" in i
                 or "pesky_defects" in i
@@ -322,7 +357,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
         dist = input.Distortions(
-            self.cdte_defect_dict,
+            self.cdte_named_defects,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
@@ -388,10 +423,16 @@ class DistortionLocalTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
+        V_Cd_POSCAR.structure.remove_oxidation_states()
+        # sm = StructureMatcher()
+        # self.assertTrue(
+        #     sm.get_rms_dist(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)[0] < 0.1
+        # )
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
+        # Check INCAR
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set ENCUT)
         self.assertFalse(
@@ -408,6 +449,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             <= V_Cd_INCAR.items()  # matches after
             # removing kwarg settings
         )
+        # Check KPOINTS
         V_Cd_KPOINTS = Kpoints.from_file(V_Cd_minus50_folder + "/KPOINTS")
         self.assertEqual(V_Cd_KPOINTS.kpts, [[1, 1, 1]])
 
@@ -420,10 +462,12 @@ class DistortionLocalTestCase(unittest.TestCase):
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2_Int_Cd_2",
+            "-60.0%__num_neighbours=2__Int_Cd_2",
         )
+        struc = Int_Cd_2_POSCAR.structure
+        struc.remove_oxidation_states()
         self.assertEqual(
-            Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
+            struc, self.Int_Cd_2_minus0pt6_struc_rattled
         )
 
         # check INCAR
@@ -739,7 +783,7 @@ class DistortionLocalTestCase(unittest.TestCase):
     def test_generate(self):
         "Test generate command"
 
-        test_yml = f"""
+        test_yml = """
 bond_distortions: [-0.5,]
 stdev: 0.15
 d_min: 2.1250262890187375  # 0.75 * 2.8333683853583165
@@ -753,44 +797,70 @@ seed: 20
 local_rattle: False"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
+        defect_name = "v_Cd"  # pymatgen-analysis-defects default name
         runner = CliRunner()
         result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c 0",
-                "-v",
-                "--config",
-                f"test_config.yml",
-            ],
-            catch_exceptions=False,
-        )
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "-v",
+                    "--config",
+                    f"test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
         self.assertEqual(result.exit_code, 0)
+        self.assertTrue(os.path.exists(f"./{defect_name}_0"))
+        self.assertTrue(os.path.exists(f"./{defect_name}_0/Bond_Distortion_-50.0%"))
         V_Cd_kwarged_POSCAR = Poscar.from_file(
-            "Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POSCAR"
+            f"./{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
         for file in ["KPOINTS", "POTCAR", "INCAR"]:
             self.assertTrue(
-                os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}")
+                os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}")
             )
         # Check KPOINTS file
         kpoints = Kpoints.from_file(
-            f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS"
+            f"{defect_name}_0/Bond_Distortion_-50.0%/" + "KPOINTS"
         )
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
         # Check INCAR
-        incar = Incar.from_file(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "INCAR")
+        incar = Incar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/" + "INCAR")
         self.assertEqual(incar.pop("IBRION"), 2)
         self.assertEqual(incar.pop("EDIFF"), 1e-5)
         self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
-
+        # TODO: fix this
+        # Test custom name
+        # defect_name = "vac_1_Cd"
+        # runner = CliRunner()
+        # result = runner.invoke(
+        #     snb,
+        #     [
+        #         "generate",
+        #         "-d",
+        #         f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+        #         "-b",
+        #         f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+        #         "-c 0",
+        #         "-n",
+        #         "vac_1_Cd",
+        #         "--config",
+        #         f"test_config.yml",
+        #     ],
+        #     catch_exceptions=False,
+        # )
+        # cwd = os.getcwd()
+        # self.assertEqual(result.exit_code, 0)
+        # # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0"))
+        # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0/Bond_Distortion_-50.0%"))
 
 if __name__ == "__main__":
     unittest.main()

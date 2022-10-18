@@ -697,7 +697,6 @@ def generate(
             f"type {defect_object.as_dict()['@class']} "
             f"with site {site_info}"
         )
-        # print("Defect site index: ", defect_object.defect_site_index) # TODO: remove
 
     if charge is not None:
         charges = [
