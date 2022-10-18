@@ -1891,7 +1891,8 @@ class InputTestCase(unittest.TestCase):
             dumpfn(dist_defects_dict, "distorted_defects_dict.json")
             test_dist_dict = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_defect_dict.json")
             self.assertDictEqual(test_dist_dict, loadfn("distorted_defects_dict.json"))
-            if_present_rm("distorted_defects_dict.json")
+            if os.path.exists("distorted_defects_dict.json"):
+                os.remove(("distorted_defects_dict.json"))
 
 if __name__ == "__main__":
     unittest.main()
