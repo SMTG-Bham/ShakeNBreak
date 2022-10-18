@@ -1932,8 +1932,13 @@ class Distortions:
         (instead of pymatgen-analysis-defects Defect() objects).
 
         Args:
-            defects_dict (:obj:`dict`):
-                Dictionary of DOPED/pyCDT defect dictionaries.
+            doped_defects_dict (:obj:`dict`):
+                Dictionary of DOPED/pyCDT defect dictionaries
+                (eg.:
+                {
+                    "vacancies": [{...}, {...},],
+                    "bulk": {..},
+                })
             oxidation_states (:obj:`dict`):
                 Dictionary of oxidation states for species in your material,
                 used to determine the number of defect neighbours to distort
@@ -1999,6 +2004,14 @@ class Distortions:
 
         """
 
+        # Check bulk entry in DOPED/PyCDT defect_dict
+        if "bulk" not in doped_defects_dict:
+            # No bulk entry - ask user to provide it
+            warnings.warn(
+                """No bulk entry in `doped_defects_dict`. Please try again
+                providing a `bulk` entry in `doped_defects_dict`."""
+            )
+            return None
         # Transform DOPED/PyCDT defect_dict to dictionary of Defect() objects
         pymatgen_defects_dict = {
             key: [] for key in doped_defects_dict.keys() if key != "bulk"
@@ -2008,22 +2021,12 @@ class Distortions:
         ) in pymatgen_defects_dict:  # loop for vacancies, antisites and interstitials
             for defect_dict in doped_defects_dict[key]:  # loop for each defect
                 # transform defect_dict to Defect object
-                if "bulk" in doped_defects_dict:
-                    pymatgen_defects_dict[key].append(
-                        cli.generate_defect_object(
-                            single_defect_dict=defect_dict,
-                            bulk_dict=doped_defects_dict["bulk"],
-                        )
+                pymatgen_defects_dict[key].append(
+                    cli.generate_defect_object(
+                        single_defect_dict=defect_dict,
+                        bulk_dict=doped_defects_dict["bulk"],
                     )
-                else:
-                    # No bulk entry - ask user to provide it
-                    # TODO: Determine bulk structure by comparing defect_structure and
-                    # defect_site?
-                    warnings.warn(
-                        """No bulk entry in defects_dict. Please try again
-                          providing a `bulk` entry in `defect_dict`."""
-                    )
-                    return
+                )
 
         return cls(
             defects_dict=pymatgen_defects_dict,

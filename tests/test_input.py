@@ -7,6 +7,7 @@ import shutil
 import unittest
 import warnings
 from unittest.mock import patch
+from monty.serialization import loadfn, dumpfn
 
 import numpy as np
 from ase.calculators.aims import Aims
@@ -232,6 +233,7 @@ class InputTestCase(unittest.TestCase):
             if_present_rm(i)  # remove test-generated defect folders if present
         for charge in range(-2, 5):
             if_present_rm(f"v_Cd_{charge}")
+        if_present_rm(f"v_Te_0")
         for fname in os.listdir("./"):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
@@ -1801,6 +1803,95 @@ class InputTestCase(unittest.TestCase):
         # )
         sm = StructureMatcher()
         self.assertTrue(sm.get_rms_dist(test_struct, generated_struct)[0] < 0.1)
+
+    def test_from_dict(self):
+        """Test from_dict() method of Distortion() class."""
+        # Test normal behaviour
+        vacancies = {
+            "vacancies": [
+                self.cdte_defect_dict["vacancies"][0],
+                self.cdte_defect_dict["vacancies"][1],
+            ],
+            "bulk": self.cdte_defect_dict["bulk"]
+        }
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_dict(
+                vacancies,
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+        pmg_defects = {
+            "vacancies":
+                {
+                    "v_Cd": self.cdte_defects["vacancies"][0],
+                    "v_Te": self.cdte_defects["vacancies"][1],
+                 }
+        }
+        self.assertDictEqual(dist.defects_dict, pmg_defects)
+
+        # Test error if missing bulk entry
+        vacancies = {
+            "vacancies": [
+                self.cdte_defect_dict["vacancies"][0],
+                self.cdte_defect_dict["vacancies"][1],
+            ],
+        }
+        with warnings.catch_warnings(record=True) as w:
+            dist = input.Distortions.from_dict(
+                vacancies,
+            )
+            self.assertEqual(
+                str(w[0].message),
+                """No bulk entry in `doped_defects_dict`. Please try again
+                providing a `bulk` entry in `doped_defects_dict`."""
+            )
+            self.assertEqual(dist, None)
+
+        # Test distortion generation
+        vacancies = {
+            "vacancies": [
+                self.cdte_defect_dict["vacancies"][0],
+                self.cdte_defect_dict["vacancies"][1],
+            ],
+            "bulk": self.cdte_defect_dict["bulk"]
+        }
+        for defect_dict in vacancies["vacancies"]:
+            defect_dict["charges"] = [0]
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_dict(
+                    vacancies,
+                    bond_distortions=[-0.3,],
+            )
+            dist_defects_dict, dist_metadata = dist.write_vasp_files()
+            mock_print.assert_any_call(
+                "Applying ShakeNBreak...",
+                "Will apply the following bond distortions:",
+                "['-0.3'].",
+                "Then, will rattle with a std dev of 0.25 Å \n",
+            )
+            mock_print.assert_any_call(
+                "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
+            )  # bold print
+            mock_print.assert_any_call(
+                "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
+            )
+            mock_print.assert_any_call(
+                "\033[1m" + "\nDefect: v_Te" + "\033[0m"
+            )  # bold print
+            mock_print.assert_any_call(
+                "\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m"
+            )
+            for defect_name in ["v_Cd", "v_Te"]:  # default pmg-analysis-defects naming
+                self.assertTrue(os.path.exists(f"{defect_name}_0/Bond_Distortion_-30.0%/POSCAR"))
+            metadata = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
+            self.assertDictEqual(loadfn("distortion_metadata.json"), metadata)
+            dumpfn(dist_defects_dict, "distorted_defects_dict.json")
+            test_dist_dict = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_defect_dict.json")
+            self.assertDictEqual(test_dist_dict, loadfn("distorted_defects_dict.json"))
+            if_present_rm("distorted_defects_dict.json")
 
 if __name__ == "__main__":
     unittest.main()

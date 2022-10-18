@@ -1,0 +1,68 @@
+{
+    "distortion_parameters": {
+        "distortion_increment": null,
+        "bond_distortions": [
+            -0.3
+        ],
+        "rattle_stdev": 0.25,
+        "local_rattle": false
+    },
+    "defects": {
+        "v_Cd": {
+            "unique_site": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "charges": {
+                "0": {
+                    "num_nearest_neighbours": 2,
+                    "distorted_atoms": [
+                        [
+                            33,
+                            "Te"
+                        ],
+                        [
+                            42,
+                            "Te"
+                        ]
+                    ],
+                    "distortion_parameters": {
+                        "bond_distortions": [
+                            -0.3
+                        ],
+                        "rattle_stdev": 0.25
+                    }
+                }
+            }
+        },
+        "v_Te": {
+            "unique_site": [
+                0.125,
+                0.125,
+                0.375
+            ],
+            "charges": {
+                "0": {
+                    "num_nearest_neighbours": 2,
+                    "distorted_atoms": [
+                        [
+                            2,
+                            "Cd"
+                        ],
+                        [
+                            9,
+                            "Cd"
+                        ]
+                    ],
+                    "distortion_parameters": {
+                        "bond_distortions": [
+                            -0.3
+                        ],
+                        "rattle_stdev": 0.25
+                    }
+                }
+            }
+        }
+    }
+}
