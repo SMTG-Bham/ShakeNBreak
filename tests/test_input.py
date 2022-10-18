@@ -231,7 +231,7 @@ class InputTestCase(unittest.TestCase):
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders if present
         for charge in range(-2, 5):
-            if_present_rm(f"as_2_Te_on_Cd_{charge}")
+            if_present_rm(f"v_Cd_{charge}")
         for fname in os.listdir("./"):
             if fname.startswith("distortion_metadata"):
                 os.remove(f"./{fname}")
@@ -1709,10 +1709,11 @@ class InputTestCase(unittest.TestCase):
         # TODO: Check why the H atom gets removed when the Defect() is created!?
         fake_hydrogen_V_Cd_dict = copy.copy(self.V_Cd_dict)
         fake_hydrogen_V_Cd_dict["charges"] = [0]
-        fake_hydrogen_V_Cd_dict["supercell"]["structure"][4].species = "H"
+        fake_hydrogen_bulk = copy.copy(self.cdte_defect_dict["bulk"])
+        fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
         fake_hydrogen_V_Cd = cli.generate_defect_object(
             fake_hydrogen_V_Cd_dict,
-            self.cdte_defect_dict["bulk"]
+            fake_hydrogen_bulk,
         )
         dist = input.Distortions(
             {"vacancies": {"vac_1_Cd": fake_hydrogen_V_Cd}},
@@ -1739,10 +1740,9 @@ class InputTestCase(unittest.TestCase):
         )
         V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
             "distortions"]
-        # self.assertEqual(len(V_Cd_distortions_dict), 21)  # 21 total distortions
-        # self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
-        # self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
-        # TODO: Fix this!
+        self.assertEqual(len(V_Cd_distortions_dict), 21)  # 21 total distortions
+        self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
+        self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
     def test_local_rattle(
         self,
