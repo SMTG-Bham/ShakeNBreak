@@ -2003,7 +2003,6 @@ class Distortions:
                     numbers are generated.
 
         """
-
         # Check bulk entry in DOPED/PyCDT defect_dict
         if "bulk" not in doped_defects_dict:
             # No bulk entry - ask user to provide it
