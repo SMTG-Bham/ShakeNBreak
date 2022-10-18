@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import unittest
 import warnings
+import copy
 
 import numpy as np
 import yaml
@@ -1541,6 +1542,62 @@ Chosen VASP error message: {error_string}
         ]:
             _test_OUTCAR_error(error)
 
+        # test treating-as-converged when energy change less than 2 meV and >50 ionic steps
+        residual_forces_outcar_string = (
+            f"""
+            energy  without entropy=      675.21988502  energy(sigma->0) =      -675.21988502
+            """
+            * 70
+        )
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(residual_forces_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)
+        self.assertNotIn(
+            "Running job for Bond_Distortion_10.0%", out
+        )  # not running job though!
+        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn(
+            "Positive energies or forces error encountered for Bond_Distortion_10.0%, "
+            "ignoring and renaming to Bond_Distortion_10.0%_High_Energy",
+            out,
+        )
+        self.assertIn(
+            "Bond_Distortion_10.0% has some (small) residual forces but energy converged "
+            "to < 2 meV, considering this converged.",
+            out,
+        )
+        self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
+        self.assertNotIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 0)
+
+        # Test no warning when not verbose
+        proc = subprocess.Popen(
+            ["snb-run", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Bond_Distortion_10.0% has some (small) residual forces but energy "
+            "converged to < 2 meV, considering this converged.",
+            out,
+        )
+        os.remove("Bond_Distortion_10.0%/OUTCAR")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
     def test_parse(self):
         """Test parse() function.
         Implicitly, this also tests the io.parse_energies() function"""
@@ -1795,7 +1852,7 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy"
         )
 
-        # test ignoring "*High_Energy*" folder(s)
+        # test parsing energies of calculations that still haven't converged
         defect = "vac_1_Ti_0"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
@@ -1829,12 +1886,17 @@ Chosen VASP error message: {error_string}
         self.assertNotEqual(
             test_energies, energies
         )  # Bond_Distortion_-20.0%_not_converged now included
-        test_energies["distortions"].update(
+        not_converged_energies = copy.deepcopy(test_energies)
+        not_converged_energies["distortions"].update(
             {"Bond_Distortion_-20.0%_not_converged": -1151.8383839}
         )
         self.assertEqual(
-            test_energies, energies
+            not_converged_energies, energies
         )  # Bond_Distortion_-20.0%_not_converged now included
+        # test print statement about not being fully relaxed
+        self.assertIn(
+            "Bond_Distortion_-20.0%_not_converged not fully relaxed", result.output
+        )
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -1842,6 +1904,61 @@ Chosen VASP error message: {error_string}
         ]
         shutil.rmtree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged"
+        )
+
+        # test parsing energies of residual-forces calculations
+        defect = "vac_1_Ti_0"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces",
+        )
+        residual_forces_outcar_string = (
+            (
+                """
+                    energy  without entropy=      675.21988502  energy(sigma->0) =      -675.21988502
+                """
+                * 70
+            )
+            + """ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this 
+            defect, considering this converged."""
+        )
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces/OUTCAR",
+            "w+",
+        ) as f:
+            f.write(residual_forces_outcar_string)
+
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+            catch_exceptions=False,
+        )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        self.assertNotEqual(
+            test_energies, energies
+        )  # Bond_Distortion_-20.0%_residual_forces now included
+        residual_forces_energies = copy.deepcopy(test_energies)
+        residual_forces_energies["distortions"].update(
+            {"Bond_Distortion_-20.0%_residual_forces": -675.21988502}
+        )
+        self.assertEqual(
+            residual_forces_energies, energies
+        )  # Bond_Distortion_-20.0%_residual_forces now included
+        # test no print statement about not being fully relaxed
+        self.assertNotIn("not fully relaxed", result.output)
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+        shutil.rmtree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces"
         )
 
     def test_parse_codes(self):
