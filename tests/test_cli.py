@@ -1303,7 +1303,9 @@ local_rattle: True"""
         )
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present but no OUTCAR
+        self.assertNotIn(
+            "Bond_Distortion_10.0% fully relaxed", out
+        )  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
@@ -1327,7 +1329,9 @@ local_rattle: True"""
         )
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present but no OUTCAR
+        self.assertNotIn(
+            "Bond_Distortion_10.0% fully relaxed", out
+        )  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
@@ -1789,6 +1793,55 @@ Chosen VASP error message: {error_string}
         ]
         shutil.rmtree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy"
+        )
+
+        # test ignoring "*High_Energy*" folder(s)
+        defect = "vac_1_Ti_0"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged",
+        )
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged/OUTCAR",
+            "r",
+        ) as f:
+            lines = f.readlines()
+            truncated = lines[:5000]
+
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged/OUTCAR",
+            "w+",
+        ) as trout:
+            for line in truncated:
+                trout.write(line)
+        result = runner.invoke(
+            snb,
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+            catch_exceptions=False,
+        )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        self.assertNotEqual(
+            test_energies, energies
+        )  # Bond_Distortion_-20.0%_not_converged now included
+        test_energies["distortions"].update(
+            {"Bond_Distortion_-20.0%_not_converged": -1151.8383839}
+        )
+        self.assertEqual(
+            test_energies, energies
+        )  # Bond_Distortion_-20.0%_not_converged now included
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+        shutil.rmtree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged"
         )
 
     def test_parse_codes(self):
