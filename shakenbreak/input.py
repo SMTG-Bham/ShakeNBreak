@@ -1003,7 +1003,8 @@ class Distortions:
             else:
                 # Check distorted element is a valid element symbol
                 try:
-                    Element(distorted_element)
+                    for element in distorted_elements[defect_name]:
+                        Element(element)
                 except ValueError:
                     warnings.warn(
                         "Problem reading the keys in distorted_elements.",
