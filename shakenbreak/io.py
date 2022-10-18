@@ -117,6 +117,8 @@ def parse_energies(
             converged = _match(
                 outcar, "required accuracy"
             )  # check if ionic relaxation converged
+            if not converged:
+                converged = _match(outcar, "considering this converged")
         return converged, energy, outcar
 
     def parse_espresso_energy(defect_dir, dist, energy, espresso_out):
