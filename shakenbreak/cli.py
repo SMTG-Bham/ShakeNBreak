@@ -9,6 +9,7 @@ from typing import Optional
 
 import click
 import numpy as np
+from importlib_metadata import version
 
 # Monty and pymatgen
 from monty.json import MontyDecoder
@@ -298,7 +299,28 @@ def identify_defect(
         "structure": bulk_structure,
         "site": defect_site,
     }
-    defect = MontyDecoder().process_decoded(for_monty_defect)
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError:
+        # This means we have the old version of pymatgen-analysis-defects,
+        # where the class attributes were different (defect_site instead of site
+        # and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            return TypeError(
+                f"You have the version {v_ana_def}"
+                " of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+        if v_pmg < "2022.7.25":
+            return TypeError(
+                f"You have the version {v_pmg}"
+                " of the package `pymatgen`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
     # print("Defect site index", defect.defect_site_index)  # TODO: Remove
     return defect
 
@@ -441,12 +463,34 @@ def generate_defect_object(
         "site": defect_site,
         # "user_charges": single_defect_dict["charges"]  # doesn't work
     }
-    defect = MontyDecoder().process_decoded(for_monty_defect)
-    # Specify defect charge states
-    if isinstance(charges, list):  # Priority to charges argument
-        defect.user_charges = charges
-    elif "charges" in single_defect_dict.keys():
-        defect.user_charges = single_defect_dict["charges"]
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError:
+        # This means we have the old version of pymatgen-analysis-defects,
+        # where the class attributes were different (defect_site instead of site
+        # and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            return TypeError(
+                f"You have the version {v_ana_def}"
+                " of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+        if v_pmg < "2022.7.25":
+            return TypeError(
+                f"You have the version {v_pmg}"
+                " of the package `pymatgen`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+    else:
+        # Specify defect charge states
+        if isinstance(charges, list):  # Priority to charges argument
+            defect.user_charges = charges
+        elif "charges" in single_defect_dict.keys():
+            defect.user_charges = single_defect_dict["charges"]
     return defect
 
 
