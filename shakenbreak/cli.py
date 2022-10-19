@@ -4,12 +4,12 @@ import os
 import pickle
 import warnings
 from copy import deepcopy
+from importlib.metadata import version
 from subprocess import call
 from typing import Optional
 
 import click
 import numpy as np
-from importlib_metadata import version
 
 # Monty and pymatgen
 from monty.json import MontyDecoder
