@@ -211,4 +211,5 @@ Requirements
    Python API <modules>
    Tutorials
    Tips
+   Code Compatibility
    Contributing
