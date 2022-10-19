@@ -959,7 +959,7 @@ def generate_all(
             any(
                 [
                     substring in defect.lower()
-                    for substring in ("as", "vac", "int", "sub", "v", "i")
+                    for substring in ("as", "vac", "int", "sub", "v", "i", "on")
                 ]
             )
             or any(
@@ -1775,7 +1775,7 @@ def groundstate(
         if any(
             [
                 substring in cwd_name.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i")
+                for substring in ("as", "vac", "int", "sub", "v", "i", "on")
             ]
         ) or any(
             [
