@@ -1008,10 +1008,14 @@ def generate_all(
             )
             or any(
                 [
-                    (dummy_h.is_valid_symbol(substring[-2:]) or substring[-2:] == "Va")
+                    (
+                        dummy_h.is_valid_symbol(substring[-2:])
+                        or substring[-1:] == "v"
+                        or substring[-2:] == "Va"
+                    )
                     for substring in defect.split("_")
-                ]  # underscore preceded by either an element symbol or "Va" (new pymatgen defect
-                # naming convention)
+                ]  # underscore preceded by either an element symbol or "Va" or "v" (new pymatgen
+                # defect naming convention)
             )
         ):
             # if user didn't specify defect names in config file,

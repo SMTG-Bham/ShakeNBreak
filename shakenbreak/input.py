@@ -873,11 +873,11 @@ class Distortions:
                 print(
                     "There are symmetry inequivalent defects."
                     " To avoid using the same name for them, the names will be refactored"
-                    " as {defect_name}_s{defect_site_index} (e.g. v_Cd_s0)."
+                    " as {defect_name}_{defect_site_index} (e.g. v_Cd_0)."
                 )
                 for defect_type in defects_dict:
                     self.defects_dict[defect_type] = {
-                        f"{defect.name}_s{defect.defect_site_index}": defect
+                        f"{defect.name}_{defect.defect_site_index}": defect
                         for defect in defects_dict[defect_type]
                     }
             else:

@@ -494,7 +494,7 @@ def _format_defect_name(
             if (
                 include_site_num_in_name
             ):  # whether to include the site number in defect name
-                if defect_type.lower() == "vac" or defect_type.lower() == "v":
+                if defect_type.lower() == "vac":
                     defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
                     # double brackets to treat it literally (tex), then extra {} for
                     # python str formatting
