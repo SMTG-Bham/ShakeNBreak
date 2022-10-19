@@ -478,7 +478,7 @@ def _apply_rattle_bond_distortions(
         # .distort() assumes VASP indexing (starting at 1)
         defect_site_index = defect_object.defect_site_index + 1
         frac_coords = None  # only for vacancies
-        if defect_site_index is not None:  # TODO: remove this line
+        if defect_site_index is not None:
             bond_distorted_defect = distortions.distort(
                 structure=defect_structure,
                 num_nearest_neighbours=num_nearest_neighbours,
@@ -487,8 +487,8 @@ def _apply_rattle_bond_distortions(
                 distorted_element=distorted_element,
                 verbose=verbose,
             )
-        else:  # TODO: remove
-            raise ValueError("Defect lacks defect_site_index!")  # TODO: remove
+        else:
+            raise ValueError("Defect lacks defect_site_index!")
 
     # Apply rattle to the bond distorted structure
     if not d_min:
