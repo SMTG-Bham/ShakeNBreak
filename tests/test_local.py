@@ -491,7 +491,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         """
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         dumpfn(
             {
                 "distortions": {-0.4: -1176.28458753},
@@ -524,9 +524,9 @@ class DistortionLocalTestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
+                                                    f"{defect}/{defect}.png")))
         compare_images(
-            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png"),
+            os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
@@ -541,7 +541,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # distorted neighbours and their identities
         fake_distortion_metadata = {
             "defects": {
-                "vac_1_Cd": {
+                "v_Cd": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -555,7 +555,7 @@ class DistortionLocalTestCase(unittest.TestCase):
                         },
                     }
                 },
-                "vac_1_Ti": {
+                "v_Ti": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 3,
@@ -580,13 +580,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
+                                                    f"{defect}/{defect}.png")))
         self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_0/vac_1_Cd_0.png")))
+                                                    "v_Cd_0/v_Cd_0.png")))
         self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_-1/vac_1_Cd_-1.png")))
+                                                    "v_Cd_-1/v_Cd_-1.png")))
         compare_images(
-            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png"),
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)

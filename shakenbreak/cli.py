@@ -1823,9 +1823,13 @@ def groundstate(
             ]
         ) or any(
             [
-                (dummy_h.is_valid_symbol(substring[-2:]) or substring[-2:] == "Va")
+                (
+                    dummy_h.is_valid_symbol(substring[-2:])
+                    or substring[-2:] == "v"
+                    or substring[-2:] == "Va"
+                )
                 for substring in cwd_name.split("_")
-            ]  # underscore preceded by either an element symbol or "Va" (new pymatgen defect
+            ]  # underscore preceded by either an element symbol or "v" (new pymatgen defect
             # naming convention)
         ):  # cwd is defect name, assume current directory is the defect folder
             if path != ".":

@@ -101,6 +101,7 @@ class CLITestCase(unittest.TestCase):
                 or "vac_1_Cd_0" in i
                 or "v_Cd" in i
                 or "Cd_i" in i
+                or "_defect_folder" in i
             ):
                 shutil.rmtree(i)
 
@@ -121,6 +122,7 @@ class CLITestCase(unittest.TestCase):
 
         if_present_rm(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
@@ -1649,7 +1651,7 @@ Chosen VASP error message: {error_string}
         # Specifying defect to parse
         # All OUTCAR's present in distortion directories
         # Energies file already present
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
@@ -1684,6 +1686,7 @@ Chosen VASP error message: {error_string}
         ]
 
         # Test when OUTCAR not present in one of the distortion directories
+        defect = "vac_1_Ti_0"  # folder in self.VASP_DIR
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -1713,14 +1716,14 @@ Chosen VASP error message: {error_string}
         # Test --all option
         self.tearDown()
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
-        defect_name = "vac_1_Ti_-1"
+        defect = "v_Ti"
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
-            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}",
+            f"{self.EXAMPLE_RESULTS}/{defect}_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1",
         )
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
-            f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/{defect}_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_0",
         )
         result = runner.invoke(
             snb,
@@ -1734,21 +1737,21 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml"
             )
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.yaml"
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_0/{defect}_0.yaml"
             )
         )
 
         # Test parsing from inside the defect folder
-        defect_name = "vac_1_Ti_-1"
+        defect = "v_Ti"
         os.remove(
-            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml"
         )
-        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1")
         result = runner.invoke(
             snb,
             [
@@ -1758,17 +1761,18 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml"
             )
         )
         os.chdir(file_path)
 
         # Test warning when setting path and parsing from inside the defect folder
-        defect_name = "vac_1_Ti_-1"
+        defect = "v_Ti"
+        defect_name = "v_Ti_-1"
         os.remove(
-            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml"
         )
-        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}")
+        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1")
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -1792,14 +1796,14 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.yaml"
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml"
             )
         )
         os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
         # Test when `defect` is present higher up in `path`
-        defect_name = "vac_1_Ti_0"
+        defect_name = "v_Ti_0"
         os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder")
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
@@ -1870,7 +1874,7 @@ Chosen VASP error message: {error_string}
         os.chdir(file_path)
 
         # test ignoring "*High_Energy*" folder(s)
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy",
@@ -1898,7 +1902,7 @@ Chosen VASP error message: {error_string}
         )
 
         # test parsing energies of calculations that still haven't converged
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged",
@@ -1952,7 +1956,7 @@ Chosen VASP error message: {error_string}
         )
 
         # test parsing energies of residual-forces calculations
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces",
@@ -1964,7 +1968,7 @@ Chosen VASP error message: {error_string}
                 """
                 * 70
             )
-            + """ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this 
+            + """ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this
             defect, considering this converged."""
         )
         with open(
@@ -2117,7 +2121,7 @@ Chosen VASP error message: {error_string}
 
     def test_analyse(self):
         "Test analyse() function"
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
         runner = CliRunner()
@@ -2154,14 +2158,14 @@ Chosen VASP error message: {error_string}
 
         # Test --all flag
         os.mkdir(f"{self.EXAMPLE_RESULTS}/pesky_defects")
-        defect_name = "vac_1_Ti_-1"
+        defect_name = "v_Ti_-1"
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}",
         )
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
-            f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/pesky_defects/v_Ti_0",
         )
         result = runner.invoke(
             snb,
@@ -2180,12 +2184,12 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/pesky_defects/vac_1_Ti_0/vac_1_Ti_0.csv"
+                f"{self.EXAMPLE_RESULTS}/pesky_defects/v_Ti_0/v_Ti_0.csv"
             )
         )
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         # Test non-existent defect
-        name = "vac_1_Ti_-2"
+        name = "v_Ti_-2"
         result = runner.invoke(
             snb,
             [
@@ -2206,8 +2210,9 @@ Chosen VASP error message: {error_string}
         )
 
         # Test when `defect` is present higher up in `path`
-        defect = "vac_1_Ti_0"
-        os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder")
+        defect = "v_Ti_0"
+        if not os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder"):
+            os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder")
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect}",
             f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}",
@@ -2247,8 +2252,8 @@ Chosen VASP error message: {error_string}
         self.tearDown()
 
         # Test analysing from inside the defect folder
-        defect_name = "vac_1_Ti_0"
         os.chdir(self.VASP_TIO2_DATA_DIR)
+        defect_name = "vac_1_Ti_0"
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -2278,6 +2283,8 @@ Chosen VASP error message: {error_string}
         os.remove(f"{defect_name}.yaml")
 
         # Test warning when setting path and analysing from inside the defect folder
+        # we are in self.VASP_TIO2_DATA_DIR
+        defect_name = "vac_1_Ti_0"
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -2334,7 +2341,8 @@ Chosen VASP error message: {error_string}
         """Test plot() function"""
         # Test the following options:
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
-        defect = "vac_1_Ti_0"
+        defect_name = "v_Ti"
+        defect = "v_Ti_0"
         runner = CliRunner()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -2362,7 +2370,7 @@ Chosen VASP error message: {error_string}
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # verbose output
-        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.png", result.output)
+        self.assertIn(f"Plot saved to {defect_name}_0/{defect_name}_0.png", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
@@ -2384,10 +2392,11 @@ Chosen VASP error message: {error_string}
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
+        defect_name = "v_Ti"
         fake_distortion_metadata = {
             "defects": {
-                "vac_1_Cd": {
+                "v_Cd": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -2401,7 +2410,7 @@ Chosen VASP error message: {error_string}
                         },
                     }
                 },
-                "vac_1_Ti": {
+                "v_Ti": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 3,
@@ -2428,17 +2437,17 @@ Chosen VASP error message: {error_string}
             )
         self.assertTrue(
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, f"{defect_name}_0/{defect_name}_0.png")
             )
         )
         self.assertTrue(
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
             )
         )
         self.assertTrue(
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png")
             )
         )
         if w:
@@ -2474,15 +2483,15 @@ Chosen VASP error message: {error_string}
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
+        self.assertIn(f"Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse "
             f"its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
-        self.assertTrue(os.path.exists("./vac_1_Ti_0.png"))
-        self.assertTrue(os.path.exists("./vac_1_Ti_0.yaml"))
+        self.assertTrue(os.path.exists("./v_Ti_0.png"))
+        self.assertTrue(os.path.exists("./v_Ti_0.yaml"))
         # Figures are compared in the local test since on Github Actions images are saved
         # with a different size (raising error when comparing).
         [
@@ -2494,7 +2503,7 @@ Chosen VASP error message: {error_string}
 
         # Test when `defect` is present higher up in `path`
         os.chdir(file_path)
-        defect_name = "vac_1_Ti_0"
+        defect_name = "v_Ti_0"
         os.mkdir(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder")
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
@@ -2518,7 +2527,7 @@ Chosen VASP error message: {error_string}
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
+        self.assertIn(f"Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json "
@@ -2529,14 +2538,14 @@ Chosen VASP error message: {error_string}
         self.assertTrue(
             os.path.exists(
                 f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder"
-                f"/{defect_name}/vac_1_Ti_0.svg"
+                f"/{defect_name}/v_Ti_0.svg"
             )
         )
         self.assertTrue(
             os.path.exists(
                 f"{self.EXAMPLE_RESULTS}/"
                 f"{defect_name}_defect_folder/"
-                f"{defect_name}/vac_1_Ti_0.yaml"
+                f"{defect_name}/v_Ti_0.yaml"
             )
         )
         self.tearDown()
@@ -2570,7 +2579,7 @@ Chosen VASP error message: {error_string}
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn("Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
+        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
         self.assertTrue(
             any(
                 [
@@ -2582,9 +2591,9 @@ Chosen VASP error message: {error_string}
                 for warning in w
             )
         )
-        self.assertTrue(os.path.exists("./vac_1_Ti_0.svg"))
-        self.assertTrue(os.path.exists(os.getcwd() + "/vac_1_Ti_0.yaml"))
-        if_present_rm(os.getcwd() + "/vac_1_Ti_0.yaml")
+        self.assertTrue(os.path.exists("./v_Ti_0.svg"))
+        self.assertTrue(os.path.exists(os.getcwd() + "/v_Ti_0.yaml"))
+        if_present_rm(os.getcwd() + "/v_Ti_0.yaml")
         self.tearDown()
 
         # Test exception when run with no arguments in top-level folder
@@ -2597,7 +2606,7 @@ Chosen VASP error message: {error_string}
             f"defects in the specified/current directory.",
             str(result.exception),
         )
-        self.assertNotIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
+        self.assertNotIn(f"Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )
@@ -2622,7 +2631,7 @@ Chosen VASP error message: {error_string}
             self.assertTrue(
                 any(
                     [
-                        f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"
+                        f"Path {self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml does not exist"
                         == str(war.message)
                         for war in w
                     ]
@@ -2643,33 +2652,33 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
         self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
-            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/v_Cd_-2,"
+            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.tearDown()  # Remove generated files
 
         # test "*High_Energy*" ignored and doesn't cause errors
         shutil.copytree(
-            os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-60.0%"),
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-60.0%"),
             os.path.join(
-                self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             ),
         )
         with warnings.catch_warnings(record=True) as w:
@@ -2694,12 +2703,12 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
-            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/v_Cd_-2,"
+            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)
@@ -2853,12 +2862,17 @@ Chosen VASP error message: {error_string}
 
         # test "*High_Energy*" ignored and doesn't cause errors
         defect = "vac_1_Cd_0"
-        shutil.copytree(
-            os.path.join(self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-60.0%"),
+        if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-48.0%_High_Energy"
-            ),
-        )
+                    self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                )
+        ):
+            shutil.copytree(
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
+                os.path.join(
+                    self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-48.0%_High_Energy"
+                ),
+            )
         result = runner.invoke(
             snb,
             [
