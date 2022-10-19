@@ -1825,7 +1825,7 @@ def groundstate(
             [
                 (
                     dummy_h.is_valid_symbol(substring[-2:])
-                    or substring[-2:] == "v"
+                    or substring[-1:] == "v"
                     or substring[-2:] == "Va"
                 )
                 for substring in cwd_name.split("_")
