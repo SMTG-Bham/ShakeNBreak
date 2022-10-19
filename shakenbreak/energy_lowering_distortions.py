@@ -67,7 +67,14 @@ def read_defects_directories(output_path: str = "./") -> dict:
     list_subdirectories = [  # Get only subdirectories in the current directory
         i
         for i in next(os.walk(output_path))[1]
-        if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
+        if ("vac_" in i)
+        or ("v_" in i)
+        or ("V_" in i)
+        or ("Int_" in i)
+        or ("_i" in i)
+        or ("sub_" in i)
+        or ("as_" in i)
+        or ("_on_" in i)
     ]  # matching doped/PyCDT/pymatgen defect names
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
