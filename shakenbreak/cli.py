@@ -589,6 +589,13 @@ def generate(
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
+        # Parse pseudopotentials from config file, if specified
+        if "POTCAR" in user_settings.keys():
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
+            user_settings.pop("POTCAR", None)
+        if "pseudopotentials" in user_settings.keys():
+            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
+            user_settings.pop("pseudopotentials", None)
         for key in list(user_settings.keys()):
             # remove non-sense keys from user_settings
             if key not in valid_args:
@@ -653,6 +660,7 @@ def generate(
             incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
             verbose=verbose,
+            potcar_settings=pseudopotentials,
             incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
@@ -675,12 +683,14 @@ def generate(
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
+                pseudopotentials=pseudopotentials,
                 input_file=input_file,
             )
         else:
             print("Writting espresso input files")
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
+                pseudopotentials=pseudopotentials,
             )
     elif code.lower() == "castep":
         if input_file:
@@ -829,9 +839,9 @@ def generate_all(
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
-        # Parse pseduopotentials from config file, if specified
+        # Parse pseudopotentials from config file, if specified
         if "POTCAR" in user_settings.keys():
-            pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
             user_settings.pop("POTCAR", None)
         if "pseudopotentials" in user_settings.keys():
             pseudopotentials = deepcopy(user_settings["pseudopotentials"])
