@@ -621,10 +621,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test compare_structures() function."""
         # V_Cd_0 with defaults (reading from `v_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="v_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         defect_energies_dict = analysis.get_energies(
-            defect_species="v_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
+            defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         with patch("builtins.print") as mock_print:
             struct_comparison_df = analysis.compare_structures(
@@ -848,7 +848,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertRaises(
             FileNotFoundError,
             analysis.get_site_magnetizations,
-            defect_species="v_Ti_-1",
+            defect_species="vac_1_Ti_-1",
             output_path=os.path.join(self.DATA_DIR, "vasp"),
             distortions=["Unperturbed", -0.4],
         )
@@ -856,7 +856,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # User gives defect_site and threshold
         with patch("builtins.print") as mock_print:
             mags = analysis.get_site_magnetizations(
-                defect_species="v_Ti_0",
+                defect_species="vac_1_Ti_0",
                 defect_site=[0.0, 0.16666666666666669, 0.25],
                 output_path=os.path.join(self.DATA_DIR, "vasp"),
                 distortions=["Unperturbed", -0.4],
@@ -914,7 +914,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"),
             )
             mags = analysis.get_site_magnetizations(
-                defect_species="v_Ti_0",
+                defect_species="vac_1_Ti_0",
                 output_path=os.path.join(self.DATA_DIR, "vasp"),
                 distortions=["Unperturbed"],
                 threshold=0.3,
@@ -922,7 +922,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertAlmostEqual(
                 str(w[-1].message),
-                "Could not find defect v_Ti_0 in distortion_metadata.json file. Will not "
+                "Could not find defect vac_1_Ti_0 in distortion_metadata.json file. Will not "
                 "include distance between defect and sites with significant magnetization.",
             )
             pd.testing.assert_frame_equal(
@@ -967,7 +967,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # Non existent structure
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
-                defect_species="v_Ti_0",
+                defect_species="vac_1_Ti_0",
                 output_path=os.path.join(self.DATA_DIR, "vasp"),
                 distortions=[
                     0.2,
@@ -977,7 +977,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertEqual(
                 str(w[-1].message),
-                "Structure for v_Ti_0 either not converged or not found. "
+                "Structure for vac_1_Ti_0 either not converged or not found. "
                 "Skipping magnetisation analysis.",
             )
         # Non existent OUTCAR
