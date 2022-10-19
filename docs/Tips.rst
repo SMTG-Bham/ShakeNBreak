@@ -5,8 +5,10 @@ Tricky Relaxations
 -------------------
 
 If certain relaxations are not converging after multiple continuation calculations (i.e. if :code:`snb-run` keeps
-resubmitting certain relaxations), this is likely due to an error in the underlying calculation and/or unreasonable
-interatomic distances causing high / positive energies and extreme forces.
+resubmitting certain relaxations), this is likely due to an error in the underlying calculation, extreme forces and/or
+small residual forces which the structure optimisation algorithm is struggling to relax. In most of these cases,
+:code:`ShakeNBreak` will automatically detect and handle these calculations, but some tricky cases may require manual
+tuning from the user:
 
 - For :code:`VASP`, a common culprit is :code:`EDWAV` in the output file, which can typically be avoided by reducing
   :code:`NCORE` and/or :code:`KPAR`. Other errors related to forces / unreasonable interatomic distances (like
@@ -20,15 +22,19 @@ interatomic distances causing high / positive energies and extreme forces.
   the rare cases where this occurs, you should rename the folder(s) to :code:`Bond_Distortion_X_High_Energy` and
   :code:`ShakeNBreak` will subsequently ignore them.
 
-If the calculation outputs show that the relaxation is proceeding fine, without any errors, just not converging to
-completion, then other input settings such as the ionic relaxation algorithm (:code:`IBRION` in :code:`VASP`),
-electronic minimisation algorithm (:code:`ALGO` in :code:`VASP`) or real space force projection (:code:`LREAL`
-in :code:`VASP`) should be adjusted to aid convergence.
+- If the calculation outputs show that the relaxation is proceeding fine, without any errors, just not converging to
+  completion (i.e. residual forces), then :code:`ShakeNBreak` will consider the calculation converged if the energy is
+  changing by <2 meV with >50 ionic steps. Alternatively, convergence of the forces can be aided by:
+    - Switching the ionic relaxation algorithm (e.g. change :code:`IBRION` to :code:`1` or :code:`3` in :code:`VASP`)
+    - Reducing the ionic step width (e.g. change :code:`POTIM` to :code:`0.02` in :code:`VASP`)
+    - Tightening/reducing the electronic convergence criterion (e.g. change :code:`EDIFF` to :code:`1e-7` in :code:`VASP`)
+    - Switching the electronic minimisation algorithm (e.g. change :code:`ALGO` to :code:`All` in :code:`VASP`), if
+      electronic concergence seems to be causing issues.
 
 In the other rare case where all distortions yield high energies, relative to the :code:`Unperturbed` structure, this is
 typically indicative of an unreasonable defect charge state (with the extreme excess charge inducing many false local
 minima on the PES). :code:`ShakeNBreak` will print a warning in these cases, with advice on how to proceed if this is
-not the case and the charge state is reasonable.
+not the case and the charge state is reasonable (see below).
 
 
 Hard/Ionic/Magnetic Materials
