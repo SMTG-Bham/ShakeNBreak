@@ -140,9 +140,9 @@ def _format_defect_name(
 
     Args:
         defect_species (:obj:`str`):
-            name of defect including charge state (i.e. vac_1_Cd_0)
+            name of defect including charge state (e.g. vac_1_Cd_0)
         include_site_num_in_name (:obj:`bool`):
-            whether to include site number in name (i.e. $V_{Cd}^{0}$ or
+            whether to include site number in name (e.g. $V_{Cd}^{0}$ or
             $V_{Cd,1}^{0}$)
 
     Returns:
@@ -494,7 +494,7 @@ def _format_defect_name(
             if (
                 include_site_num_in_name
             ):  # whether to include the site number in defect name
-                if defect_type.lower() == "vac":
+                if defect_type.lower() == "vac" or defect_type.lower() == "v":
                     defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
                     # double brackets to treat it literally (tex), then extra {} for
                     # python str formatting
