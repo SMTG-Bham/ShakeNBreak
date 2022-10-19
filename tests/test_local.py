@@ -276,6 +276,12 @@ class DistortionLocalTestCase(unittest.TestCase):
             ):
                 shutil.rmtree(i)
 
+        for defect_folder in os.listdir(self.EXAMPLE_RESULTS):
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect_folder}"):
+                if file.endswith(".png"):
+                    os.remove(f"{self.EXAMPLE_RESULTS}/{defect_folder}/{file}")
+
+
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function for INCARs and POTCARs"""
