@@ -590,6 +590,7 @@ def generate(
             if key in user_settings:
                 user_settings.pop(key, None)
         # Parse pseudopotentials from config file, if specified
+        pseudopotentials = None
         if "POTCAR" in user_settings.keys():
             pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
             user_settings.pop("POTCAR", None)
