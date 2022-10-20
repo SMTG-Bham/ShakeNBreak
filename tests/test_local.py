@@ -576,6 +576,8 @@ class DistortionLocalTestCase(unittest.TestCase):
                 charges: [0,]
                 defect_coords: [0.0, 0.0, 0.0]
         bond_distortions: [0.3,]
+        POTCAR:
+          Cd: Cd_GW
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
@@ -607,6 +609,11 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertEqual(incar_dict["IBRION"], 1)
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        # Check POTCAR generation
+        with open(f"{defect_name}_0/{dist}/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
+
         shutil.rmtree(f"{defect_name}_0")
         os.remove("INCAR")
 
@@ -756,7 +763,10 @@ width: 0.3
 max_attempts: 10000
 max_disp: 1.0
 seed: 20
-local_rattle: False"""
+local_rattle: False
+POTCAR:
+  Cd: Cd_GW
+"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         runner = CliRunner()
@@ -786,6 +796,10 @@ local_rattle: False"""
             self.assertTrue(
                 os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}")
             )
+        # Check POTCAR file
+        with open(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
         # Check KPOINTS file
         kpoints = Kpoints.from_file(
             f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS"
