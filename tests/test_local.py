@@ -629,6 +629,41 @@ class DistortionLocalTestCase(unittest.TestCase):
         shutil.rmtree(f"{defect_name}_0")
         os.remove("INCAR")
 
+        # test warning when input file doesn't match expected format:
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "--code",
+                    "vasp",
+                    "--input_file",
+                    "test_config.yml",
+                    "--config",
+                    "test_config.yml",
+                ],
+                catch_exceptions=True,
+            )
+        dist = "Unperturbed"
+        incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        shutil.rmtree(f"{defect_name}_0")
+
         # Test CASTEP
         with open("castep.param", "w") as fp:
             fp.write("XC_FUNCTIONAL: PBE \n MAX_SCF_CYCLES: 100 \n CHARGE: 0")
@@ -822,6 +857,37 @@ POTCAR:
         self.assertEqual(incar.pop("IBRION"), 2)
         self.assertEqual(incar.pop("EDIFF"), 1e-5)
         self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
+
+        # test warning when input file doesn't match expected format:
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "-v",
+                    "--input_file",
+                    f"test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
+        incar_dict = Incar.from_file("Vac_Cd_mult32_0/Bond_Distortion_-50.0%/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}"))
 
 
 if __name__ == "__main__":
