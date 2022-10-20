@@ -388,7 +388,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
@@ -420,7 +420,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2_Int_Cd_2",
+            "-60.0%__num_neighbours=2__Int_Cd_2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
