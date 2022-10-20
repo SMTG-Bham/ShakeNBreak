@@ -1895,5 +1895,87 @@ class InputTestCase(unittest.TestCase):
             test_dist_dict = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_defect_dict.json")
             self.assertDictEqual(test_dist_dict, loadfn("distorted_defects_dict.json"))
 
+    def test_from_structures(self):
+        """Test from_structures() method of Distortion() class."""
+        # Test normal behaviour (no defect_index or defect_coords)
+        vacancies = {
+            "vacancies": [
+                self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                self.cdte_defect_dict["vacancies"][1]["supercell"]["structure"],
+            ],
+            "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+        }
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_structures(
+                vacancies,
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                        "v_Te": self.cdte_defects["vacancies"][1],
+                    }
+                }
+            )
+        # Test defect position given with `defect_coords`
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_structures(
+                {
+                    "vacancies": [
+                        {
+                            "structure": self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                            "defect_coords": [0,0,0],
+                        }
+                    ],
+                    "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+                }
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                    }
+                }
+            )
+        # Test defect position given with `defect_index`
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_structures(
+                {
+                    "vacancies": [
+                        {
+                            "structure": self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                            "defect_index": 0,
+                        }
+                    ],
+                    "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+                }
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                    }
+                }
+            )
+
+
 if __name__ == "__main__":
     unittest.main()

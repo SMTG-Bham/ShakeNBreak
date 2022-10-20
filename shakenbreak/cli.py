@@ -260,7 +260,6 @@ def identify_defect(
     if defect_type == "vacancy":
         defect_site = bulk_structure[defect_index]
     else:
-        # print(f"Defect is {defect_type}")  # TODO: remove
         defect_site = defect_structure[defect_index]
 
     if defect_index is not None and auto_matching_defect_index is not None:
@@ -321,7 +320,6 @@ def identify_defect(
                 " which is incompatible. Please update this package"
                 " and try again."
             )
-    # print("Defect site index", defect.defect_site_index)  # TODO: Remove
     return defect
 
 
@@ -730,7 +728,7 @@ def generate(
     )
     if verbose and defect_index is None and defect_coords is None:
         # TODO: better to always print this when verbose = True
-        # in case user gives wrong defect position
+        # in case user gives wrong defect position?
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -1096,7 +1094,6 @@ def generate_all(
             defect_index=defect_index,
             defect_coords=defect_coords,
         )
-        # print("Defect site:", defect_object.site) # TODO: remove line
         if verbose:
             site = defect_object.site
             site_info = (
