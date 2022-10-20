@@ -485,8 +485,11 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
@@ -541,12 +544,21 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_0/vac_1_Cd_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_-1/vac_1_Cd_-1.png")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+            )
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
