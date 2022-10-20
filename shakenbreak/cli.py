@@ -657,6 +657,11 @@ def generate(
             incar = Incar.from_file(input_file)
             incar_settings = incar.as_dict()
             [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+            if not incar_settings:
+                warnings.warn(
+                    f"Input file {input_file} specified but no valid INCAR tags found. "
+                    f"Should be in the format of VASP INCAR file."
+                )
         else:
             incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
@@ -987,6 +992,11 @@ def generate_all(
             incar = Incar.from_file(input_file)
             incar_settings = incar.as_dict()
             [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+            if incar_settings == {}:
+                warnings.warn(
+                    f"Input file {input_file} specified but no valid INCAR tags found. "
+                    f"Should be in the format of VASP INCAR file."
+                )
         else:
             incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
