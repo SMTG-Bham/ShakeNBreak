@@ -10,16 +10,18 @@ import json
 import os
 import warnings
 from collections import Counter
-from typing import Optional, Tuple
+from importlib.metadata import version
+from typing import Optional, Tuple, Type
 
 import ase
 import numpy as np
 from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
+from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Composition, Element
+from pymatgen.core.structure import Composition, Element, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
@@ -371,6 +373,307 @@ def _calc_number_neighbours(num_electrons: int) -> int:
     else:
         num_neighbours = abs(num_electrons)
     return abs(num_neighbours)
+
+
+def _identify_defect(
+    defect_structure, bulk_structure, defect_coords=None, defect_index=None
+) -> Defect:
+    """
+    By comparing the defect and bulk structures, identify the defect present and its site in
+    the supercell, and generate a pymatgen defect object
+    (pymatgen.analysis.defects.core.Defect) from this.
+
+    Args:
+        defect_structure (:obj:`Structure`):
+            defect structure
+        bulk_structure (:obj:`Structure`):
+            bulk structure
+        defect_coords (:obj:`list`):
+            Fractional coordinates of the defect site in the supercell.
+        defect_index (:obj:`int`):
+            Index of the defect site in the supercell.
+
+    Returns: :obj:`Defect`
+    """
+    natoms_defect = len(defect_structure)
+    natoms_bulk = len(bulk_structure)
+    if natoms_defect == natoms_bulk - 1:
+        defect_type = "vacancy"
+    elif natoms_defect == natoms_bulk + 1:
+        defect_type = "interstitial"
+    elif natoms_defect == natoms_bulk:
+        defect_type = "substitution"
+    else:
+        raise ValueError(
+            f"Could not identify defect type from number of atoms in defect ({natoms_defect}) "
+            f"and bulk ({natoms_bulk}) structures. "
+            "ShakeNBreak is currently only built for point defects, please contact the "
+            "developers if you would like to use the method for complex defects"
+        )
+
+    if defect_coords is not None:
+        if defect_index is None:
+            site_displacement_tol = (
+                0.01  # distance tolerance for site matching to identify defect, increases in
+                # jumps of 0.1 Å
+            )
+
+            def _possible_sites_in_sphere(structure, frac_coords, tol):
+                """Find possible sites in sphere of radius tol."""
+                return sorted(
+                    structure.get_sites_in_sphere(
+                        structure.lattice.get_cartesian_coords(frac_coords),
+                        tol,
+                        include_index=True,
+                    ),
+                    key=lambda x: x[1],
+                )
+
+            max_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                bulk_structure, defect_coords, 2.5
+            )
+            max_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                defect_structure, defect_coords, 2.5
+            )
+            expanded_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                bulk_structure, defect_coords, 3.0
+            )
+            expanded_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                defect_structure, defect_coords, 3.0
+            )
+
+            # there should be one site (including specie identity) which does not match between
+            # bulk and defect structures
+            def _remove_matching_sites(bulk_site_list, defect_site_list):
+                """Remove matching sites from bulk and defect structures."""
+                bulk_sites_list = list(bulk_site_list)
+                defect_sites_list = list(defect_site_list)
+                for defect_site in defect_sites_list:
+                    for bulk_site in bulk_sites_list:
+                        if (
+                            defect_site.distance(bulk_site) < 0.5
+                            and defect_site.specie == bulk_site.specie
+                        ):
+                            if bulk_site in bulk_sites_list:
+                                bulk_sites_list.remove(bulk_site)
+                            if defect_site in defect_sites_list:
+                                defect_sites_list.remove(defect_site)
+                return bulk_sites_list, defect_sites_list
+
+            non_matching_bulk_sites, _ = _remove_matching_sites(
+                max_possible_defect_sites_in_bulk_struc,
+                expanded_possible_defect_sites_in_defect_struc,
+            )
+            _, non_matching_defect_sites = _remove_matching_sites(
+                expanded_possible_defect_sites_in_bulk_struc,
+                max_possible_defect_sites_in_defect_struc,
+            )
+
+            if (
+                len(non_matching_bulk_sites) == 0
+                and len(non_matching_defect_sites) == 0
+            ):
+                warnings.warn(
+                    f"Coordinates {defect_coords} were specified for (auto-determined) "
+                    f"{defect_type} defect, but there are no extra/missing/different species "
+                    f"within a 2.5 Å radius of this site when comparing bulk and defect "
+                    f"structures. "
+                    f"If you are trying to generate non-defect polaronic distortions, please use "
+                    f"the distort() and rattle() functions in shakenbreak.distortions via the "
+                    f"Python API. "
+                    f"Reverting to auto-site matching instead."
+                )
+
+            else:
+                searched = "bulk or defect"
+                possible_defects = []
+                while site_displacement_tol < 2.5:  # loop over distance tolerances
+                    possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
+                        bulk_structure, defect_coords, site_displacement_tol
+                    )
+                    possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
+                        defect_structure, defect_coords, site_displacement_tol
+                    )
+                    if (
+                        defect_type == "vacancy"
+                    ):  # defect site should be in bulk structure but not defect structure
+                        possible_defects, _ = _remove_matching_sites(
+                            possible_defect_sites_in_bulk_struc,
+                            expanded_possible_defect_sites_in_defect_struc,
+                        )
+                        searched = "bulk"
+                    else:
+                        # defect site should be in defect structure but not bulk structure
+                        _, possible_defects = _remove_matching_sites(
+                            expanded_possible_defect_sites_in_bulk_struc,
+                            possible_defect_sites_in_defect_struc,
+                        )
+                        searched = "defect"
+
+                    if len(possible_defects) == 1:
+                        defect_index = possible_defects[0][2]
+                        break
+
+                    site_displacement_tol += 0.1
+
+                if defect_index is None:
+                    warnings.warn(
+                        f"Could not locate (auto-determined) {defect_type} defect site within a "
+                        f"2.5 Å radius of specified coordinates {defect_coords} in {searched} "
+                        f"structure (found {len(possible_defects)} possible defect sites). "
+                        "Will attempt auto site-matching instead."
+                    )
+
+        else:  # both defect_coords and defect_index given
+            warnings.warn(
+                "Both defect_coords and defect_index were provided. Only one is needed, so "
+                "just defect_index will be used to determine the defect site"
+            )
+
+    # if defect_index is None:
+    # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
+    # so we can warn user if manual specification and auto site-matching give conflicting results
+    site_displacement_tol = (
+        0.01  # distance tolerance for site matching to identify defect, increases in
+        # jumps of 0.1 Å
+    )
+    auto_matching_defect_index = None
+    possible_defects = []
+    try:
+        while site_displacement_tol < 1.5:  # loop over distance tolerances
+            bulk_sites = [site.frac_coords for site in bulk_structure]
+            defect_sites = [site.frac_coords for site in defect_structure]
+            dist_matrix = defect_structure.lattice.get_all_distances(
+                bulk_sites, defect_sites
+            )
+            min_dist_with_index = [
+                [
+                    min(dist_matrix[bulk_index]),
+                    int(bulk_index),
+                    int(dist_matrix[bulk_index].argmin()),
+                ]
+                for bulk_index in range(len(dist_matrix))
+            ]  # list of [min dist, bulk ind, defect ind]
+
+            site_matching_indices = []
+            if defect_type in ["vacancy", "interstitial"]:
+                for mindist, bulk_index, def_struc_index in min_dist_with_index:
+                    if mindist < site_displacement_tol:
+                        site_matching_indices.append([bulk_index, def_struc_index])
+                    elif defect_type == "vacancy":
+                        possible_defects.append([bulk_index, bulk_sites[bulk_index][:]])
+
+                if defect_type == "interstitial":
+                    possible_defects = [
+                        [ind, fc[:]]
+                        for ind, fc in enumerate(defect_sites)
+                        if ind not in np.array(site_matching_indices)[:, 1]
+                    ]
+
+            elif defect_type == "substitution":
+                for mindist, bulk_index, def_struc_index in min_dist_with_index:
+                    species_match = (
+                        bulk_structure[bulk_index].specie
+                        == defect_structure[def_struc_index].specie
+                    )
+                    if mindist < site_displacement_tol and species_match:
+                        site_matching_indices.append([bulk_index, def_struc_index])
+
+                    elif not species_match:
+                        possible_defects.append(
+                            [def_struc_index, defect_sites[def_struc_index][:]]
+                        )
+
+            if len(set(np.array(site_matching_indices)[:, 0])) != len(
+                set(np.array(site_matching_indices)[:, 1])
+            ):
+                raise ValueError(
+                    "Error occurred in site_matching routine. Double counting of site matching "
+                    f"occurred: {site_matching_indices}\nAbandoning structure parsing."
+                )
+
+            if len(possible_defects) == 1:
+                auto_matching_defect_index = possible_defects[0][0]
+                break
+
+            site_displacement_tol += 0.1
+    except Exception:
+        pass  # failed auto-site matching, rely on user input or raise error if no user input
+
+    if defect_index is None and auto_matching_defect_index is None:
+        raise ValueError(
+            "Defect coordinates could not be identified from auto site-matching. "
+            f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
+            "structures correspond to the same supercell and/or specify defect site with "
+            "'defect_coords' or 'defect_index' keys in the input dictionary."
+        )
+    if defect_index is None and auto_matching_defect_index is not None:
+        defect_index = auto_matching_defect_index
+
+    if defect_type == "vacancy":
+        defect_site = bulk_structure[defect_index]
+    else:
+        defect_site = defect_structure[defect_index]
+
+    if defect_index is not None and auto_matching_defect_index is not None:
+        if defect_index != auto_matching_defect_index:
+            if defect_type == "vacancy":
+                auto_matching_defect_site = bulk_structure[auto_matching_defect_index]
+            else:
+                auto_matching_defect_site = defect_structure[auto_matching_defect_index]
+
+            def _site_info(site):
+                return (
+                    f"{site.species_string} at [{site._frac_coords[0]:.3f},"
+                    f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
+                )
+
+            if defect_coords is not None:
+                warnings.warn(
+                    f"Note that specified coordinates {defect_coords} for (auto-determined)"
+                    f" {defect_type} defect gave a match to defect site:"
+                    f" {_site_info(defect_site)} in {searched} structure, but auto site-matching "
+                    f"predicted a different defect site: {_site_info(auto_matching_defect_site)}. "
+                    f"Will use user-specified site: {_site_info(defect_site)}."
+                )
+            else:
+                warnings.warn(
+                    f"Note that specified defect index {defect_index} for (auto-determined)"
+                    f" {defect_type} defect gives defect site: {_site_info(defect_site)}, "
+                    f"but auto site-matching predicted a different defect site:"
+                    f" {_site_info(auto_matching_defect_site)}. "
+                    f"Will use user-specified site: {_site_info(defect_site)}."
+                )
+
+    for_monty_defect = {
+        "@module": "pymatgen.analysis.defects.core",
+        "@class": defect_type.capitalize(),
+        "structure": bulk_structure,
+        "site": defect_site,
+    }
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError:
+        # This means we have the old version of pymatgen-analysis-defects,
+        # where the class attributes were different (defect_site instead of site
+        # and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            return TypeError(
+                f"You have the version {v_ana_def}"
+                " of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+        if v_pmg < "2022.7.25":
+            return TypeError(
+                f"You have the version {v_pmg}"
+                " of the package `pymatgen`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+    return defect
 
 
 # Main functions
@@ -889,6 +1192,10 @@ class Distortions:
             self.defects_dict = defects_dict
 
         # Check if all expected oxidation states are provided
+        if len(list(list(self.defects_dict.values())[0].values())) == 0:
+            raise IndexError(
+                "Problem parsing input defects. Please check `defects_dict`."
+            )
         defect_object = list(list(self.defects_dict.values())[0].values())[0]
         bulk_comp = defect_object.structure.composition
         guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
@@ -2039,5 +2346,176 @@ class Distortions:
             **kwargs,
         )
 
+    @classmethod
+    def from_structures(
+        cls,
+        structures_dict: dict,
+        oxidation_states: Optional[dict] = None,
+        dict_number_electrons_user: Optional[dict] = None,
+        distortion_increment: float = 0.1,
+        bond_distortions: Optional[list] = None,
+        local_rattle: bool = False,
+        stdev: float = 0.25,
+        distorted_elements: Optional[dict] = None,
+        **kwargs,  # for mc rattle
+    ) -> None:
+        """
+        Initialise Distortion() class using a dictionary of bulk and defect
+        structures (instead of pymatgen-analysis-defects Defect() objects).
 
-# TODO: Add from_structures() method to generate distortions from defect structures
+        Args:
+            structures_dict (:obj:`dict`):
+                Dictionary of defect and bulk structures
+                (eg.:
+                {
+                    "vacancies": [Structure, Structure, ...],
+                    "substitutions": [Structure, ...],
+                    "interstitials": [Structure, ...],
+                    "bulk": Structure,
+                })
+                Alternatively, the defect index or the defect fractional
+                coordinates can provided for each defect like this:
+                {
+                    "vacancies": [
+                        {"structure": Structure, "defect_coords": [0.5, 0.5, 0.5]},
+                        ...
+                    ],
+                    "interstitials": [
+                        {"structure": Structure, "defect_index": -1},
+                        ...
+                    ],
+                    "bulk": Structure,
+                }
+            oxidation_states (:obj:`dict`):
+                Dictionary of oxidation states for species in your material,
+                used to determine the number of defect neighbours to distort
+                (e.g {"Cd": +2, "Te": -2}). If none is provided, the oxidation
+                states will be guessed based on the bulk composition and most
+                common oxidation states of any extrinsic species.
+            dict_number_electrons_user (:obj:`dict`):
+                Optional argument to set the number of extra/missing charge
+                (negative of electron count change) for the input defects
+                in their neutral state, as a dictionary with format
+                {'defect_name': charge_change} where charge_change is the
+                negative of the number of extra/missing electrons.
+                (Default: None)
+            distortion_increment (:obj:`float`):
+                Bond distortion increment. Distortion factors will range from
+                0 to +/-0.6, in increments of `distortion_increment`.
+                Recommended values: 0.1-0.3
+                (Default: 0.1)
+            bond_distortions (:obj:`list`):
+                List of bond distortions to apply to nearest neighbours,
+                instead of the default set (e.g. [-0.5, 0.5]).
+                (Default: None)
+            local_rattle (:obj:`bool`):
+                Whether to apply random displacements that tail off as we move
+                away from the defect site. Not recommended as typically worsens
+                performance. If False (default), all supercell sites are rattled
+                with the same amplitude (full rattle).
+                (Default: False)
+            stdev (:obj:`float`):
+                Standard deviation (in Angstroms) of the Gaussian distribution
+                from which random atomic displacement distances are drawn during
+                rattling. Recommended values: 0.25, or 0.15 for strongly-bound
+                /ionic materials.
+                (Default: 0.25)
+            distorted_elements (:obj:`dict`):
+                Optional argument to specify the neighbouring elements to
+                distort for each defect, in the form of a dictionary with
+                format {'defect_name': ['element1', 'element2', ...]}
+                (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
+                the defect are chosen.
+                (Default: None)
+            **kwargs:
+                Additional keyword arguments to pass to `hiphive`'s
+                `mc_rattle` function. These include:
+                - d_min (:obj:`float`):
+                    Minimum interatomic distance (in Angstroms). Monte Carlo rattle
+                    moves that put atoms at distances less than this will be heavily
+                    penalised.
+                    (Default: 2.25)
+                - max_disp (:obj:`float`):
+                    Maximum atomic displacement (in Angstroms) during Monte Carlo
+                    rattling. Rarely occurs and is used primarily as a safety net.
+                    (Default: 2.0)
+                - max_attempts (:obj:`int`):
+                    Limit for how many attempted rattle moves are allowed a single atom.
+                - active_atoms (:obj:`list`):
+                    List of the atomic indices which should undergo Monte
+                    Carlo rattling. By default, all atoms are rattled.
+                    (Default: None)
+                - seed (:obj:`int`):
+                    Seed for setting up NumPy random state from which random
+                    numbers are generated.
+
+        """
+        # Check bulk entry in DOPED/PyCDT defect_dict
+        if "bulk" not in structures_dict:
+            # No bulk entry - ask user to provide it
+            warnings.warn(
+                """No bulk entry in `structures_dict`. Please try again
+                providing a `bulk` entry in `structures_dict`."""
+            )
+            return None
+        # Transform structure to defect object
+        pymatgen_defects_dict = {
+            defect_type: []
+            for defect_type in structures_dict.keys()
+            if defect_type != "bulk"
+        }
+        for defect_type in pymatgen_defects_dict:
+            for element in structures_dict[defect_type]:
+                if isinstance(element, Structure):
+                    defect = _identify_defect(
+                        defect_structure=element,
+                        bulk_structure=structures_dict["bulk"],
+                    )
+                    if defect:
+                        pymatgen_defects_dict[defect_type].append(defect)
+                elif isinstance(element, dict):
+                    if "defect_index" in element or "defect_coords" in element:
+                        defect = _identify_defect(
+                            defect_structure=element["structure"],
+                            bulk_structure=structures_dict["bulk"],
+                            defect_coords=element.get("defect_coords"),
+                            defect_index=element.get("defect_index"),
+                        )
+                        if defect:
+                            pymatgen_defects_dict[defect_type].append(defect)
+                        else:
+                            warnings.warn(
+                                "Failed to identify defect in structure"
+                                f" with defect_index {element.get('defect_index')}"
+                                f" and/or defect_coords {element.get('defect_coords')}"
+                            )
+                else:
+                    raise TypeError(
+                        "Wrong format for `structures_dict`. "
+                        "It should be a dictionary of "
+                        "Structures or a dictionary of lists!"
+                    )
+
+        # Check pymatgen_defects_dict not empty
+        if not any(
+            len(defect_list) > 0 for defect_list in pymatgen_defects_dict.values()
+        ):
+            raise ValueError(
+                "Failed parsing defects from `structures_dict`. "
+                "Please check the format of the input dictionary "
+                "and provide 'defect_index' or 'defect_coords'."
+            )
+        return cls(
+            defects_dict=pymatgen_defects_dict,
+            oxidation_states=oxidation_states,
+            dict_number_electrons_user=dict_number_electrons_user,
+            distortion_increment=distortion_increment,
+            bond_distortions=bond_distortions,
+            local_rattle=local_rattle,
+            stdev=stdev,
+            distorted_elements=distorted_elements,
+            **kwargs,
+        )
+
+
+# TODO: Add test for from_structures() method

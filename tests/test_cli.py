@@ -1,3 +1,4 @@
+import copy
 import datetime
 import json
 import os
@@ -6,15 +7,12 @@ import shutil
 import subprocess
 import unittest
 import warnings
-import copy
 
 import numpy as np
 import yaml
-
 # Click
 from click.testing import CliRunner
 from monty.serialization import loadfn
-
 # Pymatgen
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar
