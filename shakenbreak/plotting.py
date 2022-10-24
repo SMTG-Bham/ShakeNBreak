@@ -1199,15 +1199,31 @@ def plot_all_defects(
             output_path=output_path
         )
     except FileNotFoundError:
-        if verbose:
-            warnings.warn(
-                f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents (to specify which neighbour atoms were distorted in "
-                "plot text)."
+        # check if any defect_species folders have distortion_metadata.json files
+        defect_species_list = [
+            f"{defect}_{charge}"
+            for defect in defects_dict
+            for charge in defects_dict[defect]
+        ]
+        if any(
+            os.path.isfile(
+                os.path.join(output_path, defect_species, "distortion_metadata.json")
             )
-        distortion_metadata = None
-        num_nearest_neighbours = None
-        neighbour_atom = None
+            for defect_species in defect_species_list
+        ):
+            distortion_metadata = "in_defect_species_folders"
+
+        else:
+            if verbose:
+                warnings.warn(
+                    f"Path {output_path}/distortion_metadata.json does not exist, "
+                    f"and distortion_metadata.json files not found in defect folders. "
+                    "Will not parse its contents (to specify which neighbour atoms were distorted "
+                    "in plot text)."
+                )
+            distortion_metadata = None
+            num_nearest_neighbours = None
+            neighbour_atom = None
 
     figures = {}
     for defect in defects_dict:
@@ -1240,7 +1256,17 @@ def plot_all_defects(
             # If a significant energy lowering was found, then further analyse this defect
             if float(-1 * energy_diff) > abs(min_e_diff):
                 # energy_diff is negative if energy is lowered
-                if distortion_metadata:
+                if distortion_metadata == "in_defect_species_folders":
+                    try:
+                        (
+                            num_nearest_neighbours,
+                            neighbour_atom,
+                        ) = analysis._read_distortion_metadata(
+                            output_path=f"{output_path}/{defect_species}"
+                        )
+                    except FileNotFoundError:  # distortion_metadata.json not found in this folder
+                        pass
+                if distortion_metadata and type(distortion_metadata) == dict:
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
                     )
@@ -1394,7 +1420,8 @@ def plot_defect(
         except FileNotFoundError:
             if verbose:
                 warnings.warn(
-                    f"Path {output_path}/distortion_metadata.json does not exist. Will not parse "
+                    f"Path {output_path}/distortion_metadata.json or {output_path}/"
+                    f"{defect_species}/distortion_metadata.json not found. Will not parse "
                     f"its contents (to specify which neighbour atoms were distorted in plot text)."
                 )
             pass
@@ -2049,10 +2076,11 @@ def plot_datasets(
     # distortion_range is sorted_distortions range, including 0 if above/below this range
     distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
     # set xlim to distortion_range + 5% (matplotlib default padding)
-    ax.set_xlim(
-        distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
-        distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
-    )
+    if distortion_range[1] - distortion_range[0] > 0:
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E

@@ -2320,9 +2320,9 @@ Chosen VASP error message: {error_string}
         self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.png", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. "
-            f"Will not parse its contents (to specify which neighbour atoms were distorted in "
-            f"plot text).",
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or {self.EXAMPLE_RESULTS}/"
+            f"vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
+            f"its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
         self.assertTrue(
@@ -2398,11 +2398,10 @@ Chosen VASP error message: {error_string}
         )
         if w:
             [
-                self.assertNotEqual(
-                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
-                    f"not parse its contents (to specify which neighbour atoms were distorted in "
-                    f"plot text).",
-                    str(warning.message),
+                self.assertNotIn(  # no distortion_metadata.json warning
+                    f"Will not parse its contents (to specify which neighbour atoms were "
+                    f"distorted in plot text).",
+                    str(w[0].message),
                 )
                 for warning in w
             ]  # distortion_metadata file is present
@@ -2432,7 +2431,8 @@ Chosen VASP error message: {error_string}
         self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will not parse "
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or {self.EXAMPLE_RESULTS}/"
+            f"vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
             f"its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
@@ -2476,9 +2476,11 @@ Chosen VASP error message: {error_string}
         self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json "
-            f"does not exist. Will not parse its contents (to specify which neighbour atoms were "
-            f"distorted in plot text).",
+            f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json or"
+            f" {self.EXAMPLE_RESULTS}/"
+            f"{defect_name}_defect_folder/vac_1_Ti_0/distortion_metadata.json not found. "
+            f"Will not parse its contents (to specify which neighbour atoms were distorted in "
+            f"plot text).",
             str(w[0].message),
         )
         self.assertTrue(
@@ -2529,12 +2531,13 @@ Chosen VASP error message: {error_string}
         self.assertTrue(
             any(
                 [
-                    str(warning.message)
-                    == f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json does not exist. Will "
-                    f"not parse its contents (to specify which neighbour atoms were distorted in "
-                    f"plot text).",
+                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or "
+                    f"{self.EXAMPLE_RESULTS}/"
+                    f"vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
+                    f"its contents (to specify which neighbour atoms were distorted in plot "
+                    f"text)." == str(warning.message)
+                    for warning in w
                 ]
-                for warning in w
             )
         )
         self.assertTrue(os.path.exists("./vac_1_Ti_0.svg"))
