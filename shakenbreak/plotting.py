@@ -1718,11 +1718,15 @@ def plot_colorbar(
             min(sorted_distortions + (0,)),
             max(sorted_distortions + (0,)),
         )
-        # set xlim to distortion_range + 5% (matplotlib default padding)
-        ax.set_xlim(
-            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
-            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
-        )
+        # set xlim to distortion_range + 5% (matplotlib default padding), if distortion_range is
+        # not zero (only rattled and unperturbed)
+        if distortion_range[1] - distortion_range[0] > 0:
+            ax.set_xlim(
+                distortion_range[0]
+                - 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[1]
+                + 0.05 * (distortion_range[1] - distortion_range[0]),
+            )
 
         # Formatting of tick labels.
         # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
