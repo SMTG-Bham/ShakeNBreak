@@ -1085,8 +1085,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
     # Most keywords of `plot_all_defects` have already been tested by tests of
     # `plot_defect`, `plot_datasets` and `plot_colorbar`. Now we test:
     # incorrect `output_path`, non-existent defect directory,
-    # correct output of `plot_all_defects` (dict of figures), behaviour when distortion_metadata not found
-    # or missing entry for a given charge state, and finally the keyword `min_e_diff`
+    # correct output of `plot_all_defects` (dict of figures), behaviour when distortion_metadata
+    # not found or missing entry for a given charge state, and finally the keyword `min_e_diff`
 
     def test_plot_all_defects_incorrect_output_path(self):
         """Test plot_all_defects() function when `output_path` is incorrect"""
@@ -1126,7 +1126,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
     def test_plot_defects_output(self):
-        """Test output of plot_all_defects() function. Test plot still geenrated when
+        """Test output of plot_all_defects() function. Test plot still generated when
         distortion_metadata.json does not contain info for a given charge state"""
         fig_dict = plotting.plot_all_defects(
             output_path=self.VASP_CDTE_DATA_DIR,
