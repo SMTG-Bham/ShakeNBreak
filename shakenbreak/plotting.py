@@ -1377,9 +1377,14 @@ def plot_defect(
     # If not specified, try to parse from distortion_metadata.json file
     if not neighbour_atom and not num_nearest_neighbours:
         try:
-            distortion_metadata = analysis._read_distortion_metadata(
-                output_path=output_path
-            )
+            try:
+                distortion_metadata = analysis._read_distortion_metadata(
+                    output_path=output_path
+                )
+            except FileNotFoundError:
+                distortion_metadata = analysis._read_distortion_metadata(
+                    output_path=f"{output_path}/{defect_species}"  # if user moved file
+                )
             if distortion_metadata:
                 num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                     distortion_metadata=distortion_metadata,
