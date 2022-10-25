@@ -1402,8 +1402,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--max_energy",
     "-max",
-    help="Maximum energy (in eV), relative to the unperturbed structure,"
-    " to show on the plot.",
+    help="Maximum energy (in chosen `units`), relative to the "
+    "unperturbed structure, to show on the plot.",
     type=float,
     default=0.5,
     show_default=True,

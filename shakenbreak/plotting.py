@@ -582,7 +582,7 @@ def _change_energy_units_to_meV(
     """
     if "meV" not in y_label:
         y_label = y_label.replace("eV", "meV")
-    if max_energy_above_unperturbed < 1:  # assume eV
+    if max_energy_above_unperturbed < 4:  # assume eV
         max_energy_above_unperturbed = (
             max_energy_above_unperturbed * 1000
         )  # convert to meV
@@ -1159,8 +1159,8 @@ def plot_all_defects(
             matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in eV), relative to the unperturbed structure, to
-            show on the plot.
+            Maximum energy (in chosen `units`), relative to the unperturbed structure,
+            to show on the plot.
             (Default: 0.5 eV)
         units (:obj:`str`):
             Units for energy, either "eV" or "meV".
@@ -1315,7 +1315,7 @@ def plot_defect(
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
     verbose: bool = True,
-) -> Figure:
+) -> Optional[Figure]:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
     any energy-lowering distortions.
@@ -1443,6 +1443,17 @@ def plot_defect(
             energies_dict=energies_dict,
         )
 
+    if units == "meV":
+        (
+            energies_dict,
+            max_energy_above_unperturbed,
+            y_label,
+        ) = _change_energy_units_to_meV(
+            energies_dict=energies_dict,
+            max_energy_above_unperturbed=max_energy_above_unperturbed,
+            y_label=y_label,
+        )  # convert energy units from eV to meV, and update y label
+
     energies_dict, disp_dict = _remove_high_energy_points(
         energies_dict=energies_dict,
         max_energy_above_unperturbed=max_energy_above_unperturbed,
@@ -1462,17 +1473,6 @@ def plot_defect(
         )  # Format defect name for title and axis labels
     except Exception:  # if formatting fails, just use the defect_species name
         defect_name = defect_species
-
-    if units == "meV":
-        (
-            energies_dict,
-            max_energy_above_unperturbed,
-            y_label,
-        ) = _change_energy_units_to_meV(
-            energies_dict=energies_dict,
-            max_energy_above_unperturbed=max_energy_above_unperturbed,
-            y_label=y_label,
-        )  # convert energy units from eV to meV, and update y label
 
     if num_nearest_neighbours and neighbour_atom:
         legend_label = f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
@@ -1537,7 +1537,7 @@ def plot_colorbar(
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
     verbose: Optional[bool] = True,
-) -> Figure:
+) -> Optional[Figure]:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
     similarity between different final configurations.
@@ -1815,7 +1815,7 @@ def plot_datasets(
     title: Optional[str] = None,
     neighbour_atom: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
-    max_energy_above_unperturbed: Optional[float] = 0.6,
+    max_energy_above_unperturbed: Optional[float] = 0.5,
     y_label: str = r"Energy (eV)",
     markers: Optional[list] = None,
     linestyles: Optional[list] = None,

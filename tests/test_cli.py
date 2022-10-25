@@ -2428,14 +2428,15 @@ Chosen VASP error message: {error_string}
             f"and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
-        self.assertEqual(w[0].category, UserWarning)
-        self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or {self.EXAMPLE_RESULTS}/"
-            f"vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
-            f"its contents (to specify which neighbour atoms were distorted in plot text).",
-            str(w[0].message),
-        )
+        self.assertNotIn(
+            f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output
+        )  # non-verbose
+        self.assertTrue(
+            len([warning for warning in w if warning.category == UserWarning]) == 0
+        )  # non-verbose
+        self.assertFalse(
+            any([f"distortion_metadata.json" in str(warning.message) for warning in w])
+        )  # no distortion_metadata.json warning with non-verbose option
         self.assertTrue(os.path.exists("./vac_1_Ti_0.png"))
         self.assertTrue(os.path.exists("./vac_1_Ti_0.yaml"))
         # Figures are compared in the local test since on Github Actions images are saved
@@ -2465,23 +2466,33 @@ Chosen VASP error message: {error_string}
                     "-d",
                     defect_name,
                     "-cb",
+                    "-v",
                 ],
                 catch_exceptions=False,
             )
-        self.assertNotIn(
+        self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
             f"and unperturbed: -3.26 eV.",
             result.output,
-        )  # non-verbose output
-        self.assertIn(f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output)
-        self.assertEqual(w[0].category, UserWarning)
-        self.assertEqual(
-            f"Path {self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/distortion_metadata.json or"
-            f" {self.EXAMPLE_RESULTS}/"
-            f"{defect_name}_defect_folder/vac_1_Ti_0/distortion_metadata.json not found. "
-            f"Will not parse its contents (to specify which neighbour atoms were distorted in "
-            f"plot text).",
-            str(w[0].message),
+        )  # verbose output
+        self.assertIn(
+            f"Plot saved to vac_1_Ti_0/vac_1_Ti_0.svg", result.output
+        )  # verbose
+        self.assertTrue(
+            len([warning for warning in w if warning.category == UserWarning]) == 1
+        )  # verbose
+        self.assertTrue(
+            any(
+                [  # verbose
+                    f"Path {self.EXAMPLE_RESULTS}"
+                    f"/{defect_name}_defect_folder/distortion_metadata.json or "
+                    f"{self.EXAMPLE_RESULTS}/"
+                    f"{defect_name}_defect_folder/vac_1_Ti_0/distortion_metadata.json not found. "
+                    f"Will not parse its contents (to specify which neighbour atoms were "
+                    f"distorted in plot text)." == str(warning.message)
+                    for warning in w
+                ]
+            )
         )
         self.assertTrue(
             os.path.exists(
