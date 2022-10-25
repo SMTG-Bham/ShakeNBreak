@@ -2630,6 +2630,44 @@ Chosen VASP error message: {error_string}
         )
         self.tearDown()
 
+        # Test --all option, with --min_energy option
+        defect = "vac_1_Ti_0"
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "--all",
+                "-min",
+                "1",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "png",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(  # energy diff of 3.2 eV larger than min_energy
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
+        self.assertFalse(  # energy diff of 0.75 eV less than min_energy
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+            )
+        )
+        self.assertFalse(  # energy diff of 0.9 eV less than min_energy
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+            )
+        )
+        [
+            os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
+            for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
+            if "yaml" in file
+        ]
+
+
     def test_regenerate(self):
         """Test regenerate() function"""
         with warnings.catch_warnings(record=True) as w:

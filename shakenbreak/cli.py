@@ -1346,6 +1346,16 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     show_default=True,
 )
 @click.option(
+    "--min_energy",
+    "-min",
+    help="Minimum energy difference (in eV) between the ground-state "
+    "distortion and the `Unperturbed` structure to generate the "
+    "distortion plot, when `--all` is set.",
+    default=0.05,
+    type=float,
+    show_default=True,
+)
+@click.option(
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder(s). "
@@ -1428,6 +1438,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 def plot(
     defect,
     all,
+    min_energy,
     path,
     code,
     colorbar,
@@ -1466,6 +1477,7 @@ def plot(
             add_colorbar=colorbar,
             metric=metric,
             units=units,
+            min_e_diff=min_energy,
             save_format=format,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
