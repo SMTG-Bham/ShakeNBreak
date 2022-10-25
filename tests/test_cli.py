@@ -1915,7 +1915,7 @@ Chosen VASP error message: {error_string}
         residual_forces_outcar_string = (
             (
                 """
-                    energy  without entropy=      675.21988502  energy(sigma->0) =      -675.21988502
+                    energy  without entropy=      675.21988502  energy(sigma->0) =    -675.21988502
                 """
                 * 70
             )
@@ -1960,6 +1960,64 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces"
         )
+
+        # test warning when all parsed distortions are >0.1 eV higher energy than unperturbed
+        # test parsing energies of residual-forces calculations
+        defect = "vac_1_Ti_3"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/{defect}",
+        )
+        high_energy_outcar_string = """
+        energy  without entropy=      -675.21988502  energy(sigma->0) =      -675.21988502
+        """  # unperturbed final energy is -1173.02056574 eV
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%/OUTCAR",
+            "w+",
+        ) as f:
+            f.write(high_energy_outcar_string)
+
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        high_energies_dict = {
+            "distortions": {-0.4: -675.21988502},
+            "Unperturbed": -1173.02056574,
+        }  # energies still parsed despite being high and not converged (like myself)
+        self.assertEqual(
+            high_energies_dict, energies
+        )  # energies still parsed, but all high energy
+        # test print statement about not being fully relaxed
+        self.assertIn("not fully relaxed", result.output)
+        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
+        self.assertTrue(
+            any(
+                [
+                    f"All distortions parsed for {defect} are >0.1 eV higher energy "
+                    f"than unperturbed, indicating problems with the relaxations. You should "
+                    f"first check if the calculations finished ok for this defect species and "
+                    f"if this defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    f"materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                    == str(i.message)
+                    for i in w
+                    if i.category == UserWarning
+                ]
+            )
+        )
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""

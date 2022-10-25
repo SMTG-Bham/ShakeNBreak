@@ -307,7 +307,23 @@ def parse_energies(
                 print(f"{dist} not fully relaxed")
 
     # only write energy file if energies have been parsed
-    if energies != {"distortions": {}}:
+    if energies["distortions"]:
+        if all(
+            [
+                value - energies["Unperturbed"] > 0.1
+                for value in energies["distortions"].values()
+            ]
+        ):
+            warnings.warn(
+                f"All distortions parsed for {defect} are >0.1 eV higher energy "
+                f"than unperturbed, indicating problems with the relaxations. You should "
+                f"first check if the calculations finished ok for this defect species and "
+                f"if this defect charge state is reasonable (often this is the result of an "
+                f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                f"materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+            )
         energies = sort_energies(energies)
         save_file(energies, defect, path)
     else:
