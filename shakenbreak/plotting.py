@@ -1119,9 +1119,7 @@ def _format_colorbar(
     return cbar
 
 
-# Main plotting functions
-
-
+# Main plotting functions:
 def plot_all_defects(
     defects_dict: dict,
     output_path: str = ".",
