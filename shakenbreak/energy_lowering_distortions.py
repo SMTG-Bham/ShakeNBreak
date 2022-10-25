@@ -583,24 +583,25 @@ def get_energy_lowering_distortions(
     # were already found with/without bond distortions for other charge states
     # (i.e. found but higher energy, found but also with unperturbed, found
     # but with energy lowering less than min_e_diff etc)
-    print("\nComparing and pruning defect structures across charge states...")
-    low_energy_defects = _prune_dict_across_charges(
-        low_energy_defects=low_energy_defects,
-        defect_pruning_dict=defect_pruning_dict,
-        code=code,
-        structure_filename=structure_filename,
-        output_path=output_path,
-        stol=stol,
-        min_dist=min_dist,
-    )
-
-    # Write input files for the identified distortions
-    if write_input_files:
-        write_distorted_inputs(
+    if low_energy_defects:
+        print("\nComparing and pruning defect structures across charge states...")
+        low_energy_defects = _prune_dict_across_charges(
             low_energy_defects=low_energy_defects,
-            output_path=output_path,
+            defect_pruning_dict=defect_pruning_dict,
             code=code,
+            structure_filename=structure_filename,
+            output_path=output_path,
+            stol=stol,
+            min_dist=min_dist,
         )
+
+        # Write input files for the identified distortions
+        if write_input_files:
+            write_distorted_inputs(
+                low_energy_defects=low_energy_defects,
+                output_path=output_path,
+                code=code,
+            )
 
     return low_energy_defects
 
