@@ -2662,6 +2662,25 @@ Chosen VASP error message: {error_string}
         )
         self.assertFalse("High_Energy" in result.output)
 
+        # test FileNotFoundError raised when no defect folders found
+        os.chdir(self.DATA_DIR)
+        result = runner.invoke(
+            snb,
+            [
+                "regenerate",
+                "-v",
+            ],
+            catch_exceptions=True,
+        )
+        self.assertIn(
+            f"No defect folders found in directory '{self.DATA_DIR}'. Please check the directory "
+            f"contains defect folders with names ending in a charge state after an underscore ("
+            f"e.g. `vac_1_Cd_0` or `Va_Cd_0` etc).",
+            str(result.exception),
+        )
+        self.assertEqual(result.exception.__class__, FileNotFoundError)
+        self.tearDown()
+
     def test_groundstate(self):
         """Test groundstate() function"""
         # Test default behaviour
