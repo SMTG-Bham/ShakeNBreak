@@ -2586,12 +2586,12 @@ Chosen VASP error message: {error_string}
                     ]
                 )
             )
-        # self.assertIn(
-        #     f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
-        #     " in the low_energy_defects charge state lists (and so energy lowering distortions"
-        #     " found for other charge states will not be applied for this species).",
-        #     result.output,
-        # )
+        self.assertIn(
+            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+            " in the low_energy_defects charge state lists (and so energy lowering distortions"
+            " found for other charge states will not be applied for this species).",
+            result.output,
+        )
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
