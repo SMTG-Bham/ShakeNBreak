@@ -1597,9 +1597,20 @@ def regenerate(path, code, filename, min, metastable, verbose):
     test these distortions for the other charge states of the defect.
     Considers all identified energy-lowering distortions for each defect
     in each charge state, and screens out duplicate distorted structures
-    found for multiple charge states.
+    found for multiple charge states. Defect folder names should end with
+    charge state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc).
     """
-    defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+    if path == ".":
+        path = os.getcwd()  # more verbose error if no defect folders found in path
+    defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+        output_path=path
+    )
+    if not defect_charges_dict:
+        raise FileNotFoundError(
+            f"No defect folders found in directory '{path}'. Please check the "
+            f"directory contains defect folders with names ending in a charge "
+            f"state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc)."
+        )
     _ = energy_lowering_distortions.get_energy_lowering_distortions(
         defect_charges_dict=defect_charges_dict,
         output_path=path,
