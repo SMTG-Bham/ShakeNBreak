@@ -1448,6 +1448,12 @@ def plot_defect(
         max_energy_above_unperturbed=max_energy_above_unperturbed,
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
+    if not energies_dict["distortions"]:
+        warnings.warn(
+            f"No distortion energies within {max_energy_above_unperturbed} {units} above "
+            f"unperturbed structure for {defect_species}. Skipping plot."
+        )
+        return None
 
     try:
         defect_name = _format_defect_name(
@@ -1630,6 +1636,12 @@ def plot_colorbar(
         disp_dict=disp_dict,
         max_energy_above_unperturbed=max_energy_above_unperturbed,
     )  # Remove high energy points
+    if not energies_dict["distortions"]:
+        warnings.warn(
+            f"No distortion energies within {max_energy_above_unperturbed} eV above "
+            f"unperturbed structure for {defect_species}. Skipping plot."
+        )
+        return None
 
     # Setting line color and colorbar
     if not line_color:
