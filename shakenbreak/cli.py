@@ -1443,6 +1443,11 @@ def plot(
     similarity between configurations can be illustrated with a colorbar.
     """
     if all:
+        if defect is not None:
+            warnings.warn(
+                "The option `--defect` is ignored when using the `--all` flag. (All defects in "
+                f"`--path` = {path} will be plotted)."
+            )
         defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             if verbose:
@@ -1455,7 +1460,7 @@ def plot(
         }
         for defect in defect_dirs:
             defects_dict[defect.rsplit("_", 1)[0]].append(defect.rsplit("_", 1)[1])
-        plotting.plot_all_defects(
+        return plotting.plot_all_defects(
             defects_dict=defects_dict,
             output_path=path,
             add_colorbar=colorbar,
@@ -1466,6 +1471,7 @@ def plot(
             max_energy_above_unperturbed=max_energy,
             verbose=verbose,
         )
+
     elif defect is None:
         # assume current directory is the defect folder
         if path != ".":
