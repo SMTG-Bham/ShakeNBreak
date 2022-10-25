@@ -1167,8 +1167,7 @@ def plot_all_defects(
             (Default: "eV")
         min_e_diff (:obj:`float`):
             Minimum energy difference (in eV) between the ground-state defect
-            structure, relative to the `Unperturbed` structure, to consider it
-            as having found a new energy-lowering distortion.
+            structure and the `Unperturbed` structure to generate the distortion plot.
             (Default: 0.05 eV)
         line_color (:obj:`str`):
             Color of the line connecting points.
