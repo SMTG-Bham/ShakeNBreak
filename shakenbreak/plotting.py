@@ -1256,6 +1256,11 @@ def plot_all_defects(
             # If a significant energy lowering was found, then further analyse this defect
             if float(-1 * energy_diff) > abs(min_e_diff):
                 # energy_diff is negative if energy is lowered
+                if verbose:
+                    print(
+                        f"Energy lowering distortion found for {defect} with "
+                        f"charge {charge}. Generating distortion plot..."
+                    )
                 if distortion_metadata == "in_defect_species_folders":
                     try:
                         (
