@@ -111,12 +111,15 @@ def parse_energies(
         if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
         if outcar:  # regrep faster than using Outcar/vasprun class
-            energy = _match(outcar, r"energy\(sigma->0\)\s+=\s+([\d\-\.]+)")[0][0][
-                0
-            ]  # Energy of first match
-            converged = _match(
-                outcar, "required accuracy"
-            )  # check if ionic relaxation converged
+            try:
+                energy = _match(outcar, r"energy\(sigma->0\)\s+=\s+([\d\-\.]+)")[0][0][
+                    0
+                ]  # Energy of first match
+                converged = _match(
+                    outcar, "required accuracy"
+                )  # check if ionic relaxation converged
+            except IndexError:  # no energy match found in OUTCAR, not converged
+                pass
             if not converged:
                 converged = _match(outcar, "considering this converged")
         return converged, energy, outcar
