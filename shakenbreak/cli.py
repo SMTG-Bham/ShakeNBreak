@@ -527,7 +527,7 @@ def snb():
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified defects and generated " "distortions",
+    help="Print information about identified defects and generated distortions",
     default=False,
     is_flag=True,
     show_default=True,
@@ -1576,11 +1576,11 @@ def plot(
 @click.option(
     "--metastable",
     "-meta",
-    help="Whether to also consider non-spontaneous metastable "
-    "energy-lowering distortions, as these can become ground-state "
+    help="Also include metastable energy-lowering distortions that "
+    "have been identified, as these can become ground-state "
     "distortions for other charge states.",
-    type=bool,
     default=False,
+    is_flag=True,
     show_default=True,
 )
 @click.option(
