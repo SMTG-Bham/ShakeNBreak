@@ -289,6 +289,10 @@ def parse_energies(
                     energies[dist_name] = float(energy)
                 else:
                     energies["distortions"][dist_name] = float(energy)
+
+                if not converged:
+                    print(f"{dist} not fully relaxed")
+
             elif not outcar:
                 # check if energy not found, but was previously parsed, then add to dict
                 if dist_name in prev_energies_dict:
@@ -302,9 +306,6 @@ def parse_energies(
                     ][dist_name]
                 else:
                     warnings.warn(f"No output file in {dist} directory")
-
-            if not converged:
-                print(f"{dist} not fully relaxed")
 
     # only write energy file if energies have been parsed
     if energies["distortions"]:
