@@ -13,7 +13,7 @@ from ase.io import write as ase_write
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis, io
+from shakenbreak import analysis, io, plotting
 
 aaa = AseAtomsAdaptor()
 
@@ -65,10 +65,23 @@ def read_defects_directories(output_path: str = "./") -> dict:
             Dictionary mapping defect names to a list of its charge states.
     """
     list_subdirectories = [  # Get only subdirectories in the current directory
-        i
-        for i in next(os.walk(output_path))[1]
-        if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
-    ]  # matching doped/PyCDT/pymatgen defect names
+        i for i in next(os.walk(output_path))[1]
+    ]
+    for i in list(
+        list_subdirectories
+    ):  # need to make copy of list when iterating over and
+        # removing elements
+        try:
+            formatted_name = plotting._format_defect_name(
+                i, include_site_num_in_name=False
+            )
+            if (
+                formatted_name is None
+            ):  # defect folder name not recognised, remove from list
+                list_subdirectories.remove(i)
+        except ValueError:  # defect folder name not recognised, remove from list
+            list_subdirectories.remove(i)
+
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
     ]  # split by last "_" (separate defect name from charge state)
