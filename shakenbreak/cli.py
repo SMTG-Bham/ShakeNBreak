@@ -1464,6 +1464,7 @@ def plot(
             save_format=format,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            verbose=verbose,
         )
     elif defect is None:
         # assume current directory is the defect folder
@@ -1504,6 +1505,7 @@ def plot(
             units=units,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            verbose=verbose,
         )
     except Exception:
         try:
@@ -1523,6 +1525,7 @@ def plot(
                 units=units,
                 add_title=not no_title,
                 max_energy_above_unperturbed=max_energy,
+                verbose=verbose,
             )
         except Exception:
             raise Exception(
