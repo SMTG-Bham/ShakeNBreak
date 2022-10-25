@@ -308,7 +308,7 @@ def parse_energies(
 
     # only write energy file if energies have been parsed
     if energies["distortions"]:
-        if all(
+        if "Unperturbed" in energies and all(
             [
                 value - energies["Unperturbed"] > 0.1
                 for value in energies["distortions"].values()
