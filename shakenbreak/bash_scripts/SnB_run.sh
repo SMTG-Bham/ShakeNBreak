@@ -38,7 +38,7 @@ fi
 SnB_run_loop () {
   for i in ?(*Distortion*|*Unperturbed|*attled)/; # for each distortion
     do
-      if [ "$i" == "?(*Distortion*|*Unperturbed|*attled)/" ]
+      if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]
         then echo "No distortion folders found in current directory"
         break  # exit if no distortion folders found
       fi
