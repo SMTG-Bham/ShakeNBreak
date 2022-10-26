@@ -36,7 +36,7 @@ if [ ! -f "$job_filepath" ]
 fi
 
 SnB_run_loop () {
-  for i in ?(*Distortion*|*Unperturbed|*attled)/; # for each distortion
+  for i in ?(*Distortion*|*Unperturbed*|*attled*)/; # for each distortion
     do
       if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]
         then echo "No distortion folders found in current directory"
