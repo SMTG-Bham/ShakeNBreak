@@ -328,12 +328,46 @@ def parse_energies(
         energies = sort_energies(energies)
         save_file(energies, defect, path)
     else:
-        warnings.warn(
-            f"Energies could not be parsed for defect '{defect}' in '{path}'. "
-            f"If these directories are correct, check calculations have converged, "
-            f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-            f"Bond_Distortion_xxx, Rattled, Unperturbed)"
-        )
+        # check if distortion directories were present but were all "*High_Energy*"
+        try:
+            high_energy_dist_dirs = [
+                dir
+                for dir in os.listdir(defect_dir)
+                if os.path.isdir(os.path.join(defect_dir, dir))
+                and (
+                    any(
+                        [
+                            substring in dir
+                            for substring in [
+                                "Bond_Distortion",
+                                "Rattled",
+                                "Unperturbed",
+                            ]
+                        ]
+                    )
+                    and "High_Energy" in dir
+                )
+            ]
+        except FileNotFoundError:  # no "*High_Energy*" distortion folders
+            high_energy_dist_dirs = []
+        if (
+            high_energy_dist_dirs
+        ):  # "*High_Energy*" distortion directories present and no
+            # distortion energies parsed
+            warnings.warn(
+                f"All distortions for {defect} gave positive energies or forces errors, "
+                f"indicating problems with these relaxations. You should first check that no user "
+                f"INCAR setting is causing this issue. If not, you likely need to adjust the "
+                f"`std_dev` rattling parameter (can occur for hard/ionic/close-packed materials); "
+                f"see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+            )
+        else:
+            warnings.warn(
+                f"Energies could not be parsed for defect '{defect}' in '{path}'. "
+                f"If these directories are correct, check calculations have converged, "
+                f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+                f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+            )
 
 
 # Parsing output structures of different codes
