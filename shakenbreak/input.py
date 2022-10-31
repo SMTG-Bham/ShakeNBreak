@@ -361,7 +361,7 @@ def _apply_rattle_bond_distortions(
     distortion_factor: float,
     local_rattle: bool = False,
     stdev: float = 0.25,
-    d_min: Optional[float] = None,
+    d_min: Optional[float] = 2.25,
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -412,11 +412,6 @@ def _apply_rattle_bond_distortions(
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
-            - d_min (:obj:`float`):
-                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-                moves that put atoms at distances less than this will be heavily
-                penalised.
-                (Default: 2.25)
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -466,21 +461,6 @@ def _apply_rattle_bond_distortions(
         )
 
     # Apply rattle to the bond distorted structure
-    if not d_min:
-        defect_supercell = defect_dict["supercell"]["structure"]
-        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
-        d_min = (
-            0.8 * sorted_distances[len(defect_supercell) + 20]
-        )  # ignoring interstitials by
-        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
-
     if active_atoms is None:
         distorted_atom_indices = [
             i[0] for i in bond_distorted_defect["distorted_atoms"]
@@ -605,11 +585,6 @@ def apply_snb_distortions(
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
-            - d_min (:obj:`float`):
-                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-                moves that put atoms at distances less than this will be heavily
-                penalised.
-                (Default: 2.25)
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -634,6 +609,21 @@ def apply_snb_distortions(
         "distortions": {},
         "distortion_parameters": {},
     }
+
+    if not d_min:
+        defect_supercell = defect_dict["supercell"]["structure"]
+        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+        d_min = (
+            0.8 * sorted_distances[len(defect_supercell) + 20]
+        )  # ignoring interstitials by
+        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
+        if d_min < 1.0:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
 
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
@@ -681,22 +671,7 @@ def apply_snb_distortions(
             defect_site_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
-        if not d_min:
-            defect_supercell = defect_dict["supercell"]["structure"]
-            sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
-            d_min = (
-                0.8 * sorted_distances[len(defect_supercell) + 20]
-            )  # ignoring interstitials by
-            # ignoring the first 10 non-zero bond lengths (double counted in
-            # the distance matrix)
-            if d_min < 1:
-                warnings.warn(
-                    f"Automatic bond-length detection gave a bulk bond length of "
-                    f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
-                    f"Reverting to 2.25 \u212B. If this is too large, set `d_min` "
-                    f"manually"
-                )
-                d_min = 2.25
+
         if local_rattle:
             perturbed_structure = distortions.local_mc_rattle(
                 defect_dict["supercell"]["structure"],
