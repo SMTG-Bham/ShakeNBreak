@@ -144,6 +144,9 @@ class CLITestCase(unittest.TestCase):
         )
         if_present_rm("Rattled_Bulk_CdTe_POSCAR")
 
+        # Remove parsed vac_1_Ti_0 energies file
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml")
+
     def test_snb_generate(self):
         runner = CliRunner()
         result = runner.invoke(
@@ -2733,22 +2736,8 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         if w:
-            self.assertTrue(any([war.category == UserWarning for war in w]))
-            self.assertTrue(
-                any(
-                    [
-                        f"Path {self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml does not exist"
-                        == str(war.message)
-                        for war in w
-                    ]
-                )
-            )
-        self.assertIn(
-            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
-            " in the low_energy_defects charge state lists (and so energy lowering distortions"
-            " found for other charge states will not be applied for this species).",
-            result.output,
-        )
+            self.assertFalse(any([war.category == UserWarning for war in w]))  # no User Warnings
+
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
@@ -2758,26 +2747,42 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to "
+            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to "
+            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to "
+            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to "
+            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
         self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
-            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2, "
+            f"so just writing distorted POSCAR file to "
+            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
+        self.assertNotIn(  # now we run io.parse_energies() if energy file not present
+            f"No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+            " in the low_energy_defects charge state lists (and so energy lowering distortions"
+            " found for other charge states will not be applied for this species).",
+            result.output,
+        )
+        self.assertIn("Parsing vac_1_Ti_0...", result.output)
+        self.assertIn("vac_1_Ti_0: Energy difference between minimum, found with -0.4 bond "
+                      "distortion, and unperturbed: -3.26 eV.", result.output)
+        self.assertIn("Energy lowering distortion found for vac_1_Ti with charge 0. Adding to "
+                      "low_energy_defects dictionary.", result.output)
         self.tearDown()  # Remove generated files
 
         # test "*High_Energy*" ignored and doesn't cause errors
@@ -2799,7 +2804,7 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         if w:
-            self.assertTrue(any([war.category == UserWarning for war in w]))
+            self.assertFalse(any([war.category == UserWarning for war in w]))
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
@@ -2809,12 +2814,14 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to"
+            f" {self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
             f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/vac_1_Cd_-2,"
-            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            f" so just writing distorted POSCAR file to"
+            f" {self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)
