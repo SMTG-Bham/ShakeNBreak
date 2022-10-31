@@ -279,18 +279,20 @@ class InputTestCase(unittest.TestCase):
 
     def test_apply_rattle_bond_distortions_V_Cd(self):
         """Test _apply_rattle_bond_distortions function for V_Cd"""
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
             self.V_Cd_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.5,
+            d_min=d_min
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
-        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
-        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+
         rattling_atom_indices = np.arange(0, 63)
         idx = np.in1d(rattling_atom_indices, [i - 1 for i in [33, 42]])
         rattling_atom_indices = rattling_atom_indices[
@@ -312,10 +314,13 @@ class InputTestCase(unittest.TestCase):
 
     def test_apply_rattle_bond_distortions_Int_Cd_2(self):
         """Test _apply_rattle_bond_distortions function for Int_Cd_2"""
+        sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
         Int_Cd_2_distorted_dict = input._apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
+            d_min=d_min
         )
         output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
@@ -323,10 +328,8 @@ class InputTestCase(unittest.TestCase):
             np.testing.assert_array_equal,
             Int_Cd_2_distorted_dict,
             output,
-        )  # Shouldn't match because
-        # rattling not done yet
-        sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
-        d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
+        )  # Shouldn't match because rattling not done yet
+
         rattling_atom_indices = np.arange(
             0, 64
         )  # not including index 64 which is Int_Cd_2
@@ -352,6 +355,8 @@ class InputTestCase(unittest.TestCase):
     def test_apply_rattle_bond_distortions_kwargs(self, mock_print):
         """Test _apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
+        sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
         Int_Cd_2_distorted_dict = input._apply_rattle_bond_distortions(
             self.Int_Cd_2_dict,
             num_nearest_neighbours=10,
@@ -359,6 +364,7 @@ class InputTestCase(unittest.TestCase):
             distorted_element="Cd",
             stdev=0,  # no rattling here
             verbose=True,
+            d_min=d_min,
         )
         self.assertEqual(
             Int_Cd_2_distorted_dict["distorted_structure"],
