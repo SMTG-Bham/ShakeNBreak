@@ -268,12 +268,17 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "not be included in low_energy_defects (check relaxation folders with CONTCARs "
                 "are present)."  # check this is skipped if no data
             )
-            self.assertEqual(len(w), 1)  # 28  # No Int_Cd_2_1 data (1)
+            self.assertEqual(len(w), 2)  # 28  # No Int_Cd_2_1 data and parsing not possible
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
+            self.assertIn(f"Energies could not be parsed for defect 'Int_Cd_2_1' in "
+                          f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
+                          f"check calculations have converged, and that distortion subfolders "
+                          f"match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
+                          f"Unperturbed)", str(w[0].message))
             self.assertIn(
                 f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
-                str(w[0].message),
+                str(w[1].message),
             )
 
             self.assertEqual(len(low_energy_defects_dict), 1)
@@ -337,11 +342,17 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"with charge -1."
             )
             mock_print.assert_any_call("\nInt_Cd_2")
-            self.assertEqual(len(w), 1)  # No Int_Cd_2_1 data (1)
-            self.assertEqual(warning.category, UserWarning)
+            self.assertEqual(len(w), 2)  # 28  # No Int_Cd_2_1 data and parsing not possible
+            for warning in w:
+                self.assertEqual(warning.category, UserWarning)
+            self.assertIn(f"Energies could not be parsed for defect 'Int_Cd_2_1' in "
+                          f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
+                          f"check calculations have converged, and that distortion subfolders "
+                          f"match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
+                          f"Unperturbed)", str(w[0].message))
             self.assertIn(
                 f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
-                str(w[0].message),
+                str(w[1].message),
             )
             self.assertEqual(low_energy_defects_dict, {})
 
@@ -635,8 +646,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "are present)."  # check this is skipped if no data
             )
             self.assertEqual(
-                len(w), 2
-            )  # No Int_Cd_2_1 data and too large rattle warnings
+                len(w), 3
+            )  # No Int_Cd_2_1 data (2) and too large rattle warnings
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
 
