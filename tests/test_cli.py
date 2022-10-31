@@ -1962,7 +1962,6 @@ Chosen VASP error message: {error_string}
         )
 
         # test warning when all parsed distortions are >0.1 eV higher energy than unperturbed
-        # test parsing energies of residual-forces calculations
         defect = "vac_1_Ti_3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
@@ -2011,6 +2010,58 @@ Chosen VASP error message: {error_string}
                     f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
                     f"materials); see "
                     f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                    == str(i.message)
+                    for i in w
+                    if i.category == UserWarning
+                ]
+            )
+        )
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
+
+        # test warning when all distortions have been renamed to "*High_Energy*"
+        defect = "vac_1_Ti_3"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/{defect}",
+        )
+        shutil.move(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%_High_Energy",
+        )
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]  # remove yaml files so we reparse the energies
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        self.assertFalse(
+            os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        )
+        # test print statement about not being fully relaxed
+        self.assertNotIn("not fully relaxed", result.output)
+        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
+        print([i.message for i in w])
+        print(result.output)
+        self.assertTrue(
+            any(
+                [
+                    f"All distortions for {defect} gave positive energies or forces errors, "
+                    f"indicating problems with these relaxations. You should first check that no "
+                    f"user INCAR setting is causing this issue. If not, you likely need to adjust "
+                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    f"materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
+                    f"-ionic-materials."
                     == str(i.message)
                     for i in w
                     if i.category == UserWarning
@@ -2666,7 +2717,6 @@ Chosen VASP error message: {error_string}
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
             if "yaml" in file
         ]
-
 
     def test_regenerate(self):
         """Test regenerate() function"""
