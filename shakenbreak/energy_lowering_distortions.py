@@ -405,6 +405,11 @@ def get_energy_lowering_distortions(
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
+            if not os.path.exists(energies_file):  # try parse energies now if possible
+                if verbose:
+                    print(f"Parsing {defect_species}...")
+                io.parse_energies(defect_species, output_path, code)
+
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
