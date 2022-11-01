@@ -191,7 +191,7 @@ def _compare_distortion(
         # defect
         print(
             f"New (according to structure matching) low-energy "
-            f"distorted  structure found for {defect_species}, "
+            f"distorted structure found for {defect_species}, "
             f"adding to low_energy_defects['{defect}'] list."
         )
         low_energy_defects[defect].append(
@@ -271,11 +271,11 @@ def _prune_dict_across_charges(
                     # structure found in distortion tests for this charge state.
                     # Add it to the list to avoid redundant work
                     print(
-                        f"Ground-state structure found for {defect} with charges "
-                        f"{distortion_dict['charges']} has been also previously "
-                        f"been found for charge state {charge} (according to "
-                        f"structure matching). Adding this charge to the "
-                        f"corresponding entry in low_energy_defects[{defect}]."
+                        f"Ground-state structure found for {defect} with charges"
+                        f" {distortion_dict['charges']} has been also previously been found for "
+                        f"charge state {'+' if charge > 0 else ''}{charge} (according to "
+                        f"structure matching). Adding this charge to the corresponding entry in "
+                        f"low_energy_defects[{defect}]."
                     )
                     for property, value in zip(
                         ["charges", "structures", "energy_diffs", "bond_distortions"],
@@ -443,12 +443,11 @@ def get_energy_lowering_distortions(
                         # problem parsing structure, user will have received appropriate
                         # warning from io.read_vasp_structure()
                         print(
-                            f"Problem parsing final, low-energy structure for "
-                            f"{gs_distortion} bond distortion of {defect_species} "
-                            f"at {output_path}/{defect_species}/{bond_distortion}/"
-                            f"{structure_filename}. This species will be skipped and "
-                            f"will not be included in low_energy_defects (check"
-                            f"relaxation calculation and folder)."
+                            f"Problem parsing final, low-energy structure for {gs_distortion} "
+                            f"bond distortion of {defect_species} at {output_path}"
+                            f"/{defect_species}/{bond_distortion}/{structure_filename}. This "
+                            f"species will be skipped and will not be included in "
+                            f"low_energy_defects (check relaxation calculation and folder)."
                         )
                         defect_pruning_dict[defect].remove(charge)
                         continue
@@ -473,8 +472,9 @@ def get_energy_lowering_distortions(
                 elif defect not in low_energy_defects:
                     # if defect not in dict, add it
                     print(
-                        f"Energy lowering distortion found for {defect} with "
-                        f"charge {charge}. Adding to low_energy_defects dictionary."
+                        f"Energy lowering distortion found for {defect} with charge "
+                        f"{'+' if charge > 0 else ''}{charge}. Adding to low_energy_defects "
+                        f"dictionary."
                     )
                     low_energy_defects[defect] = [
                         {
@@ -546,8 +546,9 @@ def get_energy_lowering_distortions(
                         elif defect not in low_energy_defects:
                             # if defect not in dict, add it
                             print(
-                                f"Energy lowering distortion found for {defect} with "
-                                f"charge {charge}. Adding to low_energy_defects dictionary."
+                                f"Energy lowering distortion found for {defect} with charge "
+                                f"{'+' if charge > 0 else ''}{charge}. Adding to "
+                                f"low_energy_defects dictionary."
                             )
                             low_energy_defects[defect] = [
                                 {
@@ -567,21 +568,21 @@ def get_energy_lowering_distortions(
                 ]
             ):
                 warnings.warn(
-                    f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
-                    f"than unperturbed, indicating problems with the relaxations. You should "
-                    f"first check if the calculations finished ok for this defect species and "
-                    f"if this defect charge state is reasonable (often this is the result of an "
-                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
-                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                    f"materials); see "
+                    f"All distortions for {defect} with charge {'+' if charge > 0 else ''}"
+                    f"{charge} are >0.1 eV higher energy than unperturbed, indicating problems "
+                    f"with the relaxations. You should first check if the calculations finished "
+                    f"ok for this defect species and if this defect charge state is reasonable ("
+                    f"often this is the result of an unreasonable charge state). If both checks "
+                    f"pass, you likely need to adjust the `std_dev` rattling parameter (can occur "
+                    f"for hard/ionic/close-packed materials); see "
                     f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
                 )
 
             else:
                 print(
-                    f"No energy lowering distortion with energy difference greater "
-                    f"than  min_e_diff = {min_e_diff:.2f} eV found for {defect} "
-                    f"with charge {charge}."
+                    f"No energy lowering distortion with energy difference greater than "
+                    f"min_e_diff = {min_e_diff:.2f} eV found for {defect} with charge "
+                    f"{'+' if charge > 0 else ''}{charge}."
                 )
 
     # Screen through defects to check if any lower-energy distorted structures
