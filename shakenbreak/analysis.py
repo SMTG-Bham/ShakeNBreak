@@ -872,18 +872,25 @@ def compare_structures(
         except KeyError:  # if relaxation didn't converge for this bond distortion,
             #  store it as NotANumber
             rel_energy = float("NaN")
-        df_list.append(
-            [
-                distortion,
-                round(disp_dict[distortion], 3) + 0
-                if isinstance(disp_dict[distortion], float)
-                else None,
-                round(max_dist_dict[distortion], 3) + 0
-                if isinstance(max_dist_dict[distortion], float)
-                else None,
-                round(rel_energy, 2) + 0,
-            ]
-        )
+        if distortion in disp_dict:
+            df_list.append(
+                [
+                    distortion,
+                    round(disp_dict[distortion], 3) + 0
+                    if isinstance(disp_dict[distortion], float)
+                    else None,
+                    round(max_dist_dict[distortion], 3) + 0
+                    if isinstance(max_dist_dict[distortion], float)
+                    else None,
+                    round(rel_energy, 2) + 0,
+                ]
+            )
+        else:
+            warnings.warn(
+                f"Could not find bond distortion '{distortion}' in defect_structures_dict. "
+                f"Storing as 'Not converged'."
+            )
+            df_list.append([distortion, None, None, rel_energy])
 
     if "Unperturbed" in defect_energies_dict:
         df_list.append(
