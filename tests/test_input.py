@@ -282,10 +282,7 @@ class InputTestCase(unittest.TestCase):
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
-            self.V_Cd_dict,
-            num_nearest_neighbours=2,
-            distortion_factor=0.5,
-            d_min=d_min
+            self.V_Cd_dict, num_nearest_neighbours=2, distortion_factor=0.5, d_min=d_min
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
@@ -320,7 +317,9 @@ class InputTestCase(unittest.TestCase):
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             distortion_factor=0.4,
-            d_min=d_min
+            d_min=d_min,
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=40,  # distortion_factor * 100, default
         )
         output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
@@ -343,6 +342,8 @@ class InputTestCase(unittest.TestCase):
             output["distorted_structure"],
             d_min=d_min,
             active_atoms=rattling_atom_indices,
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=40,  # distortion_factor * 100, default
         )
         np.testing.assert_equal(Int_Cd_2_distorted_dict, output)
         self.assertEqual(
@@ -518,7 +519,8 @@ class InputTestCase(unittest.TestCase):
             self.Int_Cd_2_dict,
             num_nearest_neighbours=2,
             bond_distortions=[-0.6],
-            stdev=0.25,
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=40,  # distortion_factor * 100, default
             verbose=True,
         )
         self.assertDictEqual(self.Int_Cd_2_dict, Int_Cd_2_distorted_dict["Unperturbed"])
@@ -799,6 +801,8 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
         # Test `write_vasp_files` method
         with patch("builtins.print") as mock_print:
@@ -876,7 +880,7 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.comment,
             "-60.0%__num_neighbours=2__Int_Cd_2",
         )
-        self.assertEqual(
+        self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
@@ -891,6 +895,8 @@ class InputTestCase(unittest.TestCase):
         dist = input.Distortions(
             {"vacancies": [reduced_V_Cd_dict]},
             local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
         _, distortion_metadata = dist.write_vasp_files(
             verbose=False,
@@ -961,6 +967,8 @@ class InputTestCase(unittest.TestCase):
                 distorted_elements={"Int_Cd_2": ["Cd"]},
                 dict_number_electrons_user={"Int_Cd_2": 3},
                 local_rattle=False,
+                stdev=0.25,  # old default
+                seed=42,  # old default
             )
             _, distortion_metadata = dist.write_vasp_files(
                 verbose=True,
@@ -1101,6 +1109,8 @@ class InputTestCase(unittest.TestCase):
                 {"interstitials": [reduced_Int_Cd_2_dict]},
                 oxidation_states=oxidation_states,
                 local_rattle=False,
+                stdev=0.25,  # old default
+                seed=42,  # old default
             )
             _, distortion_metadata = dist.write_vasp_files(
                 verbose=True,
@@ -1126,7 +1136,6 @@ class InputTestCase(unittest.TestCase):
         current_datetime_minus1min = (
             datetime.datetime.now() - datetime.timedelta(minutes=1)
         ).strftime("%Y-%m-%d-%H-%M")
-        print(mock_Int_Cd_2_print.call_args_list)
         self.assertTrue(
             os.path.exists(f"./distortion_metadata_{current_datetime}.json")
             or os.path.exists(
@@ -1200,6 +1209,8 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
 
         # Test `write_espresso_files` method
@@ -1281,6 +1292,8 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
         # Test `write_cp2k_files` method
         for i in self.cdte_defect_folders:
@@ -1356,6 +1369,8 @@ class InputTestCase(unittest.TestCase):
             },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
         # Test `write_castep_files` method, without specifing input file
         for i in self.cdte_defect_folders:
@@ -1432,6 +1447,8 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
         )
         # Test `write_fhi_aims_files` method
         for i in self.cdte_defect_folders:
@@ -1569,8 +1586,9 @@ class InputTestCase(unittest.TestCase):
                 ]
             )
         )
-        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
-            "distortions"]
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
+            "structures"
+        ]["distortions"]
         self.assertEqual(len(V_Cd_distortions_dict), 16)
         self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
@@ -1580,7 +1598,8 @@ class InputTestCase(unittest.TestCase):
             distortion_defect_dict, distortion_metadata = dist.apply_distortions()
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0  # no warnings
+            len([warning for warning in w if warning.category == UserWarning]),
+            0,  # no warnings
         )
         self.assertFalse(
             any(
@@ -1596,8 +1615,9 @@ class InputTestCase(unittest.TestCase):
                 ]
             )
         )
-        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
-            "distortions"]
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
+            "structures"
+        ]["distortions"]
         self.assertEqual(len(V_Cd_distortions_dict), 16)
         self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
@@ -1610,34 +1630,61 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
-        distortion_defect_dict, distortion_metadata = dist.apply_distortions(verbose=True)
+        distortion_defect_dict, distortion_metadata = dist.apply_distortions(
+            verbose=True
+        )
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0  # no warnings
+            len([warning for warning in w if warning.category == UserWarning]),
+            0,  # no warnings
         )
         self.assertFalse(
             any(
                 [
                     any([message == str(warning.message) for warning in w])
                     for message in [
-                    message_1,
-                    message_2,
-                    message_3,
-                    message_4,
-                    message_5,
-                ]
+                        message_1,
+                        message_2,
+                        message_3,
+                        message_4,
+                        message_5,
+                    ]
                 ]
             )
         )
-        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0]["structures"][
-            "distortions"]
+        V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
+            "structures"
+        ]["distortions"]
         self.assertEqual(len(V_Cd_distortions_dict), 21)
         self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
+        # test default `stdev` and `seed` setting in Distortions() with Int_Cd_2
+        int_Cd_2 = self.Int_Cd_2_dict.copy()
+        dist = input.Distortions(  # don't set `stdev` or `seed`, in order to test default behaviour
+            {"interstitials": [int_Cd_2]},
+            bond_distortions=[
+                -0.6,
+            ],  # zero electron change
+        )
+        with patch("builtins.print") as mock_print:
+            defects_dict, metadata_dict = dist.apply_distortions()
+        self.assertEqual(
+            self.Int_Cd_2_minus0pt6_struc_rattled,
+            defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][
+                "Bond_Distortion_-60.0%"
+            ],
+        )
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.6'].",
+            "Then, will rattle with a std dev of 0.28 \u212B \n",
+        )
+
     def test_local_rattle(
         self,
     ):
-        """ Test option local_rattle of Distortions class"""
+        """Test option local_rattle of Distortions class"""
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         oxidation_states = {"Cd": +2, "Te": -2}
@@ -1645,17 +1692,18 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3],
-            local_rattle=True,  # default
+            local_rattle=True,  # default off
         )
         self.assertTrue(dist.local_rattle)
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
         # test distortion info printing with auto-determined `stdev`
-        print(mock_print.call_args_list)
-        mock_print.assert_any_call("Applying ShakeNBreak...",
-                                   "Will apply the following bond distortions:",
-                                   "['-0.3'].",
-                                   "Then, will rattle with a std dev of 0.28 \u212B \n")
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.3'].",
+            "Then, will rattle with a std dev of 0.28 \u212B \n",
+        )
         # Check structure
         self.assertEqual(
             Structure.from_file(
@@ -1678,15 +1726,17 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 -0.3,
             ],  # zero electron change
-            local_rattle=True,  # default
+            local_rattle=True,  # default off
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
         # test distortion info printing with auto-determined `stdev`
-        mock_print.assert_any_call("Applying ShakeNBreak...",
-                                   "Will apply the following bond distortions:",
-                                   "['-0.3'].",
-                                   "Then, will rattle with a std dev of 0.28 \u212B \n")
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.3'].",
+            "Then, will rattle with a std dev of 0.28 \u212B \n",
+        )
         self.assertEqual(
             Structure.from_file(
                 f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
@@ -1695,7 +1745,6 @@ class InputTestCase(unittest.TestCase):
                 "Rattled"
             ],
         )
-
 
     def test_default_rattle_stdev_and_seed(
         self,
@@ -1708,7 +1757,7 @@ class InputTestCase(unittest.TestCase):
             {"vacancies": [reduced_V_Cd_dict]},
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3],
-            local_rattle=True,  # default
+            local_rattle=True,  # default off
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=70,  # distortion_factor * 100, default
         )
@@ -1736,7 +1785,7 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 -0.3,
             ],  # zero electron change
-            local_rattle=True,  # default
+            local_rattle=True,  # default off
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=0,  # distortion_factor * 100, default
         )
