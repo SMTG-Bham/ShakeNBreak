@@ -14,7 +14,10 @@ file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
