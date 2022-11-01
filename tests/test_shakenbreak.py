@@ -193,8 +193,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             # )
 
             mock_print.assert_any_call(
-                "Ground-state structure found for vac_1_Cd with charges [-2] has been also "
-                "previously been found for charge state -1 (according to structure matching). "
+                "Ground-state structure found for vac_1_Cd with charges [-2] has also "
+                "been found for charge state -1 (according to structure matching). "
                 "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
             )
 

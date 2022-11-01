@@ -101,7 +101,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             self.FHI_AIMS_DATA_DIR,
             self.ESPRESSO_DATA_DIR,
         ]:
-            for defect_dir in self.defect_folders_list + ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
+            for defect_dir in self.defect_folders_list + [
+                "vac_1_Cd_-1",
+                "vac_1_Cd_-2",
+                "vac_1_Cd_-3",
+            ]:
                 if_present_rm(os.path.join(data_dir, defect_dir))
 
         # remove generated files
@@ -395,13 +399,13 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
             mock_print.assert_any_call(
                 "Ground-state structure found for vac_1_Cd with charges ["
-                "-2] has been also previously been found for charge state 0 "
+                "-2] has also been found for charge state 0 "
                 "(according to structure matching). Adding this charge to "
                 "the corresponding entry in low_energy_defects[vac_1_Cd]."
             )
             mock_print.assert_any_call(
                 "Ground-state structure found for vac_1_Cd with charges ["
-                "-2, 0] has been also previously been found for charge "
+                "-2, 0] has also been found for charge "
                 "state -1 (according to structure matching). Adding this "
                 "charge to the corresponding entry in low_energy_defects["
                 "vac_1_Cd]."
@@ -749,8 +753,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 -0.5: -205.650,
                 0.0: -205.600,
                 0.5: -205.500,
-                "40.0%_from_2": -205.400,
-                "Rattled_from_1": -205.950,
+                "40.0%_from_0": -205.400,
+                "Rattled_from_-2": -205.950,
                 "Rattled": -205.500,
             },  # rattled from 1 lowest energy
             "Unperturbed": -205.800,
@@ -759,64 +763,144 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             fake_energies_dict,
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/vac_1_Cd_-1.yaml"),
         )
-        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_1"))
+        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_-2"))
         os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled"))
         shutil.copy(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_0.0%/CONTCAR"
             ),
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_1/CONTCAR"),
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_-2/CONTCAR"
+            ),
         )
+        shutil.copy(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_0.0%/CONTCAR"
+            ),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled/CONTCAR"),
+        )
+        os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-2/Rattled"))
         shutil.copy(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
             ),
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled/CONTCAR"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-2/Rattled/CONTCAR"),
+        )
+        # structure doesn't match Rattled_from_-2, but still shouldn't be added to
+        # excluded_charges (to test imported structure) for -2 vacancy (because it (apparently)
+        # originally came from -2)
+        V_Cd_2_dict = {"distortions": {"Rattled": -206.000}, "Unperturbed": -205.800}
+        dumpfn(
+            V_Cd_2_dict,
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-2/vac_1_Cd_-2.yaml"),
         )
 
-        with patch("builtins.print") as mock_print, warnings.catch_warnings(
-            record=True
-        ) as w:
-            warnings.filterwarnings("ignore", category=DeprecationWarning)
+        with patch("builtins.print") as mock_print:
             low_energy_defects_dict = (
                 energy_lowering_distortions.get_energy_lowering_distortions(
                     {
-                        "vac_1_Cd": [
-                            -1,
-                        ]
+                        "vac_1_Cd": [-1, -2],
                     },
                     self.VASP_CDTE_DATA_DIR,
                 )
             )
-            mock_print.assert_any_call("\nvac_1_Cd")
-            mock_print.assert_any_call(
-                "vac_1_Cd_-1: Energy difference between minimum, found with Rattled_from_1 bond "
-                "distortion, and unperturbed: -0.15 eV."
+        mock_print.assert_any_call("\nvac_1_Cd")
+        mock_print.assert_any_call(
+            "vac_1_Cd_-1: Energy difference between minimum, found with Rattled_from_-2 bond "
+            "distortion, and unperturbed: -0.15 eV."
+        )
+        mock_print.assert_any_call(
+            "Energy lowering distortion found for vac_1_Cd with charge -1. Adding to "
+            "low_energy_defects dictionary."
+        )
+        mock_print.assert_any_call(
+            "vac_1_Cd_-2: Energy difference between minimum, found with "
+            "Rattled bond distortion, and unperturbed: -0.20 eV."
+        )
+
+        # "has also been found" not in any mock_print call (i.e. Rattled_from_-2 in
+        # `vac_1_Cd_-1`directory not compared to Rattled in `vac_1_Cd_-2` directory)
+        self.assertFalse(
+            any(
+                "has also been found" in str(call) for call in mock_print.call_args_list
             )
-            mock_print.assert_any_call(
-                "Energy lowering distortion found for vac_1_Cd with charge -1. Adding to "
-                "low_energy_defects dictionary."
+        )
+        self.assertEqual(len(low_energy_defects_dict), 1)  # only vac_1_Cd
+        self.assertIn("vac_1_Cd", low_energy_defects_dict)
+        self.assertEqual(
+            len(low_energy_defects_dict["vac_1_Cd"]), 2
+        )  # different -1 and -2
+        # structures
+        self.assertEqual(low_energy_defects_dict["vac_1_Cd"][0]["charges"], [-1])
+        np.testing.assert_almost_equal(
+            low_energy_defects_dict["vac_1_Cd"][0]["energy_diffs"],
+            [-0.15],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"],
+            ["Rattled_from_-2"],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"],
+            set(),  # no -1 or -2
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], {-1}
+        )  # -1 in the -2 dict but not other way around
+
+        # test other ordering (-2 then -3 rather than -1 then -2)
+        shutil.move(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-3"),
+        )
+        shutil.move(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-3/vac_1_Cd_-1.yaml"),
+            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-3/vac_1_Cd_-3.yaml"),
+        )
+        with patch("builtins.print") as mock_print:
+            low_energy_defects_dict = (
+                energy_lowering_distortions.get_energy_lowering_distortions(
+                    {
+                        "vac_1_Cd": [-2, -3],
+                    },
+                    self.VASP_CDTE_DATA_DIR,
+                )
             )
-            self.assertEqual(len(w), 0)
-            self.assertEqual(len(low_energy_defects_dict), 1)
-            self.assertIn("vac_1_Cd", low_energy_defects_dict)
-            self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 1)
-            self.assertEqual(low_energy_defects_dict["vac_1_Cd"][0]["charges"], [-1])
-            np.testing.assert_almost_equal(
-                low_energy_defects_dict["vac_1_Cd"][0]["energy_diffs"],
-                [-0.15],
+        mock_print.assert_any_call("\nvac_1_Cd")
+        mock_print.assert_any_call(
+            "vac_1_Cd_-3: Energy difference between minimum, found with Rattled_from_-2 bond "
+            "distortion, and unperturbed: -0.15 eV."
+        )
+        # "has also been found" not in any mock_print call (i.e. Rattled_from_-2 in
+        # `vac_1_Cd_-1`directory not compared to Rattled in `vac_1_Cd_-2` directory)
+        self.assertFalse(
+            any(
+                "has also been found" in str(call) for call in mock_print.call_args_list
             )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"],
-                ["Rattled_from_1"],
-            )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["structures"],
-                [self.V_Cd_minus_0pt55_structure],
-            )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], set()
-            )
+        )
+        self.assertEqual(len(low_energy_defects_dict), 1)  # only vac_1_Cd
+        self.assertIn("vac_1_Cd", low_energy_defects_dict)
+        self.assertEqual(
+            len(low_energy_defects_dict["vac_1_Cd"]), 2
+        )  # different -3 and -2
+        # structures
+        self.assertEqual(low_energy_defects_dict["vac_1_Cd"][0]["charges"], [-2])
+        np.testing.assert_almost_equal(
+            low_energy_defects_dict["vac_1_Cd"][0]["energy_diffs"],
+            [-0.2],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"],
+            ["Rattled"],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"],
+            {-3}
+            # -3 in the -2 dict but not other way around
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][1]["excluded_charges"], set()
+        )
 
     def test_compare_struct_to_distortions(self):
         # test case where matching distortion is "Rattled_from_..."
@@ -858,8 +942,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
         self.assertTrue(comparison_results[0])
         self.assertEqual(comparison_results[1], self.V_Cd_minus_0pt55_structure)
-        print(comparison_results[2])
-        print(comparison_results[3])
         np.testing.assert_almost_equal(comparison_results[2], -0.15)
         self.assertEqual(comparison_results[3], "Rattled_from_1")
 
