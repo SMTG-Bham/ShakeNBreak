@@ -16,7 +16,7 @@ from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar
 
 from shakenbreak import distortions, input, vasp, cli
-
+from shakenbreak.distortions import rattle
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -55,6 +55,9 @@ class InputTestCase(unittest.TestCase):
         self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
         self.FHI_AIMS_DATA_DIR = os.path.join(self.DATA_DIR, "fhi_aims")
         self.ESPRESSO_DATA_DIR = os.path.join(self.DATA_DIR, "quantum_espresso")
+        self.CdTe_bulk_struc = Structure.from_file(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Bulk_Supercell_POSCAR")
+        )
 
         with open(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
@@ -1897,32 +1900,32 @@ class InputTestCase(unittest.TestCase):
 
     def test_from_structures(self):
         """Test from_structures() method of Distortion() class."""
-        # Test normal behaviour (no defect_index or defect_coords)
-        vacancies = {
-            "vacancies": [
-                self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
-                self.cdte_defect_dict["vacancies"][1]["supercell"]["structure"],
-            ],
-            "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
-        }
-        with patch("builtins.print") as mock_print:
-            dist = input.Distortions.from_structures(
-                vacancies,
-            )
-            mock_print.assert_called_once_with(
-                "Oxidation states were not explicitly set, thus have been guessed as "
-                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
-                "oxidation_states"
-            )
-            self.assertDictEqual(
-                dist.defects_dict,
-                {
-                    "vacancies": {
-                        "v_Cd": self.cdte_defects["vacancies"][0],
-                        "v_Te": self.cdte_defects["vacancies"][1],
-                    }
-                }
-            )
+        # # Test normal behaviour (no defect_index or defect_coords)
+        # vacancies = {
+        #     "vacancies": [
+        #         self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+        #         self.cdte_defect_dict["vacancies"][1]["supercell"]["structure"],
+        #     ],
+        #     "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+        # }
+        # with patch("builtins.print") as mock_print:
+        #     dist = input.Distortions.from_structures(
+        #         vacancies,
+        #     )
+        #     mock_print.assert_called_once_with(
+        #         "Oxidation states were not explicitly set, thus have been guessed as "
+        #         "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+        #         "oxidation_states"
+        #     )
+        #     self.assertDictEqual(
+        #         dist.defects_dict,
+        #         {
+        #             "vacancies": {
+        #                 "v_Cd": self.cdte_defects["vacancies"][0],
+        #                 "v_Te": self.cdte_defects["vacancies"][1],
+        #             }
+        #         }
+        #     )
         # Test defect position given with `defect_coords`
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures(
@@ -1975,7 +1978,125 @@ class InputTestCase(unittest.TestCase):
                     }
                 }
             )
+        # Most cases already tested in test_cli.py for `snb-generate`` (which uses
+        # the same function under the hood). Here we sanity check 2 more cases
 
+        # Test defect_coords working even when slightly off correct site
+        struct_interst = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR")
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_structures(
+                {
+                    "interstitials": [
+                        {
+                            "structure": struct_interst,
+                            "defect_coords": [
+                                0.8,  # 0.8125,  # actual Int_Cd_2 site
+                                0.15,  # 0.1875,
+                                0.85,  # 0.8125,
+                            ],
+                        }
+                    ],
+                    "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+                }
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertEqual(
+                dist.defects_dict["interstitials"]["Cd_i"].defect_site_index,
+                0
+            )
+            self.assertEqual(
+                list(dist.defects_dict["interstitials"]["Cd_i"].defect_structure[0].frac_coords),
+                list([0.8125, 0.1875, 0.8125])
+            )
+
+        # test defect_coords working even when significantly off (~2.2 Å) correct site,
+        # with rattled bulk
+        rattled_bulk = rattle(self.CdTe_bulk_struc)
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions.from_structures(
+                {
+                    "vacancies": [
+                        {
+                            "structure": self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                            "defect_coords": [0,0,0],
+                        }
+                    ],
+                    "bulk": rattled_bulk,
+                }
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                    }
+                }
+            )
+
+        # Test wrong type for defect index
+        with warnings.catch_warnings(record=True) as w:
+            dist = input.Distortions.from_structures(
+                {
+                    "vacancies": [
+                        {
+                            "structure": self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                            "defect_index": [0,0,0],
+                        }
+                    ],
+                    "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+                }
+            )
+            self.assertEqual(
+                str(w[0].message),
+                ("Wrong type for `defect_index`! It should be of type "
+                "int but list was provided. Will proceed "
+                "with auto-site matching."),
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                    }
+                }
+            )
+
+        # Test wrong type for defect coords
+        with warnings.catch_warnings(record=True) as w:
+            dist = input.Distortions.from_structures(
+                {
+                    "vacancies": [
+                        {
+                            "structure": self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
+                            "defect_coords": 0,
+                        }
+                    ],
+                    "bulk": self.cdte_defect_dict["bulk"]["supercell"]["structure"],
+                }
+            )
+            self.assertEqual(
+                str(w[0].message),
+                ("Wrong type for `defect_coords`! It should be of type "
+                "list/np.ndarray but int was provided. "
+                "Will proceed with auto-site matching.")
+            )
+            self.assertDictEqual(
+                dist.defects_dict,
+                {
+                    "vacancies": {
+                        "v_Cd": self.cdte_defects["vacancies"][0],
+                    }
+                }
+            )
 
 if __name__ == "__main__":
     unittest.main()

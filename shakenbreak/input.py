@@ -2466,15 +2466,22 @@ class Distortions:
         }
         for defect_type in pymatgen_defects_dict:
             for element in structures_dict[defect_type]:
-                if isinstance(element, Structure):
+                if isinstance(element, Structure):  # user only gives defect structure
                     defect = _identify_defect(
                         defect_structure=element,
                         bulk_structure=structures_dict["bulk"],
                     )
                     if defect:
                         pymatgen_defects_dict[defect_type].append(defect)
+                # Check if user gives dict with structure and defect_coords/defect_index
                 elif isinstance(element, dict):
-                    if "defect_index" in element or "defect_coords" in element:
+                    # if "defect_index" in element or "defect_coords" in element
+                    # and of correct type:
+                    if (
+                        isinstance(element.get("defect_index"), int)
+                        or isinstance(element.get("defect_coords"), list)
+                        or isinstance(element.get("defect_coords"), np.ndarray)
+                    ):
                         defect = _identify_defect(
                             defect_structure=element["structure"],
                             bulk_structure=structures_dict["bulk"],
@@ -2489,6 +2496,41 @@ class Distortions:
                                 f" with defect_index {element.get('defect_index')}"
                                 f" and/or defect_coords {element.get('defect_coords')}"
                             )
+                    else:  # wrong type for defect_coords or defect_index
+
+                        def _warn_wrong_type(variable: str, correct_type: str):
+                            warnings.warn(
+                                f"Wrong type for `{variable}`! It should be of type "
+                                f"{correct_type} but {type(element[variable]).__name__} was provided. "
+                                "Will proceed with auto-site matching."
+                            )
+
+                        if "defect_index" in element and "defect_coords" not in element:
+                            _warn_wrong_type("defect_index", "int")
+                        elif (
+                            "defect_index" not in element and "defect_coords" in element
+                        ):
+                            _warn_wrong_type("defect_coords", "list/np.ndarray")
+                        elif "defect_index" in element and "defect_coords" in element:
+                            if not isinstance(element.get("defect_index"), int):
+                                _warn_wrong_type("defect_index", "int")
+                            elif not (
+                                isinstance(element.get("defect_coords"), list)
+                                or isinstance(element.get("defect_coords"), np.ndarray)
+                            ):
+                                _warn_wrong_type("defect_coords", "list/np.ndarray")
+                        else:  # if not defect_index / defect_coords
+                            warnings.warn(
+                                """No `defect_index` or `defect_coords` provided,
+                                          so will continue with auto-site matching."""
+                            )
+                        # Proceed with auto-site matching
+                        defect = _identify_defect(
+                            defect_structure=element["structure"],
+                            bulk_structure=structures_dict["bulk"],
+                        )
+                        if defect:
+                            pymatgen_defects_dict[defect_type].append(defect)
                 else:
                     raise TypeError(
                         "Wrong format for `structures_dict`. "
