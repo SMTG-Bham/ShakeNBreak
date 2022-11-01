@@ -348,7 +348,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
             "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
             "'0.5', '0.55', '0.6'].",
-            "Then, will rattle with a std dev of 0.25 Å \n",
+            "Then, will rattle with a std dev of 0.28 Å \n",
         )
         mock_print.assert_any_call(
             "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
@@ -396,7 +396,6 @@ class DistortionLocalTestCase(unittest.TestCase):
             V_Cd_POSCAR.comment,
             "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set ENCUT)
