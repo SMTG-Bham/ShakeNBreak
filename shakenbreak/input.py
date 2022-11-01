@@ -597,7 +597,9 @@ def apply_snb_distortions(
                 (Default: None)
             - seed (:obj:`int`):
                 Seed for setting up NumPy random state from which random
-                numbers are generated.
+                numbers are generated. Default is to set seed = int(distortion_factor*100)
+                (i.e. +40% distortion -> distortion_factor = 1.4 -> seed = 140,
+                Rattled -> distortion_factor = 1 (no bond distortion) -> seed = 100)
 
     Returns:
         :obj:`dict`:
@@ -633,6 +635,13 @@ def apply_snb_distortions(
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
+            seed = kwargs.get("seed", None)
+            if (
+                not seed
+            ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
+                # to avoid cases where a particular supercell rattle gets stuck in a local minimum
+                seed = int(distortion_factor * 100)
+
             bond_distorted_defect = _apply_rattle_bond_distortions(
                 defect_dict=defect_dict,
                 num_nearest_neighbours=num_nearest_neighbours,
@@ -642,6 +651,7 @@ def apply_snb_distortions(
                 d_min=d_min,
                 distorted_element=distorted_element,
                 verbose=verbose,
+                seed=seed,
                 **kwargs,
             )
             distorted_defect_dict["distortions"][
@@ -671,6 +681,13 @@ def apply_snb_distortions(
             defect_site_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
+
+        seed = kwargs.get("seed", None)
+        if (
+            not seed
+        ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
+            # to avoid cases where a particular supercell rattle gets stuck in a local minimum
+            seed = 100  # distortion_factor = 1 when no bond distortion, just rattling
 
         if local_rattle:
             perturbed_structure = distortions.local_mc_rattle(
@@ -783,7 +800,9 @@ class Distortions:
                     (Default: None)
                 - seed (:obj:`int`):
                     Seed for setting up NumPy random state from which random
-                    numbers are generated.
+                    numbers are generated. Default is to set seed = int(distortion_factor*100)
+                    (i.e. +40% distortion -> distortion_factor = 1.4 -> seed = 140,
+                    Rattled -> distortion_factor = 1 (no bond distortion) -> seed = 100)
 
         """
         self.defects_dict = defects_dict
