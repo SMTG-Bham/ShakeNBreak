@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import pickle
 import shutil
 import subprocess
 import unittest
@@ -69,10 +68,9 @@ class CLITestCase(unittest.TestCase):
         self.V_Cd_minus0pt55_CONTCAR_struc = Structure.from_file(
             f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
             os.path.join(
@@ -89,7 +87,7 @@ class CLITestCase(unittest.TestCase):
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
         for i in [
-            "parsed_defects_dict.pickle",
+            "parsed_defects_dict.json",
             "distortion_metadata.json",
             "test_config.yml",
             "job_file",
@@ -949,9 +947,8 @@ seed: 42
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
         self.assertNotIn("Defect vac_1_Cd in charge state: +1", result.output)
-        # test parsed defects pickle
-        with open("./parsed_defects_dict.pickle", "rb") as fp:
-            parsed_defects_dict = pickle.load(fp)
+        # test parsed defects json
+        parsed_defects_dict = loadfn("parsed_defects_dict.json")
         for key in [
             "name",
             "defect_type",
@@ -987,7 +984,7 @@ nonsense_key: nonsense_value"""
                 "--config",
                 "test_config.yml",
                 "--name",
-                "vac_1_Cd",  # to match saved pickle
+                "vac_1_Cd",  # to match saved json
             ],
             catch_exceptions=False,
         )

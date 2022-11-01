@@ -2,7 +2,6 @@ import copy
 import datetime
 import json
 import os
-import pickle
 import shutil
 import unittest
 import warnings
@@ -12,6 +11,7 @@ import numpy as np
 from ase.calculators.aims import Aims
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar
+from monty.serialization import loadfn
 
 from shakenbreak import distortions, input, vasp
 
@@ -54,15 +54,12 @@ class InputTestCase(unittest.TestCase):
         self.FHI_AIMS_DATA_DIR = os.path.join(self.DATA_DIR, "fhi_aims")
         self.ESPRESSO_DATA_DIR = os.path.join(self.DATA_DIR, "quantum_espresso")
 
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_extrinsic_defects_dict.pickle"),
-            "rb",
-        ) as fp:
-            self.cdte_extrinsic_defects_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
+        self.cdte_extrinsic_defects_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_extrinsic_defects_dict.json")
+        )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
@@ -197,7 +194,7 @@ class InputTestCase(unittest.TestCase):
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated defect folders if present
         for fname in os.listdir("./"):
-            if fname.startswith("distortion_metadata"):
+            if fname.endswith("json"):  # distortion_metadata and parsed_defects_dict
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
 

@@ -1,7 +1,6 @@
 """ShakeNBreak command-line-interface (CLI)"""
 import fnmatch
 import os
-import pickle
 import warnings
 from copy import deepcopy
 from subprocess import call
@@ -11,7 +10,7 @@ import numpy as np
 from monty.json import MontyDecoder
 
 # Monty and pymatgen
-from monty.serialization import loadfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
 from pymatgen.core.structure import Element, Structure
 from pymatgen.io.vasp.inputs import Incar
@@ -718,8 +717,7 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
-    with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(defects_dict, fp)
+    dumpfn(defects_dict, "./parsed_defects_dict.json")
 
 
 @snb.command(
@@ -1054,9 +1052,8 @@ def generate_all(
                 verbose=verbose,
             )
 
-    # Dump dict with parsed defects to pickle
-    with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(defects_dict, fp)
+        # Dump dict with parsed defects to json
+        dumpfn(defects_dict, "./parsed_defects_dict.json")
 
 
 @snb.command(
