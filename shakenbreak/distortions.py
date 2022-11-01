@@ -223,9 +223,8 @@ def rattle(
             if this limit is reached an `Exception` is raised.
             (Default: 5000)
         seed (:obj:`int`):
-            Seed for NumPy random state from which random displacements are
-            generated.
-            (Default: 42)
+            Seed for NumPy random state from which random rattle displacements
+            are generated. (Default: 42)
 
     Returns:
         :obj:`Structure`:
@@ -297,8 +296,8 @@ def _local_mc_rattle_displacements(
             The cutoff used to construct the neighborlist used for checking
             interatomic distances, defaults to 2 * d_min
         seed (:obj:`int`):
-            seed for setting up NumPy random state from which random numbers are
-            generated
+            Seed for NumPy random state from which random rattle displacements
+            are generated. (Default: 42)
 
     Returns:
         :obj:`numpy.ndarray`:
@@ -436,8 +435,8 @@ def _generate_local_mc_rattled_structures(
             interatomic distance used for computing the probability for each rattle
             move
         seed (:obj:`int`):
-            seed for setting up NumPy random state from which random numbers are
-            generated
+            Seed for NumPy random state from which random rattle displacements
+            are generated. (Default: 42)
         n_iter (:obj:`int`):
             number of Monte Carlo cycles
 
@@ -518,9 +517,8 @@ def local_mc_rattle(
             if this limit is reached an `Exception` is raised.
             (Default: 5000)
         seed (:obj:`int`):
-            Seed for NumPy random state from which random displacements are
-            generated.
-            (Default: 42)
+            Seed for NumPy random state from which random rattle displacements
+            are generated. (Default: 42)
 
     Returns:
         :obj:`Structure`:

@@ -7,7 +7,6 @@ and INCAR files from being written.
 import copy
 import json
 import os
-import pickle
 import shutil
 import unittest
 import warnings
@@ -19,7 +18,7 @@ import numpy as np
 from click.testing import CliRunner
 from doped import vasp_input
 from matplotlib.testing.compare import compare_images
-from monty.serialization import dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import StructureMatcher
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
@@ -70,10 +69,9 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         # Refactor doped defect dict to dict of Defect() objects
         self.cdte_defects = {
             defect_type: [
@@ -243,11 +241,6 @@ class DistortionLocalTestCase(unittest.TestCase):
             if "#" not in str(v)
         }  # pymatgen ignores comments after values
 
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
-
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
@@ -255,7 +248,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.remove("distortion_metadata.json")
 
         for i in [
-            "parsed_defects_dict.pickle",
+            "parsed_defects_dict.json",
             "distortion_metadata.json",
             "test_config.yml",
         ]:
@@ -383,7 +376,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
             "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
             "'0.5', '0.55', '0.6'].",
-            "Then, will rattle with a std dev of 0.25 Å \n",
+            "Then, will rattle with a std dev of 0.28 Å \n",
         )
         mock_print.assert_any_call(
             "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
@@ -620,6 +613,8 @@ class DistortionLocalTestCase(unittest.TestCase):
                 charges: [0,]
                 defect_coords: [0.0, 0.0, 0.0]
         bond_distortions: [0.3,]
+        POTCAR:
+          Cd: Cd_GW
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
@@ -651,8 +646,48 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertEqual(incar_dict["IBRION"], 1)
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        # Check POTCAR generation
+        with open(f"{defect_name}_0/{dist}/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
+
         shutil.rmtree(f"{defect_name}_0")
         os.remove("INCAR")
+
+        # test warning when input file doesn't match expected format:
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "--code",
+                    "vasp",
+                    "--input_file",
+                    "test_config.yml",
+                    "--config",
+                    "test_config.yml",
+                ],
+                catch_exceptions=True,
+            )
+        dist = "Unperturbed"
+        incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        shutil.rmtree(f"{defect_name}_0")
 
         # Test CASTEP
         with open("castep.param", "w") as fp:
@@ -800,7 +835,10 @@ width: 0.3
 max_attempts: 10000
 max_disp: 1.0
 seed: 20
-local_rattle: False"""
+local_rattle: False
+POTCAR:
+  Cd: Cd_GW
+"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         defect_name = "v_Cd"  # pymatgen-analysis-defects default name
@@ -833,6 +871,10 @@ local_rattle: False"""
             self.assertTrue(
                 os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}")
             )
+        # Check POTCAR file
+        with open(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
         # Check KPOINTS file
         kpoints = Kpoints.from_file(
             f"{defect_name}_0/Bond_Distortion_-50.0%/" + "KPOINTS"
@@ -867,6 +909,38 @@ local_rattle: False"""
         # self.assertEqual(result.exit_code, 0)
         # # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0"))
         # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0/Bond_Distortion_-50.0%"))
+        # test warning when input file doesn't match expected format:
+
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "-v",
+                    "--input_file",
+                    f"test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
+        incar_dict = Incar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}"))
+
 
 if __name__ == "__main__":
     unittest.main()

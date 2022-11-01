@@ -1,6 +1,5 @@
 import copy
 import os
-import pickle
 import shutil
 import unittest
 from unittest.mock import call, patch
@@ -16,17 +15,19 @@ file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
@@ -70,8 +71,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_0",
         ]:
             if_present_rm(f"{fake_dir}")
-        if os.path.exists("distortion_metadata.json"):
-            os.remove("distortion_metadata.json")
+        if_present_rm("distortion_metadata.json")
+        if_present_rm("parsed_defects_dict.json")
 
     def test_SnB_integration(self):
         """Test full ShakeNBreak workflow, for the tricky case where at least 2

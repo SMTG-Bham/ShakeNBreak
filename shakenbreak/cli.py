@@ -1,7 +1,6 @@
 """ShakeNBreak command-line-interface (CLI)"""
 import fnmatch
 import os
-import pickle
 import warnings
 from copy import deepcopy
 from importlib.metadata import version
@@ -13,7 +12,7 @@ import numpy as np
 
 # Monty and pymatgen
 from monty.json import MontyDecoder
-from monty.serialization import loadfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
 from pymatgen.core.structure import Element, Structure
 from pymatgen.io.vasp.inputs import Incar
@@ -649,7 +648,7 @@ def snb():
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified defects and generated " "distortions",
+    help="Print information about identified defects and generated distortions",
     default=False,
     is_flag=True,
     show_default=True,
@@ -678,6 +677,7 @@ def generate(
         user_settings = {}
 
     func_args = list(locals().keys())
+    pseudopotentials = None
     if user_settings:
         valid_args = [
             "defect",
@@ -710,8 +710,14 @@ def generate(
         ]
         for key in func_args:
             if key in user_settings:
-                user_settings.pop(key, None)  # remove key from config dict
-                # as these can't be fed into Distortions()
+                user_settings.pop(key, None)
+        # Parse pseudopotentials from config file, if specified
+        if "POTCAR" in user_settings.keys():
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
+            user_settings.pop("POTCAR", None)
+        if "pseudopotentials" in user_settings.keys():
+            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
+            user_settings.pop("pseudopotentials", None)
         for key in list(user_settings.keys()):
             # remove non-sense keys from user_settings
             if key not in valid_args:
@@ -787,10 +793,16 @@ def generate(
             incar = Incar.from_file(input_file)
             incar_settings = incar.as_dict()
             [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+            if not incar_settings:
+                warnings.warn(
+                    f"Input file {input_file} specified but no valid INCAR tags found. "
+                    f"Should be in the format of VASP INCAR file."
+                )
         else:
             incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
             verbose=verbose,
+            potcar_settings=pseudopotentials,
             incar_settings=incar_settings,
         )
     elif code.lower() == "cp2k":
@@ -812,11 +824,13 @@ def generate(
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
+                pseudopotentials=pseudopotentials,
                 input_file=input_file,
             )
         else:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
+                pseudopotentials=pseudopotentials,
             )
     elif code.lower() == "castep":
         if input_file:
@@ -838,8 +852,9 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
-    with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(defect_object, fp)
+    # with open("./parsed_defects_dict.pickle", "wb") as fp:
+    #     pickle.dump(defect_object, fp)
+    dumpfn(defect_object, "./parsed_defect_object.json")
 
 
 @snb.command(
@@ -965,9 +980,9 @@ def generate_all(
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
-        # Parse pseduopotentials from config file, if specified
+        # Parse pseudopotentials from config file, if specified
         if "POTCAR" in user_settings.keys():
-            pseudopotentials = {"POTCAR": deepcopy(user_settings["potcar"])}
+            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
             user_settings.pop("POTCAR", None)
         if "pseudopotentials" in user_settings.keys():
             pseudopotentials = deepcopy(user_settings["pseudopotentials"])
@@ -1127,6 +1142,11 @@ def generate_all(
             incar = Incar.from_file(input_file)
             incar_settings = incar.as_dict()
             [incar_settings.pop(key, None) for key in ["@class", "@module"]]
+            if incar_settings == {}:
+                warnings.warn(
+                    f"Input file {input_file} specified but no valid INCAR tags found. "
+                    f"Should be in the format of VASP INCAR file."
+                )
         else:
             incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
@@ -1182,9 +1202,8 @@ def generate_all(
                 verbose=verbose,
             )
 
-    # Dump dict with parsed defects to pickle
-    with open("./parsed_defects_dict.pickle", "wb") as fp:
-        pickle.dump(defects_dict, fp)
+        # Dump dict with parsed defects to json
+        dumpfn(defects_dict, "./parsed_defects_dict.json")
 
 
 @snb.command(
@@ -1474,6 +1493,16 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     show_default=True,
 )
 @click.option(
+    "--min_energy",
+    "-min",
+    help="Minimum energy difference (in eV) between the ground-state "
+    "distortion and the `Unperturbed` structure to generate the "
+    "distortion plot, when `--all` is set.",
+    default=0.05,
+    type=float,
+    show_default=True,
+)
+@click.option(
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder(s). "
@@ -1530,8 +1559,8 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--max_energy",
     "-max",
-    help="Maximum energy (in eV), relative to the unperturbed structure,"
-    " to show on the plot.",
+    help="Maximum energy (in chosen `units`), relative to the "
+    "unperturbed structure, to show on the plot.",
     type=float,
     default=0.5,
     show_default=True,
@@ -1556,6 +1585,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 def plot(
     defect,
     all,
+    min_energy,
     path,
     code,
     colorbar,
@@ -1571,6 +1601,11 @@ def plot(
     similarity between configurations can be illustrated with a colorbar.
     """
     if all:
+        if defect is not None:
+            warnings.warn(
+                "The option `--defect` is ignored when using the `--all` flag. (All defects in "
+                f"`--path` = {path} will be plotted)."
+            )
         defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             if verbose:
@@ -1583,16 +1618,19 @@ def plot(
         }
         for defect in defect_dirs:
             defects_dict[defect.rsplit("_", 1)[0]].append(defect.rsplit("_", 1)[1])
-        plotting.plot_all_defects(
+        return plotting.plot_all_defects(
             defects_dict=defects_dict,
             output_path=path,
             add_colorbar=colorbar,
             metric=metric,
             units=units,
+            min_e_diff=min_energy,
             save_format=format,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            verbose=verbose,
         )
+
     elif defect is None:
         # assume current directory is the defect folder
         if path != ".":
@@ -1632,6 +1670,7 @@ def plot(
             units=units,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            verbose=verbose,
         )
     except Exception:
         try:
@@ -1651,6 +1690,7 @@ def plot(
                 units=units,
                 add_title=not no_title,
                 max_energy_above_unperturbed=max_energy,
+                verbose=verbose,
             )
         except Exception:
             raise Exception(
@@ -1704,11 +1744,11 @@ def plot(
 @click.option(
     "--metastable",
     "-meta",
-    help="Whether to also consider non-spontaneous metastable "
-    "energy-lowering distortions, as these can become ground-state "
+    help="Also include metastable energy-lowering distortions that "
+    "have been identified, as these can become ground-state "
     "distortions for other charge states.",
-    type=bool,
     default=False,
+    is_flag=True,
     show_default=True,
 )
 @click.option(
@@ -1725,9 +1765,20 @@ def regenerate(path, code, filename, min, metastable, verbose):
     test these distortions for the other charge states of the defect.
     Considers all identified energy-lowering distortions for each defect
     in each charge state, and screens out duplicate distorted structures
-    found for multiple charge states.
+    found for multiple charge states. Defect folder names should end with
+    charge state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc).
     """
-    defect_charges_dict = energy_lowering_distortions.read_defects_directories()
+    if path == ".":
+        path = os.getcwd()  # more verbose error if no defect folders found in path
+    defect_charges_dict = energy_lowering_distortions.read_defects_directories(
+        output_path=path
+    )
+    if not defect_charges_dict:
+        raise FileNotFoundError(
+            f"No defect folders found in directory '{path}'. Please check the "
+            f"directory contains defect folders with names ending in a charge "
+            f"state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc)."
+        )
     _ = energy_lowering_distortions.get_energy_lowering_distortions(
         defect_charges_dict=defect_charges_dict,
         output_path=path,

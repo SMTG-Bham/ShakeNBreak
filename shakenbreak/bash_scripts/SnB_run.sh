@@ -36,9 +36,9 @@ if [ ! -f "$job_filepath" ]
 fi
 
 SnB_run_loop () {
-  for i in ?(*Distortion*|*Unperturbed|*attled)/; # for each distortion
+  for i in ?(*Distortion*|*Unperturbed*|*attled*)/; # for each distortion
     do
-      if [ "$i" == "?(*Distortion*|*Unperturbed|*attled)/" ]
+      if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]
         then echo "No distortion folders found in current directory"
         break  # exit if no distortion folders found
       fi
@@ -56,7 +56,7 @@ SnB_run_loop () {
           then
           # count number of ionic steps with positive energies, after the first 5 ionic steps
           pos_energies=$(grep entropy= OUTCAR | awk 'FNR>5 && $NF !~ /^-/{print $0}' | wc -l)
-          errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI)" OUTCAR)
+          errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI|FEXC)" OUTCAR)
           if (( pos_energies > 0 )) ||  (( errors > 0 ))  # if there are positive energies or errors in OUTCAR
             then
             echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
