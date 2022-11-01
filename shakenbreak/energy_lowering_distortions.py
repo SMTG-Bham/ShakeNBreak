@@ -13,7 +13,7 @@ from ase.io import write as ase_write
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis, io
+from shakenbreak import analysis, io, plotting
 
 aaa = AseAtomsAdaptor()
 
@@ -65,17 +65,23 @@ def read_defects_directories(output_path: str = "./") -> dict:
             Dictionary mapping defect names to a list of its charge states.
     """
     list_subdirectories = [  # Get only subdirectories in the current directory
-        i
-        for i in next(os.walk(output_path))[1]
-        if ("vac_" in i)
-        or ("v_" in i)
-        or ("V_" in i)
-        or ("Int_" in i)
-        or ("_i" in i)
-        or ("sub_" in i)
-        or ("as_" in i)
-        or ("_on_" in i)
-    ]  # matching doped/PyCDT/pymatgen defect names
+        i for i in next(os.walk(output_path))[1]
+    ]
+    for i in list(
+        list_subdirectories
+    ):  # need to make copy of list when iterating over and
+        # removing elements
+        try:
+            formatted_name = plotting._format_defect_name(
+                i, include_site_num_in_name=False
+            )
+            if (
+                formatted_name is None
+            ):  # defect folder name not recognised, remove from list
+                list_subdirectories.remove(i)
+        except ValueError:  # defect folder name not recognised, remove from list
+            list_subdirectories.remove(i)
+
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
     ]  # split by last "_" (separate defect name from charge state)
@@ -399,6 +405,11 @@ def get_energy_lowering_distortions(
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
+            if not os.path.exists(energies_file):  # try parse energies now if possible
+                if verbose:
+                    print(f"Parsing {defect_species}...")
+                io.parse_energies(defect_species, output_path, code)
+
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
@@ -577,24 +588,25 @@ def get_energy_lowering_distortions(
     # were already found with/without bond distortions for other charge states
     # (i.e. found but higher energy, found but also with unperturbed, found
     # but with energy lowering less than min_e_diff etc)
-    print("\nComparing and pruning defect structures across charge states...")
-    low_energy_defects = _prune_dict_across_charges(
-        low_energy_defects=low_energy_defects,
-        defect_pruning_dict=defect_pruning_dict,
-        code=code,
-        structure_filename=structure_filename,
-        output_path=output_path,
-        stol=stol,
-        min_dist=min_dist,
-    )
-
-    # Write input files for the identified distortions
-    if write_input_files:
-        write_distorted_inputs(
+    if low_energy_defects:
+        print("\nComparing and pruning defect structures across charge states...")
+        low_energy_defects = _prune_dict_across_charges(
             low_energy_defects=low_energy_defects,
-            output_path=output_path,
+            defect_pruning_dict=defect_pruning_dict,
             code=code,
+            structure_filename=structure_filename,
+            output_path=output_path,
+            stol=stol,
+            min_dist=min_dist,
         )
+
+        # Write input files for the identified distortions
+        if write_input_files:
+            write_distorted_inputs(
+                low_energy_defects=low_energy_defects,
+                output_path=output_path,
+                code=code,
+            )
 
     return low_energy_defects
 
