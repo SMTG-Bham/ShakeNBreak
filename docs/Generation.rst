@@ -51,12 +51,13 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
                 Cd  # Distort Cd atoms near the Cd interstitial
 
         # Rattle section
-        stdev: 0.25  # Rattle standard deviation
+        stdev: 0.25  # Rattle standard deviation (Default = 10% of auto-determined bulk bond length)
         d_min: 2.25  # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
         active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
         max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
         max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
+        seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
 
 
 .. NOTE::
@@ -134,12 +135,13 @@ the following directory structures will be parsed correctly:
                 Cd # Distort Cd atoms near the Cd interstitial
 
         # Rattle section
-        stdev: 0.25  # Rattle standard deviation
+        stdev: 0.25  # Rattle standard deviation (Default = 10% of auto-determined bulk bond length)
         d_min: 2.25  # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
         active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
         max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
         max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
+        seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
 
 The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
 distortion folders with the relaxation input files and structures. If using ``VASP``:
