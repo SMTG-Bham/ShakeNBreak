@@ -607,7 +607,7 @@ class InputTestCase(unittest.TestCase):
         """Test _apply_rattle_bond_distortions function with all possible kwargs"""
         # test distortion kwargs with Int_Cd_2
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
-            self.Int_Cd_2,
+            copy.copy(self.Int_Cd_2),
             num_nearest_neighbours=10,
             bond_distortions=[-0.6],
             distorted_element="Cd",
@@ -759,8 +759,8 @@ class InputTestCase(unittest.TestCase):
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
         for defect_dict in [
-            {"vacancies": [self.V_Cd,]},
-            {"interstitials": [self.Int_Cd_2,]},
+            {"vacancies": [copy.copy(self.V_Cd),]},
+            {"interstitials": [copy.copy(self.Int_Cd_2),]},
         ]:
             with patch("builtins.print") as mock_print:
                 # transform defect_dict to Defect object
@@ -1736,7 +1736,6 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
         # test short interatomic distance distortions not omitted when Hydrogen knocking about
-        # TODO: Check why the H atom gets removed when the Defect() is created!?
         fake_hydrogen_V_Cd_dict = copy.copy(self.V_Cd_dict)
         fake_hydrogen_V_Cd_dict["charges"] = [0]
         fake_hydrogen_bulk = copy.copy(self.cdte_defect_dict["bulk"])
@@ -1779,15 +1778,24 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
         # test default `stdev` and `seed` setting in Distortions() with Int_Cd_2
-        int_Cd_2 = self.Int_Cd_2_dict.copy()
+        int_Cd_2 = copy.copy(self.Int_Cd_2)
+        int_Cd_2.user_charges = [0,]
         dist = input.Distortions(  # don't set `stdev` or `seed`, in order to test default behaviour
-            {"interstitials": [int_Cd_2]},
-            bond_distortions=[
-                -0.6,
-            ],  # zero electron change
+            {
+                "interstitials":
+                    {"Int_Cd_2": int_Cd_2,},
+            },
+            bond_distortions=[-0.6, ],  # zero electron change
+            local_rattle=False,
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=40,  # distortion_factor * 100, default
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
+        # Check structure
+        defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][
+            "Bond_Distortion_-60.0%"
+        ].remove_oxidation_states()
         self.assertEqual(
             self.Int_Cd_2_minus0pt6_struc_rattled,
             defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][

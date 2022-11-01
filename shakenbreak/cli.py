@@ -854,7 +854,7 @@ def generate(
             )
     # with open("./parsed_defects_dict.pickle", "wb") as fp:
     #     pickle.dump(defect_object, fp)
-    dumpfn(defect_object, "./parsed_defect_object.json")
+    dumpfn(defect_object, "./parsed_defects_dict.json")
 
 
 @snb.command(

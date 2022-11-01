@@ -131,28 +131,28 @@ class CLITestCase(unittest.TestCase):
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"vac_1_Cd_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         if_present_rm(
             os.path.join(
-                self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             )
         )
         if_present_rm("Rattled_Bulk_CdTe_POSCAR")
 
         # Remove parsed vac_1_Ti_0 energies file
-        if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0/vac_1_Ti_0.yaml")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml")
 
     def test_generate_defect_object(self):
         """Test generate_defect_object"""
@@ -2036,9 +2036,9 @@ Chosen VASP error message: {error_string}
         )
 
         # test warning when all parsed distortions are >0.1 eV higher energy than unperturbed
-        defect = "vac_1_Ti_3"
+        defect = "v_Ti_3"
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
         )
         high_energy_outcar_string = """
@@ -2093,9 +2093,9 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
         # test warning when all distortions have been renamed to "*High_Energy*"
-        defect = "vac_1_Ti_3"
+        defect = "v_Ti_3"
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
         )
         shutil.move(
@@ -2507,7 +2507,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or {self.EXAMPLE_RESULTS}/"
-            "vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
+            f"{defect}/distortion_metadata.json not found. Will not parse "
             "its contents (to specify which neighbour atoms were distorted in plot text).",
             str(w[0].message),
         )
@@ -2731,7 +2731,7 @@ Chosen VASP error message: {error_string}
                 [
                     f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or "
                     f"{self.EXAMPLE_RESULTS}/"
-                    "vac_1_Ti_0/distortion_metadata.json not found. Will not parse "
+                    "v_Ti_0/distortion_metadata.json not found. Will not parse "
                     "its contents (to specify which neighbour atoms were distorted in plot "
                     "text)." == str(warning.message)
                     for warning in w
@@ -2760,7 +2760,6 @@ Chosen VASP error message: {error_string}
         self.tearDown()
 
         # Test --all option, with --min_energy option
-        defect = "vac_1_Ti_0"
         result = runner.invoke(
             snb,
             [
@@ -2775,19 +2774,20 @@ Chosen VASP error message: {error_string}
             ],
             catch_exceptions=False,
         )
+        defect = "v_Ti_0"
         self.assertTrue(  # energy diff of 3.2 eV larger than min_energy
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png")
             )
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
             )
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png")
             )
         )
         [
@@ -2810,6 +2810,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
+        defect = "v_Cd" # in example results
         if w:
             self.assertFalse(
                 any([war.category == UserWarning for war in w])
@@ -2825,52 +2826,58 @@ Chosen VASP error message: {error_string}
         )
         self.assertIn(
             "Writing low-energy distorted structure to "
-            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"{self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
             "Writing low-energy distorted structure to "
-            f"{self.EXAMPLE_RESULTS}/vac_1_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_-1/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_-1/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
+        vac_ti = "v_Ti"
         self.assertNotIn(  # now we run io.parse_energies() if energy file not present
-            "No data parsed for vac_1_Ti_0. This species will be skipped and will not be included"
+            f"No data parsed for {vac_ti}_0. This species will be skipped and will not be included"
             " in the low_energy_defects charge state lists (and so energy lowering distortions"
             " found for other charge states will not be applied for this species).",
             result.output,
         )
-        self.assertIn("Parsing vac_1_Ti_0...", result.output)
+        self.assertIn(f"Parsing {vac_ti}_0...", result.output)
         self.assertIn(
-            "vac_1_Ti_0: Energy difference between minimum, found with -0.4 bond "
+            f"{vac_ti}_0: Energy difference between minimum, found with -0.4 bond "
             "distortion, and unperturbed: -3.26 eV.",
             result.output,
         )
         self.assertIn(
-            "Energy lowering distortion found for vac_1_Ti with charge 0. Adding to "
+            f"Energy lowering distortion found for {vac_ti} with charge 0. Adding to "
             "low_energy_defects dictionary.",
             result.output,
         )
         self.tearDown()  # Remove generated files
 
         # test "*High_Energy*" ignored and doesn't cause errors
-        shutil.copytree(
-            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-60.0%"),
+        if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
-            ),
-        )
+                    self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                )
+        ):
+            shutil.copytree(
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-60.0%"),
+                os.path.join(
+                    self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                ),
+            )
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
