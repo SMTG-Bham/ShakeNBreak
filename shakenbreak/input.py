@@ -627,6 +627,7 @@ def apply_snb_distortions(
             )
             d_min = 2.25
 
+    seed = kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
             distortion = (
@@ -635,7 +636,6 @@ def apply_snb_distortions(
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
-            seed = kwargs.get("seed", None)
             if (
                 not seed
             ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
@@ -682,7 +682,6 @@ def apply_snb_distortions(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
 
-        seed = kwargs.get("seed", None)
         if (
             not seed
         ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
