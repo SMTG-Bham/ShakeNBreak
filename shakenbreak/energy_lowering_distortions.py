@@ -111,6 +111,7 @@ def _compare_distortion(
     low_energy_defects: dict,
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> dict:
     """
     Compare the ground state distortion (`gs_distortion`) to the other
@@ -142,6 +143,8 @@ def _compare_distortion(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`dict`
@@ -161,6 +164,7 @@ def _compare_distortion(
             # found to match
             stol=stol,
             min_dist=min_dist,
+            verbose=verbose,
         )
         comparison_dicts_dict[i] = struct_comparison_dict
 
@@ -214,6 +218,7 @@ def _prune_dict_across_charges(
     output_path: str = ".",
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> dict:
     """
     Screen through defects to check if any lower-energy distorted structures
@@ -255,9 +260,22 @@ def _prune_dict_across_charges(
             for charge in list(
                 set(defect_pruning_dict[defect]) - set(distortion_dict["charges"])
             ):
-                # charges in defect_pruning_dict that aren't already in this
-                # distortion entry
+                imported_groundstates = [
+                    gs_distortion
+                    for gs_distortion in distortion_dict["bond_distortions"]
+                    if isinstance(gs_distortion, str) and "_from_" in gs_distortion
+                ]
+                orig_charges_from_imported_groundstates = [
+                    int(gs_distortion.split("_from_")[-1])
+                    for gs_distortion in imported_groundstates
+                ]
+                # skip if groundstate is from an imported distortion, from this charge state
+                if charge in orig_charges_from_imported_groundstates:
+                    continue
+
+                # charges in defect_pruning_dict that aren't already in this distortion entry
                 defect_species = f"{defect}_{charge}"
+                print(defect_species, distortion_dict)
                 comparison_results = compare_struct_to_distortions(
                     distortion_dict["structures"][0],
                     defect_species,
@@ -266,6 +284,7 @@ def _prune_dict_across_charges(
                     structure_filename=structure_filename,
                     stol=stol,
                     min_dist=min_dist,
+                    verbose=verbose,
                 )
                 if comparison_results[0]:
                     # structure found in distortion tests for this charge state.
@@ -467,6 +486,7 @@ def get_energy_lowering_distortions(
                         low_energy_defects=low_energy_defects,
                         stol=stol,
                         min_dist=min_dist,
+                        verbose=verbose,
                     )
 
                 elif defect not in low_energy_defects:
@@ -541,6 +561,7 @@ def get_energy_lowering_distortions(
                                 low_energy_defects=low_energy_defects,
                                 stol=stol,
                                 min_dist=min_dist,
+                                verbose=verbose,
                             )
 
                         elif defect not in low_energy_defects:
@@ -620,6 +641,7 @@ def compare_struct_to_distortions(
     structure_filename: str = "CONTCAR",
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> tuple:
     """
     Compares the ground-state structure found for a certain defect charge
@@ -652,6 +674,8 @@ def compare_struct_to_distortions(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             orderto consider them not matching (in Å, default = 0.2 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`tuple`:
@@ -683,6 +707,7 @@ def compare_struct_to_distortions(
         stol=stol,
         min_dist=min_dist,
         display_df=False,
+        verbose=verbose,
     )
     if struct_comparison_df is None:  # no converged structures found for
         # defect_species

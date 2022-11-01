@@ -643,6 +643,7 @@ def calculate_struct_comparison(
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
     min_dist: float = 0.1,
+    verbose: bool = True,
 ) -> dict:
     """
     Calculate either the summed atomic displacement, with metric = "disp",
@@ -680,6 +681,8 @@ def calculate_struct_comparison(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`dict`:
@@ -712,7 +715,8 @@ def calculate_struct_comparison(
             f"ref_structure must be either a key from defect_structures_dict "
             f"or a pymatgen Structure object. Got {type(ref_structure)} instead."
         )
-    print(f"Comparing structures to {ref_name}...")
+    if verbose:
+        print(f"Comparing structures to {ref_name}...")
 
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
@@ -762,6 +766,7 @@ def compare_structures(
     units: str = "eV",
     min_dist: float = 0.1,
     display_df: bool = True,
+    verbose: bool = True,
 ) -> Union[None, pd.DataFrame]:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
@@ -800,6 +805,8 @@ def compare_structures(
         display_df (:obj:`bool`):
             Whether or not to display the structure comparison DataFrame
             interactively in Jupyter/Ipython (Default: True).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`pd.DataFrame`:
@@ -825,6 +832,7 @@ def compare_structures(
         ref_structure=ref_structure,
         stol=stol,
         min_dist=min_dist,
+        verbose=verbose,
     )
     with _HiddenPrints():  # only print "Comparing to..." once
         max_dist_dict = calculate_struct_comparison(
@@ -832,6 +840,7 @@ def compare_structures(
             metric="max_dist",
             ref_structure=ref_structure,
             stol=stol,
+            verbose=verbose,
         )
         # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
         number_of_nan = len([value for value in disp_dict.values() if value is None])
@@ -846,6 +855,7 @@ def compare_structures(
                 metric="max_dist",
                 ref_structure=ref_structure,
                 stol=stol + 0.4,
+                verbose=verbose,
             )
             disp_dict = calculate_struct_comparison(
                 defect_structures_dict,
@@ -853,6 +863,7 @@ def compare_structures(
                 ref_structure=ref_structure,
                 stol=stol + 0.4,
                 min_dist=min_dist,
+                verbose=verbose,
             )
 
     for distortion in defect_energies_dict["distortions"]:
