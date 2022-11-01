@@ -441,6 +441,7 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[-0.5],
             stdev=0.25,
             verbose=True,
+            seed=42,  # old default
         )
         self.assertDictEqual(self.V_Cd_dict, V_Cd_distorted_dict["Unperturbed"])
 
@@ -456,6 +457,7 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[-0.5],
             stdev=0.1,
             verbose=True,
+            seed=42,  # old default
         )
         distorted_V_Cd_struc = V_Cd_0pt1_distorted_dict["distortions"][
             "Bond_Distortion_-50.0%"
@@ -474,6 +476,7 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[-0.5],
             stdev=0.25,
             verbose=True,
+            seed=42,  # old default
         )
         V_Cd_3_neighbours_distortion_parameters = self.V_Cd_distortion_parameters.copy()
         V_Cd_3_neighbours_distortion_parameters["num_distorted_neighbours"] = 3
@@ -526,7 +529,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             self.Int_Cd_2_minus0pt6_struc_rattled, distorted_Int_Cd_2_struc
         )
-
         np.testing.assert_equal(
             Int_Cd_2_distorted_dict["distortion_parameters"],
             self.Int_Cd_2_normal_distortion_parameters,
@@ -1635,7 +1637,7 @@ class InputTestCase(unittest.TestCase):
     def test_local_rattle(
         self,
     ):
-        """ "Test option local_rattle of Distortions class"""
+        """ Test option local_rattle of Distortions class"""
         reduced_V_Cd_dict = self.V_Cd_dict.copy()
         reduced_V_Cd_dict["charges"] = [0]
         oxidation_states = {"Cd": +2, "Te": -2}
@@ -1646,7 +1648,14 @@ class InputTestCase(unittest.TestCase):
             local_rattle=True,  # default
         )
         self.assertTrue(dist.local_rattle)
-        defects_dict, metadata_dict = dist.apply_distortions()
+        with patch("builtins.print") as mock_print:
+            defects_dict, metadata_dict = dist.apply_distortions()
+        # test distortion info printing with auto-determined `stdev`
+        print(mock_print.call_args_list)
+        mock_print.assert_any_call("Applying ShakeNBreak...",
+                                   "Will apply the following bond distortions:",
+                                   "['-0.3'].",
+                                   "Then, will rattle with a std dev of 0.28 \u212B \n")
         # Check structure
         self.assertEqual(
             Structure.from_file(
@@ -1671,7 +1680,13 @@ class InputTestCase(unittest.TestCase):
             ],  # zero electron change
             local_rattle=True,  # default
         )
-        defects_dict, metadata_dict = dist.apply_distortions()
+        with patch("builtins.print") as mock_print:
+            defects_dict, metadata_dict = dist.apply_distortions()
+        # test distortion info printing with auto-determined `stdev`
+        mock_print.assert_any_call("Applying ShakeNBreak...",
+                                   "Will apply the following bond distortions:",
+                                   "['-0.3'].",
+                                   "Then, will rattle with a std dev of 0.28 \u212B \n")
         self.assertEqual(
             Structure.from_file(
                 f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
