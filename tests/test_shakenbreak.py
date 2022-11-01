@@ -187,16 +187,16 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                     defect_charges_dict
                 )
             )
-            # mock_print.assert_any_call(
-            #     "Low-energy distorted structure for vac_1_Cd_-1 already "
-            #     "found with charge states [0], storing together."
-            # )
-
             mock_print.assert_any_call(
-                "Ground-state structure found for vac_1_Cd with charges [-2] has also "
-                "been found for charge state -1 (according to structure matching). "
-                "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
+                "Low-energy distorted structure for vac_1_Cd_-1 already "
+                "found with charge states [0], storing together."
             )
+
+        mock_print.not_called_with(
+            "Ground-state structure found for vac_1_Cd with charges [-2] has also "
+            "been found for charge state -1 (according to structure matching). "
+            "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
+        )  # not called because -2 groundstate is -7.5%_from_-1 (i.e. imported from -1)
 
         # Test that energy_lowering_distortions parsing functions run ok if run on folders where
         # we've already done _some_ re-tests from other structures (-55.0%_from_0 for -1 but not
@@ -216,7 +216,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         self.assertEqual(
             sorted(
-                [sorted(tuple([-2, -1])), sorted(tuple([0, -1]))]
+                [sorted(tuple([-2])), sorted(tuple([0, -1]))]
             ),  # sort to make sure order is the same
             sorted(
                 [
