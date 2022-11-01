@@ -1,11 +1,11 @@
 import os
-import pickle
 import unittest
 import warnings
 from unittest.mock import patch
 
 import numpy as np
 from pymatgen.core.structure import Structure
+from monty.serialization import loadfn
 
 from shakenbreak import distortions
 
@@ -16,10 +16,9 @@ class DistortionTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
 
         self.V_Cd_struc = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
@@ -62,7 +61,7 @@ class DistortionTestCase(unittest.TestCase):
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
             )
         )
-        # Confirm correct structures and pickle dict:
+        # Confirm correct structures and json dict:
         self.assertEqual(
             self.V_Cd_struc,
             self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],

@@ -7,7 +7,6 @@ and INCAR files from being written.
 import copy
 import json
 import os
-import pickle
 import shutil
 import unittest
 import warnings
@@ -19,7 +18,7 @@ import numpy as np
 from click.testing import CliRunner
 from doped import vasp_input
 from matplotlib.testing.compare import compare_images
-from monty.serialization import dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
@@ -69,10 +68,9 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
@@ -212,11 +210,6 @@ class DistortionLocalTestCase(unittest.TestCase):
             if "#" not in str(v)
         }  # pymatgen ignores comments after values
 
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
-
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
@@ -224,7 +217,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.remove("distortion_metadata.json")
 
         for i in [
-            "parsed_defects_dict.pickle",
+            "parsed_defects_dict.json",
             "distortion_metadata.json",
             "test_config.yml",
         ]:
