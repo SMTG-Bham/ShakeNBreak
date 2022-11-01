@@ -1020,7 +1020,7 @@ class Distortions:
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             f"{[f'{round(i,3)+0}' for i in bond_distortions]}.",
-            f"Then, will rattle with a std dev of {stdev} \u212B \n",
+            f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
         )
 
     def _update_distortion_metadata(
