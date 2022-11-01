@@ -275,7 +275,6 @@ def _prune_dict_across_charges(
 
                 # charges in defect_pruning_dict that aren't already in this distortion entry
                 defect_species = f"{defect}_{charge}"
-                print(defect_species, distortion_dict)
                 comparison_results = compare_struct_to_distortions(
                     distortion_dict["structures"][0],
                     defect_species,
@@ -290,8 +289,8 @@ def _prune_dict_across_charges(
                     # structure found in distortion tests for this charge state.
                     # Add it to the list to avoid redundant work
                     print(
-                        f"Ground-state structure found for {defect} with charges"
-                        f" {distortion_dict['charges']} has been also previously been found for "
+                        f"Ground-state structure found for {defect} with charges "
+                        f"{distortion_dict['charges']} has also been found for "
                         f"charge state {'+' if charge > 0 else ''}{charge} (according to "
                         f"structure matching). Adding this charge to the corresponding entry in "
                         f"low_energy_defects[{defect}]."

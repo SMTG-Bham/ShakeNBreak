@@ -893,18 +893,32 @@ def compare_structures(
             df_list.append([distortion, None, None, rel_energy])
 
     if "Unperturbed" in defect_energies_dict:
-        df_list.append(
-            [
-                "Unperturbed",
-                round(disp_dict["Unperturbed"], 3) + 0
-                if isinstance(disp_dict["Unperturbed"], float)
-                else None,
-                round(max_dist_dict["Unperturbed"], 3) + 0
-                if isinstance(max_dist_dict["Unperturbed"], float)
-                else None,
-                round(defect_energies_dict["Unperturbed"], 2) + 0,
-            ]
-        )
+        if "Unperturbed" in disp_dict:
+            df_list.append(
+                [
+                    "Unperturbed",
+                    round(disp_dict["Unperturbed"], 3) + 0
+                    if isinstance(disp_dict["Unperturbed"], float)
+                    else None,
+                    round(max_dist_dict["Unperturbed"], 3) + 0
+                    if isinstance(max_dist_dict["Unperturbed"], float)
+                    else None,
+                    round(defect_energies_dict["Unperturbed"], 2) + 0,
+                ]
+            )
+        else:
+            warnings.warn(
+                "Could not find Unperturbed structure in defect_structures_dict. Storing as 'Not "
+                "converged'."
+            )
+            df_list.append(
+                [
+                    "Unperturbed",
+                    None,
+                    None,
+                    round(defect_energies_dict["Unperturbed"], 2) + 0,
+                ]
+            )
 
     struct_comparison_df = pd.DataFrame(
         df_list,
