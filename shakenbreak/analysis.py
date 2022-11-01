@@ -643,6 +643,7 @@ def calculate_struct_comparison(
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
     min_dist: float = 0.1,
+    verbose: bool = True,
 ) -> dict:
     """
     Calculate either the summed atomic displacement, with metric = "disp",
@@ -680,6 +681,8 @@ def calculate_struct_comparison(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`dict`:
@@ -712,7 +715,8 @@ def calculate_struct_comparison(
             f"ref_structure must be either a key from defect_structures_dict "
             f"or a pymatgen Structure object. Got {type(ref_structure)} instead."
         )
-    print(f"Comparing structures to {ref_name}...")
+    if verbose:
+        print(f"Comparing structures to {ref_name}...")
 
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
@@ -762,6 +766,7 @@ def compare_structures(
     units: str = "eV",
     min_dist: float = 0.1,
     display_df: bool = True,
+    verbose: bool = True,
 ) -> Union[None, pd.DataFrame]:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
@@ -800,6 +805,8 @@ def compare_structures(
         display_df (:obj:`bool`):
             Whether or not to display the structure comparison DataFrame
             interactively in Jupyter/Ipython (Default: True).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`pd.DataFrame`:
@@ -825,6 +832,7 @@ def compare_structures(
         ref_structure=ref_structure,
         stol=stol,
         min_dist=min_dist,
+        verbose=verbose,
     )
     with _HiddenPrints():  # only print "Comparing to..." once
         max_dist_dict = calculate_struct_comparison(
@@ -832,6 +840,7 @@ def compare_structures(
             metric="max_dist",
             ref_structure=ref_structure,
             stol=stol,
+            verbose=verbose,
         )
         # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
         number_of_nan = len([value for value in disp_dict.values() if value is None])
@@ -846,6 +855,7 @@ def compare_structures(
                 metric="max_dist",
                 ref_structure=ref_structure,
                 stol=stol + 0.4,
+                verbose=verbose,
             )
             disp_dict = calculate_struct_comparison(
                 defect_structures_dict,
@@ -853,6 +863,7 @@ def compare_structures(
                 ref_structure=ref_structure,
                 stol=stol + 0.4,
                 min_dist=min_dist,
+                verbose=verbose,
             )
 
     for distortion in defect_energies_dict["distortions"]:
@@ -861,32 +872,53 @@ def compare_structures(
         except KeyError:  # if relaxation didn't converge for this bond distortion,
             #  store it as NotANumber
             rel_energy = float("NaN")
-        df_list.append(
-            [
-                distortion,
-                round(disp_dict[distortion], 3) + 0
-                if isinstance(disp_dict[distortion], float)
-                else None,
-                round(max_dist_dict[distortion], 3) + 0
-                if isinstance(max_dist_dict[distortion], float)
-                else None,
-                round(rel_energy, 2) + 0,
-            ]
-        )
+        if distortion in disp_dict:
+            df_list.append(
+                [
+                    distortion,
+                    round(disp_dict[distortion], 3) + 0
+                    if isinstance(disp_dict[distortion], float)
+                    else None,
+                    round(max_dist_dict[distortion], 3) + 0
+                    if isinstance(max_dist_dict[distortion], float)
+                    else None,
+                    round(rel_energy, 2) + 0,
+                ]
+            )
+        else:
+            warnings.warn(
+                f"Could not find bond distortion '{distortion}' in defect_structures_dict. "
+                f"Storing as 'Not converged'."
+            )
+            df_list.append([distortion, None, None, rel_energy])
 
     if "Unperturbed" in defect_energies_dict:
-        df_list.append(
-            [
-                "Unperturbed",
-                round(disp_dict["Unperturbed"], 3) + 0
-                if isinstance(disp_dict["Unperturbed"], float)
-                else None,
-                round(max_dist_dict["Unperturbed"], 3) + 0
-                if isinstance(max_dist_dict["Unperturbed"], float)
-                else None,
-                round(defect_energies_dict["Unperturbed"], 2) + 0,
-            ]
-        )
+        if "Unperturbed" in disp_dict:
+            df_list.append(
+                [
+                    "Unperturbed",
+                    round(disp_dict["Unperturbed"], 3) + 0
+                    if isinstance(disp_dict["Unperturbed"], float)
+                    else None,
+                    round(max_dist_dict["Unperturbed"], 3) + 0
+                    if isinstance(max_dist_dict["Unperturbed"], float)
+                    else None,
+                    round(defect_energies_dict["Unperturbed"], 2) + 0,
+                ]
+            )
+        else:
+            warnings.warn(
+                "Could not find Unperturbed structure in defect_structures_dict. Storing as 'Not "
+                "converged'."
+            )
+            df_list.append(
+                [
+                    "Unperturbed",
+                    None,
+                    None,
+                    round(defect_energies_dict["Unperturbed"], 2) + 0,
+                ]
+            )
 
     struct_comparison_df = pd.DataFrame(
         df_list,

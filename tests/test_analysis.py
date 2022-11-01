@@ -504,7 +504,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_species="v_Cd_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
-            max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict)
+            max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict, verbose=True)
             mock_print.assert_called_with("Comparing structures to Unperturbed...")
         self.assertEqual(
             len(max_dist_dict), len(defect_structures_dict)
@@ -533,7 +533,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # test with specified ref_structure as dict key:
         with patch("builtins.print") as mock_print:
             disp_dict = analysis.calculate_struct_comparison(
-                defect_structures_dict, "disp", ref_structure=-0.4
+                defect_structures_dict, "disp", ref_structure=-0.4, verbose=True
             )
             mock_print.assert_called_with(
                 "Comparing structures to -40.0% bond distorted structure..."
@@ -549,6 +549,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_structures_dict,
                 "disp",
                 ref_structure=self.V_Cd_minus0pt5_struc_rattled,
+                verbose=True
             )
             mock_print.assert_called_with(
                 "Comparing structures to specified ref_structure (Cd31 Te32)..."
