@@ -1796,8 +1796,11 @@ class InputTestCase(unittest.TestCase):
         defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][
             "Bond_Distortion_-60.0%"
         ].remove_oxidation_states()
+        test_struct = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_0_minus0pt6_struc_rattle_seed_0_stdev_0.28_POSCAR"
+        )
         self.assertEqual(
-            self.Int_Cd_2_minus0pt6_struc_rattled,
+            test_struct,
             defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][
                 "Bond_Distortion_-60.0%"
             ],
@@ -1821,6 +1824,8 @@ class InputTestCase(unittest.TestCase):
             oxidation_states=oxidation_states,
             bond_distortions=[-0.3],
             local_rattle=True,  # default off
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=70,  # distortion_factor * 100, default
         )
         self.assertTrue(dist.local_rattle)
         with patch("builtins.print") as mock_print:
@@ -1833,6 +1838,9 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.28 \u212B \n",
         )
         # Check structure
+        defects_dict["vac_1_Cd"]["charges"][0]["structures"]["distortions"][
+            "Bond_Distortion_-30.0%"
+        ].remove_oxidation_states()
         self.assertEqual(
             Structure.from_file(
                 f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0_-30.0%_Distortion_tailed_off_rattle_POSCAR"
@@ -1855,6 +1863,8 @@ class InputTestCase(unittest.TestCase):
                 -0.3,
             ],  # zero electron change
             local_rattle=True,  # default off
+            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+            seed=0,
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
@@ -1865,13 +1875,16 @@ class InputTestCase(unittest.TestCase):
             "['-0.3'].",
             "Then, will rattle with a std dev of 0.28 \u212B \n",
         )
+        gen_struct = defects_dict["Int_Cd_2"]["charges"][2]["structures"]["distortions"][
+            "Rattled"
+        ]
+        gen_struct.remove_oxidation_states()
+        test_struct = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
+        )
         self.assertEqual(
-            Structure.from_file(
-                f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
-            ),
-            defects_dict["Int_Cd_2"]["charges"][2]["structures"]["distortions"][
-                "Rattled"
-            ],
+            test_struct,
+            gen_struct,
         )
 
     def test_default_rattle_stdev_and_seed(
@@ -1925,16 +1938,12 @@ class InputTestCase(unittest.TestCase):
             ]
         generated_struct.remove_oxidation_states()
         test_struct = Structure.from_file(
-            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
         )
-        # self.assertEqual(
-        #     Structure.from_file(
-        #         f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_POSCAR"
-        #     ),
-        #     generated_struct,
-        # )
-        sm = StructureMatcher()
-        self.assertTrue(sm.get_rms_dist(test_struct, generated_struct)[0] < 0.1)
+        self.assertEqual(
+            test_struct,
+            generated_struct,
+        )
 
     def test_from_dict(self):
         """Test from_dict() method of Distortion() class."""
