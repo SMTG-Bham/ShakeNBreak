@@ -423,8 +423,8 @@ def _apply_rattle_bond_distortions(
                 Carlo rattling. By default, all atoms are rattled.
                 (Default: None)
             - seed (:obj:`int`):
-                Seed for setting up NumPy random state from which random
-                numbers are generated.
+                Seed for setting up NumPy random state from which rattle
+                random displacements are generated.
 
     Returns:
         :obj:`dict`:
@@ -596,10 +596,10 @@ def apply_snb_distortions(
                 Carlo rattling. By default, all atoms are rattled.
                 (Default: None)
             - seed (:obj:`int`):
-                Seed for setting up NumPy random state from which random
-                numbers are generated. Default is to set seed = int(distortion_factor*100)
-                (i.e. +40% distortion -> distortion_factor = 1.4 -> seed = 140,
-                Rattled -> distortion_factor = 1 (no bond distortion) -> seed = 100)
+                Seed from which rattle random displacements are generated. Default
+                is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                distortion_factor = 1.4 -> seed = 140, Rattled ->
+                distortion_factor = 1 (no bond distortion) -> seed = 100)
 
     Returns:
         :obj:`dict`:
@@ -798,10 +798,10 @@ class Distortions:
                     Carlo rattling. By default, all atoms are rattled.
                     (Default: None)
                 - seed (:obj:`int`):
-                    Seed for setting up NumPy random state from which random
-                    numbers are generated. Default is to set seed = int(distortion_factor*100)
-                    (i.e. +40% distortion -> distortion_factor = 1.4 -> seed = 140,
-                    Rattled -> distortion_factor = 1 (no bond distortion) -> seed = 100)
+                    Seed from which rattle random displacements are generated. Default
+                    is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                    distortion_factor = 1.4 -> seed = 140, Rattled ->
+                    distortion_factor = 1 (no bond distortion) -> seed = 100)
 
         """
         self.defects_dict = defects_dict

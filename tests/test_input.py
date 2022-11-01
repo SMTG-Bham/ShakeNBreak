@@ -475,7 +475,7 @@ class InputTestCase(unittest.TestCase):
             self.V_Cd_dict,
             num_nearest_neighbours=3,
             bond_distortions=[-0.5],
-            stdev=0.25,
+            stdev=0.25,  # old default
             verbose=True,
             seed=42,  # old default
         )
