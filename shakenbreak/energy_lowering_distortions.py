@@ -422,16 +422,22 @@ def get_energy_lowering_distortions(
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
+            if verbose:
+                print(f"Parsing {defect_species}...")
+
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
-            if not os.path.exists(energies_file):  # try parse energies now if possible
-                if verbose:
-                    print(f"Parsing {defect_species}...")
+            with warnings.catch_warnings():  # ignore warnings in case energies already parsed
+                # and output files deleted
+                if os.path.exists(
+                    energies_file
+                ):  # ignore parsing warnings _only_ if energies
+                    # file already exists
+                    warnings.simplefilter("ignore", category=UserWarning)
                 io.parse_energies(defect_species, output_path, code)
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
-
             # Defect without data
             if energies_dict is None:
                 print(
