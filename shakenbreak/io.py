@@ -243,7 +243,6 @@ def parse_energies(
                 prev_energies_dict, _, _ = analysis._sort_data(
                     energies_file, verbose=False
                 )
-                print(dist_dirs, prev_energies_dict)
             except Exception:
                 prev_energies_dict = {}
         else:

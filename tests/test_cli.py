@@ -2079,8 +2079,6 @@ Chosen VASP error message: {error_string}
         # test print statement about not being fully relaxed
         self.assertNotIn("not fully relaxed", result.output)
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
-        print([i.message for i in w])
-        print(result.output)
         self.assertTrue(
             any(
                 [
