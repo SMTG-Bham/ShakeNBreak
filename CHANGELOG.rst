@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+v22.11.1
+--------
+
+Main changes:
+
+- Update rattling procedure; :code:`stdev` be automatically set to 10% bulk bond length and :code:`seed` alternated for different
+  distortions (set to 100*distortion_factor) to avoid rare 'stuck rattle' occurrences.
+- Refactor :code:`pickle` usages to :code:`JSON` serialisation to be more robust to package (i.e. pymatgen) updates.
+- Update :code:`snb-regenerate` to be more robust, can be continually rerun without generating duplicate calculations.
+- Update :code:`snb-run` to consider calculations with >50 ionic steps and <2 meV energy change as converged.
+- Minor changes, efficiency improvements and bug fixes.
+
+
 v22.10.14
 --------
 
