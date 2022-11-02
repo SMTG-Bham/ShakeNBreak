@@ -833,7 +833,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )
         mock_print.assert_any_call("\nvac_1_Cd")
-        print(mock_print.call_args_list)
         mock_print.assert_any_call(
             "vac_1_Cd_-1: Energy difference between minimum, found with Rattled_from_-2 bond "
             "distortion, and unperturbed: -0.15 eV."
