@@ -1,5 +1,4 @@
 import os
-import pickle
 import shutil
 import unittest
 from unittest.mock import call, patch
@@ -15,17 +14,19 @@ file_path = os.path.dirname(__file__)
 
 def if_present_rm(path):
     if os.path.exists(path):
-        shutil.rmtree(path)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
 
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
@@ -68,8 +69,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_0",
         ]:
             if_present_rm(f"{fake_dir}")
-        if os.path.exists("distortion_metadata.json"):
-            os.remove("distortion_metadata.json")
+        if_present_rm("distortion_metadata.json")
+        if_present_rm("parsed_defects_dict.json")
 
     def test_SnB_integration(self):
         """Test full ShakeNBreak workflow, for the tricky case where at least 2
@@ -186,16 +187,16 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                     defect_charges_dict
                 )
             )
-            # mock_print.assert_any_call(
-            #     "Low-energy distorted structure for vac_1_Cd_-1 already "
-            #     "found with charge states [0], storing together."
-            # )
-
             mock_print.assert_any_call(
-                "Ground-state structure found for vac_1_Cd with charges [-2] has been also "
-                "previously been found for charge state -1 (according to structure matching). "
-                "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
+                "Low-energy distorted structure for vac_1_Cd_-1 already "
+                "found with charge states [0], storing together."
             )
+
+        mock_print.not_called_with(
+            "Ground-state structure found for vac_1_Cd with charges [-2] has also "
+            "been found for charge state -1 (according to structure matching). "
+            "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
+        )  # not called because -2 groundstate is -7.5%_from_-1 (i.e. imported from -1)
 
         # Test that energy_lowering_distortions parsing functions run ok if run on folders where
         # we've already done _some_ re-tests from other structures (-55.0%_from_0 for -1 but not
@@ -215,7 +216,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         self.assertEqual(
             sorted(
-                [sorted(tuple([-2, -1])), sorted(tuple([0, -1]))]
+                [sorted(tuple([-2])), sorted(tuple([0, -1]))]
             ),  # sort to make sure order is the same
             sorted(
                 [

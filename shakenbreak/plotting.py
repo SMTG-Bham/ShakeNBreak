@@ -582,7 +582,7 @@ def _change_energy_units_to_meV(
     """
     if "meV" not in y_label:
         y_label = y_label.replace("eV", "meV")
-    if max_energy_above_unperturbed < 1:  # assume eV
+    if max_energy_above_unperturbed < 4:  # assume eV
         max_energy_above_unperturbed = (
             max_energy_above_unperturbed * 1000
         )  # convert to meV
@@ -1119,9 +1119,7 @@ def _format_colorbar(
     return cbar
 
 
-# Main plotting functions
-
-
+# Main plotting functions:
 def plot_all_defects(
     defects_dict: dict,
     output_path: str = ".",
@@ -1159,16 +1157,15 @@ def plot_all_defects(
             matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in eV), relative to the unperturbed structure, to
-            show on the plot.
+            Maximum energy (in chosen `units`), relative to the unperturbed structure,
+            to show on the plot.
             (Default: 0.5 eV)
         units (:obj:`str`):
             Units for energy, either "eV" or "meV".
             (Default: "eV")
         min_e_diff (:obj:`float`):
             Minimum energy difference (in eV) between the ground-state defect
-            structure, relative to the `Unperturbed` structure, to consider it
-            as having found a new energy-lowering distortion.
+            structure and the `Unperturbed` structure to generate the distortion plot.
             (Default: 0.05 eV)
         line_color (:obj:`str`):
             Color of the line connecting points.
@@ -1199,15 +1196,31 @@ def plot_all_defects(
             output_path=output_path
         )
     except FileNotFoundError:
-        if verbose:
-            warnings.warn(
-                f"Path {output_path}/distortion_metadata.json does not exist. "
-                "Will not parse its contents (to specify which neighbour atoms were distorted in "
-                "plot text)."
+        # check if any defect_species folders have distortion_metadata.json files
+        defect_species_list = [
+            f"{defect}_{charge}"
+            for defect in defects_dict
+            for charge in defects_dict[defect]
+        ]
+        if any(
+            os.path.isfile(
+                os.path.join(output_path, defect_species, "distortion_metadata.json")
             )
-        distortion_metadata = None
-        num_nearest_neighbours = None
-        neighbour_atom = None
+            for defect_species in defect_species_list
+        ):
+            distortion_metadata = "in_defect_species_folders"
+
+        else:
+            if verbose:
+                warnings.warn(
+                    f"Path {output_path}/distortion_metadata.json does not exist, "
+                    f"and distortion_metadata.json files not found in defect folders. "
+                    "Will not parse its contents (to specify which neighbour atoms were distorted "
+                    "in plot text)."
+                )
+            distortion_metadata = None
+            num_nearest_neighbours = None
+            neighbour_atom = None
 
     figures = {}
     for defect in defects_dict:
@@ -1240,7 +1253,22 @@ def plot_all_defects(
             # If a significant energy lowering was found, then further analyse this defect
             if float(-1 * energy_diff) > abs(min_e_diff):
                 # energy_diff is negative if energy is lowered
-                if distortion_metadata:
+                if verbose:
+                    print(
+                        f"Energy lowering distortion found for {defect} with "
+                        f"charge {charge}. Generating distortion plot..."
+                    )
+                if distortion_metadata == "in_defect_species_folders":
+                    try:
+                        (
+                            num_nearest_neighbours,
+                            neighbour_atom,
+                        ) = analysis._read_distortion_metadata(
+                            output_path=f"{output_path}/{defect_species}"
+                        )
+                    except FileNotFoundError:  # distortion_metadata.json not found in this folder
+                        pass
+                if distortion_metadata and type(distortion_metadata) == dict:
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
                     )
@@ -1285,7 +1313,7 @@ def plot_defect(
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "svg",
     verbose: bool = True,
-) -> Figure:
+) -> Optional[Figure]:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
     any energy-lowering distortions.
@@ -1377,9 +1405,14 @@ def plot_defect(
     # If not specified, try to parse from distortion_metadata.json file
     if not neighbour_atom and not num_nearest_neighbours:
         try:
-            distortion_metadata = analysis._read_distortion_metadata(
-                output_path=output_path
-            )
+            try:
+                distortion_metadata = analysis._read_distortion_metadata(
+                    output_path=output_path
+                )
+            except FileNotFoundError:
+                distortion_metadata = analysis._read_distortion_metadata(
+                    output_path=f"{output_path}/{defect_species}"  # if user moved file
+                )
             if distortion_metadata:
                 num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                     distortion_metadata=distortion_metadata,
@@ -1389,7 +1422,8 @@ def plot_defect(
         except FileNotFoundError:
             if verbose:
                 warnings.warn(
-                    f"Path {output_path}/distortion_metadata.json does not exist. Will not parse "
+                    f"Path {output_path}/distortion_metadata.json or {output_path}/"
+                    f"{defect_species}/distortion_metadata.json not found. Will not parse "
                     f"its contents (to specify which neighbour atoms were distorted in plot text)."
                 )
             pass
@@ -1407,20 +1441,6 @@ def plot_defect(
             energies_dict=energies_dict,
         )
 
-    energies_dict, disp_dict = _remove_high_energy_points(
-        energies_dict=energies_dict,
-        max_energy_above_unperturbed=max_energy_above_unperturbed,
-        disp_dict=disp_dict if add_colorbar else None,
-    )  # remove high energy points
-
-    try:
-        defect_name = _format_defect_name(
-            defect_species=defect_species,
-            include_site_num_in_name=include_site_num_in_name,
-        )  # Format defect name for title and axis labels
-    except Exception:  # if formatting fails, just use the defect_species name
-        defect_name = defect_species
-
     if units == "meV":
         (
             energies_dict,
@@ -1431,6 +1451,26 @@ def plot_defect(
             max_energy_above_unperturbed=max_energy_above_unperturbed,
             y_label=y_label,
         )  # convert energy units from eV to meV, and update y label
+
+    energies_dict, disp_dict = _remove_high_energy_points(
+        energies_dict=energies_dict,
+        max_energy_above_unperturbed=max_energy_above_unperturbed,
+        disp_dict=disp_dict if add_colorbar else None,
+    )  # remove high energy points
+    if not energies_dict["distortions"]:
+        warnings.warn(
+            f"No distortion energies within {max_energy_above_unperturbed} {units} above "
+            f"unperturbed structure for {defect_species}. Skipping plot."
+        )
+        return None
+
+    try:
+        defect_name = _format_defect_name(
+            defect_species=defect_species,
+            include_site_num_in_name=include_site_num_in_name,
+        )  # Format defect name for title and axis labels
+    except Exception:  # if formatting fails, just use the defect_species name
+        defect_name = defect_species
 
     if num_nearest_neighbours and neighbour_atom:
         legend_label = f"Distortions: {num_nearest_neighbours} {neighbour_atom}"
@@ -1495,7 +1535,7 @@ def plot_colorbar(
     line_color: Optional[str] = None,
     save_format: Optional[str] = "svg",
     verbose: Optional[bool] = True,
-) -> Figure:
+) -> Optional[Figure]:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
     similarity between different final configurations.
@@ -1594,6 +1634,12 @@ def plot_colorbar(
         disp_dict=disp_dict,
         max_energy_above_unperturbed=max_energy_above_unperturbed,
     )  # Remove high energy points
+    if not energies_dict["distortions"]:
+        warnings.warn(
+            f"No distortion energies within {max_energy_above_unperturbed} eV above "
+            f"unperturbed structure for {defect_species}. Skipping plot."
+        )
+        return None
 
     # Setting line color and colorbar
     if not line_color:
@@ -1718,11 +1764,15 @@ def plot_colorbar(
             min(sorted_distortions + (0,)),
             max(sorted_distortions + (0,)),
         )
-        # set xlim to distortion_range + 5% (matplotlib default padding)
-        ax.set_xlim(
-            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
-            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
-        )
+        # set xlim to distortion_range + 5% (matplotlib default padding), if distortion_range is
+        # not zero (only rattled and unperturbed)
+        if distortion_range[1] - distortion_range[0] > 0:
+            ax.set_xlim(
+                distortion_range[0]
+                - 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[1]
+                + 0.05 * (distortion_range[1] - distortion_range[0]),
+            )
 
         # Formatting of tick labels.
         # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
@@ -1763,7 +1813,7 @@ def plot_datasets(
     title: Optional[str] = None,
     neighbour_atom: Optional[str] = None,
     num_nearest_neighbours: Optional[int] = None,
-    max_energy_above_unperturbed: Optional[float] = 0.6,
+    max_energy_above_unperturbed: Optional[float] = 0.5,
     y_label: str = r"Energy (eV)",
     markers: Optional[list] = None,
     linestyles: Optional[list] = None,
@@ -2040,10 +2090,11 @@ def plot_datasets(
     # distortion_range is sorted_distortions range, including 0 if above/below this range
     distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
     # set xlim to distortion_range + 5% (matplotlib default padding)
-    ax.set_xlim(
-        distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
-        distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
-    )
+    if distortion_range[1] - distortion_range[0] > 0:
+        ax.set_xlim(
+            distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+            distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
+        )
 
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E

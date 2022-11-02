@@ -32,7 +32,7 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     To specify additional distortion parameters, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_config.yaml>`_
+    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
     file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
     A detailed description of all the parameters is available in the Python API section
     (:ref:`shakenbreak.input.Distortions class <api_input>`).
@@ -43,25 +43,30 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
         # General/Distortion section
         oxidation_states:  # If not specified, the code will determine them
-        Cd: 2
-        Te: -2
+            Cd: 2
+            Te: -2
         distortion_increment: 0.1  # Bond distortion increment
         distorted_elements:  # (Default = None, distorts nearest neighbours)
             vac_Cd_1:
                 Cd  # Distort Cd atoms near the Cd interstitial
 
         # Rattle section
-        stdev: 0.25  # Rattle standard deviation
+        stdev: 0.25  # Rattle standard deviation (Default = 10% of auto-determined bulk bond length)
         d_min: 2.25  # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
         active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
         max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
         max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
+        seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
 
 
 .. NOTE::
     By default, :code:`ShakeNBreak` generates input files for the :code:`VASP` code, but this can be controlled with the
-    ``--code`` flag.
+    ``--code`` flag. For instance, to use ``CP2K``:
+
+    .. code:: bash
+
+        $ snb-generate --code cp2k --bulk bulk_structure.cif --defect vac_1_Cd_POSCAR --defect-coords 0 0 0
 
 
 .. TIP::
@@ -106,7 +111,7 @@ the following directory structures will be parsed correctly:
 
 .. NOTE::
     To specify the charge state range for each defect, as well as other optional arguments, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/input_files/example_generate_all_config.yaml>`_ file
+    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
     like the one below. A detailed description of all the parameters is available in the
     Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
 
@@ -116,12 +121,12 @@ the following directory structures will be parsed correctly:
 
         # Defects section: to specify charge states and defect index/frac coords
         defects:
-        vac_1_Cd:  # Name should match your defect structure file/folder
-            charges: [0, -1, -2]  # List of charge states
-            defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
-        Int_Cd_2:
-            charges: [0, +1, +2]
-            defect_index: -1  # Lattice site of the interstitial
+            vac_1_Cd:  # Name should match your defect structure file/folder
+                charges: [0, -1, -2]  # List of charge states
+                defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
+            Int_Cd_2:
+                charges: [0, +1, +2]
+                defect_index: -1  # Lattice site of the interstitial
 
         # Distortion section
         distortion_increment: 0.1 # Increment for distortion range
@@ -130,12 +135,13 @@ the following directory structures will be parsed correctly:
                 Cd # Distort Cd atoms near the Cd interstitial
 
         # Rattle section
-        stdev: 0.25  # Rattle standard deviation
+        stdev: 0.25  # Rattle standard deviation (Default = 10% of auto-determined bulk bond length)
         d_min: 2.25  # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
         active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
         max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
         max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
+        seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
 
 The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
 distortion folders with the relaxation input files and structures. If using ``VASP``:
@@ -162,6 +168,10 @@ distortion folders with the relaxation input files and structures. If using ``VA
             |        | ...
             | ...
 
+.. TIP::
+    See ``snb-generate_all -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate-all>`_
+    for details on the options available for this command.
+
 Submitting the geometry optimisations
 =======================================
 
@@ -181,6 +191,7 @@ script file name of ``my_job_script.sh``, we would use:
 .. code:: bash
 
     $ snb-run --submit-command sbatch --job-script my_job_script.sh --all
+
 
 To submit a single defect, we can simply run the command :code:`snb-run` within the defect folder:
 

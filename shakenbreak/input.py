@@ -361,7 +361,7 @@ def _apply_rattle_bond_distortions(
     distortion_factor: float,
     local_rattle: bool = False,
     stdev: float = 0.25,
-    d_min: Optional[float] = None,
+    d_min: Optional[float] = 2.25,
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -412,11 +412,6 @@ def _apply_rattle_bond_distortions(
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
-            - d_min (:obj:`float`):
-                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-                moves that put atoms at distances less than this will be heavily
-                penalised.
-                (Default: 2.25)
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -428,8 +423,8 @@ def _apply_rattle_bond_distortions(
                 Carlo rattling. By default, all atoms are rattled.
                 (Default: None)
             - seed (:obj:`int`):
-                Seed for setting up NumPy random state from which random
-                numbers are generated.
+                Seed for setting up NumPy random state from which rattle
+                random displacements are generated.
 
     Returns:
         :obj:`dict`:
@@ -466,21 +461,6 @@ def _apply_rattle_bond_distortions(
         )
 
     # Apply rattle to the bond distorted structure
-    if not d_min:
-        defect_supercell = defect_dict["supercell"]["structure"]
-        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
-        d_min = (
-            0.8 * sorted_distances[len(defect_supercell) + 20]
-        )  # ignoring interstitials by
-        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
-
     if active_atoms is None:
         distorted_atom_indices = [
             i[0] for i in bond_distorted_defect["distorted_atoms"]
@@ -605,11 +585,6 @@ def apply_snb_distortions(
         **kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
-            - d_min (:obj:`float`):
-                Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-                moves that put atoms at distances less than this will be heavily
-                penalised.
-                (Default: 2.25)
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -621,8 +596,10 @@ def apply_snb_distortions(
                 Carlo rattling. By default, all atoms are rattled.
                 (Default: None)
             - seed (:obj:`int`):
-                Seed for setting up NumPy random state from which random
-                numbers are generated.
+                Seed from which rattle random displacements are generated. Default
+                is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                distortion_factor = 1.4 -> seed = 140, Rattled ->
+                distortion_factor = 1 (no bond distortion) -> seed = 100)
 
     Returns:
         :obj:`dict`:
@@ -635,6 +612,22 @@ def apply_snb_distortions(
         "distortion_parameters": {},
     }
 
+    if not d_min:
+        defect_supercell = defect_dict["supercell"]["structure"]
+        sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+        d_min = (
+            0.8 * sorted_distances[len(defect_supercell) + 20]
+        )  # ignoring interstitials by
+        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
+        if d_min < 1.0:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
+
+    seed = kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
             distortion = (
@@ -643,6 +636,12 @@ def apply_snb_distortions(
             if verbose:
                 print(f"--Distortion {distortion:.1%}")
             distortion_factor = 1 + distortion
+            if (
+                not seed
+            ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
+                # to avoid cases where a particular supercell rattle gets stuck in a local minimum
+                seed = int(distortion_factor * 100)
+
             bond_distorted_defect = _apply_rattle_bond_distortions(
                 defect_dict=defect_dict,
                 num_nearest_neighbours=num_nearest_neighbours,
@@ -652,6 +651,7 @@ def apply_snb_distortions(
                 d_min=d_min,
                 distorted_element=distorted_element,
                 verbose=verbose,
+                seed=seed,
                 **kwargs,
             )
             distorted_defect_dict["distortions"][
@@ -681,22 +681,13 @@ def apply_snb_distortions(
             defect_site_index = len(
                 defect_dict["supercell"]["structure"]
             )  # defect atom comes last in structure
-        if not d_min:
-            defect_supercell = defect_dict["supercell"]["structure"]
-            sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
-            d_min = (
-                0.8 * sorted_distances[len(defect_supercell) + 20]
-            )  # ignoring interstitials by
-            # ignoring the first 10 non-zero bond lengths (double counted in
-            # the distance matrix)
-            if d_min < 1:
-                warnings.warn(
-                    f"Automatic bond-length detection gave a bulk bond length of "
-                    f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
-                    f"Reverting to 2.25 \u212B. If this is too large, set `d_min` "
-                    f"manually"
-                )
-                d_min = 2.25
+
+        if (
+            not seed
+        ):  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
+            # to avoid cases where a particular supercell rattle gets stuck in a local minimum
+            seed = 100  # distortion_factor = 1 when no bond distortion, just rattling
+
         if local_rattle:
             perturbed_structure = distortions.local_mc_rattle(
                 defect_dict["supercell"]["structure"],
@@ -740,7 +731,6 @@ class Distortions:
         distortion_increment: float = 0.1,
         bond_distortions: Optional[list] = None,
         local_rattle: bool = False,
-        stdev: float = 0.25,
         distorted_elements: Optional[dict] = None,
         **kwargs,  # for mc rattle
     ):
@@ -777,12 +767,6 @@ class Distortions:
                 performance. If False (default), all supercell sites are rattled
                 with the same amplitude (full rattle).
                 (Default: False)
-            stdev (:obj:`float`):
-                Standard deviation (in Angstroms) of the Gaussian distribution
-                from which random atomic displacement distances are drawn during
-                rattling. Recommended values: 0.25, or 0.15 for strongly-bound
-                /ionic materials.
-                (Default: 0.25)
             distorted_elements (:obj:`dict`):
                 Optional argument to specify the neighbouring elements to
                 distort for each defect, in the form of a dictionary with
@@ -793,11 +777,16 @@ class Distortions:
             **kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
                 `mc_rattle` function. These include:
+                - stdev (:obj:`float`):
+                    Standard deviation (in Angstroms) of the Gaussian distribution
+                    from which random atomic displacement distances are drawn during
+                    rattling. Default is set to 10% of the nearest neighbour distance
+                    in the bulk supercell.
                 - d_min (:obj:`float`):
-                    Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-                    moves that put atoms at distances less than this will be heavily
-                    penalised.
-                    (Default: 2.25)
+                    Minimum interatomic distance (in Angstroms) in the rattled
+                    structure. Monte Carlo rattle moves that put atoms at distances
+                    less than this will be heavily penalised. Default is to set this
+                    to 80% of the nearest neighbour distance in the bulk supercell.
                 - max_disp (:obj:`float`):
                     Maximum atomic displacement (in Angstroms) during Monte Carlo
                     rattling. Rarely occurs and is used primarily as a safety net.
@@ -809,16 +798,41 @@ class Distortions:
                     Carlo rattling. By default, all atoms are rattled.
                     (Default: None)
                 - seed (:obj:`int`):
-                    Seed for setting up NumPy random state from which random
-                    numbers are generated.
+                    Seed from which rattle random displacements are generated. Default
+                    is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                    distortion_factor = 1.4 -> seed = 140, Rattled ->
+                    distortion_factor = 1 (no bond distortion) -> seed = 100)
 
         """
         self.defects_dict = defects_dict
         self.oxidation_states = oxidation_states
         self.distorted_elements = distorted_elements
         self.dict_number_electrons_user = dict_number_electrons_user
-        self.stdev = stdev
         self.local_rattle = local_rattle
+
+        if "stdev" in kwargs:
+            self.stdev = kwargs.pop("stdev")
+        else:
+            if "bulk" in self.defects_dict:
+                bulk_supercell = self.defects_dict["bulk"]["supercell"]["structure"]
+                sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
+                self.stdev = 0.1 * sorted_distances[len(bulk_supercell)]
+            else:  # determine minimum distance from first defect in dict
+                defect_subdict = list(self.defects_dict.values())[0][0]
+                defect_supercell = defect_subdict["supercell"]["structure"]
+                sorted_distances = np.sort(defect_supercell.distance_matrix.flatten())
+                self.stdev = (
+                    0.1 * sorted_distances[len(defect_supercell) + 20]
+                )  # ignoring interstitials by ignoring the first 10 non-zero bond lengths (
+                # double counted in the distance matrix)
+            if self.stdev > 0.4 or self.stdev < 0.02:
+                warnings.warn(
+                    f"Automatic bond-length detection gave a bulk bond length of {10*self.stdev} "
+                    f"\u212B and thus a rattle `stdev` of {self.stdev} ( = 10% bond length), "
+                    f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                    f"set `stdev` manually"
+                )
+                self.stdev = 0.25
 
         # check if all expected oxidation states are provided
         if "bulk" in self.defects_dict:
@@ -933,10 +947,9 @@ class Distortions:
                 distorted_element = distorted_elements[defect_name]
             except KeyError:
                 warnings.warn(
-                    "Problem reading the keys in distorted_elements.",
-                    "Are they the correct defect names (without charge states)?",
-                    "Proceeding without discriminating which neighbour "
-                    + "elements to distort.",
+                    "Problem reading the keys in distorted_elements. Are they the correct defect "
+                    "names (without charge states)? Proceeding without discriminating which "
+                    "neighbour elements to distort.",
                 )
                 distorted_element = None
         else:
@@ -1025,7 +1038,7 @@ class Distortions:
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             f"{[f'{round(i,3)+0}' for i in bond_distortions]}.",
-            f"Then, will rattle with a std dev of {stdev} \u212B \n",
+            f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
         )
 
     def _update_distortion_metadata(
