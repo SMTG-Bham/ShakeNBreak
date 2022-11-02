@@ -3051,6 +3051,33 @@ Chosen VASP error message: {error_string}
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
         self.assertFalse("High_Energy" in result.output)
 
+        # test energies parsed if no energies file present
+        defect = "vac_1_Ti_0"
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # run from within defect folder
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR")
+        )
+        self.assertIn(
+            f"{defect}: Ground state structure (found with -0.4 distortion) saved to"
+            f" {self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR"
+        )
+        V_Ti_minus0pt4_structure = Structure.from_file(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%/CONTCAR"
+        )
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate")
+
 
 if __name__ == "__main__":
     unittest.main()
