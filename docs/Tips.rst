@@ -52,8 +52,10 @@ in response to bond distortion. If this issue occurs, it will manifest as:
   reduce the rattle standard deviation (:code:`stdev`) to 7.5% of the bulk bond length (or 5% if this still causes
   higher energies) to avoid this – if you're unsure of the bulk bond length for your material, just look at the previous
   info messages or output :code:`distortion_metadata.json` files from :code:`ShakeNBreak`, for which the default
-  :code:`stdev` will be equal to 10% of the bulk bond length. Typically the largest rattle standard deviation for which
-  the relaxations run without issue is best for performance in terms of finding groundstate structures.
+  :code:`stdev` will be equal to 10% of the bulk bond length. If this occurs, it often indicates a complex PES with
+  multiple energy minima, thus energy-lowering distortions particularly likely, so important to test these cases with
+  reduced :code:`stdev`! Typically the largest rattle standard deviation for which the relaxations run without issue is
+  best for performance in terms of finding groundstate structures.
     - Note that strongly-correlated / magnetic materials in particular can be extremely sensitive to large structural
       noise, and so these typically require rattle standard deviations (:code:`stdev`) ≤ 0.05 Å.
 

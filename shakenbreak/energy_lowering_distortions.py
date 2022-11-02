@@ -593,9 +593,12 @@ def get_energy_lowering_distortions(
                     f"with the relaxations. You should first check if the calculations finished "
                     f"ok for this defect species and if this defect charge state is reasonable ("
                     f"often this is the result of an unreasonable charge state). If both checks "
-                    f"pass, you likely need to adjust the `std_dev` rattling parameter (can occur "
-                    f"for hard/ionic/close-packed materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                    f"pass, you likely need to adjust the `stdev` rattling parameter (can occur "
+                    f"for hard/ionic/magnetic materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                    f"– This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to "
+                    f"test with reduced `stdev`!"
                 )
 
             else:
