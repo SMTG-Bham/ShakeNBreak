@@ -2087,7 +2087,7 @@ Chosen VASP error message: {error_string}
                     f"All distortions for {defect} gave positive energies or forces errors, "
                     "indicating problems with these relaxations. You should first check that no "
                     "user INCAR setting is causing this issue. If not, you likely need to adjust "
-                    "the `stddev` rattling parameter (can occur for hard/ionic/magnetic "
+                    "the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
                     "materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
                     "-ionic-materials." == str(i.message)
                     for i in w
