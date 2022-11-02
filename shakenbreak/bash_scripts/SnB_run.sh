@@ -36,9 +36,9 @@ if [ ! -f "$job_filepath" ]
 fi
 
 SnB_run_loop () {
-  for i in ?(*Distortion*|*Unperturbed|*attled)/; # for each distortion
+  for i in ?(*Distortion*|*Unperturbed*|*attled*)/; # for each distortion
     do
-      if [ "$i" == "?(*Distortion*|*Unperturbed|*attled)/" ]
+      if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]
         then echo "No distortion folders found in current directory"
         break  # exit if no distortion folders found
       fi
@@ -55,13 +55,28 @@ SnB_run_loop () {
         if [ -f OUTCAR ]  # if OUTCAR exists so rerunning rather than 1st run
           then
           # count number of ionic steps with positive energies, after the first 5 ionic steps
-          pos_energies=$( grep entropy= OUTCAR | awk 'FNR>5 && $NF !~ /^-/{print $0}' | wc -l )
-          errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI)" OUTCAR)
+          pos_energies=$(grep entropy= OUTCAR | awk 'FNR>5 && $NF !~ /^-/{print $0}' | wc -l)
+          errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI|FEXC)" OUTCAR)
           if (( pos_energies > 0 )) ||  (( errors > 0 ))  # if there are positive energies or errors in OUTCAR
             then
             echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
             builtin cd .. || return
             mv "${i%/}" "${i%/}_High_Energy"
+            continue
+          fi
+          init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
+          fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
+          energy_diff=$(echo "$init_energy - $fin_energy" | bc)
+          num_energies=$(grep -c entropy= OUTCAR)
+          # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the initial energy
+          # then calculation is essentially converged, don't rerun
+          if (( num_energies > 50 )) && (( $(echo "$energy_diff < 0.002" | bc -l) ))
+            then
+            if [ "$verbose" = true ]
+              then echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
+            fi
+            echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >> OUTCAR
+            builtin cd .. || return
             continue
           fi
           echo "${i%?} not (fully) relaxed, saving files and rerunning"

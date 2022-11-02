@@ -7,7 +7,6 @@ and INCAR files from being written.
 import copy
 import json
 import os
-import pickle
 import shutil
 import unittest
 import warnings
@@ -19,7 +18,7 @@ import numpy as np
 from click.testing import CliRunner
 from doped import vasp_input
 from matplotlib.testing.compare import compare_images
-from monty.serialization import dumpfn
+from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
 
@@ -69,10 +68,9 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
+        self.cdte_defect_dict = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
 
@@ -212,11 +210,6 @@ class DistortionLocalTestCase(unittest.TestCase):
             if "#" not in str(v)
         }  # pymatgen ignores comments after values
 
-        with open(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.pickle"), "rb"
-        ) as fp:
-            self.cdte_defect_dict = pickle.load(fp)
-
     def tearDown(self) -> None:
         for i in self.cdte_defect_folders:
             if_present_rm(i)  # remove test-generated vac_1_Cd_0 folder if present
@@ -224,7 +217,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.remove("distortion_metadata.json")
 
         for i in [
-            "parsed_defects_dict.pickle",
+            "parsed_defects_dict.json",
             "distortion_metadata.json",
             "test_config.yml",
         ]:
@@ -240,6 +233,12 @@ class DistortionLocalTestCase(unittest.TestCase):
                 or "pesky_defects" in i
             ):
                 shutil.rmtree(i)
+
+        for defect in os.listdir(f"{self.EXAMPLE_RESULTS}"):
+            if "vac_1_Cd" in defect:
+                for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}"):
+                    if file.endswith(".png"):
+                        os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
@@ -342,7 +341,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
             "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
             "'0.5', '0.55', '0.6'].",
-            "Then, will rattle with a std dev of 0.25 Å \n",
+            "Then, will rattle with a std dev of 0.28 Å \n",
         )
         mock_print.assert_any_call(
             "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
@@ -388,9 +387,8 @@ class DistortionLocalTestCase(unittest.TestCase):
         V_Cd_POSCAR = Poscar.from_file(V_Cd_minus50_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2_vac_1_Cd",
+            "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
         # check if default INCAR is subset of INCAR: (not here because we set ENCUT)
@@ -420,7 +418,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_minus60_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2_Int_Cd_2",
+            "-60.0%__num_neighbours=2__Int_Cd_2",
         )
         self.assertEqual(
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
@@ -479,8 +477,11 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
@@ -535,12 +536,21 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Ti_0/vac_1_Ti_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_0/vac_1_Cd_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "vac_1_Cd_-1/vac_1_Cd_-1.png")))
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Ti_0/vac_1_Ti_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png")
+            )
+        )
+        self.assertTrue(
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_-1/vac_1_Cd_-1.png")
+            )
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, "vac_1_Cd_0/vac_1_Cd_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
@@ -570,6 +580,8 @@ class DistortionLocalTestCase(unittest.TestCase):
                 charges: [0,]
                 defect_coords: [0.0, 0.0, 0.0]
         bond_distortions: [0.3,]
+        POTCAR:
+          Cd: Cd_GW
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
@@ -601,8 +613,48 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.assertEqual(incar_dict["IBRION"], 1)
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        # Check POTCAR generation
+        with open(f"{defect_name}_0/{dist}/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
+
         shutil.rmtree(f"{defect_name}_0")
         os.remove("INCAR")
+
+        # test warning when input file doesn't match expected format:
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "--code",
+                    "vasp",
+                    "--input_file",
+                    "test_config.yml",
+                    "--config",
+                    "test_config.yml",
+                ],
+                catch_exceptions=True,
+            )
+        dist = "Unperturbed"
+        incar_dict = Incar.from_file(f"{defect_name}_0/{dist}/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/{file}"))
+        shutil.rmtree(f"{defect_name}_0")
 
         # Test CASTEP
         with open("castep.param", "w") as fp:
@@ -750,7 +802,10 @@ width: 0.3
 max_attempts: 10000
 max_disp: 1.0
 seed: 20
-local_rattle: False"""
+local_rattle: False
+POTCAR:
+  Cd: Cd_GW
+"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         runner = CliRunner()
@@ -780,6 +835,10 @@ local_rattle: False"""
             self.assertTrue(
                 os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}")
             )
+        # Check POTCAR file
+        with open(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POTCAR") as myfile:
+            first_line = myfile.readline()
+        self.assertIn("PAW_PBE Cd_GW", first_line)
         # Check KPOINTS file
         kpoints = Kpoints.from_file(
             f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/" + "KPOINTS"
@@ -790,6 +849,37 @@ local_rattle: False"""
         self.assertEqual(incar.pop("IBRION"), 2)
         self.assertEqual(incar.pop("EDIFF"), 1e-5)
         self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
+
+        # test warning when input file doesn't match expected format:
+        os.remove("distortion_metadata.json")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "-v",
+                    "--input_file",
+                    f"test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
+        incar_dict = Incar.from_file("Vac_Cd_mult32_0/Bond_Distortion_-50.0%/INCAR").as_dict()
+        self.assertEqual(incar_dict["IBRION"], 2)  # default setting
+        # assert UserWarning about unparsed input file
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(
+            "Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file.",
+            str(user_warnings[-1].message),
+        )
+        for file in ["KPOINTS", "POTCAR", "POSCAR"]:
+            self.assertTrue(os.path.exists(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/{file}"))
 
 
 if __name__ == "__main__":

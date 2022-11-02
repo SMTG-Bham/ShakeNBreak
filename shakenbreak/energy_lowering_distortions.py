@@ -13,7 +13,7 @@ from ase.io import write as ase_write
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis, io
+from shakenbreak import analysis, io, plotting
 
 aaa = AseAtomsAdaptor()
 
@@ -65,10 +65,23 @@ def read_defects_directories(output_path: str = "./") -> dict:
             Dictionary mapping defect names to a list of its charge states.
     """
     list_subdirectories = [  # Get only subdirectories in the current directory
-        i
-        for i in next(os.walk(output_path))[1]
-        if ("as_" in i) or ("vac_" in i) or ("Int_" in i) or ("sub_" in i)
-    ]  # matching doped/PyCDT/pymatgen defect names
+        i for i in next(os.walk(output_path))[1]
+    ]
+    for i in list(
+        list_subdirectories
+    ):  # need to make copy of list when iterating over and
+        # removing elements
+        try:
+            formatted_name = plotting._format_defect_name(
+                i, include_site_num_in_name=False
+            )
+            if (
+                formatted_name is None
+            ):  # defect folder name not recognised, remove from list
+                list_subdirectories.remove(i)
+        except ValueError:  # defect folder name not recognised, remove from list
+            list_subdirectories.remove(i)
+
     list_name_charge = [
         i.rsplit("_", 1) for i in list_subdirectories
     ]  # split by last "_" (separate defect name from charge state)
@@ -98,6 +111,7 @@ def _compare_distortion(
     low_energy_defects: dict,
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> dict:
     """
     Compare the ground state distortion (`gs_distortion`) to the other
@@ -129,6 +143,8 @@ def _compare_distortion(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`dict`
@@ -148,6 +164,7 @@ def _compare_distortion(
             # found to match
             stol=stol,
             min_dist=min_dist,
+            verbose=verbose,
         )
         comparison_dicts_dict[i] = struct_comparison_dict
 
@@ -178,7 +195,7 @@ def _compare_distortion(
         # defect
         print(
             f"New (according to structure matching) low-energy "
-            f"distorted  structure found for {defect_species}, "
+            f"distorted structure found for {defect_species}, "
             f"adding to low_energy_defects['{defect}'] list."
         )
         low_energy_defects[defect].append(
@@ -201,6 +218,7 @@ def _prune_dict_across_charges(
     output_path: str = ".",
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> dict:
     """
     Screen through defects to check if any lower-energy distorted structures
@@ -242,8 +260,20 @@ def _prune_dict_across_charges(
             for charge in list(
                 set(defect_pruning_dict[defect]) - set(distortion_dict["charges"])
             ):
-                # charges in defect_pruning_dict that aren't already in this
-                # distortion entry
+                imported_groundstates = [
+                    gs_distortion
+                    for gs_distortion in distortion_dict["bond_distortions"]
+                    if isinstance(gs_distortion, str) and "_from_" in gs_distortion
+                ]
+                orig_charges_from_imported_groundstates = [
+                    int(gs_distortion.split("_from_")[-1])
+                    for gs_distortion in imported_groundstates
+                ]
+                # skip if groundstate is from an imported distortion, from this charge state
+                if charge in orig_charges_from_imported_groundstates:
+                    continue
+
+                # charges in defect_pruning_dict that aren't already in this distortion entry
                 defect_species = f"{defect}_{charge}"
                 comparison_results = compare_struct_to_distortions(
                     distortion_dict["structures"][0],
@@ -253,16 +283,17 @@ def _prune_dict_across_charges(
                     structure_filename=structure_filename,
                     stol=stol,
                     min_dist=min_dist,
+                    verbose=verbose,
                 )
                 if comparison_results[0]:
                     # structure found in distortion tests for this charge state.
                     # Add it to the list to avoid redundant work
                     print(
                         f"Ground-state structure found for {defect} with charges "
-                        f"{distortion_dict['charges']} has been also previously "
-                        f"been found for charge state {charge} (according to "
-                        f"structure matching). Adding this charge to the "
-                        f"corresponding entry in low_energy_defects[{defect}]."
+                        f"{distortion_dict['charges']} has also been found for "
+                        f"charge state {'+' if charge > 0 else ''}{charge} (according to "
+                        f"structure matching). Adding this charge to the corresponding entry in "
+                        f"low_energy_defects[{defect}]."
                     )
                     for property, value in zip(
                         ["charges", "structures", "energy_diffs", "bond_distortions"],
@@ -392,6 +423,11 @@ def get_energy_lowering_distortions(
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
+            if not os.path.exists(energies_file):  # try parse energies now if possible
+                if verbose:
+                    print(f"Parsing {defect_species}...")
+                io.parse_energies(defect_species, output_path, code)
+
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
@@ -425,12 +461,11 @@ def get_energy_lowering_distortions(
                         # problem parsing structure, user will have received appropriate
                         # warning from io.read_vasp_structure()
                         print(
-                            f"Problem parsing final, low-energy structure for "
-                            f"{gs_distortion} bond distortion of {defect_species} "
-                            f"at {output_path}/{defect_species}/{bond_distortion}/"
-                            f"{structure_filename}. This species will be skipped and "
-                            f"will not be included in low_energy_defects (check"
-                            f"relaxation calculation and folder)."
+                            f"Problem parsing final, low-energy structure for {gs_distortion} "
+                            f"bond distortion of {defect_species} at {output_path}"
+                            f"/{defect_species}/{bond_distortion}/{structure_filename}. This "
+                            f"species will be skipped and will not be included in "
+                            f"low_energy_defects (check relaxation calculation and folder)."
                         )
                         defect_pruning_dict[defect].remove(charge)
                         continue
@@ -450,13 +485,15 @@ def get_energy_lowering_distortions(
                         low_energy_defects=low_energy_defects,
                         stol=stol,
                         min_dist=min_dist,
+                        verbose=verbose,
                     )
 
                 elif defect not in low_energy_defects:
                     # if defect not in dict, add it
                     print(
-                        f"Energy lowering distortion found for {defect} with "
-                        f"charge {charge}. Adding to low_energy_defects dictionary."
+                        f"Energy lowering distortion found for {defect} with charge "
+                        f"{'+' if charge > 0 else ''}{charge}. Adding to low_energy_defects "
+                        f"dictionary."
                     )
                     low_energy_defects[defect] = [
                         {
@@ -523,13 +560,15 @@ def get_energy_lowering_distortions(
                                 low_energy_defects=low_energy_defects,
                                 stol=stol,
                                 min_dist=min_dist,
+                                verbose=verbose,
                             )
 
                         elif defect not in low_energy_defects:
                             # if defect not in dict, add it
                             print(
-                                f"Energy lowering distortion found for {defect} with "
-                                f"charge {charge}. Adding to low_energy_defects dictionary."
+                                f"Energy lowering distortion found for {defect} with charge "
+                                f"{'+' if charge > 0 else ''}{charge}. Adding to "
+                                f"low_energy_defects dictionary."
                             )
                             low_energy_defects[defect] = [
                                 {
@@ -549,45 +588,49 @@ def get_energy_lowering_distortions(
                 ]
             ):
                 warnings.warn(
-                    f"All distortions for {defect} with charge {charge} are >0.1 eV higher energy "
-                    f"than unperturbed, indicating problems with the relaxations. You should "
-                    f"first check if the calculations finished ok for this defect species and "
-                    f"if this defect charge state is reasonable (often this is the result of an "
-                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
-                    f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                    f"materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                    f"All distortions for {defect} with charge {'+' if charge > 0 else ''}"
+                    f"{charge} are >0.1 eV higher energy than unperturbed, indicating problems "
+                    f"with the relaxations. You should first check if the calculations finished "
+                    f"ok for this defect species and if this defect charge state is reasonable ("
+                    f"often this is the result of an unreasonable charge state). If both checks "
+                    f"pass, you likely need to adjust the `stdev` rattling parameter (can occur "
+                    f"for hard/ionic/magnetic materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                    f"– This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to "
+                    f"test with reduced `stdev`!"
                 )
 
             else:
                 print(
-                    f"No energy lowering distortion with energy difference greater "
-                    f"than  min_e_diff = {min_e_diff:.2f} eV found for {defect} "
-                    f"with charge {charge}."
+                    f"No energy lowering distortion with energy difference greater than "
+                    f"min_e_diff = {min_e_diff:.2f} eV found for {defect} with charge "
+                    f"{'+' if charge > 0 else ''}{charge}."
                 )
 
     # Screen through defects to check if any lower-energy distorted structures
     # were already found with/without bond distortions for other charge states
     # (i.e. found but higher energy, found but also with unperturbed, found
     # but with energy lowering less than min_e_diff etc)
-    print("\nComparing and pruning defect structures across charge states...")
-    low_energy_defects = _prune_dict_across_charges(
-        low_energy_defects=low_energy_defects,
-        defect_pruning_dict=defect_pruning_dict,
-        code=code,
-        structure_filename=structure_filename,
-        output_path=output_path,
-        stol=stol,
-        min_dist=min_dist,
-    )
-
-    # Write input files for the identified distortions
-    if write_input_files:
-        write_distorted_inputs(
+    if low_energy_defects:
+        print("\nComparing and pruning defect structures across charge states...")
+        low_energy_defects = _prune_dict_across_charges(
             low_energy_defects=low_energy_defects,
-            output_path=output_path,
+            defect_pruning_dict=defect_pruning_dict,
             code=code,
+            structure_filename=structure_filename,
+            output_path=output_path,
+            stol=stol,
+            min_dist=min_dist,
         )
+
+        # Write input files for the identified distortions
+        if write_input_files:
+            write_distorted_inputs(
+                low_energy_defects=low_energy_defects,
+                output_path=output_path,
+                code=code,
+            )
 
     return low_energy_defects
 
@@ -600,6 +643,7 @@ def compare_struct_to_distortions(
     structure_filename: str = "CONTCAR",
     stol: float = 0.5,
     min_dist: float = 0.2,
+    verbose: bool = False,
 ) -> tuple:
     """
     Compares the ground-state structure found for a certain defect charge
@@ -632,6 +676,8 @@ def compare_struct_to_distortions(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             orderto consider them not matching (in Å, default = 0.2 Å).
+        verbose (:obj:`bool`):
+            Whether to print information message about structures being compared.
 
     Returns:
         :obj:`tuple`:
@@ -663,6 +709,7 @@ def compare_struct_to_distortions(
         stol=stol,
         min_dist=min_dist,
         display_df=False,
+        verbose=verbose,
     )
     if struct_comparison_df is None:  # no converged structures found for
         # defect_species
