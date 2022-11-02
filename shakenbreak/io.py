@@ -316,14 +316,16 @@ def parse_energies(
             ]
         ):
             warnings.warn(
-                f"All distortions parsed for {defect} are >0.1 eV higher energy "
-                f"than unperturbed, indicating problems with the relaxations. You should "
-                f"first check if the calculations finished ok for this defect species and "
-                f"if this defect charge state is reasonable (often this is the result of an "
-                f"unreasonable charge state). If both checks pass, you likely need to adjust "
-                f"the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                f"materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                f"All distortions parsed for {defect} are >0.1 eV higher energy than unperturbed, "
+                f"indicating problems with the relaxations. You should first check if the "
+                f"calculations finished ok for this defect species and if this defect charge "
+                f"state is reasonable (often this is the result of an unreasonable charge state). "
+                f"If both checks pass, you likely need to adjust the `stdev` rattling parameter ("
+                f"can occur for hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                f"– This often indicates a complex PES with multiple minima, "
+                f"thus energy-lowering distortions particularly likely, so important to "
+                f"test with reduced `stdev`!"
             )
         energies = sort_energies(energies)
         save_file(energies, defect, path)
@@ -358,7 +360,7 @@ def parse_energies(
                 f"All distortions for {defect} gave positive energies or forces errors, "
                 f"indicating problems with these relaxations. You should first check that no user "
                 f"INCAR setting is causing this issue. If not, you likely need to adjust the "
-                f"`std_dev` rattling parameter (can occur for hard/ionic/close-packed materials); "
+                f"`stddev` rattling parameter (can occur for hard/ionic/magnetic materials); "
                 f"see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
             )
         else:

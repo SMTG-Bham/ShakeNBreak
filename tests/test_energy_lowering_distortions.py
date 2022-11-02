@@ -657,14 +657,16 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 self.assertEqual(warning.category, UserWarning)
 
             warning_message = (
-                "All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
-                "unperturbed, indicating problems with the relaxations. You should "
-                "first check if the calculations finished ok for this defect species and "
-                "if this defect charge state is reasonable (often this is the result of an "
-                "unreasonable charge state). If both checks pass, you likely need to adjust "
-                "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                "materials); see "
-                "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                f"All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
+                f"unperturbed, indicating problems with the relaxations. You should first check "
+                f"if the calculations finished ok for this defect species and if this defect "
+                f"charge state is reasonable (often this is the result of an unreasonable charge "
+                f"state). If both checks pass, you likely need to adjust the `stdev` rattling "
+                f"parameter (can occur for hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                f"– This often indicates a complex PES with multiple minima, "
+                f"thus energy-lowering distortions particularly likely, so important to "
+                f"test with reduced `stdev`!"
             )
             self.assertTrue(
                 any([str(warning.message) == warning_message for warning in w])

@@ -2028,15 +2028,17 @@ Chosen VASP error message: {error_string}
         self.assertTrue(
             any(
                 [
-                    f"All distortions parsed for {defect} are >0.1 eV higher energy "
-                    "than unperturbed, indicating problems with the relaxations. You should "
-                    "first check if the calculations finished ok for this defect species and "
-                    "if this defect charge state is reasonable (often this is the result of an "
-                    "unreasonable charge state). If both checks pass, you likely need to adjust "
-                    "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                    "materials); see "
-                    "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
-                    == str(i.message)
+                    f"All distortions parsed for {defect} are >0.1 eV higher energy than "
+                    f"unperturbed, indicating problems with the relaxations. You should first "
+                    f"check if the calculations finished ok for this defect species and if this "
+                    f"defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
+                    f"materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                    f"– This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to "
+                    f"test with reduced `stdev`!" == str(i.message)
                     for i in w
                     if i.category == UserWarning
                 ]
@@ -2085,7 +2087,7 @@ Chosen VASP error message: {error_string}
                     f"All distortions for {defect} gave positive energies or forces errors, "
                     "indicating problems with these relaxations. You should first check that no "
                     "user INCAR setting is causing this issue. If not, you likely need to adjust "
-                    "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    "the `stddev` rattling parameter (can occur for hard/ionic/magnetic "
                     "materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
                     "-ionic-materials." == str(i.message)
                     for i in w
