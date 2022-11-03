@@ -3075,6 +3075,30 @@ Chosen VASP error message: {error_string}
         )
         self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
         if_present_rm(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate")
+        self.tearDown()  # return to test file directory
+
+        # test non-verbose output
+        defect = "vac_1_Cd_0"
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "-nv",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
+        )
+        self.assertFalse(result.output)  # no output (No "Parsing..." or "Groundstate structure
+        # saved to...")
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
 
 if __name__ == "__main__":
