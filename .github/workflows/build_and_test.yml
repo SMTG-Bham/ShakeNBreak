@@ -37,7 +37,11 @@ jobs:
           pip install numpy
           pip install -e .
           pip install -e .[tests]
-
+      - name: Check package versions
+        run: |
+          pip show -V pymatgen-analysis-defects
+          pip show -V pymatgen
+          pip show -V pytest
       - name: Test
         run:  |
           for test in tests/test_*py

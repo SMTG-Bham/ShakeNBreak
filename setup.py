@@ -161,8 +161,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pymatgen>=2022.9.21",
-        "pymatgen-analysis-defects>=2022.9.14",
+        "pymatgen>=2022.10.22",
+        "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
         "pandas",
@@ -173,7 +173,7 @@ setup(
     ],
     extras_require={
         "tests": [
-            "pytest",
+            "pytest>=7.1.3",
             "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
         ],
         "docs": [
