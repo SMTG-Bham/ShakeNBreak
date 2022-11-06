@@ -1071,7 +1071,7 @@ class InputTestCase(unittest.TestCase):
         )
 
         # test other kwargs:
-        reduced_Int_Cd_2 = copy.deecopy(self.Int_Cd_2)
+        reduced_Int_Cd_2 = copy.deepcopy(self.Int_Cd_2)
         reduced_Int_Cd_2.user_charges = [1,]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
