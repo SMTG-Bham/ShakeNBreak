@@ -208,7 +208,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             mock_print.assert_any_call(
                 "\nComparing and pruning defect structures across charge states..."
             )
-            # TODO: check this!
+            # TODO: check this!!
             # mock_print.assert_any_call(
             #     "Low-energy distorted structure for vac_1_Cd_-1 already "
             #     "found with charge states [0], storing together."
