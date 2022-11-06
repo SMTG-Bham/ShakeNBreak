@@ -2076,15 +2076,17 @@ Chosen VASP error message: {error_string}
         self.assertTrue(
             any(
                 [
-                    f"All distortions parsed for {defect} are >0.1 eV higher energy "
-                    "than unperturbed, indicating problems with the relaxations. You should "
-                    "first check if the calculations finished ok for this defect species and "
-                    "if this defect charge state is reasonable (often this is the result of an "
-                    "unreasonable charge state). If both checks pass, you likely need to adjust "
-                    "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                    "materials); see "
-                    "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
-                    == str(i.message)
+                    f"All distortions parsed for {defect} are >0.1 eV higher energy than "
+                    f"unperturbed, indicating problems with the relaxations. You should first "
+                    f"check if the calculations finished ok for this defect species and if this "
+                    f"defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
+                    f"materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                    f"– This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to "
+                    f"test with reduced `stdev`!" == str(i.message)
                     for i in w
                     if i.category == UserWarning
                 ]
@@ -2125,15 +2127,13 @@ Chosen VASP error message: {error_string}
         # test print statement about not being fully relaxed
         self.assertNotIn("not fully relaxed", result.output)
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
-        print([i.message for i in w])
-        print(result.output)
         self.assertTrue(
             any(
                 [
                     f"All distortions for {defect} gave positive energies or forces errors, "
                     "indicating problems with these relaxations. You should first check that no "
                     "user INCAR setting is causing this issue. If not, you likely need to adjust "
-                    "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
+                    "the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
                     "materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
                     "-ionic-materials." == str(i.message)
                     for i in w
@@ -3109,6 +3109,57 @@ Chosen VASP error message: {error_string}
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
         self.assertFalse("High_Energy" in result.output)
+
+        # test energies parsed if no energies file present
+        defect = "vac_1_Ti_0"
+        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # run from within defect folder
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR")
+        )
+        self.assertIn(
+            f"{defect}: Ground state structure (found with -0.4 distortion) saved to"
+            f" {self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR"
+        )
+        V_Ti_minus0pt4_structure = Structure.from_file(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%/CONTCAR"
+        )
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate")
+        self.tearDown()  # return to test file directory
+
+        # test non-verbose output
+        defect = "vac_1_Cd_0"
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+                "-p",
+                self.VASP_CDTE_DATA_DIR,
+                "-nv",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
+        )
+        self.assertFalse(result.output)  # no output (No "Parsing..." or "Groundstate structure
+        # saved to...")
+        gs_structure = Structure.from_file(
+            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"
+        )
+        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
+        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
 
 if __name__ == "__main__":

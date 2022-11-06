@@ -1829,10 +1829,10 @@ def regenerate(path, code, filename, min, metastable, verbose):
     default=".",
 )
 @click.option(
-    "--verbose",
-    "-v",
-    help="Print information about ground state structures and generated folders.",
-    default=True,
+    "--non_verbose",
+    "-nv",
+    help="Don't print information about ground state structures and generated folders.",
+    default=False,
     is_flag=True,
     show_default=True,
 )
@@ -1841,7 +1841,7 @@ def groundstate(
     groundstate_filename,
     structure_filename,
     path,
-    verbose,
+    non_verbose,
 ):
     """
     Generate folders with the identified ground state structures. A folder (named
@@ -1897,7 +1897,7 @@ def groundstate(
                 groundstate_folder=directory,
                 groundstate_filename=groundstate_filename,
                 structure_filename=structure_filename,
-                verbose=verbose,
+                verbose=not non_verbose,
             )
 
             return
@@ -1908,5 +1908,5 @@ def groundstate(
         groundstate_folder=directory,
         groundstate_filename=groundstate_filename,
         structure_filename=structure_filename,
-        verbose=verbose,
+        verbose=not non_verbose,
     )
