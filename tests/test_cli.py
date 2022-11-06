@@ -1179,6 +1179,75 @@ seed: 42"""  # previous default
         if_present_rm(f"{defect_name}_0")
         self.tearDown()
 
+        # Test defects with new pymatgen naming
+        # Test defect_settings (charges, defect index/coords)
+        defect_name = "Va_Cd"
+        os.mkdir(defects_dir)
+        os.mkdir(f"{defects_dir}/{defect_name}")
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}/POSCAR",
+        )
+        # CONFIG file
+        test_yml = f"""
+                defects:
+                    {defect_name}:
+                        charges: [0,]
+                        defect_coords: [0.0, 0.0, 0.0]
+                bond_distortions: [0.3,]
+                local_rattle: True
+                stdev: 0.25
+                seed: 42
+                """  # previous default
+        with open("test_config.yml", "w") as fp:
+            fp.write(test_yml)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate_all",
+                    "-d",
+                    f"{defects_dir}/",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-v",
+                    "--config",
+                    "test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
+        # Test outputs
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("Auto site-matching identified", result.output)
+        self.assertIn("Oxidation states were not explicitly set", result.output)
+        # self.assertFalse(w) # no warnings (charges set in config file)
+        # Only neutral charge state
+        self.assertNotIn(
+            f"Defect {defect_name} in charge state: -1. Number of distorted neighbours: 1",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertIn("--Distortion 30.0%", result.output)
+        self.assertIn(
+            "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            result.output,
+        )
+        for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
+            self.assertTrue(os.path.exists(f"{defect_name}_0/{dist}/POSCAR"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-1/Unperturbed/POSCAR"))
+        # check POSCAR
+        self.assertEqual(
+            Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
+            self.V_Cd_0pt3_local_rattled,
+        )
+        if_present_rm(f"{defect_name}_0")
+        self.tearDown()
+
         # Test wrong names in config file (different from defect folders)
         # Names of defect folders/files should be used as defect names
         # CONFIG file
