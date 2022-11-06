@@ -146,13 +146,21 @@ class CLITestCase(unittest.TestCase):
                 )
         if_present_rm(
             os.path.join(
-                self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+            )
+        )
+        if_present_rm(
+            os.path.join(
+                self.EXAMPLE_RESULTS, "vac_1_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             )
         )
         if_present_rm("Rattled_Bulk_CdTe_POSCAR")
 
         # Remove parsed vac_1_Ti_0 energies file
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml")
+
+        if os.path.exists("./previous_default_rattle_settings.yaml"):
+            os.remove("./previous_default_rattle_settings.yaml")
 
     def test_generate_defect_object(self):
         """Test generate_defect_object"""
@@ -3079,7 +3087,7 @@ Chosen VASP error message: {error_string}
         )
 
         # test "*High_Energy*" ignored and doesn't cause errors
-        defect = "vac_1_Cd_0"
+        defect = "vac_1_Cd_0"  # in self.VASP_CDTE_DATA_DIR
         if not os.path.exists(
             os.path.join(
                     self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
@@ -3088,7 +3096,7 @@ Chosen VASP error message: {error_string}
             shutil.copytree(
                 os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
                 os.path.join(
-                    self.EXAMPLE_RESULTS, f"{defect}/Bond_Distortion_-48.0%_High_Energy"
+                    self.VASP_CDTE_DATA_DIR, f"{defect}/Bond_Distortion_-48.0%_High_Energy"
                 ),
             )
         result = runner.invoke(
@@ -3111,7 +3119,7 @@ Chosen VASP error message: {error_string}
         self.assertFalse("High_Energy" in result.output)
 
         # test energies parsed if no energies file present
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # run from within defect folder
         result = runner.invoke(
             snb,
@@ -3139,7 +3147,7 @@ Chosen VASP error message: {error_string}
         self.tearDown()  # return to test file directory
 
         # test non-verbose output
-        defect = "vac_1_Cd_0"
+        defect = "vac_1_Cd_0"  # in VASP_CDTE_DATA_DIR
         result = runner.invoke(
             snb,
             [
