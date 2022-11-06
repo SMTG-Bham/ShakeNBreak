@@ -36,6 +36,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
+            if_present_rm(defect_dir)
             os.mkdir(f"{defect_dir}")
         V_Cd_1_dict = {"distortions": {-0.075: -206.700}, "Unperturbed": -205.8}
         dumpfn(V_Cd_1_dict, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
@@ -84,6 +85,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         reduced_V_Cd = copy.copy(self.V_Cd)
         reduced_V_Cd.user_charges = [-2, -1, 0]
 
+        # Generate input files
         dist = input.Distortions(
             {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
             oxidation_states=oxidation_states,
@@ -186,12 +188,25 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
             "vac_1_Cd_-2/Bond_Distortion_-7.5%_from_-1/CONTCAR",
         )
+        shutil.copyfile(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
+            "vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/CONTCAR",
+        )
 
         with patch("builtins.print") as mock_print:
             low_energy_defects = (
                 energy_lowering_distortions.get_energy_lowering_distortions(
                     defect_charges_dict
                 )
+            )
+            mock_print.assert_any_call(
+                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, and unperturbed: -0.76 eV."
+            )
+            mock_print.assert_any_call(
+                "Comparing structures to specified ref_structure (Cd31 Te32)..."
+            )
+            mock_print.assert_any_call(
+                "\nComparing and pruning defect structures across charge states..."
             )
             mock_print.assert_any_call(
                 "Low-energy distorted structure for vac_1_Cd_-1 already "
