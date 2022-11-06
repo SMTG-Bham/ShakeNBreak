@@ -592,14 +592,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
     def test_get_energy_lowering_distortions_no_energies_file(self):
         """Test that `io.parse_energies()` is called fine if no energies file present"""
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         low_energy_defects_dict = (
             energy_lowering_distortions.get_energy_lowering_distortions(
-                {"vac_1_Ti": [0]}, self.EXAMPLE_RESULTS
+                {"v_Ti": [0]}, self.EXAMPLE_RESULTS
             )
         )
-        self.assertEqual(len(low_energy_defects_dict["vac_1_Ti"]), 1)
+        self.assertEqual(len(low_energy_defects_dict["v_Ti"]), 1)
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         test_energies = {
             "distortions": {
