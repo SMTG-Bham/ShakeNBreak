@@ -874,21 +874,30 @@ def generate_all(
                     f"Defect {defect} not found in config file {config}. "
                     f"Will parse defect name from folders/files."
                 )
-        if (not defect_name) and any(
-            [
-                substring in defect.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i")
-            ]
-        ):
-            # if user didn't specify defect names in config file,
-            # check if defect filename correspond to standard defect abbreviations
-            defect_name = defect
+        if not defect_name:
+            try:
+                defect_name = plotting._format_defect_name(
+                    defect, include_site_num_in_name=False
+                )
+            except Exception:
+                try:
+                    defect_name = plotting._format_defect_name(
+                        f"{defect}_0", include_site_num_in_name=False
+                    )
+                except Exception:
+                    pass
+            if defect_name:
+                # if user didn't specify defect names in config file,
+                # check if defect filename is recognised
+                defect_name = defect
+
         if not defect_name:
             raise ValueError(
                 "Error in defect name parsing; could not parse defect name "
                 f"from {defect}. Please include its name in the 'defects' section of "
                 "the config file."
             )
+
         return defect_name
 
     def parse_defect_charges(defect_name, defect_settings):
@@ -918,7 +927,7 @@ def generate_all(
         return None, None
 
     defects_dict = {}
-    for defect in defects_dirs:
+    for defect in defects_dirs:  # file or directory
         if os.path.isfile(f"{defects}/{defect}"):
             try:  # try to parse structure from it
                 defect_struc = Structure.from_file(f"{defects}/{defect}")
@@ -929,24 +938,34 @@ def generate_all(
         elif os.path.isdir(f"{defects}/{defect}"):
             if (
                 len(os.listdir(f"{defects}/{defect}")) == 1
-            ):  # if only 1 file in directory,
-                # assume it's the defect structure
+            ):  # if only 1 file in directory, assume it's the defect structure
                 defect_file = os.listdir(f"{defects}/{defect}")[0]
             else:
-                defect_file = [
+                poss_defect_files = [  # check for POSCAR and cif by default
                     file.lower()
                     for file in os.listdir(f"{defects}/{defect}")
-                    if structure_file.lower() in file or "cif" in file
-                ][
-                    0
-                ]  # check for POSCAR and cif by default
+                    if structure_file.lower() in file.lower()
+                    or "cif" in file
+                    and "bulk" not in file.lower()
+                ]
+                if len(poss_defect_files) == 1:
+                    defect_file = poss_defect_files[0]
+                else:
+                    warnings.warn(
+                        f"Multiple structure files found in {defects}/{defect}, "
+                        f"cannot uniquely determine determine which is the defect, "
+                        f"skipping."
+                    )
+                    continue
             if defect_file:
                 defect_struc = Structure.from_file(
                     os.path.join(defects, defect, defect_file)
                 )
                 defect_name = parse_defect_name(defect, defect_settings)
         else:
-            raise FileNotFoundError(f"Could not parse defects from path {defects}")
+            warnings.warn(f"Could not parse {defects}/{defect} as a defect, skipping.")
+            continue
+
         # Check if charges / indices are provided in config file
         charges = parse_defect_charges(defect_name, defect_settings)
         defect_index, defect_coords = parse_defect_position(
