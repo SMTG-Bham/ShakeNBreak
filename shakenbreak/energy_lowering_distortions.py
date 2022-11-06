@@ -422,16 +422,21 @@ def get_energy_lowering_distortions(
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
             defect_species = f"{defect}_{charge}"
+            if verbose:
+                print(f"Parsing {defect_species}...")
+
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
-            if not os.path.exists(energies_file):  # try parse energies now if possible
-                if verbose:
-                    print(f"Parsing {defect_species}...")
+            with warnings.catch_warnings():  # ignore warnings in case energies already parsed
+                # and output files deleted
+                if os.path.exists(
+                    energies_file
+                ):  # ignore parsing warnings _only_ if energies file already exists
+                    warnings.simplefilter("ignore", category=UserWarning)
                 io.parse_energies(defect_species, output_path, code)
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose
             )
-
             # Defect without data
             if energies_dict is None:
                 print(
@@ -593,9 +598,12 @@ def get_energy_lowering_distortions(
                     f"with the relaxations. You should first check if the calculations finished "
                     f"ok for this defect species and if this defect charge state is reasonable ("
                     f"often this is the result of an unreasonable charge state). If both checks "
-                    f"pass, you likely need to adjust the `std_dev` rattling parameter (can occur "
-                    f"for hard/ionic/close-packed materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                    f"pass, you likely need to adjust the `stdev` rattling parameter (can occur "
+                    f"for hard/ionic/magnetic materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                    f"– This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to "
+                    f"test with reduced `stdev`!"
                 )
 
             else:
@@ -1237,13 +1245,23 @@ def write_groundstate_structure(
 
     def _write_single_groundstate(
         output_path,
-        species,
+        defect_species,
         groundstate_folder,
         groundstate_filename,
         structure_filename,
         verbose,
     ):
-        energies_file = f"{output_path}/{species}/{species}.yaml"
+        if verbose:
+            print(f"Parsing {defect_species}...")
+
+        energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
+        with warnings.catch_warnings():  # ignore warnings in case energies already parsed
+            # and output files deleted
+            if os.path.exists(
+                energies_file
+            ):  # ignore parsing warnings _only_ if energies file already exists
+                warnings.simplefilter("ignore", category=UserWarning)
+            io.parse_energies(defect_species, output_path)
 
         # Get ground state distortion
         _, _, gs_distortion = analysis._sort_data(
@@ -1251,7 +1269,7 @@ def write_groundstate_structure(
         )
         if gs_distortion is None:
             warnings.warn(
-                f"Energies file {energies_file} could not be parsed for {species}, "
+                f"Energies file {energies_file} could not be parsed for {defect_species}, "
                 f"skipping this defect species"
             )
             return
@@ -1259,28 +1277,32 @@ def write_groundstate_structure(
         bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
         # Origin path
-        origin_path = f"{output_path}/{species}/{bond_distortion}/{structure_filename}"
+        origin_path = (
+            f"{output_path}/{defect_species}/{bond_distortion}/{structure_filename}"
+        )
         if not os.path.exists(origin_path):
             raise FileNotFoundError(
                 f"The structure file {structure_filename} is not present"
-                f" in the directory {output_path}/{species}/{bond_distortion}"
+                f" in the directory {output_path}/{defect_species}/{bond_distortion}"
             )
 
         # Destination path
         if groundstate_folder:
-            if not os.path.exists(f"{output_path}/{species}/{groundstate_folder}"):
-                os.mkdir(f"{output_path}/{species}/{groundstate_folder}")
+            if not os.path.exists(
+                f"{output_path}/{defect_species}/{groundstate_folder}"
+            ):
+                os.mkdir(f"{output_path}/{defect_species}/{groundstate_folder}")
             destination_path = os.path.join(
-                f"{output_path}/{species}/",
+                f"{output_path}/{defect_species}/",
                 f"{groundstate_folder}/{groundstate_filename}",
             )
             if verbose:
                 print(
-                    f"{species}: Ground state structure (found with "
+                    f"{defect_species}: Ground state structure (found with "
                     f"{gs_distortion} distortion) saved to {destination_path}"
                 )
         else:
-            destination_path = f"{output_path}/{species}/{groundstate_filename}"
+            destination_path = f"{output_path}/{defect_species}/{groundstate_filename}"
 
         shutil.copyfile(
             origin_path,
@@ -1299,7 +1321,7 @@ def write_groundstate_structure(
             for charge in charges:
                 _write_single_groundstate(
                     output_path=output_path,
-                    species=f"{defect}_{charge}",
+                    defect_species=f"{defect}_{charge}",
                     groundstate_folder=groundstate_folder,
                     groundstate_filename=groundstate_filename,
                     structure_filename=structure_filename,
@@ -1311,7 +1333,7 @@ def write_groundstate_structure(
 
         _write_single_groundstate(
             output_path=output_path,
-            species=species,
+            defect_species=species,
             groundstate_folder=groundstate_folder,
             groundstate_filename=groundstate_filename,
             structure_filename=structure_filename,

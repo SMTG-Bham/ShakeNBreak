@@ -39,6 +39,7 @@ Mock.assert_not_called_with = assert_not_called_with
 class EnergyLoweringDistortionsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.CASTEP_DATA_DIR = os.path.join(self.DATA_DIR, "castep")
         self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
@@ -226,83 +227,83 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     self.defect_charges_dict, self.VASP_CDTE_DATA_DIR
                 )
             )
-            mock_print.assert_any_call("\nvac_1_Cd")
-            mock_print.assert_any_call(
-                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
-                "and unperturbed: -0.76 eV."
-            )
-            mock_print.assert_any_call(
-                "Energy lowering distortion found for vac_1_Cd with charge 0. Adding to "
-                "low_energy_defects dictionary."
-            )
-            mock_print.assert_any_call(
-                "No energy lowering distortion with energy difference greater than min_e_diff = "
-                "0.05 eV found for vac_1_Cd with charge -1."
-            )
-            mock_print.assert_any_call(
-                "vac_1_Cd_-2: Energy difference between minimum, found with -0.35 bond distortion, "
-                "and unperturbed: -0.20 eV."
-            )
-            mock_print.assert_any_call(
-                "Problem parsing final, low-energy structure for -0.35 bond distortion of "
-                f"vac_1_Cd_-2 at {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-35.0"
-                "%/CONTCAR. This species will be skipped and will not be included in "
-                "low_energy_defects (check relaxation calculation and folder)."
-            )
-            mock_print.assert_any_call("\nInt_Cd_2")
-            mock_print.assert_any_call(
-                "No data parsed for Int_Cd_2_1. This species will be skipped and will not be "
-                "included in the low_energy_defects charge state lists (and so energy lowering "
-                "distortions found for other charge states will not be applied for this species)."
-            )
-            mock_print.assert_not_called_with(
-                "No energy lowering distortion with energy difference greater than min_e_diff = "
-                "0.05 eV found for Int_Cd_2 with charge +1."
-            )
-            mock_print.assert_any_call(
-                "\nComparing and pruning defect structures across charge states..."
-            )
-            mock_print.assert_any_call(
-                "Problem parsing structures for vac_1_Cd_-1. This species will be skipped and will "
-                "not be included in low_energy_defects (check relaxation folders with CONTCARs "
-                "are present)."  # check this is skipped if no data
-            )
-            self.assertEqual(
-                len(w), 2
-            )  # 28  # No Int_Cd_2_1 data and parsing not possible
-            for warning in w:
-                self.assertEqual(warning.category, UserWarning)
-            self.assertIn(
-                "Energies could not be parsed for defect 'Int_Cd_2_1' in "
-                f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
-                "check calculations have converged, and that distortion subfolders "
-                "match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
-                "Unperturbed)",
-                str(w[0].message),
-            )
-            self.assertIn(
-                f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
-                str(w[1].message),
-            )
+        mock_print.assert_any_call("\nvac_1_Cd")
+        mock_print.assert_any_call(
+            "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
+            "and unperturbed: -0.76 eV."
+        )
+        mock_print.assert_any_call(
+            "Energy lowering distortion found for vac_1_Cd with charge 0. Adding to "
+            "low_energy_defects dictionary."
+        )
+        mock_print.assert_any_call(
+            "No energy lowering distortion with energy difference greater than min_e_diff = "
+            "0.05 eV found for vac_1_Cd with charge -1."
+        )
+        mock_print.assert_any_call(
+            "vac_1_Cd_-2: Energy difference between minimum, found with -0.35 bond distortion, "
+            "and unperturbed: -0.20 eV."
+        )
+        mock_print.assert_any_call(
+            "Problem parsing final, low-energy structure for -0.35 bond distortion of "
+            f"vac_1_Cd_-2 at {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-35.0"
+            "%/CONTCAR. This species will be skipped and will not be included in "
+            "low_energy_defects (check relaxation calculation and folder)."
+        )
+        mock_print.assert_any_call("\nInt_Cd_2")
+        mock_print.assert_any_call(
+            "No data parsed for Int_Cd_2_1. This species will be skipped and will not be "
+            "included in the low_energy_defects charge state lists (and so energy lowering "
+            "distortions found for other charge states will not be applied for this species)."
+        )
+        mock_print.assert_not_called_with(
+            "No energy lowering distortion with energy difference greater than min_e_diff = "
+            "0.05 eV found for Int_Cd_2 with charge +1."
+        )
+        mock_print.assert_any_call(
+            "\nComparing and pruning defect structures across charge states..."
+        )
+        mock_print.assert_any_call(
+            "Problem parsing structures for vac_1_Cd_-1. This species will be skipped and will "
+            "not be included in low_energy_defects (check relaxation folders with CONTCARs "
+            "are present)."  # check this is skipped if no data
+        )
+        self.assertEqual(
+            len(w), 2
+        )  # 28  # No Int_Cd_2_1 data and parsing not possible
+        for warning in w:
+            self.assertEqual(warning.category, UserWarning)
+        self.assertIn(
+            "Energies could not be parsed for defect 'Int_Cd_2_1' in "
+            f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
+            "check calculations have converged, and that distortion subfolders "
+            "match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
+            "Unperturbed)",
+            str(w[0].message),
+        )
+        self.assertIn(
+            f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
+            str(w[1].message),
+        )
 
-            self.assertEqual(len(low_energy_defects_dict), 1)
-            self.assertIn("vac_1_Cd", low_energy_defects_dict)
-            self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 1)
-            self.assertEqual(low_energy_defects_dict["vac_1_Cd"][0]["charges"], [0])
-            np.testing.assert_almost_equal(
-                low_energy_defects_dict["vac_1_Cd"][0]["energy_diffs"],
-                [-0.7551820700000178],
-            )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"], [-0.55]
-            )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["structures"],
-                [self.V_Cd_minus_0pt55_structure],
-            )
-            self.assertEqual(
-                low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], set()
-            )
+        self.assertEqual(len(low_energy_defects_dict), 1)
+        self.assertIn("vac_1_Cd", low_energy_defects_dict)
+        self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 1)
+        self.assertEqual(low_energy_defects_dict["vac_1_Cd"][0]["charges"], [0])
+        np.testing.assert_almost_equal(
+            low_energy_defects_dict["vac_1_Cd"][0]["energy_diffs"],
+            [-0.7551820700000178],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["bond_distortions"], [-0.55]
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["structures"],
+            [self.V_Cd_minus_0pt55_structure],
+        )
+        self.assertEqual(
+            low_energy_defects_dict["vac_1_Cd"][0]["excluded_charges"], set()
+        )
 
         # test verbose=False output:
         with patch("builtins.print") as mock_print:
@@ -589,6 +590,31 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
 
+    def test_get_energy_lowering_distortions_no_energies_file(self):
+        """Test that `io.parse_energies()` is called fine if no energies file present"""
+        defect = "vac_1_Ti_0"
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        low_energy_defects_dict = (
+            energy_lowering_distortions.get_energy_lowering_distortions(
+                {"vac_1_Ti": [0]}, self.EXAMPLE_RESULTS
+            )
+        )
+        self.assertEqual(len(low_energy_defects_dict["vac_1_Ti"]), 1)
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        test_energies = {
+            "distortions": {
+                -0.4: -1176.28458753,
+            },
+            "Unperturbed": -1173.02056574,
+        }  # Using dictionary here (rather than file/string), because parsing order is difference
+        # on github actions
+        self.assertDictEqual(test_energies, energies)
+        [
+            os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+            for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
+            if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
+        ]
+
     def test_get_energy_lowering_distortions_rattle_too_large(self):
         """Test warning when all rattled distortions >0.1 eV higher energy than unperturbed"""
         failing_V_Cd_1_dict = {
@@ -657,14 +683,16 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 self.assertEqual(warning.category, UserWarning)
 
             warning_message = (
-                "All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
-                "unperturbed, indicating problems with the relaxations. You should "
-                "first check if the calculations finished ok for this defect species and "
-                "if this defect charge state is reasonable (often this is the result of an "
-                "unreasonable charge state). If both checks pass, you likely need to adjust "
-                "the `std_dev` rattling parameter (can occur for hard/ionic/close-packed "
-                "materials); see "
-                "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                f"All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
+                f"unperturbed, indicating problems with the relaxations. You should first check "
+                f"if the calculations finished ok for this defect species and if this defect "
+                f"charge state is reasonable (often this is the result of an unreasonable charge "
+                f"state). If both checks pass, you likely need to adjust the `stdev` rattling "
+                f"parameter (can occur for hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
+                f"– This often indicates a complex PES with multiple minima, "
+                f"thus energy-lowering distortions particularly likely, so important to "
+                f"test with reduced `stdev`!"
             )
             self.assertTrue(
                 any([str(warning.message) == warning_message for warning in w])
