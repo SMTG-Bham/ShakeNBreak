@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import unittest
@@ -7,7 +8,7 @@ import pytest
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 
-from shakenbreak import energy_lowering_distortions, input, io, plotting
+from shakenbreak import energy_lowering_distortions, input, io, plotting, cli
 
 file_path = os.path.dirname(__file__)
 
@@ -28,12 +29,14 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
 
         # create fake distortion folders for testing functionality:
         for defect_dir in ["vac_1_Cd_-1", "vac_1_Cd_-2"]:
+            if_present_rm(defect_dir)
             os.mkdir(f"{defect_dir}")
         V_Cd_1_dict = {"distortions": {-0.075: -206.700}, "Unperturbed": -205.8}
         dumpfn(V_Cd_1_dict, "vac_1_Cd_-1/vac_1_Cd_-1.yaml")
@@ -79,11 +82,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         then reparsed and plotted successfully
         """
         oxidation_states = {"Cd": +2, "Te": -2}
-        reduced_V_Cd_dict = self.V_Cd_dict.copy()
-        reduced_V_Cd_dict["charges"] = [-2, -1, 0]
+        reduced_V_Cd = copy.copy(self.V_Cd)
+        reduced_V_Cd.user_charges = [-2, -1, 0]
 
+        # Generate input files
         dist = input.Distortions(
-            {"vacancies": [reduced_V_Cd_dict]},
+            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
@@ -140,15 +144,19 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             )
 
         # test correct structures written
+        gen_struc = Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR")
+        gen_struc.remove_oxidation_states()
         self.assertEqual(
             self.V_Cd_minus_0pt55_structure,
-            Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR"),
+            gen_struc,
         )
+        gen_struc = Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR")
+        gen_struc.remove_oxidation_states()
         self.assertEqual(
             Structure.from_file(
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")
             ),
-            Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR"),
+            gen_struc,
         )
 
         V_Cd_m1_dict_w_distortion = {
@@ -180,6 +188,10 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
             "vac_1_Cd_-2/Bond_Distortion_-7.5%_from_-1/CONTCAR",
         )
+        shutil.copyfile(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"),
+            "vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/CONTCAR",
+        )
 
         with patch("builtins.print") as mock_print:
             low_energy_defects = (
@@ -188,9 +200,23 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 )
             )
             mock_print.assert_any_call(
+                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, and unperturbed: -0.76 eV."
+            )
+            mock_print.assert_any_call(
+                "Comparing structures to specified ref_structure (Cd31 Te32)..."
+            )
+            mock_print.assert_any_call(
+                "\nComparing and pruning defect structures across charge states..."
+            )
+            # TODO: check this!!
+            # mock_print.assert_any_call(
+            #     "Low-energy distorted structure for vac_1_Cd_-1 already "
+            #     "found with charge states [0], storing together."
+            # )
+            mock_print.not_called_with(
                 "Low-energy distorted structure for vac_1_Cd_-1 already "
                 "found with charge states [0], storing together."
-            )
+            )  # not called because -1 groundstate is -55.0%_from_0 (i.e. imported from 0)
 
         mock_print.not_called_with(
             "Ground-state structure found for vac_1_Cd with charges [-2] has also "
