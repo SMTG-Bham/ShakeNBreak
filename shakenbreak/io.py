@@ -48,7 +48,7 @@ def parse_energies(
         filename (:obj:`str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
-            (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
+            (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
 
@@ -307,69 +307,95 @@ def parse_energies(
                 else:
                     warnings.warn(f"No output file in {dist} directory")
 
-    # only write energy file if energies have been parsed
-    if energies["distortions"]:
-        if "Unperturbed" in energies and all(
-            [
-                value - energies["Unperturbed"] > 0.1
-                for value in energies["distortions"].values()
-            ]
-        ):
-            warnings.warn(
-                f"All distortions parsed for {defect} are >0.1 eV higher energy than unperturbed, "
-                f"indicating problems with the relaxations. You should first check if the "
-                f"calculations finished ok for this defect species and if this defect charge "
-                f"state is reasonable (often this is the result of an unreasonable charge state). "
-                f"If both checks pass, you likely need to adjust the `stdev` rattling parameter ("
-                f"can occur for hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
-                f"– This often indicates a complex PES with multiple minima, "
-                f"thus energy-lowering distortions particularly likely, so important to "
-                f"test with reduced `stdev`!"
-            )
-        energies = sort_energies(energies)
-        save_file(energies, defect, path)
-    else:
-        # check if distortion directories were present but were all "*High_Energy*"
-        try:
-            high_energy_dist_dirs = [
-                dir
-                for dir in os.listdir(defect_dir)
-                if os.path.isdir(os.path.join(defect_dir, dir))
-                and (
-                    any(
-                        [
-                            substring in dir
-                            for substring in [
-                                "Bond_Distortion",
-                                "Rattled",
-                                "Unperturbed",
-                            ]
-                        ]
-                    )
-                    and "High_Energy" in dir
+        # only write energy file if energies have been parsed
+        if energies["distortions"]:
+            if "Unperturbed" in energies and all(
+                [
+                    value - energies["Unperturbed"] > 0.1
+                    for value in energies["distortions"].values()
+                ]
+            ):
+                warnings.warn(
+                    f"All distortions parsed for {defect} are >0.1 eV higher energy than "
+                    f"unperturbed, indicating problems with the relaxations. You should first "
+                    f"check if the calculations finished ok for this defect species and if this "
+                    f"defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
+                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
+                    f"materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
+                    f"-ionic-materials. – This often indicates a complex PES with multiple minima, "
+                    f"thus energy-lowering distortions particularly likely, so important to test "
+                    f"with reduced `stdev`!"
                 )
-            ]
-        except FileNotFoundError:  # no "*High_Energy*" distortion folders
-            high_energy_dist_dirs = []
-        if (
-            high_energy_dist_dirs
-        ):  # "*High_Energy*" distortion directories present and no
-            # distortion energies parsed
-            warnings.warn(
-                f"All distortions for {defect} gave positive energies or forces errors, "
-                f"indicating problems with these relaxations. You should first check that no user "
-                f"INCAR setting is causing this issue. If not, you likely need to adjust the "
-                f"`stddev` rattling parameter (can occur for hard/ionic/magnetic materials); "
-                f"see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
-            )
+
+            # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
+            # warn user about output files not being parsed for this entry
+            for key, value in prev_energies_dict.items():
+                if key not in energies:
+                    energies[key] = value
+                    warnings.warn(
+                        f"No output file in {key} directory, but previous parsed result "
+                        f"found in {energies_file}, using this."
+                    )
+                elif key == "distortions":
+                    for key2, value2 in prev_energies_dict["distortions"].items():
+                        if key2 not in energies["distortions"]:
+                            energies["distortions"][key2] = value2
+                            warnings.warn(
+                                f"No output file in {key2} directory, but previous parsed result "
+                                f"found in {energies_file}, using this."
+                            )
+
+            energies = sort_energies(energies)
+            save_file(energies, defect, path)
         else:
-            warnings.warn(
-                f"Energies could not be parsed for defect '{defect}' in '{path}'. "
-                f"If these directories are correct, check calculations have converged, "
-                f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-                f"Bond_Distortion_xxx, Rattled, Unperturbed)"
-            )
+            # check if distortion directories were present but were all "*High_Energy*"
+            try:
+                high_energy_dist_dirs = [
+                    dir
+                    for dir in os.listdir(defect_dir)
+                    if os.path.isdir(os.path.join(defect_dir, dir))
+                    and (
+                        any(
+                            [
+                                substring in dir
+                                for substring in [
+                                    "Bond_Distortion",
+                                    "Rattled",
+                                    "Unperturbed",
+                                ]
+                            ]
+                        )
+                        and "High_Energy" in dir
+                    )
+                ]
+            except FileNotFoundError:  # no "*High_Energy*" distortion folders
+                high_energy_dist_dirs = []
+            if (
+                high_energy_dist_dirs
+            ):  # "*High_Energy*" distortion directories present and no distortion energies parsed
+                warnings.warn(
+                    f"All distortions for {defect} gave positive energies or forces errors, "
+                    f"indicating problems with these relaxations. You should first check that no "
+                    f"user INCAR setting is causing this issue. If not, you likely need to adjust "
+                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
+                    f"materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
+                    f"-ionic-materials."
+                )
+            else:
+                warnings.warn(
+                    f"Energies could not be parsed for defect '{defect}' in '{path}'. "
+                    f"If these directories are correct, check calculations have converged, "
+                    f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+                    f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+                )
+    else:
+        warnings.warn(
+            f"Energies could not be parsed for defect '{defect}' in '{path}'. "
+            f"If these directories are correct, check calculations have converged, "
+            f"and that distortion subfolders match ShakeNBreak naming (e.g. "
+            f"Bond_Distortion_xxx, Rattled, Unperturbed)"
+        )
 
 
 # Parsing output structures of different codes

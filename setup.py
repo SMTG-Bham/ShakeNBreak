@@ -131,7 +131,7 @@ fonts = package_files("fonts/")
 
 setup(
     name="shakenbreak",
-    version="22.11.1",
+    version="22.11.07",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "
@@ -160,8 +160,9 @@ setup(
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
     install_requires=[
-        "numpy<1.22",  # Requirement of hiphive
-        "pymatgen<2022.8.23",
+        "numpy",
+        "pymatgen==2022.10.22",
+        "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
         "pandas",
@@ -172,7 +173,7 @@ setup(
     ],
     extras_require={
         "tests": [
-            "pytest",
+            "pytest>=7.1.3",
             "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
         ],
         "docs": [

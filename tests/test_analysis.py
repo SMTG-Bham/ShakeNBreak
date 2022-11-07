@@ -501,7 +501,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="vac_1_Cd_0", output_path=self.EXAMPLE_RESULTS
+            defect_species="v_Cd_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
             max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict, verbose=True)
@@ -620,7 +620,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_compare_structures(self):
         """Test compare_structures() function."""
-        # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
+        # V_Cd_0 with defaults (reading from `v_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
             defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
