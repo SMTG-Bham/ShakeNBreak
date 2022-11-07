@@ -160,8 +160,9 @@ setup(
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
     install_requires=[
-        "numpy<1.22",  # Requirement of hiphive
-        "pymatgen<2022.8.23",
+        "numpy",
+        "pymatgen==2022.10.22",
+        "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
         "pandas",
@@ -172,7 +173,7 @@ setup(
     ],
     extras_require={
         "tests": [
-            "pytest",
+            "pytest>=7.1.3",
             "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
         ],
         "docs": [

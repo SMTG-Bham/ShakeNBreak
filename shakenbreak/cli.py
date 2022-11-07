@@ -3,13 +3,15 @@ import fnmatch
 import os
 import warnings
 from copy import deepcopy
+from importlib.metadata import version
 from subprocess import call
+from typing import Optional
 
 import click
 import numpy as np
-from monty.json import MontyDecoder
 
 # Monty and pymatgen
+from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
 from pymatgen.core.structure import Element, Structure
@@ -30,10 +32,13 @@ def identify_defect(
     Args:
         defect_structure (:obj:`Structure`):
             defect structure
+        bulk_structure (:obj:`Structure`):
+            bulk structure
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
             Index of the defect site in the supercell.
+
     Returns: :obj:`Defect`
     """
     natoms_defect = len(defect_structure)
@@ -290,14 +295,59 @@ def identify_defect(
         "@module": "pymatgen.analysis.defects.core",
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
-        "defect_site": defect_site,
+        "site": defect_site,
     }
-
-    defect = MontyDecoder().process_decoded(for_monty_defect)
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError:
+        # This means we have the old version of pymatgen-analysis-defects,
+        # where the class attributes were different (defect_site instead of site
+        # and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            return TypeError(
+                f"You have the version {v_ana_def}"
+                " of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+        if v_pmg < "2022.7.25":
+            return TypeError(
+                f"You have the version {v_pmg}"
+                " of the package `pymatgen`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
     return defect
 
 
-def generate_defect_dict(defect_object, charges, defect_name) -> dict:
+def _get_substituted_site(defect_object: Defect, defect_name: str):
+    """Get the site in the pristine structure that has been
+    substituted in the defect structure.
+    """
+    # get bulk_site
+    poss_deflist = sorted(
+        defect_object.structure.get_sites_in_sphere(  # Defect().structure is bulk_structure
+            defect_object.site.coords, 0.01, include_index=True
+        ),
+        key=lambda x: x[1],
+    )
+    if not poss_deflist:
+        raise ValueError(
+            "Error in defect object generation; could not find substitution "
+            f"site inside bulk structure for {defect_name}"
+        )
+    defindex = poss_deflist[0][2]
+    sub_site_in_bulk = defect_object.structure[defindex]  # bulk site of substitution
+    return sub_site_in_bulk
+
+
+def _generate_defect_dict(
+    defect_object: dict,
+    charges: list,
+    defect_name: str,
+) -> dict:
     """
     Create defect dictionary from a pymatgen Defect object.
 
@@ -317,7 +367,7 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
         "site_multiplicity": defect_object.multiplicity,
         "supercell": {
             "size": [1, 1, 1],
-            "structure": defect_object.generate_defect_structure(),
+            "structure": defect_object.defect_structure,
         },
         "charges": charges,
     }
@@ -340,21 +390,10 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
 
     if single_defect_dict["defect_type"] in ["substitution", "antisite"]:
         # get bulk_site
-        poss_deflist = sorted(
-            defect_object.bulk_structure.get_sites_in_sphere(
-                defect_object.site.coords, 0.01, include_index=True
-            ),
-            key=lambda x: x[1],
+        sub_site_in_bulk = _get_substituted_site(
+            defect_object=defect_object,
+            defect_name=defect_name,
         )
-        if not poss_deflist:
-            raise ValueError(
-                "Error in defect object generation; could not find substitution "
-                f"site inside bulk structure for {defect_name}"
-            )
-        defindex = poss_deflist[0][2]
-        sub_site_in_bulk = defect_object.bulk_structure[
-            defindex
-        ]  # bulk site of substitution
 
         single_defect_dict["unique_site"] = sub_site_in_bulk
         single_defect_dict["site_specie"] = sub_site_in_bulk.specie.symbol
@@ -386,6 +425,72 @@ def generate_defect_dict(defect_object, charges, defect_name) -> dict:
     return defects_dict
 
 
+def generate_defect_object(
+    single_defect_dict: dict,
+    bulk_dict: dict,
+    charges: Optional[list] = None,
+) -> Defect:
+    """
+    Create Defect() object from a DOPED/PyCDT single_defect_dict.
+
+    Args:
+        single_defect_dict (:obj:`dict`):
+            DOPED/PyCDT defect dictionary.
+        bulk_dict (:obj:`dict`):
+            DOPED/PyCDT entry for bulk in the defects dictionary,
+            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
+        charges (:obj:`list`):
+            List of charge states for the defect.
+
+    Returns: :obj:`Defect`
+    """
+    defect_type = single_defect_dict["defect_type"]
+    if defect_type == "antisite":
+        defect_type = (
+            "substitution"  # antisites are represented with Substitution class
+        )
+    # Get bulk structure
+    bulk_structure = bulk_dict["supercell"]["structure"]
+    # Get defect site
+    defect_site = single_defect_dict["bulk_supercell_site"]
+    for_monty_defect = {
+        "@module": "pymatgen.analysis.defects.core",
+        "@class": defect_type.capitalize(),
+        "structure": bulk_structure,
+        "site": defect_site,
+        # "user_charges": single_defect_dict["charges"]  # doesn't work
+    }
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError:
+        # This means we have the old version of pymatgen-analysis-defects,
+        # where the class attributes were different (defect_site instead of site
+        # and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            return TypeError(
+                f"You have the version {v_ana_def}"
+                " of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+        if v_pmg < "2022.7.25":
+            return TypeError(
+                f"You have the version {v_pmg}"
+                " of the package `pymatgen`,"
+                " which is incompatible. Please update this package"
+                " and try again."
+            )
+    else:
+        # Specify defect charge states
+        if isinstance(charges, list):  # Priority to charges argument
+            defect.user_charges = charges
+        elif "charges" in single_defect_dict.keys():
+            defect.user_charges = single_defect_dict["charges"]
+    return defect
+
+
 def _parse_defect_dirs(path) -> list:
     """Parse defect directories present in the specified path."""
     return [
@@ -399,6 +504,23 @@ def _parse_defect_dirs(path) -> list:
             ]
         )  # only parse defect directories that contain distortion folders
     ]
+
+
+def _get_defect_type_plural(defect: Defect):
+    """Generate the defect type (in plural, e.g. vacancies)
+    for a given Defect object.
+
+    Args:
+        defect (:obj: Defect): Defect object
+    """
+    defect_type = str(defect.as_dict()["@class"].lower())
+    if defect_type == "vacancy":
+        defect_type_plural = "vacancies"
+    elif defect_type == "substitution":
+        defect_type_plural = "substitutions"
+    elif defect_type == "interstitial":
+        defect_type_plural = "interstitials"
+    return defect_type_plural
 
 
 def CommandWithConfigFile(
@@ -611,6 +733,8 @@ def generate(
         defect_coords=defect_coords,
     )
     if verbose and defect_index is None and defect_coords is None:
+        # TODO: better to always print this when verbose = True
+        # in case user gives wrong defect position?
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -646,11 +770,24 @@ def generate(
         charges = list(range(-2, +3))
 
     if name is None:
-        name = defect_object.name
+        name = (
+            defect_object.name
+        )  # v_X, X_i or X_Y for vacancies, interstitials, substitutions
 
-    defects_dict = generate_defect_dict(defect_object, charges, name)
+    # Update charge states
+    defect_object.user_charges = charges
+    defect_type_plural = _get_defect_type_plural(defect_object)
 
-    Dist = input.Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(
+        defects_dict={
+            defect_type_plural: {
+                name: defect_object,  # So that user can specify defect name.
+                # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
+                # names would be the same)
+            }
+        },
+        **user_settings,
+    )
     if code.lower() == "vasp":
         if input_file:
             incar = Incar.from_file(input_file)
@@ -684,7 +821,6 @@ def generate(
         "quantum-espresso",
         "quantumespresso",
     ]:
-        print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
@@ -692,7 +828,6 @@ def generate(
                 input_file=input_file,
             )
         else:
-            print("Writting espresso input files")
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
                 pseudopotentials=pseudopotentials,
@@ -717,7 +852,9 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
-    dumpfn(defects_dict, "./parsed_defects_dict.json")
+    # with open("./parsed_defects_dict.pickle", "wb") as fp:
+    #     pickle.dump(defect_object, fp)
+    dumpfn(defect_object, "./parsed_defects_dict.json")
 
 
 @snb.command(
@@ -989,16 +1126,17 @@ def generate_all(
                 f"with site {site_info}"
             )
 
-        defect_dict = generate_defect_dict(defect_object, charges, defect_name)
+        # Update charges and defect name
+        defect_object.user_charges = charges
 
-        # Add defect entry to full defect_dict
-        defect_type = str(list(defect_dict.keys())[0])
-        if defect_type in defects_dict:  # vacancies, antisites or interstitials
-            defects_dict[defect_type] += deepcopy(defect_dict[defect_type][0])
+        # Add defect entry to full defects_dict
+        defect_type_plural = _get_defect_type_plural(defect_object)
+        if defect_type_plural in defects_dict:  # vacancies, antisites or interstitials
+            defects_dict[defect_type_plural] += {defect_name: deepcopy(defect_object)}
         else:
             defects_dict.update(
                 {
-                    defect_type: deepcopy(defect_dict[defect_type]),
+                    defect_type_plural: {defect_name: deepcopy(defect_object)},
                 }
             )
 
@@ -1037,7 +1175,6 @@ def generate_all(
         "quantum-espresso",
         "quantumespresso",
     ]:
-        print("Code is espresso")
         if input_file:
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
@@ -1045,7 +1182,6 @@ def generate_all(
                 input_file=input_file,
             )
         else:
-            print("Writting espresso input files")
             distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
                 verbose=verbose,
                 pseudopotentials=pseudopotentials,
@@ -1740,13 +1876,17 @@ def groundstate(
         if any(
             [
                 substring in cwd_name.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i")
+                for substring in ("as", "vac", "int", "sub", "v", "i", "on")
             ]
         ) or any(
             [
-                (dummy_h.is_valid_symbol(substring[-2:]) or substring[-2:] == "Va")
+                (
+                    dummy_h.is_valid_symbol(substring[-2:])
+                    or substring[-1:] == "v"
+                    or substring[-2:] == "Va"
+                )
                 for substring in cwd_name.split("_")
-            ]  # underscore preceded by either an element symbol or "Va" (new pymatgen defect
+            ]  # underscore preceded by either an element symbol or "v" (new pymatgen defect
             # naming convention)
         ):  # cwd is defect name, assume current directory is the defect folder
             if path != ".":

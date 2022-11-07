@@ -592,14 +592,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
     def test_get_energy_lowering_distortions_no_energies_file(self):
         """Test that `io.parse_energies()` is called fine if no energies file present"""
-        defect = "vac_1_Ti_0"
+        defect = "v_Ti_0"
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         low_energy_defects_dict = (
             energy_lowering_distortions.get_energy_lowering_distortions(
-                {"vac_1_Ti": [0]}, self.EXAMPLE_RESULTS
+                {"v_Ti": [0]}, self.EXAMPLE_RESULTS
             )
         )
-        self.assertEqual(len(low_energy_defects_dict["vac_1_Ti"]), 1)
+        self.assertEqual(len(low_energy_defects_dict["v_Ti"]), 1)
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         test_energies = {
             "distortions": {
@@ -847,7 +847,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
 
         # "has also been found" not in any mock_print call (i.e. Rattled_from_-2 in
-        # `vac_1_Cd_-1`directory not compared to Rattled in `vac_1_Cd_-2` directory)
+        # `vac_1_Cd_-1` directory not compared to Rattled in `vac_1_Cd_-2` directory)
         self.assertFalse(
             any(
                 "has also been found" in str(call) for call in mock_print.call_args_list
@@ -898,7 +898,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         mock_print.assert_any_call(
             "vac_1_Cd_-3: Energy difference between minimum, found with Rattled_from_-2 bond "
             "distortion, and unperturbed: -0.15 eV."
-        )
+        )  # Fails on GA?
         # "has also been found" not in any mock_print call (i.e. Rattled_from_-2 in
         # `vac_1_Cd_-1`directory not compared to Rattled in `vac_1_Cd_-2` directory)
         self.assertFalse(

@@ -48,7 +48,7 @@ def parse_energies(
         filename (:obj:`str`):
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
-            (i.e. vasp: 'OUTCAR', cp2k: "relax.out", espresso: "espresso.out",
+            (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
 
