@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+v22.11.7
+--------
+
+Main changes:
+
+- Refactor ShakeNBreak to make it compatible with `pymatgen>=2022.8.23`. Now `Distortions` takes in
+  `pymatgen.analysis.defects.core.Defect` objects.
+- Add `Distortions.from_dict()` and `Distortions.from_structures()` to generate defect distortions from a
+  dictionary of defects (in doped format) or from a list of defect structures, respectively.
+
 v22.11.1
 --------
 

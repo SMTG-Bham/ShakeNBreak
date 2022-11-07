@@ -75,6 +75,16 @@ The functions provided include:
 More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
 We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+
+## Code Compatibility
+`ShakeNBreak` is built to natively function using `pymatgen` `Defect` objects ([docs available here](https://materialsproject.github.io/pymatgen-analysis-defects/)) and be compatible with the most recent version of `pymatgen`. If you are receiving `pymatgen`-related errors when using `ShakeNBreak`, you may need to update `pymatgen` and/or `ShakeNBreak`, which can be done with:
+```bash
+pip install --upgrade pymatgen shakenbreak
+```
+
+`ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures), **_but also_** can take in `pymatgen` `Structure` objects, `doped` defect dictionaries or structure files (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code (such as `doped`, `DASP`, `PyLada`, `PyCDT`, `Spinney`, `DefAP`, `PyDEF`, `pydefect`...) that generates these files.
+Please let us know if you have any issues with compatibility, or if you would like to see any additional features added to `ShakeNBreak` to make it more compatible with your code.
+
 ## Contributing
 
 ### Bugs reports, feature requests and questions
