@@ -5,7 +5,7 @@ sphinx_click
 sphinx_design
 numpy<1.21
 pymatgen>2022.0.17 #==2022.10.22
-pymatgen-analsysis-defects #>=2022.10.28
+pymatgen-analysis-defects #>=2022.10.28
 ase
 matplotlib
 pandas
