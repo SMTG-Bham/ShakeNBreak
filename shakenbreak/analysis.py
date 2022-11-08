@@ -1177,6 +1177,12 @@ def get_site_magnetizations(
             )
             return None
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+        if not outcar.spin:
+            warnings.warn(
+                f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "
+                f"calculation (ISPIN = 1), so magnetization analysis is not possible. Skipping."
+            )
+            return None
         if verbose:
             print(
                 f"Analysing distortion {distortion}. "
