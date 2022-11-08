@@ -299,26 +299,26 @@ def identify_defect(
     }
     try:
         defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError:
+    except TypeError as exc:
         # This means we have the old version of pymatgen-analysis-defects,
         # where the class attributes were different (defect_site instead of site
         # and no user_charges)
         v_ana_def = version("pymatgen-analysis-defects")
         v_pmg = version("pymatgen")
         if v_ana_def < "2022.9.14":
-            return TypeError(
-                f"You have the version {v_ana_def}"
-                " of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package (with `pip install "
+                "shakenbreak`) and try again."
             )
         if v_pmg < "2022.7.25":
-            return TypeError(
-                f"You have the version {v_pmg}"
-                " of the package `pymatgen`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
+                f"Please update this package (with `pip install shakenbreak`) and try again."
             )
+        else:
+            raise exc
+
     return defect
 
 
@@ -462,32 +462,33 @@ def generate_defect_object(
     }
     try:
         defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError:
+    except TypeError as exc:
         # This means we have the old version of pymatgen-analysis-defects,
         # where the class attributes were different (defect_site instead of site
         # and no user_charges)
         v_ana_def = version("pymatgen-analysis-defects")
         v_pmg = version("pymatgen")
         if v_ana_def < "2022.9.14":
-            return TypeError(
-                f"You have the version {v_ana_def}"
-                " of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package (with `pip install "
+                "shakenbreak`) and try again."
             )
         if v_pmg < "2022.7.25":
-            return TypeError(
-                f"You have the version {v_pmg}"
-                " of the package `pymatgen`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_pmg} of the package `pymatgen`, which is "
+                f"incompatible. "
+                f"Please update this package (with `pip install shakenbreak`) and try again."
             )
-    else:
-        # Specify defect charge states
-        if isinstance(charges, list):  # Priority to charges argument
-            defect.user_charges = charges
-        elif "charges" in single_defect_dict.keys():
-            defect.user_charges = single_defect_dict["charges"]
+        else:
+            raise exc
+
+    # Specify defect charge states
+    if isinstance(charges, list):  # Priority to charges argument
+        defect.user_charges = charges
+    elif "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
+
     return defect
 
 
@@ -733,8 +734,6 @@ def generate(
         defect_coords=defect_coords,
     )
     if verbose and defect_index is None and defect_coords is None:
-        # TODO: better to always print this when verbose = True
-        # in case user gives wrong defect position?
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -852,8 +851,6 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
-    # with open("./parsed_defects_dict.pickle", "wb") as fp:
-    #     pickle.dump(defect_object, fp)
     dumpfn(defect_object, "./parsed_defects_dict.json")
 
 
