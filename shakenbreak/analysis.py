@@ -1153,7 +1153,7 @@ def get_site_magnetizations(
                 "should be the distortion factor (e.g. 0.2) or the "
                 "Unperturbed/Rattled name."
             )
-            return None
+            continue
         structure = io.read_vasp_structure(
             f"{output_path}/{defect_species}/{dist_label}/CONTCAR"
         )
@@ -1162,7 +1162,7 @@ def get_site_magnetizations(
                 f"Structure for {defect_species} either not converged or not "
                 "found. Skipping magnetisation analysis."
             )
-            return None
+            continue
         if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
             # for vacancies, append fake atom
             structure.append(
@@ -1175,14 +1175,14 @@ def get_site_magnetizations(
                 f"{dist_label}/OUTCAR. "
                 "Skipping magnetization analysis."
             )
-            return None
+            continue
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
         if not outcar.spin:
             warnings.warn(
                 f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "
                 f"calculation (ISPIN = 1), so magnetization analysis is not possible. Skipping."
             )
-            return None
+            continue
         if verbose:
             print(
                 f"Analysing distortion {distortion}. "
