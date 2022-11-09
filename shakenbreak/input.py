@@ -1320,10 +1320,9 @@ class Distortions:
                         Element(distorted_elements[defect_name])
                 except ValueError:
                     warnings.warn(
-                        "Problem reading the keys in distorted_elements.",
-                        "Are they correct element symbols?",
-                        "Proceeding without discriminating which neighbour "
-                        + "elements to distort.",
+                        "Problem reading the keys in distorted_elements. Are they correct element "
+                        "symbols? Proceeding without discriminating which neighbour elements to "
+                        "distort.",
                     )
                     distorted_element = None
         else:
