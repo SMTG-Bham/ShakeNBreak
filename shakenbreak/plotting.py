@@ -1659,6 +1659,7 @@ def plot_colorbar(
     )
 
     # Plotting
+    line = None  # to later check if line was plotted, for legend formatting
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         if (
             "Rattled" in energies_dict["distortions"].keys()
@@ -1705,7 +1706,7 @@ def plot_colorbar(
             )
             if len(non_imported_sorted_indices) > 1:  # more than one point
                 # Plot line connecting points
-                ax.plot(
+                (line,) = ax.plot(
                     [sorted_distortions[i] for i in non_imported_sorted_indices],
                     [sorted_energies[i] for i in non_imported_sorted_indices],
                     ls="-",
@@ -1785,7 +1786,23 @@ def plot_colorbar(
             ],
         )
 
-        plt.legend(frameon=True).set_zorder(
+        # reformat 'line' legend handle to include 'im' datapoint handle
+        handles, labels = ax.get_legend_handles_labels()
+        # get handle and label that corresponds to line, if line present:
+        if line:
+            line_handle, line_label = [
+                (handle, label)
+                for handle, label in zip(handles, labels)
+                if label == legend_label
+            ][0]
+            # remove line handle and label from handles and labels
+            handles = [handle for handle in handles if handle != line_handle]
+            labels = [label for label in labels if label != line_label]
+            # add line handle and label to handles and labels, with datapoint handle
+            handles = [(im, line_handle)] + handles
+            labels = [line_label] + labels
+
+        plt.legend(handles, labels, scatteryoffsets=[0.5], frameon=True).set_zorder(
             100
         )  # make sure it's on top of the other points
 
