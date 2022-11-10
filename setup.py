@@ -140,9 +140,9 @@ setup(
     "https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
     long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
-    author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    author_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
-    maintainer_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    maintainer_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     readme="README.md",  # PyPI readme
     url="https://github.com/SMTG-UCL/ShakeNBreak",
     license="MIT",
