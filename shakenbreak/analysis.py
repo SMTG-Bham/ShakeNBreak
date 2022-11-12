@@ -187,7 +187,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
 
     Returns:
         :obj:`tuple`:
-            (Energies dictionary, Energy difference, ground state bond distortion)
+            (Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()

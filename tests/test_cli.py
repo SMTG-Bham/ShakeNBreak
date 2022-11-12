@@ -579,7 +579,7 @@ class CLITestCase(unittest.TestCase):
             self.assertNotIn("Coordinates", str(w[0].message))
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: [0.01568712 0.01684992 0.00136596]\n" #[0.015687 0.01685  0.001366]\n"  # rattled position
+            f"\tDefect Site Index / Frac Coords: [0.0157 0.0168 0.001]\n"  # rattled position
             + "            Original Neighbour Distances: [(2.33, 42, 'Te'), (2.73, 33, 'Te')]\n"
             + "            Distorted Neighbour Distances:\n\t[(0.93, 42, 'Te'), (1.09, 33, 'Te')]",
             result.output,
