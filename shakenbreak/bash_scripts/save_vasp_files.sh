@@ -7,3 +7,4 @@ for i in {CONTCAR,OUTCAR,XDATCAR,POSCAR,INCAR,OSZICAR,vasprun.xml}
 do
 cp $i ${i}_${current_time}
 done
+gzip vasprun.xml_${current_time}  # gzip to save file space
