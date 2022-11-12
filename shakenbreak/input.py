@@ -6,12 +6,11 @@ as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 import copy
 import datetime
 import functools
-import json
 import os
 import warnings
 from collections import Counter
 from importlib.metadata import version
-from typing import Optional, Tuple, Type
+from typing import Optional, Tuple, Type, Union
 
 import ase
 import numpy as np
@@ -21,7 +20,7 @@ from ase.calculators.espresso import Espresso
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Composition, Element, Structure
+from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
@@ -109,7 +108,7 @@ def _write_distortion_metadata(
                 ),
                 "r",
             ) as old_metadata_file:
-                old_metadata = json.load(old_metadata_file)
+                old_metadata = loadfn(old_metadata_file)
             # Combine old and new metadata dictionaries
             for defect in old_metadata["defects"]:
                 if (
@@ -230,7 +229,10 @@ def _get_bulk_comp(defect_object) -> Composition:
     return bulk_structure.composition
 
 
-def _get_bulk_defect_site(defect_object):
+def _get_bulk_defect_site(
+    defect_object: Defect,
+    defect_name: str,
+) -> PeriodicSite:
     """Get defect site in the bulk structure (e.g.
     for a P substitution on Si, get the original Si site).
     """
@@ -284,6 +286,7 @@ def _most_common_oxi(element) -> int:
 
 def _calc_number_electrons(
     defect_object: Defect,
+    defect_name: str,
     oxidation_states: dict,
     verbose: bool = False,
 ) -> int:
@@ -294,6 +297,8 @@ def _calc_number_electrons(
     Args:
         defect_object (:obj:`Defect`):
             pymatgen.analysis.defects.core.Defect object.
+        defect_name (:obj:`str`):
+            Name of the defect species.
         oxidation_states (:obj:`dict`):
             Dictionary with oxidation states of the atoms in the material (e.g.
             {"Cd": +2, "Te": -2}).
@@ -309,7 +314,6 @@ def _calc_number_electrons(
 
     # Determine number of extra/missing electrons based on defect type and
     # oxidation states
-    defect_name = defect_object.name
     defect_type = defect_object.as_dict()["@class"].lower()
     # We use the following variables:
     # site_specie: Original species on the bulk site
@@ -327,7 +331,7 @@ def _calc_number_electrons(
     elif defect_type in ["antisite", "substitution"]:
         # get bulk_site
         sub_site_in_bulk = _get_bulk_defect_site(
-            defect_object
+            defect_object, defect_name
         )  # bulk site of substitution
         site_specie = sub_site_in_bulk.specie.symbol  # Species occuping the *bulk* site
         substituting_specie = str(
@@ -335,9 +339,7 @@ def _calc_number_electrons(
         )  # Current species occupying the defect site (e.g. the substitution)
 
     else:
-        raise ValueError(
-            "`defect_dict` has an invalid `defect_type`:" + f"{defect_type}"
-        )
+        raise ValueError(f"`defect_dict` has an invalid `defect_type`: {defect_type}")
 
     num_electrons = (
         oxidation_states[substituting_specie] - oxidation_states[site_specie]
@@ -866,6 +868,7 @@ def _apply_rattle_bond_distortions(
 
 def apply_snb_distortions(
     defect_object: dict,
+    defect_name: str,
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
@@ -882,6 +885,8 @@ def apply_snb_distortions(
     Args:
         defect_object (:obj:`Defect`):
             pymatgen.analysis.defects.core.Defect() object.
+        defect_name (:obj:`str`):
+            Name of the defect species.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -941,7 +946,7 @@ def apply_snb_distortions(
     defect_type = str(defect_object.as_dict()["@class"].lower())
     defect_structure = defect_object.defect_structure
     # Get defect site
-    bulk_supercell_site = _get_bulk_defect_site(defect_object)  # bulk site
+    bulk_supercell_site = _get_bulk_defect_site(defect_object, defect_name)  # bulk site
     defect_site_index = defect_object.defect_site_index
 
     if not d_min:
@@ -1054,7 +1059,7 @@ class Distortions:
 
     def __init__(
         self,
-        defects: Optional[list, dict],
+        defects: Union[list, dict],
         oxidation_states: Optional[dict] = None,
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
@@ -1065,10 +1070,11 @@ class Distortions:
     ):
         """
         Args:
-            defects (:obj:`dict` or `list`):
+            defects (:obj:`dict_or_list`):
                 List or dictionary of pymatgen.analysis.defects.core.Defect() objects.
                 E.g.: [Vacancy(), Interstitial(), Substitution(), ...]
-                In this case, generated defect folders will be named using Defect.name.
+                In this case, generated defect folders will be named in the format:
+                "{Defect.name}_s{Defect.defect_site_index}_m{Defect.multiplicity}".
 
                 Alternatively, if specific defect folder names are desired, `defects` can
                 be input as a dictionary in the format {"defect name": Defect()}.
@@ -1153,20 +1159,10 @@ class Distortions:
         # a dict or list of Defects
         # To account for this, here we refactor the list into a dict
         if isinstance(defects, list):
-            counter = Counter([defect.name for defect in defects])
-            if any([value > 1 for value in counter.values()]):
-                print(
-                    "There are defects with the same Defect.name in the `defects` list."
-                    " To avoid overwriting, the names will be refactored"
-                    " as {defect_name}_{defect_site_index} (e.g. v_Cd_0)."
-                )  # TODO: Refactor this to specifically name which defects are being overwritten
-                # maybe use site-symmetry and then alphabe counter if still same name?
-                self.defects_dict = {
-                    f"{defect.name}_{defect.defect_site_index}": defect
-                    for defect in defects
-                }
-            else:
-                self.defects_dict = {defect.name: defect for defect in defects}
+            self.defects_dict = {
+                f"{defect.name}_s{defect.defect_site_index}_m{defect.get_multiplicity()}": defect
+                for defect in defects
+            }
 
         elif isinstance(defects, dict):
             # check if it's a doped/PyCDT defect_dict:
@@ -1213,8 +1209,8 @@ class Distortions:
                 "`defects`: List or dictionary of "
                 "pymatgen.analysis.defects.core.Defect() objects.\n"
                 "E.g.: [Vacancy(), Interstitial(), Substitution(), ...]\n"
-                "In this case, generated defect folders will be named using "
-                "Defect.name.\n\n"
+                "In this case, generated defect folders will be named in the format:"
+                "'{Defect.name}_s{Defect.defect_site_index}_m{Defect.multiplicity}'\n\n"
                 "Alternatively, if specific defect folder names are desired, "
                 "`defects` can be input as a dictionary in the format "
                 "{'defect name': Defect()}\n"
@@ -1398,7 +1394,9 @@ class Distortions:
         if dict_number_electrons_user:
             number_electrons = dict_number_electrons_user[defect_name]
         else:
-            number_electrons = _calc_number_electrons(defect, oxidation_states)
+            number_electrons = _calc_number_electrons(
+                defect, defect_name, oxidation_states
+            )
 
         _bold_print(f"\nDefect: {defect_name}")
         if number_electrons < 0:
@@ -1505,6 +1503,7 @@ class Distortions:
     def _setup_distorted_defect_dict(
         self,
         defect: Defect,
+        defect_name: str,
     ) -> dict:
         """
         Setup `distorted_defect_dict` with info for `defect`.
@@ -1512,6 +1511,8 @@ class Distortions:
         Args:
             defect (:obj:`pymatgen.analysis.defects.core.Defect()`):
                 Defect object to generate `distorted_defect_dict` from.
+            defect_name (:obj:`str`):
+                Name of the defect.
 
         Returns:
             :obj:`dict`
@@ -1524,7 +1525,7 @@ class Distortions:
             padding = 1
             user_charges = defect.get_charge_states(padding=padding)
             warnings.warn(
-                f"As charge states have not been specified for defect {defect.name},"
+                f"As charge states have not been specified for defect {defect_name},"
                 f" a padding of {padding} will be used on either sides of 0 and the"
                 " oxidation state value."
             )
@@ -1532,17 +1533,17 @@ class Distortions:
             distorted_defect_dict = {
                 "defect_type": str(defect.as_dict()["@class"].lower()),
                 "defect_site": defect.site,  # _get_bulk_defect_site(defect),
-                "defect_supercell_site": _get_bulk_defect_site(defect),
+                "defect_supercell_site": _get_bulk_defect_site(defect, defect_name),
                 "defect_multiplicity": defect.get_multiplicity(),
                 "charges": {charge: {} for charge in user_charges},
             }  # General info about (neutral) defect
-        except NotImplementedError:
+        except NotImplementedError as e:
+            print(e.message)  # TODO: remove this
             distorted_defect_dict = {
                 "defect_type": str(defect.as_dict()["@class"].lower()),
                 "defect_site": defect.site,  # _get_bulk_defect_site(defect),
-                "defect_supercell_site": _get_bulk_defect_site(defect),
-                # "defect_multiplicity": defect.get_multiplicity(),
-                # Problem determining multiplicity # TODO: Fix this!
+                "defect_supercell_site": _get_bulk_defect_site(defect, defect_name),
+                "defect_multiplicity": defect.get_multiplicity(),
                 "charges": {charge: {} for charge in user_charges},
             }  # General info about (neutral) defect
         if (
@@ -1638,7 +1639,7 @@ class Distortions:
             }
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
-                defect_object
+                defect_object, defect_name
             )
 
             for charge in distorted_defects_dict[defect_name][
@@ -1652,6 +1653,7 @@ class Distortions:
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
                     defect_object=defect_object,
+                    defect_name=defect_name,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
                     local_rattle=self.local_rattle,
