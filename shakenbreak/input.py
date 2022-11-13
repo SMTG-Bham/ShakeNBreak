@@ -107,13 +107,11 @@ def _write_distortion_metadata(
         )
         try:
             print(f"Combining old and new metadata in {filename}.")
-            with open(
+            old_metadata = loadfn(
                 os.path.join(
                     output_path, f"distortion_metadata_{current_datetime}.json"
-                ),
-                "r",
-            ) as old_metadata_file:
-                old_metadata = loadfn(old_metadata_file)
+                )
+            )
             # Combine old and new metadata dictionaries
             for defect in old_metadata["defects"]:
                 if (
