@@ -504,23 +504,6 @@ def _parse_defect_dirs(path) -> list:
     ]
 
 
-def _get_defect_type_plural(defect: Defect):
-    """Generate the defect type (in plural, e.g. vacancies)
-    for a given Defect object.
-
-    Args:
-        defect (:obj: Defect): Defect object
-    """
-    defect_type = str(defect.as_dict()["@class"].lower())
-    if defect_type == "vacancy":
-        defect_type_plural = "vacancies"
-    elif defect_type == "substitution":
-        defect_type_plural = "substitutions"
-    elif defect_type == "interstitial":
-        defect_type_plural = "interstitials"
-    return defect_type_plural
-
-
 def CommandWithConfigFile(
     config_file_param_name,
 ):  # can also set CLI options using config file
@@ -772,15 +755,12 @@ def generate(
 
     # Update charge states
     defect_object.user_charges = charges
-    defect_type_plural = _get_defect_type_plural(defect_object)
 
     Dist = input.Distortions(
-        defects_dict={
-            defect_type_plural: {
-                name: defect_object,  # So that user can specify defect name.
-                # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
-                # names would be the same)
-            }
+        defects={
+            name: defect_object,  # So that user can specify defect name.
+            # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
+            # names would be the same)
         },
         **user_settings,
     )
@@ -991,7 +971,8 @@ def generate_all(
         defect_name = None
         # if user included cif/POSCAR as part of the defect structure name, remove it
         for substring in ("cif", "POSCAR", structure_file):
-            defect = defect.replace(substring, "")
+            if defect != substring:
+                defect = defect.replace(substring, "")
         for symbol in ("-", "_", "."):
             if defect.endswith(symbol):  # trailing characters
                 defect = defect[:-1]
@@ -1006,6 +987,8 @@ def generate_all(
                     f"Will parse defect name from folders/files."
                 )
         if not defect_name:
+            # if user didn't specify defect names in config file,
+            # check if defect filename is recognised
             try:
                 defect_name = plotting._format_defect_name(
                     defect, include_site_num_in_name=False
@@ -1018,16 +1001,7 @@ def generate_all(
                 except Exception:
                     pass
             if defect_name:
-                # if user didn't specify defect names in config file,
-                # check if defect filename is recognised
                 defect_name = defect
-
-        if not defect_name:
-            raise ValueError(
-                "Error in defect name parsing; could not parse defect name "
-                f"from {defect}. Please include its name in the 'defects' section of "
-                "the config file."
-            )
 
         return defect_name
 
@@ -1062,7 +1036,10 @@ def generate_all(
         if os.path.isfile(f"{defects}/{defect}"):
             try:  # try to parse structure from it
                 defect_struc = Structure.from_file(f"{defects}/{defect}")
-                defect_name = parse_defect_name(defect, defect_settings)
+                defect_name = parse_defect_name(
+                    defect, defect_settings
+                )  # None if not recognised
+
             except Exception:
                 continue
 
@@ -1097,8 +1074,7 @@ def generate_all(
             warnings.warn(f"Could not parse {defects}/{defect} as a defect, skipping.")
             continue
 
-        # Check if charges / indices are provided in config file
-        charges = parse_defect_charges(defect_name, defect_settings)
+        # Check if indices are provided in config file
         defect_index, defect_coords = parse_defect_position(
             defect_name, defect_settings
         )
@@ -1120,19 +1096,38 @@ def generate_all(
                 f"with site {site_info}"
             )
 
-        # Update charges and defect name
+        # Add defect entry to full defects_dict
+        if defect_name is None:  # name based on defect object
+            defect_type = str(defect_object.as_dict()["@class"].lower())
+            if defect_type != "interstitial":
+                defect_name = f"{defect_object.name}_s{defect_object.defect_site_index}"
+            else:  # interstitial
+                defect_name = (
+                    f"{defect_object.name}_m"
+                    f"{input._get_voronoi_multiplicity(defect_object.site, defect_object.structure)}"
+                )
+
+        # Update charges if specified in config file
+        charges = parse_defect_charges(defect_name, defect_settings)
         defect_object.user_charges = charges
 
-        # Add defect entry to full defects_dict
-        defect_type_plural = _get_defect_type_plural(defect_object)
-        if defect_type_plural in defects_dict:  # vacancies, antisites or interstitials
-            defects_dict[defect_type_plural] += {defect_name: deepcopy(defect_object)}
+        # Rename if defect_name already present in defects_dict
+        if defect_name in defects_dict:  # if name already exists, rename entry in
+            # dict to {defect_name}a, and rename this entry to {defect_name}b
+            prev_defect = defects_dict.pop(defect_name)
+            defects_dict[f"{defect_name}a"] = prev_defect
+            defects_dict[f"{defect_name}b"] = deepcopy(defect_object)
+
+        elif defect_name in [name[:-1] for name in defects_dict.keys()]:
+            # rename defect to {defect_name}{iterated letter}
+            last_letter = [
+                name[-1] for name in defects_dict.keys() if name[:-1] == defect_name
+            ].sort()[-1]
+            new_letter = chr(ord(last_letter) + 1)
+            defects_dict[f"{defect_name}{new_letter}"] = deepcopy(defect_object)
+
         else:
-            defects_dict.update(
-                {
-                    defect_type_plural: {defect_name: deepcopy(defect_object)},
-                }
-            )
+            defects_dict[defect_name] = deepcopy(defect_object)
 
     # Apply distortions and write input files
     Dist = input.Distortions(defects_dict, **user_settings)
