@@ -6,6 +6,7 @@ as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 import copy
 import datetime
 import functools
+import itertools
 import os
 import warnings
 from collections import Counter
@@ -20,11 +21,15 @@ from ase.calculators.espresso import Espresso
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
+from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
+from scipy.cluster.hierarchy import fcluster, linkage
+from scipy.spatial import Voronoi
+from scipy.spatial.distance import squareform
 
 from shakenbreak import analysis, cli, distortions, io, vasp
 
@@ -375,6 +380,138 @@ def _calc_number_neighbours(num_electrons: int) -> int:
     else:
         num_neighbours = abs(num_electrons)
     return abs(num_neighbours)
+
+
+def _get_voronoi_nodes(
+    structure,
+):
+    """
+    Get the Voronoi nodes of a structure.
+    Templated from the TopographyAnalyzer class, added to
+    pymatgen.analysis.defects.utils by Yiming Chen, but now deleted.
+    Modified to map down to primitive, do Voronoi analysis, then map
+    back to original supercell; much more efficient.
+
+    Args:
+        structure (:obj:`Structure`):
+            pymatgen `Structure` object.
+    """
+    # map all sites to the unit cell; 0 ≤ xyz < 1.
+    structure = Structure.from_sites(structure, to_unit_cell=True)
+    # get Voronoi nodes in primitive structure and then map back to the
+    # supercell
+    prim_structure = structure.get_primitive_structure()
+
+    # get all atom coords in a supercell of the structure because
+    # Voronoi polyhedra can extend beyond the standard unit cell.
+    coords = []
+    cell_range = list(range(-1, 2))
+    for shift in itertools.product(cell_range, cell_range, cell_range):
+        for site in prim_structure.sites:
+            shifted = site.frac_coords + shift
+            coords.append(prim_structure.lattice.get_cartesian_coords(shifted))
+
+    # Voronoi tessellation.
+    voro = Voronoi(coords)
+
+    # Only include voronoi polyhedra within the unit cell.
+    vnodes = []
+    tol = 1e-3
+    for vertex in voro.vertices:
+        frac_coords = prim_structure.lattice.get_fractional_coords(vertex)
+        vnode = PeriodicSite("V-", frac_coords, prim_structure.lattice)
+        if np.all([-tol <= coord < 1 + tol for coord in frac_coords]):
+            if not any([p.distance(vnode) < tol for p in vnodes]):
+                vnodes.append(vnode)
+
+    # cluster nodes that are within a certain distance of each other
+    voronoi_coords = [v.frac_coords for v in vnodes]
+    dist_matrix = np.array(
+        prim_structure.lattice.get_all_distances(voronoi_coords, voronoi_coords)
+    )
+    dist_matrix = (dist_matrix + dist_matrix.T) / 2
+    condensed_m = squareform(dist_matrix)
+    z = linkage(condensed_m)
+    cn = fcluster(z, 0.2, criterion="distance")  # cluster nodes with 0.2 Å
+    merged_vnodes = []
+    for n in set(cn):
+        frac_coords = []
+        for i, j in enumerate(np.where(cn == n)[0]):
+            if i == 0:
+                frac_coords.append(vnodes[j].frac_coords)
+            else:
+                fcoords = vnodes[j].frac_coords
+                d, image = prim_structure.lattice.get_distance_and_image(
+                    frac_coords[0], fcoords
+                )
+                frac_coords.append(fcoords + image)
+        merged_vnodes.append(
+            PeriodicSite("V-", np.average(frac_coords, axis=0), prim_structure.lattice)
+        )
+    vnodes = merged_vnodes
+
+    # remove nodes less than 0.5 Å from sites in the structure
+    vfcoords = [v.frac_coords for v in vnodes]
+    sfcoords = prim_structure.frac_coords
+    dist_matrix = prim_structure.lattice.get_all_distances(vfcoords, sfcoords)
+    all_dist = np.min(dist_matrix, axis=1)
+    vnodes = [v for i, v in enumerate(vnodes) if all_dist[i] > 0.5]
+
+    # map back to the supercell
+    sm = StructureMatcher(primitive_cell=False, attempt_supercell=True)
+    mapping = sm.get_supercell_matrix(structure, prim_structure)
+    voronoi_struc = Structure.from_sites(
+        vnodes
+    )  # Structure object with Voronoi nodes as sites
+    voronoi_struc.make_supercell(mapping)  # Map back to the supercell
+
+    # check if there was an origin shift between primitive and supercell
+    regenerated_supercell = prim_structure.copy()
+    regenerated_supercell.make_supercell(mapping)
+    fractional_shift = sm.get_transformation(structure, regenerated_supercell)[1]
+    if not np.allclose(fractional_shift, 0):
+        voronoi_struc.translate_sites(
+            range(len(voronoi_struc)), fractional_shift, frac_coords=True
+        )
+
+    vnodes = voronoi_struc.sites
+
+    return vnodes
+
+
+def _get_voronoi_multiplicity(site, structure):
+    """Get the multiplicity of a Voronoi site in structure"""
+    vnodes = _get_voronoi_nodes(structure)
+
+    distances_and_species_list = []
+    for vnode in vnodes:
+        distances_and_species = [
+            (np.round(vnode.distance(atomic_site), decimals=3), atomic_site.species)
+            for atomic_site in structure.sites
+        ]
+        sorted_distances_and_species = sorted(distances_and_species)
+        distances_and_species_list.append(sorted_distances_and_species)
+
+    site_distances_and_species = [
+        (np.round(site.distance(atomic_site), decimals=3), atomic_site.species)
+        for atomic_site in structure.sites
+    ]
+    sorted_site_distances_and_species = sorted(site_distances_and_species)
+
+    multiplicity = 0
+    for distances_and_species in distances_and_species_list:
+        if distances_and_species == sorted_site_distances_and_species:
+            multiplicity += 1
+
+    if multiplicity == 0:
+        warnings.warn(
+            f"Multiplicity of interstitial at site "
+            f"{np.around(site.frac_coords, decimals=3)} could not be determined from "
+            f"Voronoi analysis. Multiplicity set to 1."
+        )
+        multiplicity = 1
+
+    return multiplicity
 
 
 def _identify_defect(
@@ -1074,7 +1211,10 @@ class Distortions:
                 List or dictionary of pymatgen.analysis.defects.core.Defect() objects.
                 E.g.: [Vacancy(), Interstitial(), Substitution(), ...]
                 In this case, generated defect folders will be named in the format:
-                "{Defect.name}_s{Defect.defect_site_index}_m{Defect.multiplicity}".
+                "{Defect.name}_m{Defect.multiplicity}" for interstitials and
+                "{Defect.name}_s{Defect.defect_site_index}" for vacancies and substitutions.
+                The labels "a", "b", "c"... will be appended for defects with multiple
+                inequivalent sites.
 
                 Alternatively, if specific defect folder names are desired, `defects` can
                 be input as a dictionary in the format {"defect name": Defect()}.
@@ -1159,10 +1299,37 @@ class Distortions:
         # a dict or list of Defects
         # To account for this, here we refactor the list into a dict
         if isinstance(defects, list):
-            self.defects_dict = {
-                f"{defect.name}_s{defect.defect_site_index}_m{defect.get_multiplicity()}": defect
-                for defect in defects
-            }
+            self.defects_dict = {}
+            for defect in defects:
+                defect_type = str(defect.as_dict()["@class"].lower())
+                if defect_type != "interstitial":
+                    defect_name = f"{defect.name}_s{defect.defect_site_index}"
+                else:  # interstitial
+                    defect_name = (
+                        f"{defect.name}_"
+                        f"m{_get_voronoi_multiplicity(defect.site, defect.structure)}"
+                    )
+
+                if (
+                    defect_name in self.defects_dict
+                ):  # if name already exists, rename entry in
+                    # dict to {defect_name}a, and rename this entry to {defect_name}b
+                    prev_defect = self.defects_dict.pop(defect_name)
+                    self.defects_dict[f"{defect_name}a"] = prev_defect
+                    self.defects_dict[f"{defect_name}b"] = defect
+
+                elif defect_name in [name[:-1] for name in self.defects_dict.keys()]:
+                    # rename defect to {defect_name}{iterated letter}
+                    last_letter = [
+                        name[-1]
+                        for name in self.defects_dict.keys()
+                        if name[:-1] == defect_name
+                    ].sort()[-1]
+                    new_letter = chr(ord(last_letter) + 1)
+                    self.defects_dict[f"{defect_name}{new_letter}"] = defect
+
+                else:
+                    self.defects_dict[defect_name] = defect
 
         elif isinstance(defects, dict):
             # check if it's a doped/PyCDT defect_dict:
@@ -1537,13 +1704,14 @@ class Distortions:
                 "defect_multiplicity": defect.get_multiplicity(),
                 "charges": {charge: {} for charge in user_charges},
             }  # General info about (neutral) defect
-        except NotImplementedError as e:
-            print(e.message)  # TODO: remove this
+        except NotImplementedError:  # interstitial
             distorted_defect_dict = {
                 "defect_type": str(defect.as_dict()["@class"].lower()),
                 "defect_site": defect.site,  # _get_bulk_defect_site(defect),
                 "defect_supercell_site": _get_bulk_defect_site(defect, defect_name),
-                "defect_multiplicity": defect.get_multiplicity(),
+                "defect_multiplicity": _get_voronoi_multiplicity(
+                    defect.site, defect.structure
+                ),
                 "charges": {charge: {} for charge in user_charges},
             }  # General info about (neutral) defect
         if (
