@@ -2453,8 +2453,8 @@ class InputTestCase(unittest.TestCase):
                 "wrong type!", bulk=self.CdTe_bulk_struc)  # `defects` as string
             self.assertIn(no_bulk_error, e.exception)
 
-        if_present_rm(os.path.join(self.test_dir, "Cd_i_m128_3"))
-        if_present_rm(os.path.join(self.test_dir, "v_Cd_s0_-3"))  # default padding
+        if_present_rm(os.path.join("Cd_i_m128_3"))
+        if_present_rm(os.path.join("v_Cd_s0_-3"))  # default padding
 
 
 if __name__ == "__main__":
