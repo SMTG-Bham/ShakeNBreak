@@ -1294,7 +1294,11 @@ class Distortions:
         self.local_rattle = local_rattle
 
         # To allow user to specify defect names (with CLI), `defects` can be either
-        # a dict or list of Defects
+        # a dict or list of Defects, or a single Defect
+        if isinstance(defects, Defect):
+            defects = [
+                defects,
+            ]
         # To account for this, here we refactor the list into a dict
         if isinstance(defects, list):
             self.defects_dict = {}

@@ -958,6 +958,10 @@ class InputTestCase(unittest.TestCase):
             "oxidation_states"
         )
 
+        # test Distortions() initialised fine with a single Defect
+        dist = input.Distortions(self.V_Cd)
+        self.assertEqual(dist.defects_dict["v_Cd_s0"], self.cdte_defects["vac_1_Cd"])
+
     def test_write_vasp_files(self):
         """Test `write_vasp_files` method"""
         oxidation_states = {"Cd": +2, "Te": -2}
