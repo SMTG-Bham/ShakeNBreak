@@ -1096,38 +1096,17 @@ def generate_all(
                 f"with site {site_info}"
             )
 
-        # Add defect entry to full defects_dict
         if defect_name is None:  # name based on defect object
-            defect_type = str(defect_object.as_dict()["@class"].lower())
-            if defect_type != "interstitial":
-                defect_name = f"{defect_object.name}_s{defect_object.defect_site_index}"
-            else:  # interstitial
-                defect_name = (
-                    f"{defect_object.name}_m"
-                    f"{input._get_voronoi_multiplicity(defect_object.site, defect_object.structure)}"
-                )
+            defect_name = input._get_defect_name_from_obj(defect_object)
 
         # Update charges if specified in config file
         charges = parse_defect_charges(defect_name, defect_settings)
         defect_object.user_charges = charges
 
-        # Rename if defect_name already present in defects_dict
-        if defect_name in defects_dict:  # if name already exists, rename entry in
-            # dict to {defect_name}a, and rename this entry to {defect_name}b
-            prev_defect = defects_dict.pop(defect_name)
-            defects_dict[f"{defect_name}a"] = prev_defect
-            defects_dict[f"{defect_name}b"] = deepcopy(defect_object)
-
-        elif defect_name in [name[:-1] for name in defects_dict.keys()]:
-            # rename defect to {defect_name}{iterated letter}
-            last_letter = [
-                name[-1] for name in defects_dict.keys() if name[:-1] == defect_name
-            ].sort()[-1]
-            new_letter = chr(ord(last_letter) + 1)
-            defects_dict[f"{defect_name}{new_letter}"] = deepcopy(defect_object)
-
-        else:
-            defects_dict[defect_name] = deepcopy(defect_object)
+        # Add defect entry to full defects_dict
+        defect_name = input._update_defect_dict(
+            defect_object, defect_name, defects_dict
+        )
 
     # Apply distortions and write input files
     Dist = input.Distortions(defects_dict, **user_settings)
