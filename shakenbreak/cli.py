@@ -1928,41 +1928,50 @@ def groundstate(
             )
         ]
     ):  # distortion subfolders in cwd
-        cwd_name = os.getcwd().split("/")[-1]
-        dummy_h = Element("H")
-        if any(
-            [
-                substring in cwd_name.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i", "on")
-            ]
-        ) or any(
-            [
-                (
-                    dummy_h.is_valid_symbol(substring[-2:])
-                    or substring[-1:] == "v"
-                    or substring[-2:] == "Va"
+        # check if defect folders also in cwd
+        for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
+            defect_name = None
+            try:
+                defect_name = plotting._format_defect_name(
+                    dir, include_site_num_in_name=False
                 )
-                for substring in cwd_name.split("_")
-            ]  # underscore preceded by either an element symbol or "v" (new pymatgen defect
-            # naming convention)
-        ):  # cwd is defect name, assume current directory is the defect folder
-            if path != ".":
-                warnings.warn(
-                    "`--path` option ignored when running from within defect folder ("
-                    "determined to be the case here based on current directory and "
-                    "subfolder names)."
-                )
+            except Exception:
+                try:
+                    defect_name = plotting._format_defect_name(
+                        f"{dir}_0", include_site_num_in_name=False
+                    )
+                except Exception:
+                    pass
 
-            energy_lowering_distortions.write_groundstate_structure(
-                all=False,
-                output_path=os.getcwd(),
-                groundstate_folder=directory,
-                groundstate_filename=groundstate_filename,
-                structure_filename=structure_filename,
-                verbose=not non_verbose,
+            if (
+                defect_name
+            ):  # recognised defect folder found in cwd, warn user and proceed
+                # assuming they want to just parse the distortion folders in cwd
+                warnings.warn(
+                    f"Both distortion folders and defect folders (i.e. {dir}) were "
+                    f"found in the current directory. The defect folders will be "
+                    f"ignored and the groundstate structure from the distortion folders "
+                    f"in this directory will be generated."
+                )
+                break
+
+        # assume current directory is the defect folder
+        if path != ".":
+            warnings.warn(
+                "`--path` option ignored when running from within defect folder (assumed to be "
+                "the case here as distortion folders found in current directory)."
             )
 
-            return
+        energy_lowering_distortions.write_groundstate_structure(
+            all=False,
+            output_path=os.getcwd(),
+            groundstate_folder=directory,
+            groundstate_filename=groundstate_filename,
+            structure_filename=structure_filename,
+            verbose=not non_verbose,
+        )
+
+        return
 
     # otherwise, assume top level directory is the path
     energy_lowering_distortions.write_groundstate_structure(
