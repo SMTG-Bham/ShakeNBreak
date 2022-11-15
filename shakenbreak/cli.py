@@ -385,9 +385,7 @@ def generate(
             defect_object.user_charges = charges  # Update charge states
 
     if name is None:
-        name = (
-            defect_object.name
-        )  # v_X, X_i or X_Y for vacancies, interstitials, substitutions
+        name = input._get_defect_name_from_obj(defect_object)
 
     Dist = input.Distortions(
         defects={
