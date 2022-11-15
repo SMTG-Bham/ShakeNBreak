@@ -124,7 +124,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(low_energy_defects)
+            energy_lowering_distortions.write_retest_inputs(low_energy_defects)
 
             mock_print.assert_any_call(
                 "Writing low-energy distorted structure to "
@@ -229,7 +229,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # -2 and -7.5%_from_-1 for -2 but not for 0)(i.e. if we did this parsing early when only
         # some of the other charge states had converged etc)
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(low_energy_defects)
+            energy_lowering_distortions.write_retest_inputs(low_energy_defects)
 
             mock_print.assert_any_call(
                 "As ./vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1 already exists, it's assumed this "

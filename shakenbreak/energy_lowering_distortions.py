@@ -630,7 +630,7 @@ def get_energy_lowering_distortions(
 
         # Write input files for the identified distortions
         if write_input_files:
-            write_distorted_inputs(
+            write_retest_inputs(
                 low_energy_defects=low_energy_defects,
                 output_path=output_path,
                 code=code,
@@ -820,7 +820,7 @@ def compare_struct_to_distortions(
         )  # T/F, matching structure, energy_diff, distortion factor
 
 
-def write_distorted_inputs(
+def write_retest_inputs(
     low_energy_defects: dict,
     output_path: str = ".",
     code: str = "vasp",

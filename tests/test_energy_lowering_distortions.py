@@ -215,7 +215,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
     def test_get_energy_lowering_distortions(self):
         """
         Test get_energy_lowering_distortions() function, as well
-        as write_distorted_inputs and the internal functions called
+        as write_retest_inputs and the internal functions called
         by get_energy_lowering_distortions()
         """
         with patch("builtins.print") as mock_print, warnings.catch_warnings(
@@ -973,8 +973,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         np.testing.assert_almost_equal(comparison_results[2], -0.15)
         self.assertEqual(comparison_results[3], "Rattled_from_1")
 
-    def test_write_distorted_inputs(self):
-        """Test write_distorted_inputs()."""
+    def test_write_retest_inputs(self):
+        """Test write_retest_inputs()."""
         for fake_distortion_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
             if not os.path.exists(
                 f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/{fake_distortion_dir}"
@@ -1010,7 +1010,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(
+            energy_lowering_distortions.write_retest_inputs(
                 low_energy_defects=low_energy_defects_dict,
                 output_path=self.VASP_CDTE_DATA_DIR,
             )
@@ -1074,7 +1074,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 output_path=self.VASP_CDTE_DATA_DIR
             )
         )
-        energy_lowering_distortions.write_distorted_inputs(
+        energy_lowering_distortions.write_retest_inputs(
             low_energy_defects=low_energy_defects_dict,
             output_path=self.VASP_CDTE_DATA_DIR,
         )
@@ -1125,7 +1125,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             ),
             os.path.join(self.CP2K_DATA_DIR, "vac_1_Cd_-1/Unperturbed/cp2k_input.inp"),
         )  # Copy over CP2K input file
-        energy_lowering_distortions.write_distorted_inputs(
+        energy_lowering_distortions.write_retest_inputs(
             low_energy_defects=low_energy_defects_dict,
             output_path=self.CP2K_DATA_DIR,
             code="CP2K",
@@ -1189,7 +1189,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     self.ESPRESSO_DATA_DIR, f"vac_1_Cd_-1/Unperturbed/{filename}"
                 )
             )
-        energy_lowering_distortions.write_distorted_inputs(
+        energy_lowering_distortions.write_retest_inputs(
             low_energy_defects=low_energy_defects_dict,
             output_path=self.ESPRESSO_DATA_DIR,
             code="espresso",
@@ -1257,7 +1257,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     self.FHI_AIMS_DATA_DIR, f"vac_1_Cd_-1/Unperturbed/{filename}"
                 )
             )
-        energy_lowering_distortions.write_distorted_inputs(
+        energy_lowering_distortions.write_retest_inputs(
             low_energy_defects=low_energy_defects_dict,
             output_path=self.FHI_AIMS_DATA_DIR,
             code="FHI-aims",
@@ -1322,7 +1322,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     f"vac_1_Cd_-1/Bond_Distortion_-7.5%/{filename}",
                 )
             )
-        energy_lowering_distortions.write_distorted_inputs(
+        energy_lowering_distortions.write_retest_inputs(
             low_energy_defects=low_energy_defects_dict,
             output_path=self.CASTEP_DATA_DIR,
             code="CASTEP",
