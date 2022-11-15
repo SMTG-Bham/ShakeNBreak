@@ -14,7 +14,7 @@ import numpy as np
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Element, Structure
+from pymatgen.core.structure import Element, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Incar
 
 # ShakeNBreak
@@ -57,8 +57,24 @@ def identify_defect(
             "developers if you would like to use the method for complex defects"
         )
 
+    bulk_site_index = None
+    defect_site_index = None
+
+    if (
+        defect_type == "vacancy" and defect_index
+    ):  # defect_index should correspond to bulk struc
+        bulk_site_index = defect_index  # TODO: Update docstring!
+    elif defect_index:  # defect_index should correspond to defect struc
+        if defect_type == "interstitial":
+            defect_site_index = defect_index
+        if (
+            defect_type == "substitution"
+        ):  # also want bulk site index for substitutions,
+            # so use defect index coordinates
+            defect_coords = defect_structure[defect_index].frac_coords
+
     if defect_coords is not None:
-        if defect_index is None:
+        if bulk_site_index is None and defect_site_index is None:
             site_displacement_tol = (
                 0.01  # distance tolerance for site matching to identify defect, increases in
                 # jumps of 0.1 Å
@@ -133,7 +149,7 @@ def identify_defect(
             else:
                 searched = "bulk or defect"
                 possible_defects = []
-                while site_displacement_tol < 2.5:  # loop over distance tolerances
+                while site_displacement_tol < 5:  # loop over distance tolerances
                     possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
                         bulk_structure, defect_coords, site_displacement_tol
                     )
@@ -148,24 +164,34 @@ def identify_defect(
                             expanded_possible_defect_sites_in_defect_struc,
                         )
                         searched = "bulk"
-                    else:
+                        if len(possible_defects) == 1:
+                            bulk_site_index = possible_defects[0][2]
+                            break
+
+                    else:  # interstitial or substitution
                         # defect site should be in defect structure but not bulk structure
                         _, possible_defects = _remove_matching_sites(
                             expanded_possible_defect_sites_in_bulk_struc,
                             possible_defect_sites_in_defect_struc,
                         )
                         searched = "defect"
-
-                    if len(possible_defects) == 1:
-                        defect_index = possible_defects[0][2]
+                        if len(possible_defects) == 1:
+                            if defect_type == "substitution":
+                                possible_defects_in_bulk, _ = _remove_matching_sites(
+                                    possible_defect_sites_in_bulk_struc,
+                                    expanded_possible_defect_sites_in_defect_struc,
+                                )
+                                if len(possible_defects_in_bulk) == 1:
+                                    bulk_site_index = possible_defects_in_bulk[0][2]
+                        defect_site_index = possible_defects[0][2]
                         break
 
                     site_displacement_tol += 0.1
 
-                if defect_index is None:
+                if bulk_site_index is None and defect_site_index is None:
                     warnings.warn(
                         f"Could not locate (auto-determined) {defect_type} defect site within a "
-                        f"2.5 Å radius of specified coordinates {defect_coords} in {searched} "
+                        f"5 Å radius of specified coordinates {defect_coords} in {searched} "
                         f"structure (found {len(possible_defects)} possible defect sites). "
                         "Will attempt auto site-matching instead."
                     )
@@ -176,97 +202,157 @@ def identify_defect(
                 "just defect_index will be used to determine the defect site"
             )
 
-    # if defect_index is None:
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
     site_displacement_tol = (
         0.01  # distance tolerance for site matching to identify defect, increases in
         # jumps of 0.1 Å
     )
-    auto_matching_defect_index = None
+    auto_matching_bulk_site_index = None
+    auto_matching_defect_site_index = None
     possible_defects = []
+    site_matching_indices = []
+
     try:
-        while site_displacement_tol < 1.5:  # loop over distance tolerances
-            bulk_sites = [site.frac_coords for site in bulk_structure]
-            defect_sites = [site.frac_coords for site in defect_structure]
-            dist_matrix = defect_structure.lattice.get_all_distances(
-                bulk_sites, defect_sites
-            )
-            min_dist_with_index = [
-                [
-                    min(dist_matrix[bulk_index]),
-                    int(bulk_index),
-                    int(dist_matrix[bulk_index].argmin()),
-                ]
-                for bulk_index in range(len(dist_matrix))
-            ]  # list of [min dist, bulk ind, defect ind]
+        bulk_sites = [site.frac_coords for site in bulk_structure]
+        defect_sites = [site.frac_coords for site in defect_structure]
+        matched_bulk_indices = []
+        matched_defect_indices = []
+        dist_matrix = defect_structure.lattice.get_all_distances(
+            bulk_sites, defect_sites
+        )
+        min_dist_with_index = [
+            [
+                min(dist_matrix[bulk_index]),
+                int(bulk_index),
+                int(dist_matrix[bulk_index].argmin()),
+            ]
+            for bulk_index in range(len(dist_matrix))
+        ]  # list of [min dist, bulk ind, defect ind]
 
-            site_matching_indices = []
-            if defect_type in ["vacancy", "interstitial"]:
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    if mindist < site_displacement_tol:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-                    elif defect_type == "vacancy":
-                        possible_defects.append([bulk_index, bulk_sites[bulk_index][:]])
-
-                if defect_type == "interstitial":
-                    possible_defects = [
-                        [ind, fc[:]]
-                        for ind, fc in enumerate(defect_sites)
-                        if ind not in np.array(site_matching_indices)[:, 1]
-                    ]
-
-            elif defect_type == "substitution":
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    species_match = (
-                        bulk_structure[bulk_index].specie
-                        == defect_structure[def_struc_index].specie
-                    )
-                    if mindist < site_displacement_tol and species_match:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-
-                    elif not species_match:
-                        possible_defects.append(
-                            [def_struc_index, defect_sites[def_struc_index][:]]
-                        )
-
-            if len(set(np.array(site_matching_indices)[:, 0])) != len(
-                set(np.array(site_matching_indices)[:, 1])
-            ):
-                raise ValueError(
-                    "Error occurred in site_matching routine. Double counting of site matching "
-                    f"occurred: {site_matching_indices}\nAbandoning structure parsing."
+        while site_displacement_tol < 5:  # loop over distance tolerances
+            for mindist, bulk_index, def_struc_index in min_dist_with_index:
+                species_match = (
+                    bulk_structure[bulk_index].specie
+                    == defect_structure[def_struc_index].specie
                 )
 
+                matched_bulk_indices = [i[0] for i in site_matching_indices]
+                matched_defect_indices = [i[1] for i in site_matching_indices]
+                if (
+                    mindist < site_displacement_tol
+                    and species_match
+                    and bulk_index not in matched_bulk_indices
+                    and def_struc_index not in matched_defect_indices
+                ):
+                    site_matching_indices.append([bulk_index, def_struc_index])
+
+                elif (
+                    mindist < site_displacement_tol
+                    and defect_type == "substitution"
+                    and not species_match
+                ):
+                    possible_defects.append(
+                        [def_struc_index, defect_sites[def_struc_index][:], bulk_index]
+                    )
+
+            if defect_type == "interstitial":
+                if site_matching_indices:
+                    possible_defects = [
+                        [ind, fc[:], None]
+                        for ind, fc in enumerate(defect_sites)
+                        if ind not in matched_defect_indices
+                    ]
+
+            elif defect_type == "vacancy":
+                if site_matching_indices:
+                    possible_defects = [
+                        [None, fc[:], ind]
+                        for ind, fc in enumerate(bulk_sites)
+                        if ind not in matched_bulk_indices
+                    ]
+
             if len(possible_defects) == 1:
-                auto_matching_defect_index = possible_defects[0][0]
+                auto_matching_defect_site_index = possible_defects[0][0]
+                auto_matching_bulk_site_index = possible_defects[0][2]
                 break
 
+            if (
+                site_matching_indices
+                and bulk_site_index is None
+                and defect_site_index is None
+            ):
+                # failed auto-site matching, rely on user input or raise error if no user input
+                if len(set(np.array(site_matching_indices)[:, 0])) != len(
+                    set(np.array(site_matching_indices)[:, 1])
+                ):
+                    raise ValueError(
+                        "Error occurred in site_matching routine. Double counting of site matching "
+                        f"occurred: {site_matching_indices}\nAbandoning structure parsing."
+                    )
+
             site_displacement_tol += 0.1
+
     except Exception:
         pass  # failed auto-site matching, rely on user input or raise error if no user input
 
-    if defect_index is None and auto_matching_defect_index is None:
+    if (
+        defect_site_index is None
+        and bulk_site_index is None
+        and auto_matching_bulk_site_index is None
+        and auto_matching_defect_site_index is None
+    ):
         raise ValueError(
             "Defect coordinates could not be identified from auto site-matching. "
             f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
             "structures correspond to the same supercell and/or specify defect site with "
             "--defect-coords or --defect-index."
         )
-    if defect_index is None and auto_matching_defect_index is not None:
-        defect_index = auto_matching_defect_index
+
+    if (
+        defect_site_index is None
+        and bulk_site_index is None
+        and (
+            auto_matching_defect_site_index is not None
+            or auto_matching_bulk_site_index is not None
+        )
+    ):
+        # user didn't specify coordinates or index, but auto site-matching found a defect site
+        if auto_matching_bulk_site_index is not None:
+            bulk_site_index = auto_matching_bulk_site_index
+        if auto_matching_defect_site_index is not None:
+            defect_site_index = auto_matching_defect_site_index
 
     if defect_type == "vacancy":
-        defect_site = bulk_structure[defect_index]
+        defect_site = bulk_structure[bulk_site_index]
+    elif defect_type == "substitution":
+        defect_site_in_bulk = bulk_structure[bulk_site_index]
+        defect_site = PeriodicSite(
+            defect_structure[defect_site_index].specie,
+            defect_site_in_bulk.frac_coords,
+            bulk_structure.lattice,
+        )
     else:
-        defect_site = defect_structure[defect_index]
+        defect_site = defect_structure[defect_site_index]
 
-    if defect_index is not None and auto_matching_defect_index is not None:
-        if defect_index != auto_matching_defect_index:
+    if (defect_index is not None or defect_coords is not None) and (
+        auto_matching_defect_site_index is not None
+        and auto_matching_bulk_site_index is not None
+    ):
+        # user specified site, check if it matched the auto site-matching
+        user_index = (
+            defect_site_index if defect_site_index is not None else bulk_site_index
+        )
+        auto_index = (
+            auto_matching_defect_site_index
+            if auto_matching_defect_site_index is not None
+            else auto_matching_bulk_site_index
+        )
+        if user_index != auto_index:
             if defect_type == "vacancy":
-                auto_matching_defect_site = bulk_structure[auto_matching_defect_index]
+                auto_matching_defect_site = bulk_structure[auto_index]
             else:
-                auto_matching_defect_site = defect_structure[auto_matching_defect_index]
+                auto_matching_defect_site = defect_structure[auto_index]
 
             def _site_info(site):
                 return (
