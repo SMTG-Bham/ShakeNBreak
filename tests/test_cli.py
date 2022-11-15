@@ -16,7 +16,7 @@ from monty.serialization import loadfn
 
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar
+from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
 from shakenbreak.cli import generate_defect_object, snb
 from shakenbreak.distortions import rattle
@@ -83,6 +83,8 @@ class CLITestCase(unittest.TestCase):
         self.previous_default_rattle_settings_config = os.path.join(
             os.path.dirname(__file__), "previous_default_rattle_settings.yaml"
         )
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
 
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
@@ -103,8 +105,9 @@ class CLITestCase(unittest.TestCase):
                 or "Int_Cd" in i
                 or "Wally_McDoodle" in i
                 or "pesky_defects" in i
-                or "vac_1_Cd_0" in i
+                or "vac_1_Cd" in i
                 or "v_Cd" in i
+                or "v_Te" in i
                 or "Cd_i" in i
                 or "_defect_folder" in i
                 or "Te_Cd_0" in i
@@ -750,6 +753,78 @@ class CLITestCase(unittest.TestCase):
             result.output,
         )
 
+        # test padding functionality:
+        # default padding = 1
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+            ],
+            catch_exceptions=False,
+        )
+        defect_name = "v_Cd"
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -3. Number of distorted neighbours: 1",
+            result.output,
+        )
+        self.assertNotIn(f"Defect {defect_name} in charge state: -4.", result.output)
+        self.assertNotIn(f"Defect {defect_name} in charge state: +2.", result.output)
+
+        # check if correct files were created:
+        self.assertTrue(os.path.exists(f"{defect_name}_-3"))
+        self.assertFalse(os.path.exists(f"{defect_name}_+2"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-4"))
+
+        # check print info message:
+        self.assertIn(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "state}, with a `padding = 1` on either side of this range.",
+            result.output,
+        )
+
+        # test padding explicitly set
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-p",
+                "4",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -6. Number of distorted neighbours: 4",
+            result.output,
+        )
+        self.assertNotIn(f"Defect {defect_name} in charge state: -7.", result.output)
+        self.assertNotIn(f"Defect {defect_name} in charge state: +5.", result.output)
+
+        # check if correct files were created:
+        self.assertTrue(os.path.exists(f"{defect_name}_-6"))
+        self.assertFalse(os.path.exists(f"{defect_name}_+5"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-7"))
+
+        # check print info message:
+        self.assertIn(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "state}, with a `padding = 4` on either side of this range.",
+            result.output,
+        )
+
     def test_snb_generate_config(self):
         # test config file:
         test_yml = """
@@ -1094,25 +1169,32 @@ local_rattle: False
 nonsense_key: nonsense_value"""
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c 0",
-                "--config",
-                "test_config.yml",
-                "--name",
-                "vac_1_Cd",  # to match saved json
-            ],
-            catch_exceptions=False,
-        )
+
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "--config",
+                    "test_config.yml",
+                    "--name",
+                    "vac_1_Cd",  # to match saved json
+                ],
+            )
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
+        self.assertNotIn("Defect vac_1_Cd in charge state: -1", result.output)
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            "Defect charges were specified using the CLI option, but `charges` "
+            "was also specified in the `--config` file – this will be ignored!",
+            str(w[0].message)
+        )
         self.tearDown()
 
     def test_snb_generate_all(self):
@@ -1121,8 +1203,9 @@ nonsense_key: nonsense_value"""
         # Also test local rattle parameter
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
-        defect_name = "vac_1_Cd"
         os.mkdir(defects_dir)
+        runner = CliRunner()
+        defect_name = "vac_1_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1136,9 +1219,7 @@ seed: 42"""  # previous default
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        warnings.filterwarnings("ignore", category=DeprecationWarning)
         with warnings.catch_warnings(record=True) as w:
-            runner = CliRunner()
             result = runner.invoke(
                 snb,
                 [
@@ -1157,12 +1238,6 @@ seed: 42"""  # previous default
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Auto site-matching identified", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
-        self.assertEqual(w[0].category, UserWarning)
-        self.assertEqual(
-            f"No charge (range) set for defect {defect_name} in config file,"
-            " assuming default range of +/-2",
-            str(w[0].message),
-        )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['0.3']."
             " Then, will rattle with a std dev of 0.25 Å",
@@ -1208,18 +1283,8 @@ seed: 42"""  # previous default
             + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te')]",
             result.output,
         )
-        self.assertIn(
-            f"Defect {defect_name} in charge state: +2. Number of distorted neighbours: 4",
-            result.output,
-        )
-        self.assertIn("--Distortion 30.0%", result.output)
-        self.assertIn(
-            "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), (2.83, 52, 'Te'), (2.83, 63, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te'), (3.68, 63, 'Te')]",
-            result.output,
-        )
-        for charge in range(-1, 3):
+        self.assertNotIn(f"Defect {defect_name} in charge state: +2.", result.output)  # old default
+        for charge in [1,] + list(range(-1, 2)):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
                 self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
         for dist in ["Unperturbed", "Rattled"]:
@@ -1420,12 +1485,6 @@ seed: 42"""  # previous default
             f"Will parse defect name from folders/files.",
             str(w[0].message),
         )  # Defect name not parsed from config
-        self.assertEqual(w[1].category, UserWarning)
-        self.assertEqual(
-            f"No charge (range) set for defect {defect_name} in config file,"
-            " assuming default range of +/-2",
-            str(w[1].message),
-        )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['0.3']. Then, "
             "will rattle with a std dev of 0.28 Å",
@@ -1490,12 +1549,6 @@ seed: 42"""  # previous default
             f"Will parse defect name from folders/files.",
             str(w[0].message),
         )  # Defect name not parsed from config
-        self.assertEqual(w[1].category, UserWarning)
-        self.assertEqual(
-            f"No charge (range) set for defect v_Cd_s0 in config file,"
-            " assuming default range of +/-2",
-            str(w[1].message),
-        )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['0.3']. Then, "
             "will rattle with a std dev of 0.28 Å",
@@ -1522,6 +1575,44 @@ seed: 42"""  # previous default
             self.assertTrue(os.path.exists(f"v_Cd_s0_-1/{dist}/POSCAR"))
         # The input_file option is tested in local test, as INCAR
         # not written in Github Actions
+
+        # test padding
+        defect_name = "Vac_Cd"
+        os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
+        shutil.copyfile(
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+            f"{defects_dir}/{defect_name}_POSCAR",
+        )
+        result = runner.invoke(
+            snb,
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-p",
+                "4",
+            ],
+        )
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -6. Number of distorted neighbours: 4",
+            result.output,
+        )
+        self.assertNotIn(f"Defect {defect_name} in charge state: -7.", result.output)
+        self.assertNotIn(f"Defect {defect_name} in charge state: +5.", result.output)
+
+        # check if correct files were created:
+        self.assertTrue(os.path.exists(f"{defect_name}_-6"))
+        self.assertFalse(os.path.exists(f"{defect_name}_+5"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-7"))
+
+        # check print info message:
+        self.assertIn(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "state}, with a `padding = 4` on either side of this range.",
+            result.output,
+        )
 
     def test_run(self):
         """Test snb-run function"""
@@ -2334,7 +2425,7 @@ Chosen VASP error message: {error_string}
                 defect,
                 "-p",
                 f"{self.DATA_DIR}/{code}",
-                "-c",
+                "--code",
                 code,
             ],
             catch_exceptions=False,
@@ -2360,7 +2451,7 @@ Chosen VASP error message: {error_string}
                 defect,
                 "-p",
                 f"{self.DATA_DIR}/{code}",
-                "-c",
+                "--code",
                 code,
             ],
             catch_exceptions=False,
@@ -2386,7 +2477,7 @@ Chosen VASP error message: {error_string}
                 defect,
                 "-p",
                 f"{self.DATA_DIR}/{code}",
-                "-c",
+                "--code",
                 "espresso",
             ],
             catch_exceptions=False,
@@ -2412,7 +2503,7 @@ Chosen VASP error message: {error_string}
                 defect,
                 "-p",
                 f"{self.DATA_DIR}/{code}",
-                "-c",
+                "--code",
                 "fhi-aims",
             ],
             catch_exceptions=False,
@@ -3211,7 +3302,7 @@ Chosen VASP error message: {error_string}
                 [
                     str(warning.message)
                     == "`--path` option ignored when running from within defect folder (assumed "
-                       "to be the case here as distortion folders found in current directory)."
+                    "to be the case here as distortion folders found in current directory)."
                     for warning in w
                 ]
             )

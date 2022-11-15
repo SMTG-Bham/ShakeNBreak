@@ -311,9 +311,9 @@ class InputTestCase(unittest.TestCase):
         # remove test-generated defect folders if present
         for i in self.cdte_defect_folders_old_names + self.cdte_defect_folders:
             if_present_rm(i)
-        for charge in range(-2, 5):
-            if_present_rm(f"v_Cd_{charge}")
-        if_present_rm(f"v_Te_0")
+        for i in os.listdir():
+            if os.path.isdir(i) and ("v_Te" in i or "v_Cd" in i):
+                if_present_rm(i)
         for fname in os.listdir("./"):
             if fname.endswith("json"):  # distortion_metadata and parsed_defects_dict
                 os.remove(f"./{fname}")
@@ -1674,10 +1674,7 @@ class InputTestCase(unittest.TestCase):
         self.tearDown()
 
         # test explicitly set
-        dist = input.Distortions(
-            vacancies,
-            padding=4
-        )
+        dist = input.Distortions(vacancies, padding=4)
         dist_defects_dict, dist_metadata = dist.write_vasp_files()
         for defect_name in ["v_Cd_s0", "v_Te_s32"]:
             self.assertTrue(
@@ -1686,7 +1683,6 @@ class InputTestCase(unittest.TestCase):
             self.assertFalse(os.path.exists(f"{defect_name}_7"))
         self.assertFalse(os.path.exists("v_Cd_s0_5"))
         self.assertTrue(os.path.exists("v_Te_s32_6"))
-
 
     @patch("builtins.print")
     def test_write_espresso_files(self, mock_print):
@@ -2441,13 +2437,9 @@ class InputTestCase(unittest.TestCase):
                 ],
                 bulk=self.CdTe_bulk_struc,
             )
+        self.assertEqual(dist.defects_dict["Cd_i_m128"].defect_site_index, 0)
         self.assertEqual(
-            dist.defects_dict["Cd_i_m128"].defect_site_index, 0
-        )
-        self.assertEqual(
-            list(
-                dist.defects_dict["Cd_i_m128"].defect_structure[0].frac_coords
-            ),
+            list(dist.defects_dict["Cd_i_m128"].defect_structure[0].frac_coords),
             list([0.8125, 0.1875, 0.8125]),
         )
 
@@ -2456,7 +2448,8 @@ class InputTestCase(unittest.TestCase):
         rattled_bulk = rattle(self.CdTe_bulk_struc)
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures(
-                [(self.V_Cd_struc, [0, 0, 0])], bulk=rattled_bulk)
+                [(self.V_Cd_struc, [0, 0, 0])], bulk=rattled_bulk
+            )
         self.assertDictEqual(
             dist.defects_dict, {"v_Cd_s0": self.cdte_defects["vac_1_Cd"]}
         )
@@ -2464,7 +2457,8 @@ class InputTestCase(unittest.TestCase):
         # Test wrong type for defect index/coords
         with warnings.catch_warnings(record=True) as w:
             dist = input.Distortions.from_structures(
-                [(self.V_Cd_struc, "wrong type!")], bulk=self.CdTe_bulk_struc)  # defect index as
+                [(self.V_Cd_struc, "wrong type!")], bulk=self.CdTe_bulk_struc
+            )  # defect index as
             # string
         self.assertEqual(
             str(w[0].message),
@@ -2485,7 +2479,8 @@ class InputTestCase(unittest.TestCase):
                 "Wrong format for `defects`. Should be a list of pymatgen Structure objects"
             )
             dist = input.Distortions.from_structures(
-                "wrong type!", bulk=self.CdTe_bulk_struc)  # `defects` as string
+                "wrong type!", bulk=self.CdTe_bulk_struc
+            )  # `defects` as string
             self.assertIn(no_bulk_error, e.exception)
 
         if_present_rm(os.path.join("Cd_i_m128_3"))
@@ -2494,9 +2489,7 @@ class InputTestCase(unittest.TestCase):
         # Test padding usage
         vacancies = [defect for defect in self.cdte_defect_list if "v_" in defect.name]
         # test default
-        dist = input.Distortions.from_structures(
-            self.V_Cd_struc, self.CdTe_bulk_struc
-        )
+        dist = input.Distortions.from_structures(self.V_Cd_struc, self.CdTe_bulk_struc)
         dist.write_vasp_files()
         defect_name = "v_Cd_s0"
         self.assertTrue(

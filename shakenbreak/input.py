@@ -1540,7 +1540,7 @@ class Distortions:
 
         # if user_charges not set for all defects, print info about how charge states will be
         # determined
-        if all(defect.user_charges is None for defect in self.defects_dict.values()):
+        if all(not defect.user_charges for defect in self.defects_dict.values()):
             print(
                 "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
                 f"with a `padding = {padding}` on either side of this range."
