@@ -107,6 +107,7 @@ class CLITestCase(unittest.TestCase):
                 or "v_Cd" in i
                 or "Cd_i" in i
                 or "_defect_folder" in i
+                or "Te_Cd_0" in i
             ):
                 shutil.rmtree(i)
 
@@ -235,7 +236,6 @@ class CLITestCase(unittest.TestCase):
             result.output,
         )
         self.assertIn(
-            "Applying ShakeNBreak...",
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
             "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
@@ -697,6 +697,56 @@ class CLITestCase(unittest.TestCase):
             metadata = json.load(metadata_file)
         np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
 
+        # test defect ID with tricky DX centre defect
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_as_1_Te_on_Cd_-2_DX_Relaxed_CONTCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-v",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(
+            f"Auto site-matching identified"
+            f" {self.VASP_CDTE_DATA_DIR}/CdTe_as_1_Te_on_Cd_-2_DX_Relaxed_CONTCAR "
+            f"to be type Substitution with site Te at [0.000, 0.000, 0.000]",
+            result.output,
+        )
+        self.assertIn(
+            "Oxidation states were not explicitly set, thus have been guessed as {"
+            "'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "oxidation_states",
+            result.output,
+        )
+        self.assertIn(
+            "Applying ShakeNBreak... Will apply the following bond distortions: ["
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
+            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
+            result.output,
+        )
+        defect_name = "Te_Cd"
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 4", result.output)
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 4",
+            result.output,
+        )
+        self.assertIn("--Distortion -60.0%", result.output)
+        self.assertIn(
+            "\tDefect Site Index / Frac Coords: 1\n"
+            + "            Original Neighbour Distances: [(2.83, 34, 'Te'), (2.83, 43, 'Te'), "
+            "(2.83, 53, 'Te'), (2.83, 64, 'Te')]]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 34, 'Te'), (1.13, 43, 'Te'), "
+            "(1.13, 53, 'Te'), (1.13, 64, 'Te')]",
+            result.output,
+        )
+
     def test_snb_generate_config(self):
         # test config file:
         test_yml = """
@@ -705,7 +755,8 @@ stdev: 0.15
 d_min: 2.1250262890187375  # 0.75 * 2.8333683853583165
 nbr_cutoff: 3.4
 n_iter: 3
-active_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30] # np.arange(0,31)
+active_atoms: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 
+23, 24, 25, 26, 27, 28, 29, 30] # np.arange(0,31)
 width: 0.3
 max_attempts: 10000
 max_disp: 1.0
