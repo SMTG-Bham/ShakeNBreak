@@ -2280,7 +2280,9 @@ class InputTestCase(unittest.TestCase):
         )
 
     def test_from_structures(self):
-        """Test from_structures() method of Distortion() class."""
+        """Test from_structures() method of Distortion() class.
+        Implicitly, this also tests the functionality of `input.identify_defect()`
+        """
         # Test normal behaviour (no defect_index or defect_coords), with `defects` as a single
         # structure
         with patch("builtins.print") as mock_print:
@@ -2329,11 +2331,11 @@ class InputTestCase(unittest.TestCase):
         # old default rattling
 
         # test interstitial generation, with defects as list of structures
-        with patch("builtins.print") as mock_print:
-            dist = input.Distortions.from_structures(
-                [self.Int_Cd_2_struc, self.V_Cd_struc], self.CdTe_bulk_struc
-            )
-            dist.write_vasp_files()
+        # with patch("builtins.print") as mock_print:
+        dist = input.Distortions.from_structures(
+            [self.Int_Cd_2_struc, self.V_Cd_struc], self.CdTe_bulk_struc
+        )
+        dist.write_vasp_files()
         self.assertDictEqual(
             dist.defects_dict,
             {

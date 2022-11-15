@@ -189,9 +189,8 @@ def _compare_distortion(
         ):
             low_energy_defects[defect][index][property].append(value)
 
-    else:  # only add to list if it doesn't match _any_ of the
-        # other distortions and the structure was not previously
-        # found, then add it to the list of distortions for this
+    else:  # only add to list if it doesn't match _any_ of the other distortions and the
+        # structure was not previously found, then add it to the list of distortions for this
         # defect
         print(
             f"New (according to structure matching) low-energy "

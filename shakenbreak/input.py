@@ -294,8 +294,8 @@ def _calc_number_electrons(
     verbose: bool = False,
 ) -> int:
     """
-    Calculates the number of extra/missing electrons of the defect species
-    (in `defect_object`) based on `oxidation_states`.
+    Calculates the number of extra/missing electrons of the neutral
+    defect species (in `defect_object`) based on `oxidation_states`.
 
     Args:
         defect_object (:obj:`Defect`):
@@ -512,7 +512,7 @@ def _get_voronoi_multiplicity(site, structure):
     return multiplicity
 
 
-def _identify_defect(
+def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
 ) -> Defect:
     """
@@ -528,7 +528,9 @@ def _identify_defect(
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
-            Index of the defect site in the supercell.
+            Index of the defect site in the supercell. For vacancies, this
+            should be the site index in the bulk structure, while for substitutions
+            and interstitials it should be the site index in the defect structure.
 
     Returns: :obj:`Defect`
     """
@@ -548,8 +550,32 @@ def _identify_defect(
             "developers if you would like to use the method for complex defects"
         )
 
+    # remove oxidation states before site-matching
+    defect_struc = (
+        defect_structure.copy()
+    )  # copy to prevent overwriting original structures
+    bulk_struc = bulk_structure.copy()
+    defect_struc.remove_oxidation_states()
+    bulk_struc.remove_oxidation_states()
+
+    bulk_site_index = None
+    defect_site_index = None
+
+    if (
+        defect_type == "vacancy" and defect_index
+    ):  # defect_index should correspond to bulk struc
+        bulk_site_index = defect_index
+    elif defect_index:  # defect_index should correspond to defect struc
+        if defect_type == "interstitial":
+            defect_site_index = defect_index
+        if (
+            defect_type == "substitution"
+        ):  # also want bulk site index for substitutions,
+            # so use defect index coordinates
+            defect_coords = defect_struc[defect_index].frac_coords
+
     if defect_coords is not None:
-        if defect_index is None:
+        if bulk_site_index is None and defect_site_index is None:
             site_displacement_tol = (
                 0.01  # distance tolerance for site matching to identify defect, increases in
                 # jumps of 0.1 Å
@@ -567,16 +593,16 @@ def _identify_defect(
                 )
 
             max_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_structure, defect_coords, 2.5
+                bulk_struc, defect_coords, 2.5
             )
             max_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_structure, defect_coords, 2.5
+                defect_struc, defect_coords, 2.5
             )
             expanded_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_structure, defect_coords, 3.0
+                bulk_struc, defect_coords, 3.0
             )
             expanded_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_structure, defect_coords, 3.0
+                defect_struc, defect_coords, 3.0
             )
 
             # there should be one site (including specie identity) which does not match between
@@ -624,12 +650,12 @@ def _identify_defect(
             else:
                 searched = "bulk or defect"
                 possible_defects = []
-                while site_displacement_tol < 2.5:  # loop over distance tolerances
+                while site_displacement_tol < 5:  # loop over distance tolerances
                     possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                        bulk_structure, defect_coords, site_displacement_tol
+                        bulk_struc, defect_coords, site_displacement_tol
                     )
                     possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                        defect_structure, defect_coords, site_displacement_tol
+                        defect_struc, defect_coords, site_displacement_tol
                     )
                     if (
                         defect_type == "vacancy"
@@ -639,24 +665,35 @@ def _identify_defect(
                             expanded_possible_defect_sites_in_defect_struc,
                         )
                         searched = "bulk"
-                    else:
+                        if len(possible_defects) == 1:
+                            bulk_site_index = possible_defects[0][2]
+                            break
+
+                    else:  # interstitial or substitution
                         # defect site should be in defect structure but not bulk structure
                         _, possible_defects = _remove_matching_sites(
                             expanded_possible_defect_sites_in_bulk_struc,
                             possible_defect_sites_in_defect_struc,
                         )
                         searched = "defect"
+                        if len(possible_defects) == 1:
+                            if defect_type == "substitution":
+                                possible_defects_in_bulk, _ = _remove_matching_sites(
+                                    possible_defect_sites_in_bulk_struc,
+                                    expanded_possible_defect_sites_in_defect_struc,
+                                )
+                                if len(possible_defects_in_bulk) == 1:
+                                    bulk_site_index = possible_defects_in_bulk[0][2]
 
-                    if len(possible_defects) == 1:
-                        defect_index = possible_defects[0][2]
-                        break
+                            defect_site_index = possible_defects[0][2]
+                            break
 
                     site_displacement_tol += 0.1
 
-                if defect_index is None:
+                if bulk_site_index is None and defect_site_index is None:
                     warnings.warn(
                         f"Could not locate (auto-determined) {defect_type} defect site within a "
-                        f"2.5 Å radius of specified coordinates {defect_coords} in {searched} "
+                        f"5 Å radius of specified coordinates {defect_coords} in {searched} "
                         f"structure (found {len(possible_defects)} possible defect sites). "
                         "Will attempt auto site-matching instead."
                     )
@@ -667,97 +704,155 @@ def _identify_defect(
                 "just defect_index will be used to determine the defect site"
             )
 
-    # if defect_index is None:
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
     site_displacement_tol = (
         0.01  # distance tolerance for site matching to identify defect, increases in
         # jumps of 0.1 Å
     )
-    auto_matching_defect_index = None
+    auto_matching_bulk_site_index = None
+    auto_matching_defect_site_index = None
     possible_defects = []
+    site_matching_indices = []
+
     try:
-        while site_displacement_tol < 1.5:  # loop over distance tolerances
-            bulk_sites = [site.frac_coords for site in bulk_structure]
-            defect_sites = [site.frac_coords for site in defect_structure]
-            dist_matrix = defect_structure.lattice.get_all_distances(
-                bulk_sites, defect_sites
-            )
-            min_dist_with_index = [
-                [
-                    min(dist_matrix[bulk_index]),
-                    int(bulk_index),
-                    int(dist_matrix[bulk_index].argmin()),
-                ]
-                for bulk_index in range(len(dist_matrix))
-            ]  # list of [min dist, bulk ind, defect ind]
+        bulk_sites = [site.frac_coords for site in bulk_struc]
+        defect_sites = [site.frac_coords for site in defect_struc]
+        matched_bulk_indices = []
+        matched_defect_indices = []
+        dist_matrix = defect_struc.lattice.get_all_distances(bulk_sites, defect_sites)
+        min_dist_with_index = [
+            [
+                min(dist_matrix[bulk_index]),
+                int(bulk_index),
+                int(dist_matrix[bulk_index].argmin()),
+            ]
+            for bulk_index in range(len(dist_matrix))
+        ]  # list of [min dist, bulk ind, defect ind]
 
-            site_matching_indices = []
-            if defect_type in ["vacancy", "interstitial"]:
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    if mindist < site_displacement_tol:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-                    elif defect_type == "vacancy":
-                        possible_defects.append([bulk_index, bulk_sites[bulk_index][:]])
-
-                if defect_type == "interstitial":
-                    possible_defects = [
-                        [ind, fc[:]]
-                        for ind, fc in enumerate(defect_sites)
-                        if ind not in np.array(site_matching_indices)[:, 1]
-                    ]
-
-            elif defect_type == "substitution":
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    species_match = (
-                        bulk_structure[bulk_index].specie
-                        == defect_structure[def_struc_index].specie
-                    )
-                    if mindist < site_displacement_tol and species_match:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-
-                    elif not species_match:
-                        possible_defects.append(
-                            [def_struc_index, defect_sites[def_struc_index][:]]
-                        )
-
-            if len(set(np.array(site_matching_indices)[:, 0])) != len(
-                set(np.array(site_matching_indices)[:, 1])
-            ):
-                raise ValueError(
-                    "Error occurred in site_matching routine. Double counting of site matching "
-                    f"occurred: {site_matching_indices}\nAbandoning structure parsing."
+        while site_displacement_tol < 5:  # loop over distance tolerances
+            for mindist, bulk_index, def_struc_index in min_dist_with_index:
+                species_match = (
+                    bulk_struc[bulk_index].specie
+                    == defect_struc[def_struc_index].specie
                 )
 
+                matched_bulk_indices = [i[0] for i in site_matching_indices]
+                matched_defect_indices = [i[1] for i in site_matching_indices]
+                if (
+                    mindist < site_displacement_tol
+                    and species_match
+                    and bulk_index not in matched_bulk_indices
+                    and def_struc_index not in matched_defect_indices
+                ):
+                    site_matching_indices.append([bulk_index, def_struc_index])
+
+                elif (
+                    mindist < site_displacement_tol
+                    and defect_type == "substitution"
+                    and not species_match
+                ):
+                    possible_defects.append(
+                        [def_struc_index, defect_sites[def_struc_index][:], bulk_index]
+                    )
+
+            if defect_type == "interstitial":
+                if site_matching_indices:
+                    possible_defects = [
+                        [ind, fc[:], None]
+                        for ind, fc in enumerate(defect_sites)
+                        if ind not in matched_defect_indices
+                    ]
+
+            elif defect_type == "vacancy":
+                if site_matching_indices:
+                    possible_defects = [
+                        [None, fc[:], ind]
+                        for ind, fc in enumerate(bulk_sites)
+                        if ind not in matched_bulk_indices
+                    ]
+
             if len(possible_defects) == 1:
-                auto_matching_defect_index = possible_defects[0][0]
+                auto_matching_defect_site_index = possible_defects[0][0]
+                auto_matching_bulk_site_index = possible_defects[0][2]
                 break
 
+            if (
+                site_matching_indices
+                and bulk_site_index is None
+                and defect_site_index is None
+            ):
+                # failed auto-site matching, rely on user input or raise error if no user input
+                if len(set(np.array(site_matching_indices)[:, 0])) != len(
+                    set(np.array(site_matching_indices)[:, 1])
+                ):
+                    raise ValueError(
+                        "Error occurred in site_matching routine. Double counting of site matching "
+                        f"occurred: {site_matching_indices}\nAbandoning structure parsing."
+                    )
+
             site_displacement_tol += 0.1
+
     except Exception:
         pass  # failed auto-site matching, rely on user input or raise error if no user input
 
-    if defect_index is None and auto_matching_defect_index is None:
+    if (
+        defect_site_index is None
+        and bulk_site_index is None
+        and auto_matching_bulk_site_index is None
+        and auto_matching_defect_site_index is None
+    ):
         raise ValueError(
-            "Defect coordinates could not be identified from auto site-matching. "
-            f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
-            "structures correspond to the same supercell and/or specify defect site with "
-            "'defect_coords' or 'defect_index' keys in the input dictionary."
+            "Defect coordinates could not be identified from auto site-matching. Check bulk and "
+            "defect structures correspond to the same supercell and/or specify defect site with "
+            "--defect-coords or --defect-index (if using the SnB CLI), or 'defect_coords' or "
+            "'defect_index' keys in the input dictionary if using the SnB Python API."
         )
-    if defect_index is None and auto_matching_defect_index is not None:
-        defect_index = auto_matching_defect_index
+
+    if (
+        defect_site_index is None
+        and bulk_site_index is None
+        and (
+            auto_matching_defect_site_index is not None
+            or auto_matching_bulk_site_index is not None
+        )
+    ):
+        # user didn't specify coordinates or index, but auto site-matching found a defect site
+        if auto_matching_bulk_site_index is not None:
+            bulk_site_index = auto_matching_bulk_site_index
+        if auto_matching_defect_site_index is not None:
+            defect_site_index = auto_matching_defect_site_index
 
     if defect_type == "vacancy":
-        defect_site = bulk_structure[defect_index]
+        defect_site = bulk_struc[bulk_site_index]
+    elif defect_type == "substitution":
+        defect_site_in_bulk = bulk_struc[bulk_site_index]
+        defect_site = PeriodicSite(
+            defect_struc[defect_site_index].specie,
+            defect_site_in_bulk.frac_coords,
+            bulk_struc.lattice,
+        )
     else:
-        defect_site = defect_structure[defect_index]
+        defect_site = defect_struc[defect_site_index]
 
-    if defect_index is not None and auto_matching_defect_index is not None:
-        if defect_index != auto_matching_defect_index:
+    if (defect_index is not None or defect_coords is not None) and (
+        auto_matching_defect_site_index is not None
+        and auto_matching_bulk_site_index is not None
+    ):
+        # user specified site, check if it matched the auto site-matching
+        user_index = (
+            defect_site_index if defect_site_index is not None else bulk_site_index
+        )
+        auto_index = (
+            auto_matching_defect_site_index
+            if auto_matching_defect_site_index is not None
+            else auto_matching_bulk_site_index
+        )
+        if user_index != auto_index:
             if defect_type == "vacancy":
-                auto_matching_defect_site = bulk_structure[auto_matching_defect_index]
+                auto_matching_defect_site = bulk_struc[auto_index]
             else:
-                auto_matching_defect_site = defect_structure[auto_matching_defect_index]
+                auto_matching_defect_site = defect_struc[auto_index]
 
             def _site_info(site):
                 return (
@@ -866,7 +961,7 @@ def _apply_rattle_bond_distortions(
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
-    **kwargs,
+    **mc_rattle_kwargs,
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure
@@ -909,7 +1004,7 @@ def _apply_rattle_bond_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **kwargs:
+        **mc_rattle_kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
             - max_disp (:obj:`float`):
@@ -993,7 +1088,7 @@ def _apply_rattle_bond_distortions(
                 stdev=stdev,
                 d_min=d_min,
                 active_atoms=active_atoms,
-                **kwargs,
+                **mc_rattle_kwargs,
             )
         else:
             bond_distorted_defect["distorted_structure"] = distortions.rattle(
@@ -1001,7 +1096,7 @@ def _apply_rattle_bond_distortions(
                 stdev=stdev,
                 d_min=d_min,
                 active_atoms=active_atoms,
-                **kwargs,
+                **mc_rattle_kwargs,
             )
     except Exception as ex:
         if "attempts" in str(ex):
@@ -1019,7 +1114,7 @@ def _apply_rattle_bond_distortions(
                     d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
                     active_atoms=active_atoms,
                     max_attempts=7000,  # default is 5000
-                    **kwargs,
+                    **mc_rattle_kwargs,
                 )
             else:
                 bond_distorted_defect["distorted_structure"] = distortions.rattle(
@@ -1028,7 +1123,7 @@ def _apply_rattle_bond_distortions(
                     d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
                     active_atoms=active_atoms,
                     max_attempts=7000,  # default is 5000
-                    **kwargs,
+                    **mc_rattle_kwargs,
                 )
             if verbose:
                 warnings.warn(
@@ -1052,7 +1147,7 @@ def apply_snb_distortions(
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
-    **kwargs,
+    **mc_rattle_kwargs,
 ) -> dict:
     """
     Applies rattle and bond distortions to `num_nearest_neighbours` of the
@@ -1089,7 +1184,7 @@ def apply_snb_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **kwargs:
+        **mc_rattle_kwargs:
             Additional keyword arguments to pass to `hiphive`'s
             `mc_rattle` function. These include:
             - max_disp (:obj:`float`):
@@ -1139,7 +1234,7 @@ def apply_snb_distortions(
             )
             d_min = 2.25
 
-    seed = kwargs.pop("seed", None)
+    seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
         for distortion in bond_distortions:
             distortion = (
@@ -1164,7 +1259,7 @@ def apply_snb_distortions(
                 distorted_element=distorted_element,
                 verbose=verbose,
                 seed=seed,
-                **kwargs,
+                **mc_rattle_kwargs,
             )
             distorted_defect_dict["distortions"][
                 analysis._get_distortion_filename(distortion)
@@ -1205,14 +1300,14 @@ def apply_snb_distortions(
                 frac_coords=frac_coords,
                 stdev=stdev,
                 d_min=d_min,
-                **kwargs,
+                **mc_rattle_kwargs,
             )
         else:
             perturbed_structure = distortions.rattle(
                 defect_structure,
                 stdev=stdev,
                 d_min=d_min,
-                **kwargs,
+                **mc_rattle_kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
         distorted_defect_dict["distortion_parameters"] = {
@@ -1242,7 +1337,7 @@ class Distortions:
         bond_distortions: Optional[list] = None,
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
-        **kwargs,  # for mc rattle
+        **mc_rattle_kwargs,
     ):
         """
         Args:
@@ -1299,7 +1394,7 @@ class Distortions:
                 (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
                 the defect are chosen.
                 (Default: None)
-            **kwargs:
+            **mc_rattle_kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
                 `mc_rattle` function. These include:
                 - stdev (:obj:`float`):
@@ -1409,8 +1504,8 @@ class Distortions:
 
         defect_object = list(self.defects_dict.values())[0]
         bulk_comp = defect_object.structure.composition
-        if "stdev" in kwargs:
-            self.stdev = kwargs.pop("stdev")
+        if "stdev" in mc_rattle_kwargs:
+            self.stdev = mc_rattle_kwargs.pop("stdev")
         else:
             bulk_supercell = defect_object.structure
             sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
@@ -1482,7 +1577,7 @@ class Distortions:
                 np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)
             )
 
-        self._mc_rattle_kwargs = kwargs
+        self._mc_rattle_kwargs = mc_rattle_kwargs
 
         # Create dictionary to keep track of the bond distortions applied
         self.distortion_metadata = {
@@ -1720,7 +1815,7 @@ class Distortions:
                 "defect_site": defect.site,  # _get_bulk_defect_site(defect),
                 "defect_supercell_site": _get_bulk_defect_site(defect, defect_name),
                 "defect_multiplicity": defect.get_multiplicity(),
-                "charges": {charge: {} for charge in user_charges},
+                "charges": {int(charge): {} for charge in user_charges},
             }  # General info about (neutral) defect
         except NotImplementedError:  # interstitial
             distorted_defect_dict = {
@@ -1730,7 +1825,7 @@ class Distortions:
                 "defect_multiplicity": _get_voronoi_multiplicity(
                     defect.site, defect.structure
                 ),
-                "charges": {charge: {} for charge in user_charges},
+                "charges": {int(charge): {} for charge in user_charges},
             }  # General info about (neutral) defect
         if (
             str(defect.as_dict()["@class"].lower()) == "substitution"
@@ -2447,7 +2542,7 @@ class Distortions:
         bond_distortions: Optional[list] = None,
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
-        **kwargs,  # for mc rattle
+        **mc_rattle_kwargs,
     ) -> None:
         """
         Initialise Distortion() class from defect and bulk structures.
@@ -2497,7 +2592,7 @@ class Distortions:
                 (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
                 the defect are chosen.
                 (Default: None)
-            **kwargs:
+            **mc_rattle_kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
                 `mc_rattle` function. These include:
                 - stdev (:obj:`float`):
@@ -2534,7 +2629,7 @@ class Distortions:
 
         for defect_structure in defects:
             if isinstance(defect_structure, Structure):
-                defect = _identify_defect(
+                defect = identify_defect(
                     defect_structure=defect_structure,
                     bulk_structure=bulk,
                 )
@@ -2556,7 +2651,7 @@ class Distortions:
                 elif isinstance(defect_structure[1], int) or isinstance(
                     defect_structure[1], float
                 ):  # defect index
-                    defect = _identify_defect(
+                    defect = identify_defect(
                         defect_structure=defect_structure[0],
                         bulk_structure=bulk,
                         defect_index=int(defect_structure[1]),
@@ -2566,7 +2661,7 @@ class Distortions:
                     or isinstance(defect_structure[1], tuple)
                     or isinstance(defect_structure[1], np.ndarray)
                 ):
-                    defect = _identify_defect(
+                    defect = identify_defect(
                         defect_structure=defect_structure[0],
                         bulk_structure=bulk,
                         defect_coords=defect_structure[1],
@@ -2579,7 +2674,7 @@ class Distortions:
                         f" {type(defect_structure[1])} instead. "
                         f"Will proceed with auto-site matching."
                     )
-                    defect = _identify_defect(
+                    defect = identify_defect(
                         defect_structure=defect_structure[0], bulk_structure=bulk
                     )
 
@@ -2617,5 +2712,5 @@ class Distortions:
             bond_distortions=bond_distortions,
             local_rattle=local_rattle,
             distorted_elements=distorted_elements,
-            **kwargs,
+            **mc_rattle_kwargs,
         )
