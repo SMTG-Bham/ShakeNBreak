@@ -196,7 +196,10 @@ def _create_vasp_input(
         None
     """
     # create folder for defect
-    _create_folder(os.path.join(output_path, defect_name))
+    _create_folder(
+        os.path.join(output_path, defect_name)
+    )  # TODO: If defect folder already
+    # exists, iterate name as with Distortions list? Or something else?
     for (
         distortion,
         single_defect_dict,
@@ -779,8 +782,8 @@ def identify_defect(
 
             if (
                 site_matching_indices
-                and bulk_site_index is None
-                and defect_site_index is None
+                and auto_matching_bulk_site_index is None
+                and auto_matching_defect_site_index is None
             ):
                 # failed auto-site matching, rely on user input or raise error if no user input
                 if len(set(np.array(site_matching_indices)[:, 0])) != len(
@@ -837,7 +840,7 @@ def identify_defect(
 
     if (defect_index is not None or defect_coords is not None) and (
         auto_matching_defect_site_index is not None
-        and auto_matching_bulk_site_index is not None
+        or auto_matching_bulk_site_index is not None
     ):
         # user specified site, check if it matched the auto site-matching
         user_index = (

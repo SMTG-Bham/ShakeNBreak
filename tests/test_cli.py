@@ -110,7 +110,7 @@ class CLITestCase(unittest.TestCase):
                 or "v_Te" in i
                 or "Cd_i" in i
                 or "_defect_folder" in i
-                or "Te_Cd_0" in i
+                or "Te_Cd" in i
             ):
                 shutil.rmtree(i)
 
@@ -247,7 +247,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -286,7 +286,6 @@ class CLITestCase(unittest.TestCase):
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -347,6 +346,7 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
+        defect_name = "v_Cd_s4"
         result = runner.invoke(
             snb,
             [
@@ -361,7 +361,6 @@ class CLITestCase(unittest.TestCase):
                 "4",
                 "-v",
             ],
-            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn("Auto site-matching", result.output)
@@ -474,7 +473,7 @@ class CLITestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
-        defect_name = "Cd_i"
+        defect_name = "Cd_i_m128"
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
@@ -499,7 +498,6 @@ class CLITestCase(unittest.TestCase):
                     0.85,  # 0.8125,
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         self.assertEqual(result.exit_code, 0)
         if w:
@@ -626,7 +624,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -736,7 +734,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "Te_Cd"
+        defect_name = "Te_Cd_s0"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 4", result.output)
         self.assertIn(
@@ -766,7 +764,7 @@ class CLITestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -856,9 +854,8 @@ local_rattle: False"""
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertEqual(result.exit_code, 0)
         V_Cd_kwarged_POSCAR = Poscar.from_file(
             f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
@@ -874,7 +871,6 @@ oxidation_states:
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -887,7 +883,6 @@ oxidation_states:
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn("Auto site-matching identified", result.output)
@@ -898,7 +893,7 @@ oxidation_states:
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
@@ -927,7 +922,6 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -941,7 +935,6 @@ local_rattle: False
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
         defect_name = "Int_Cd_2"
         self.assertEqual(result.exit_code, 0)
@@ -1014,7 +1007,6 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -1028,7 +1020,6 @@ local_rattle: False
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn("Auto site-matching identified", result.output)
@@ -1069,7 +1060,6 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -1081,9 +1071,8 @@ local_rattle: False
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_s0"
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Defect {defect_name} in charge state: -7. Number of distorted neighbours: 3",
@@ -1116,7 +1105,6 @@ seed: 42
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -1132,7 +1120,6 @@ seed: 42
                 "--config",
                 "test_config.yml",
             ],
-            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
@@ -1882,6 +1869,8 @@ Chosen VASP error message: {error_string}
             "CNORMN",
             "ZPOTRF",
             "ZTRTRI",
+            "FEXCP",
+            "FEXCF"
         ]:
             _test_OUTCAR_error(error)
 
