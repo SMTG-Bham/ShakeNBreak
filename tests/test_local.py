@@ -76,9 +76,10 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.cdte_defects = {
             defect_type: [
                 cli.generate_defect_object(defect_dict, self.cdte_defect_dict["bulk"])
-                for defect_dict
-                in self.cdte_defect_dict[defect_type]
-            ] for defect_type in self.cdte_defect_dict.keys() if defect_type != "bulk"
+                for defect_dict in self.cdte_defect_dict[defect_type]
+            ]
+            for defect_type in self.cdte_defect_dict.keys()
+            if defect_type != "bulk"
         }
         # Use custom names (similar to DOPED/PyCDT)
         self.cdte_named_defects = {
@@ -102,8 +103,12 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
-        self.Int_Cd_2 = cli.generate_defect_object(self.Int_Cd_2_dict, self.cdte_defect_dict["bulk"])
+        self.V_Cd = cli.generate_defect_object(
+            self.V_Cd_dict, self.cdte_defect_dict["bulk"]
+        )
+        self.Int_Cd_2 = cli.generate_defect_object(
+            self.Int_Cd_2_dict, self.cdte_defect_dict["bulk"]
+        )
 
         self.V_Cd_struc = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
@@ -269,11 +274,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             ):
                 shutil.rmtree(i)
 
-        for defect_folder in os.listdir(self.EXAMPLE_RESULTS):
+        for defect_folder in [
+            dir for dir in os.listdir(self.EXAMPLE_RESULTS)
+            if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{dir}")
+        ]:
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect_folder}"):
                 if file.endswith(".png"):
                     os.remove(f"{self.EXAMPLE_RESULTS}/{defect_folder}/{file}")
-
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
@@ -465,9 +472,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         )
         struc = Int_Cd_2_POSCAR.structure
         struc.remove_oxidation_states()
-        self.assertEqual(
-            struc, self.Int_Cd_2_minus0pt6_struc_rattled
-        )
+        self.assertEqual(struc, self.Int_Cd_2_minus0pt6_struc_rattled)
 
         # check INCAR
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
@@ -522,8 +527,9 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    f"{defect}/{defect}.png")))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
@@ -578,12 +584,15 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    f"{defect}/{defect}.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "v_Cd_0/v_Cd_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "v_Cd_-1/v_Cd_-1.png")))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
+        )
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
+        )
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
@@ -594,6 +603,55 @@ class DistortionLocalTestCase(unittest.TestCase):
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
             if "yaml" in file or "png" in file
         ]
+
+        # generate docs example plots:
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0"
+        )
+        for i in range(1,7):
+            shutil.copyfile(
+                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Unperturbed/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_{i}0.0%/CONTCAR",
+            )
+        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
+        energies_dict["distortions"][-0.5] = energies_dict["distortions"][-0.6]
+        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-60.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
+        )
+
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "-d",
+                "v_Cd_0",
+                "-cb",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "svg",
+            ],
+        )
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg", "../docs/v_Cd_0_colorbar.svg")
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "-d",
+                "v_Cd_0",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "svg",
+            ],
+        )
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg", "../docs/v_Cd_0.svg")
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_0")
+        shutil.move(
+            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0", f"{self.EXAMPLE_RESULTS}/v_Cd_0"
+        )
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
 
@@ -844,20 +902,20 @@ POTCAR:
         defect_name = "v_Cd"  # pymatgen-analysis-defects default name
         runner = CliRunner()
         result = runner.invoke(
-                snb,
-                [
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c 0",
-                    "-v",
-                    "--config",
-                    f"test_config.yml",
-                ],
-                catch_exceptions=False,
-            )
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-v",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertTrue(os.path.exists(f"./{defect_name}_0"))
         self.assertTrue(os.path.exists(f"./{defect_name}_0/Bond_Distortion_-50.0%"))
@@ -928,7 +986,9 @@ POTCAR:
                 ],
                 catch_exceptions=False,
             )
-        incar_dict = Incar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR").as_dict()
+        incar_dict = Incar.from_file(
+            f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR"
+        ).as_dict()
         self.assertEqual(incar_dict["IBRION"], 2)  # default setting
         # assert UserWarning about unparsed input file
         user_warnings = [warning for warning in w if warning.category == UserWarning]
@@ -939,7 +999,9 @@ POTCAR:
             str(user_warnings[-1].message),
         )
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:
-            self.assertTrue(os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}"))
+            self.assertTrue(
+                os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}")
+            )
 
 
 if __name__ == "__main__":
