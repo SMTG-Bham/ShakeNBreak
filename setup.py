@@ -161,7 +161,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pymatgen==2022.10.22",
+        "pymatgen==2022.10.23",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",

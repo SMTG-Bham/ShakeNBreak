@@ -37,7 +37,9 @@ def identify_defect(
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
-            Index of the defect site in the supercell.
+            Index of the defect site in the supercell. For vacancies, this
+            should be the site index in the bulk structure, while for substitutions
+            and interstitials it should be the site index in the defect structure.
 
     Returns: :obj:`Defect`
     """
@@ -63,7 +65,7 @@ def identify_defect(
     if (
         defect_type == "vacancy" and defect_index
     ):  # defect_index should correspond to bulk struc
-        bulk_site_index = defect_index  # TODO: Update docstring!
+        bulk_site_index = defect_index
     elif defect_index:  # defect_index should correspond to defect struc
         if defect_type == "interstitial":
             defect_site_index = defect_index
@@ -665,7 +667,8 @@ def snb():
 @click.option(
     "--defect-index",
     "--idx",
-    help="Index of defect site in defect structure, in case auto site-matching fails",
+    help="Index of defect site in defect structure (if substitution/interstitial) "
+    "or bulk structure (if vacancy), in case auto site-matching fails",
     default=None,
     type=int,
 )
