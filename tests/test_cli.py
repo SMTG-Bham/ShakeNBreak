@@ -207,6 +207,9 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
     def test_snb_generate(self):
+        """Implicitly, the `snb-generate` tests also test the functionality of
+        `input.identify_defect()`
+        """
         runner = CliRunner()
         result = runner.invoke(
             snb,

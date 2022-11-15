@@ -128,8 +128,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
             len(formatted_ax.yaxis.get_ticklabels()), 6 + 2
         )  # +2 bc MaxNLocator adds ticks
         # beyond axis limits for autoscaling reasons
-        # self.assertTrue([float(tick.get_text()) % 0.3 == 0.0 for tick in formatted_ax.xaxis.get_ticklabels()]) # x ticks should be multiples of 0.3
-        print(formatted_ax.xaxis.get_ticklabels())
+        self.assertTrue([float(tick.get_text().replace("−", "-"))  # weird mpl ticker reformatting
+                         % 0.3 == 0.0 for tick in
+                         formatted_ax.xaxis.get_ticklabels()]) # x ticks should be multiples of 0.3
         # check x label if no nearest neighbour info
         ax.plot(
             list(self.V_Cd_energies_dict["distortions"].keys()),
