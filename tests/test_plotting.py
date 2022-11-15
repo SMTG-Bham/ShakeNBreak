@@ -304,20 +304,20 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0",
             include_site_num_in_name=True,
         )
-        self.assertEqual(formatted_name, "$V_{Cd_1}^{0}$")
+        self.assertEqual(formatted_name, "$V_{Cd_{1}}^{0}$")
         # test interstitial case
         formatted_name = plotting._format_defect_name(
             defect_species="Int_Cd_1_0",
             include_site_num_in_name=True,
         )
-        self.assertEqual(formatted_name, "Cd$_{i_1}^{0}$")
+        self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
         # test lowercase interstitial
         formatted_name = plotting._format_defect_name(
             defect_species="int_Cd_1_0",
             include_site_num_in_name=True,
         )
-        self.assertEqual(formatted_name, "Cd$_{i_1}^{0}$")
+        self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
         # test uppercase vacancy (pymatgen default name)
         formatted_name = plotting._format_defect_name(
@@ -331,7 +331,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species="as_1_Ni_on_Li_0",
             include_site_num_in_name=True,
         )
-        self.assertEqual(formatted_name, "Ni$_{Li_1}^{0}$")
+        self.assertEqual(formatted_name, "Ni$_{Li_{1}}^{0}$")
 
         # check exceptions raised: invalid charge or defect_species
         # test error catching:
@@ -417,6 +417,42 @@ class PlottingDefectsTestCase(unittest.TestCase):
             formatted_name = plotting._format_defect_name(
                 defect_species=defect_species,
                 include_site_num_in_name=False,
+            )
+            self.assertEqual(formatted_name, expected_name)
+
+        defect_species_w_site_num_name_dict = {
+            "vac_Cd_mult32_0": "$V_{Cd_{m32}}^{0}$",
+            "Int_Li_mult64_-1": "Li$_{i_{m64}}^{-1}$",
+            "Int_Li_mult64_-2": "Li$_{i_{m64}}^{-2}$",
+            "Int_Li_mult64_0": "Li$_{i_{m64}}^{0}$",
+            "Int_Li_mult64_1": "Li$_{i_{m64}}^{+1}$",
+            "Int_Li_mult64_2": "Li$_{i_{m64}}^{+2}$",
+            "Sub_Li_on_Ni_mult32_-1": "Li$_{Ni_{m32}}^{-1}$",
+            "Sub_Li_on_Ni_mult32_-2": "Li$_{Ni_{m32}}^{-2}$",
+            "Sub_Li_on_Ni_mult32_0": "Li$_{Ni_{m32}}^{0}$",
+            "Sub_Li_on_Ni_mult32_1": "Li$_{Ni_{m32}}^{+1}$",
+            "Sub_Li_on_Ni_mult32_2": "Li$_{Ni_{m32}}^{+2}$",
+            "Sub_Ni_on_Li_mult32_-1": "Ni$_{Li_{m32}}^{-1}$",
+            "Sub_Ni_on_Li_mult32_-2": "Ni$_{Li_{m32}}^{-2}$",
+            "Sub_Ni_on_Li_mult32_0": "Ni$_{Li_{m32}}^{0}$",
+            "Sub_Ni_on_Li_mult32_1": "Ni$_{Li_{m32}}^{+1}$",
+            "Sub_Ni_on_Li_mult32_2": "Ni$_{Li_{m32}}^{+2}$",
+            "Vac_Li_mult32_-1": "$V_{Li_{m32}}^{-1}$",
+            "Vac_Li_mult32_-2": "$V_{Li_{m32}}^{-2}$",
+            "Vac_Li_mult32_0": "$V_{Li_{m32}}^{0}$",
+            "Vac_Li_mult32_1": "$V_{Li_{m32}}^{+1}$",
+            "v_Cd_s0_-1": "$V_{Cd_{s0}}^{-1}$",
+            "v_Te_s32_2": "$V_{Te_{s32}}^{+2}$",
+            "v_Te_s32a_2": "$V_{Te_{s32a}}^{+2}$",
+            "Te_Cd_s32_2": "Te$_{Cd_{s32}}^{+2}$",
+            "Te_Cd_s32c_2": "Te$_{Cd_{s32c}}^{+2}$",
+            "Cd_Te_s0_2": "Cd$_{Te_{s0}}^{+2}$",
+            "Cd_Te_s0a_2": "Cd$_{Te_{s0a}}^{+2}$",
+        }
+        for defect_species, expected_name in defect_species_w_site_num_name_dict.items():
+            formatted_name = plotting._format_defect_name(
+                defect_species=defect_species,
+                include_site_num_in_name=True,
             )
             self.assertEqual(formatted_name, expected_name)
 
