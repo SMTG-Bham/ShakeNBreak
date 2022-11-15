@@ -1150,7 +1150,7 @@ def plot_all_defects(
     line_color: Optional[str] = None,
     add_title: Optional[bool] = True,
     save_plot: bool = True,
-    save_format: str = "svg",
+    save_format: str = "png",
     verbose: bool = True,
 ) -> dict:
     """
@@ -1198,7 +1198,7 @@ def plot_all_defects(
             (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plots (warnings and where they're saved).
 
@@ -1330,7 +1330,7 @@ def plot_defect(
     line_color: Optional[str] = None,
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: bool = True,
 ) -> Optional[Figure]:
     """
@@ -1392,7 +1392,7 @@ def plot_defect(
             (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: "svg")
+            (Default: "png")
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 
@@ -1552,7 +1552,7 @@ def plot_colorbar(
     output_path: Optional[str] = ".",
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: Optional[bool] = True,
 ) -> Optional[Figure]:
     """
@@ -1611,7 +1611,7 @@ def plot_colorbar(
             (Default: 'Energy (eV)')
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 
@@ -1858,7 +1858,7 @@ def plot_datasets(
     linewidth: Optional[float] = None,
     save_plot: Optional[bool] = False,
     output_path: Optional[str] = ".",
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: Optional[bool] = True,
 ) -> Figure:
     """
@@ -1918,7 +1918,7 @@ def plot_datasets(
             (Default: ".")
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 
