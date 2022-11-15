@@ -2881,7 +2881,7 @@ Chosen VASP error message: {error_string}
             result.output,
         )  # non-verbose output
         self.assertNotIn(
-            "Plot saved to v_Ti_0/v_Ti_0.svg", result.output
+            "Plot saved to v_Ti_0/v_Ti_0.png", result.output
         )  # non-verbose
         self.assertTrue(
             len([warning for warning in w if warning.category == UserWarning]) == 0
@@ -2927,7 +2927,7 @@ Chosen VASP error message: {error_string}
             "and unperturbed: -3.26 eV.",
             result.output,
         )  # verbose output
-        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.svg", result.output)  # verbose
+        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.png", result.output)  # verbose
         self.assertTrue(
             len([warning for warning in w if warning.category == UserWarning]) == 1
         )  # verbose
@@ -2947,7 +2947,7 @@ Chosen VASP error message: {error_string}
         self.assertTrue(
             os.path.exists(
                 f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder"
-                f"/{defect_name}/v_Ti_0.svg"
+                f"/{defect_name}/v_Ti_0.png"
             )
         )
         self.assertTrue(
@@ -2988,7 +2988,7 @@ Chosen VASP error message: {error_string}
             "and unperturbed: -3.26 eV.",
             result.output,
         )  # non-verbose output
-        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
+        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.png", result.output)
         self.assertTrue(
             any(
                 [
@@ -3001,7 +3001,7 @@ Chosen VASP error message: {error_string}
                 ]
             )
         )
-        self.assertTrue(os.path.exists("./v_Ti_0.svg"))
+        self.assertTrue(os.path.exists("./v_Ti_0.png"))
         self.assertTrue(os.path.exists(os.getcwd() + "/v_Ti_0.yaml"))
         if_present_rm(os.getcwd() + "/v_Ti_0.yaml")
         self.tearDown()
@@ -3016,7 +3016,7 @@ Chosen VASP error message: {error_string}
             "all defects in the specified/current directory.",
             str(result.exception),
         )
-        self.assertNotIn(f"Plot saved to v_Ti_0/v_Ti_0.svg", result.output)
+        self.assertNotIn(f"Plot saved to v_Ti_0/v_Ti_0.png", result.output)
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )

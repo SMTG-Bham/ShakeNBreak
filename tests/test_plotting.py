@@ -82,10 +82,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def tearDown(self):
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2")
         for file in os.listdir(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0"):
-            if file.endswith(".svg"):
+            if file.endswith(".svg") or file.endswith(".png"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/{file}")
         for file in os.listdir(self.VASP_CDTE_DATA_DIR):
-            if file.endswith(".svg"):
+            if file.endswith(".svg") or file.endswith(".png"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/{file}")
         if_present_rm("Int_Se_1_6.png")
 
@@ -649,12 +649,12 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
         # test previously saved plot renaming and print statement
         plotting._save_plot(
-            fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
+            fig=fig, defect_name=defect_name, output_path=".", save_format="png"
         )
-        self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
+        self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
-                fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
+                fig=fig, defect_name=defect_name, output_path=".", save_format="png"
             )
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
         current_datetime_minus1min = (
@@ -663,42 +663,41 @@ class PlottingDefectsTestCase(unittest.TestCase):
             "%Y-%m-%d-%H-%M"
         )  # in case delay between writing and testing plot generation
 
-        self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
-        mock_print.assert_any_call(f"Plot saved to ./vac_1_Cd_0.svg")
+        self.assertTrue(os.path.exists(f"./{defect_name}.png"))
+        mock_print.assert_any_call(f"Plot saved to ./vac_1_Cd_0.png")
         self.assertTrue(
-            os.path.exists(f"./{defect_name}_{current_datetime}.svg")
-            or os.path.exists(f"./{defect_name}_{current_datetime_minus1min}.svg")
+            os.path.exists(f"./{defect_name}_{current_datetime}.png")
+            or os.path.exists(f"./{defect_name}_{current_datetime_minus1min}.png")
         )
         self.assertTrue(
-            f"Previous version of {defect_name}.svg found in output_path: './'. Will rename "
-            f"old plot to {defect_name}_{current_datetime}.svg."
+            f"Previous version of {defect_name}.png found in output_path: './'. Will rename "
+            f"old plot to {defect_name}_{current_datetime}.png."
             in mock_print.call_args_list[0][0][0]
-            or f"Previous version of {defect_name}.svg found in output_path: './'. Will rename "
-            f"old plot to {defect_name}_{current_datetime_minus1min}.svg."
+            or f"Previous version of {defect_name}.png found in output_path: './'. Will rename "
+            f"old plot to {defect_name}_{current_datetime_minus1min}.png."
             in mock_print.call_args_list[0][0][0]
         )
-        if_present_rm(f"./{defect_name}.svg")
-        if_present_rm(f"./{defect_name}_{current_datetime}.svg")
-        if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.svg")
+        if_present_rm(f"./{defect_name}.png")
+        if_present_rm(f"./{defect_name}_{current_datetime}.png")
+        if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.png")
 
         # test no print statements with verbose = False
         plotting._save_plot(
-            fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
+            fig=fig, defect_name=defect_name, output_path="."
         )
-        self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
+        self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
                 fig=fig,
                 defect_name=defect_name,
                 output_path=".",
-                save_format="svg",
                 verbose=False,
             )
-        self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
+        self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         mock_print.assert_not_called()
-        if_present_rm(f"./{defect_name}.svg")
-        if_present_rm(f"./{defect_name}_{current_datetime}.svg")
-        if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.svg")
+        if_present_rm(f"./{defect_name}.png")
+        if_present_rm(f"./{defect_name}_{current_datetime}.png")
+        if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.png")
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -792,11 +791,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
             legend_label="SnB: 2 Te",
             line_color="k",
             title="$V_{Cd}^{0}$",
-            save_format="svg",
             save_plot=True,
             y_label="E (eV)",
         )
-        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "vac_1_Cd_0.svg")))
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "vac_1_Cd_0.png")))
         return fig
 
     @pytest.mark.mpl_image_compare(
@@ -1029,7 +1027,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species="fake_defect",
             energies_dict=self.V_Cd_energies_dict,
         )
-        os.remove(f"{self.VASP_CDTE_DATA_DIR}/fake_defect.svg")
+        os.remove(f"{self.VASP_CDTE_DATA_DIR}/fake_defect.png")
 
     def test_plot_defect_missing_unperturbed_energy(self):
         with warnings.catch_warnings(record=True) as w:

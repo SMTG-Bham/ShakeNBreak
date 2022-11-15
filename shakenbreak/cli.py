@@ -1160,7 +1160,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     "-f",
     help="Format to save the plot as.",
     type=str,
-    default="svg",
+    default="png",
     show_default=True,
 )
 @click.option(
