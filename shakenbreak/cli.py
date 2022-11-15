@@ -182,21 +182,30 @@ def snb():
 @click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
 @click.option(
     "--min-charge",
-    "--min",
+    "-min",
     help="Minimum defect charge state for which to generate distortions",
     default=None,
     type=int,
 )
 @click.option(
     "--max-charge",
-    "--max",
+    "-max",
     help="Maximum defect charge state for which to generate distortions",
     default=None,
     type=int,
 )
 @click.option(
+    "--padding",
+    "-p",
+    help="If `--charge` or `--min-charge` & `--max-charge` are not set, "
+    "defect charges will be set to the range: 0 – {Defect oxidation state}, "
+    "with a `--padding` on either side of this range.",
+    default=1,
+    type=int,
+)
+@click.option(
     "--defect-index",
-    "--idx",
+    "-idx",
     help="Index of defect site in defect structure (if substitution/interstitial) "
     "or bulk structure (if vacancy), in case auto site-matching fails",
     default=None,
@@ -204,7 +213,7 @@ def snb():
 )
 @click.option(
     "--defect-coords",
-    "--def-coords",
+    "-def-coords",
     help="Fractional coordinates of defect site in defect structure, in case auto "
     "site-matching fails. In the form 'x y z' (3 arguments)",
     type=click.Tuple([float, float, float]),
@@ -259,6 +268,7 @@ def generate(
     charge,
     min_charge,
     max_charge,
+    padding,
     defect_index,
     defect_coords,
     code,
@@ -285,6 +295,8 @@ def generate(
             "charge",
             "min_charge",
             "max_charge",
+            "padding",
+            "charges",
             "defect_index",
             "defect_coords",
             "code",
@@ -348,6 +360,7 @@ def generate(
         charges = [
             charge,
         ]
+        defect_object.user_charges = charges  # Update charge states
 
     elif max_charge is not None or min_charge is not None:
         if max_charge is None or min_charge is None:
@@ -358,22 +371,23 @@ def generate(
         charge_lims = [min_charge, max_charge]
         charges = list(
             range(min(charge_lims), max(charge_lims) + 1)
-        )  # just in case user mixes min and max
-        # because of different signs ("+1 to -3" etc)
+        )  # just in case user mixes min and max because of different signs ("+1 to -3" etc)
+        defect_object.user_charges = charges  # Update charge states
 
-    else:
-        warnings.warn(
-            "No charge (range) set for defect, assuming default range of +/-2"
-        )
-        charges = list(range(-2, +3))
+    if user_settings and "charges" in user_settings:
+        charges = user_settings.pop("charges", None)
+        if defect_object.user_charges:
+            warnings.warn(
+                "Defect charges were specified using the CLI option, but `charges` "
+                "was also specified in the `--config` file – this will be ignored!"
+            )
+        else:
+            defect_object.user_charges = charges  # Update charge states
 
     if name is None:
         name = (
             defect_object.name
         )  # v_X, X_i or X_Y for vacancies, interstitials, substitutions
-
-    # Update charge states
-    defect_object.user_charges = charges
 
     Dist = input.Distortions(
         defects={
@@ -381,6 +395,7 @@ def generate(
             # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
             # names would be the same)
         },
+        padding=padding,
         **user_settings,
     )
     if code.lower() == "vasp":
@@ -481,6 +496,15 @@ def generate(
     type=click.Path(exists=True, dir_okay=False),
 )
 @click.option(
+    "--padding",
+    "-p",
+    help="For any defects where `charge` is not set in the --config file, "
+    "charges will be set to the range: 0 – {Defect oxidation state}, "
+    "with a `--padding` on either side of this range.",
+    default=1,
+    type=int,
+)
+@click.option(
     "--code",
     help="Code to generate relaxation input files for. "
     "Options: 'VASP', 'CP2K', 'espresso', 'CASTEP', 'FHI-aims'.",
@@ -517,6 +541,7 @@ def generate(
 def generate_all(
     defects,
     bulk,
+    padding,
     structure_file,
     code,
     config,
@@ -555,6 +580,9 @@ def generate_all(
             "input_file",
             "verbose",
             "oxidation_states",
+            "charges",
+            "charge",
+            "padding",
             "dict_number_electrons_user",
             "distortion_increment",
             "bond_distortions",
@@ -628,14 +656,12 @@ def generate_all(
         charges = None
         if isinstance(defect_settings, dict):
             if defect_name in defect_settings:
-                charges = defect_settings.get(defect_name).get("charges")
-        if not charges:
-            warnings.warn(
-                f"No charge (range) set for defect {defect_name} in config file,"
-                " assuming default range of +/-2"
-            )
-            charges = list(range(-2, +3))
-        return charges
+                charges = defect_settings.get(defect_name).get("charges", None)
+                if charges is None:
+                    charges = [
+                        defect_settings.get(defect_name).get("charge", None),
+                    ]
+        return charges  # determing using padding if not set in config file
 
     def parse_defect_position(defect_name, defect_settings):
         if defect_settings:
@@ -728,7 +754,7 @@ def generate_all(
         )
 
     # Apply distortions and write input files
-    Dist = input.Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(defects_dict, padding=padding, **user_settings)
     if code.lower() == "vasp":
         if input_file:
             incar = Incar.from_file(input_file)
@@ -902,7 +928,6 @@ def run(submit_command, job_script, job_name_option, all, verbose):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -972,7 +997,6 @@ def parse(defect, all, path, code):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1104,7 +1128,6 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1308,7 +1331,6 @@ def plot(
 )
 @click.option(
     "--code",
-    "-c",
     help="Code to generate relaxation input files for. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1324,7 +1346,8 @@ def plot(
     show_default=True,
 )
 @click.option(
-    "--min",
+    "--min_energy",
+    "-min",
     help="Minimum energy difference (in eV) between the ground-state"
     " defect structure, relative to the `Unperturbed` structure,"
     " to consider it as having found a new energy-lowering"
@@ -1351,7 +1374,7 @@ def plot(
     is_flag=True,
     show_default=True,
 )
-def regenerate(path, code, filename, min, metastable, verbose):
+def regenerate(path, code, filename, min_energy, metastable, verbose):
     """
     Identify defect species undergoing energy-lowering distortions and
     test these distortions for the other charge states of the defect.
@@ -1377,7 +1400,7 @@ def regenerate(path, code, filename, min, metastable, verbose):
         code=code,
         structure_filename=filename,
         write_input_files=True,
-        min_e_diff=min,
+        min_e_diff=min_energy,
         metastable=metastable,
         verbose=verbose,
     )
