@@ -1655,6 +1655,39 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions(vacancies)
             self.assertIn(no_bulk_error, e.exception)
 
+        # Test padding usage
+        vacancies = [defect for defect in self.cdte_defect_list if "v_" in defect.name]
+        for vacancy in vacancies:
+            vacancy.user_charges = None  # not set
+        # test default
+        dist = input.Distortions(
+            vacancies,
+        )
+        dist_defects_dict, dist_metadata = dist.write_vasp_files()
+        for defect_name in ["v_Cd_s0", "v_Te_s32"]:
+            self.assertTrue(
+                os.path.exists(f"{defect_name}_1/Bond_Distortion_-30.0%/POSCAR")
+            )
+        self.assertFalse(os.path.exists("v_Cd_s0_2"))
+        self.assertTrue(os.path.exists("v_Te_s32_3"))
+        self.assertFalse(os.path.exists("v_Te_s32_4"))
+        self.tearDown()
+
+        # test explicitly set
+        dist = input.Distortions(
+            vacancies,
+            padding=4
+        )
+        dist_defects_dict, dist_metadata = dist.write_vasp_files()
+        for defect_name in ["v_Cd_s0", "v_Te_s32"]:
+            self.assertTrue(
+                os.path.exists(f"{defect_name}_4/Bond_Distortion_-30.0%/POSCAR")
+            )
+            self.assertFalse(os.path.exists(f"{defect_name}_7"))
+        self.assertFalse(os.path.exists("v_Cd_s0_5"))
+        self.assertTrue(os.path.exists("v_Te_s32_6"))
+
+
     @patch("builtins.print")
     def test_write_espresso_files(self, mock_print):
         """Test method write_espresso_files"""
@@ -2457,6 +2490,33 @@ class InputTestCase(unittest.TestCase):
 
         if_present_rm(os.path.join("Cd_i_m128_3"))
         if_present_rm(os.path.join("v_Cd_s0_-3"))  # default padding
+
+        # Test padding usage
+        vacancies = [defect for defect in self.cdte_defect_list if "v_" in defect.name]
+        # test default
+        dist = input.Distortions.from_structures(
+            self.V_Cd_struc, self.CdTe_bulk_struc
+        )
+        dist.write_vasp_files()
+        defect_name = "v_Cd_s0"
+        self.assertTrue(
+            os.path.exists(f"{defect_name}_1/Bond_Distortion_-30.0%/POSCAR")
+        )
+        self.assertFalse(os.path.exists(f"{defect_name}_2"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-3"))
+        self.tearDown()
+
+        # test explicitly set
+        dist = input.Distortions.from_structures(
+            self.V_Cd_struc, self.CdTe_bulk_struc, padding=4
+        )
+        dist.write_vasp_files()
+        self.assertTrue(
+            os.path.exists(f"{defect_name}_4/Bond_Distortion_-30.0%/POSCAR")
+        )
+        self.assertFalse(os.path.exists(f"{defect_name}_5"))
+        self.assertTrue(os.path.exists(f"{defect_name}_-6"))
+        self.assertFalse(os.path.exists(f"{defect_name}_-7"))
 
 
 if __name__ == "__main__":
