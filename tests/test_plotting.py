@@ -751,6 +751,28 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         return fig
 
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="Cd_Te_s32c_2_displacement.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_colorbar_SnB_naming_w_site_num(self):
+        """Test plot_colorbar() function with SnB defect naming and
+        `include_site_num_in_name=True`"""
+        fig = plotting.plot_colorbar(
+            energies_dict=self.V_Cd_energies_dict,
+            disp_dict=self.V_Cd_displacement_dict,
+            defect_species="Cd_Te_s32c_2",
+            include_site_num_in_name=True,
+            num_nearest_neighbours=4,
+            neighbour_atom="Te",
+            metric="disp",
+        )
+        return fig
+
+
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
         filename="vac_1_Cd_0_maxdist_title_linecolor_label.png",
