@@ -727,7 +727,7 @@ class CLITestCase(unittest.TestCase):
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
             "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
-            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
+            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
         defect_name = "Te_Cd"
@@ -741,7 +741,7 @@ class CLITestCase(unittest.TestCase):
         self.assertIn(
             "\tDefect Site Index / Frac Coords: 1\n"
             + "            Original Neighbour Distances: [(2.83, 34, 'Te'), (2.83, 43, 'Te'), "
-            "(2.83, 53, 'Te'), (2.83, 64, 'Te')]]\n"
+            "(2.83, 53, 'Te'), (2.83, 64, 'Te')]\n"
             + "            Distorted Neighbour Distances:\n\t[(1.13, 34, 'Te'), (1.13, 43, 'Te'), "
             "(1.13, 53, 'Te'), (1.13, 64, 'Te')]",
             result.output,
