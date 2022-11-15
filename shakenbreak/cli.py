@@ -183,8 +183,9 @@ def identify_defect(
                                 )
                                 if len(possible_defects_in_bulk) == 1:
                                     bulk_site_index = possible_defects_in_bulk[0][2]
-                        defect_site_index = possible_defects[0][2]
-                        break
+
+                            defect_site_index = possible_defects[0][2]
+                            break
 
                     site_displacement_tol += 0.1
 
@@ -303,9 +304,8 @@ def identify_defect(
         and auto_matching_defect_site_index is None
     ):
         raise ValueError(
-            "Defect coordinates could not be identified from auto site-matching. "
-            f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
-            "structures correspond to the same supercell and/or specify defect site with "
+            "Defect coordinates could not be identified from auto site-matching. Check bulk and "
+            "defect structures correspond to the same supercell and/or specify defect site with "
             "--defect-coords or --defect-index."
         )
 
