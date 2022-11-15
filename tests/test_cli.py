@@ -3207,9 +3207,8 @@ Chosen VASP error message: {error_string}
             any(
                 [
                     str(warning.message)
-                    == "`--path` option ignored when running from within defect folder ("
-                    "determined to be the case here based on current directory and "
-                    "subfolder names)."
+                    == "`--path` option ignored when running from within defect folder (assumed "
+                       "to be the case here as distortion folders found in current directory)."
                     for warning in w
                 ]
             )
