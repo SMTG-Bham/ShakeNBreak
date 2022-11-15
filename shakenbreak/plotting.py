@@ -247,44 +247,51 @@ def _format_defect_name(
     def _check_matching_defect_format_with_site_num(
         element, name, pre_def_type_list, post_def_type_list
     ):
-        match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
-        if match:
-            items = match.groups()
-            for match_generator in [
-                (
-                    fstring in name
-                    for pre_def_type in pre_def_type_list
-                    for fstring in [
-                        f"{pre_def_type}{items[1]}{element}",
-                        f"{pre_def_type}{element}{items[1]}",
-                        f"{pre_def_type}{items[1]}_{element}",
-                        f"{pre_def_type}{element}_{items[1]}",
-                    ]
-                ),
-            ]:
-                if any(match_generator):
-                    return True, items[1]
+        for site_preposition in ["s", "m", "mult", ""]:
+            for site_postposition in [r"[a-z]", ""]:
+                match = re.match(
+                    r"([a-z_]+)("
+                    + site_preposition
+                    + r"[0-9]+"
+                    + site_postposition
+                    + r")",
+                    name,
+                    re.I,
+                )
 
-            for match_generator in [
-                (
-                    fstring in name
-                    for post_def_type in post_def_type_list
-                    for fstring in [
-                        f"{element}{items[1]}{post_def_type}",
-                        f"{items[1]}{element}{post_def_type}",
-                        f"{element}{items[1]}_{post_def_type}",
-                        f"{items[1]}_{element}{post_def_type}",
-                    ]
-                ),
-            ]:
-                if any(match_generator):
-                    return True, items[1]
+                if match:
+                    items = match.groups()
+                    for match_generator in [
+                        (
+                            fstring in name
+                            for pre_def_type in pre_def_type_list
+                            for fstring in [
+                                f"{pre_def_type}{items[1]}{element}",
+                                f"{pre_def_type}{element}{items[1]}",
+                                f"{pre_def_type}{items[1]}_{element}",
+                                f"{pre_def_type}{element}_{items[1]}",
+                            ]
+                        ),
+                    ]:
+                        if any(match_generator):
+                            return True, items[1].replace("mult", "m")
 
-            else:
-                return False, None
+                    for match_generator in [
+                        (
+                            fstring in name
+                            for post_def_type in post_def_type_list
+                            for fstring in [
+                                f"{element}{items[1]}{post_def_type}",
+                                f"{items[1]}{element}{post_def_type}",
+                                f"{element}{items[1]}_{post_def_type}",
+                                f"{items[1]}_{element}{post_def_type}",
+                            ]
+                        ),
+                    ]:
+                        if any(match_generator):
+                            return True, items[1].replace("mult", "m")
 
-        else:
-            return False, None
+        return False, None
 
     def _try_vacancy_interstitial_match(
         element,
@@ -313,7 +320,7 @@ def _format_defect_name(
                 post_vacancy_strings,
             )
             if match_found:
-                defect_name = f"$V_{{{element}_{site_num}}}^{{{charge}}}$"
+                defect_name = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
 
             else:
                 match_found, site_num = _check_matching_defect_format_with_site_num(
@@ -323,7 +330,7 @@ def _format_defect_name(
                     post_interstitial_strings,
                 )
                 if match_found:
-                    defect_name = f"{element}$_{{i_{site_num}}}^{{{charge}}}$"
+                    defect_name = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
 
         if (
             _check_matching_defect_format(
@@ -360,24 +367,36 @@ def _format_defect_name(
         if (
             defect_name and include_site_num_in_name
         ):  # if we have a match, check if we can add the site number
-            match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
-            if match:
-                items = match.groups()
-                if any(
-                    fstring in name
-                    for fstring in [
-                        f"{items[1]}_{substituting_element}_{orig_site_element}",
-                        f"{substituting_element}_{orig_site_element}_{items[1]}",
-                        f"{items[1]}_{substituting_element}_on_{orig_site_element}",
-                        f"{substituting_element}_on_{orig_site_element}_{items[1]}",
-                    ]
-                ):
-                    defect_name = (
-                        f"{substituting_element}$_{{{orig_site_element}_{items[1]}}}^"
-                        f"{{{charge}}}$"
+            for site_preposition in ["s", "m", "mult", ""]:
+                for site_postposition in [r"[a-z]", ""]:
+                    match = re.match(
+                        r"([a-z_]+)("
+                        + site_preposition
+                        + r"[0-9]+"
+                        + site_postposition
+                        + r")",
+                        name,
+                        re.I,
                     )
 
-        return defect_name
+                    if match:
+                        items = match.groups()
+                        if any(
+                            fstring in name
+                            for fstring in [
+                                f"{items[1]}_{substituting_element}_{orig_site_element}",
+                                f"{substituting_element}_{orig_site_element}_{items[1]}",
+                                f"{items[1]}_{substituting_element}_on_{orig_site_element}",
+                                f"{substituting_element}_on_{orig_site_element}_{items[1]}",
+                            ]
+                        ):
+                            defect_name = (
+                                f"{substituting_element}$_{{{orig_site_element}_{{{items[1]}}}}}^"
+                                f"{{{charge}}}$"
+                            )
+                            return defect_name.replace("mult", "m")
+
+        return defect_name.replace("mult", "m")
 
     def _defect_name_from_matching_elements(
         element_matches, name, include_site_num_in_name

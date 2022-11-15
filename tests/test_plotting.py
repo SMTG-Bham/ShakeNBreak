@@ -400,6 +400,17 @@ class PlottingDefectsTestCase(unittest.TestCase):
             "Vac_Li_mult32_-2": "$V_{Li}^{-2}$",
             "Vac_Li_mult32_0": "$V_{Li}^{0}$",
             "Vac_Li_mult32_1": "$V_{Li}^{+1}$",
+            "v_Cd_s0_-1": "$V_{Cd}^{-1}$",
+            "v_Te_s32_2": "$V_{Te}^{+2}$",
+            "Cd_i_m128_2": "Cd$_i^{+2}$",
+            "Cd_i_m32_2": "Cd$_i^{+2}$",
+            "Cd_i_m32a_2": "Cd$_i^{+2}$",
+            "Cd_i_m32b_2": "Cd$_i^{+2}$",
+            "Te_i_m128b_-2": "Te$_i^{-2}$",
+            "Te_Cd_s32_2": "Te$_{Cd}^{+2}$",
+            "Te_Cd_s32c_2": "Te$_{Cd}^{+2}$",
+            "Cd_Te_s0_2": "Cd$_{Te}^{+2}$",
+            "Cd_Te_s0a_2": "Cd$_{Te}^{+2}$",
         }
 
         for defect_species, expected_name in defect_species_name_dict.items():
