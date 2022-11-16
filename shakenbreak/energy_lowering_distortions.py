@@ -1075,7 +1075,7 @@ def _copy_cp2k_files(
     """
     if not input_filename:
         input_filename = "cp2k_input.inp"
-    distorted_structure.to("cif", f"{distorted_dir}/structure.cif")
+    distorted_structure.to(fmt="cif", filename=f"{distorted_dir}/structure.cif")
     if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         shutil.copyfile(
             f"{output_path}/{defect_species}/Unperturbed/{input_filename}",
