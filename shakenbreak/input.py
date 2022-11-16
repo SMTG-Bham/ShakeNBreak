@@ -8,6 +8,7 @@ import datetime
 import functools
 import itertools
 import os
+import shutil
 import warnings
 from collections import Counter
 from importlib.metadata import version
@@ -196,10 +197,106 @@ def _create_vasp_input(
         None
     """
     # create folder for defect
-    _create_folder(
-        os.path.join(output_path, defect_name)
-    )  # TODO: If defect folder already
-    # exists, iterate name as with Distortions list? Or something else?
+    defect_name_wout_charge, charge = defect_name.rsplit(
+        "_", 1
+    )  # `defect_name` includes charge
+    test_letters = [
+        "h",
+        "g",
+        "f",
+        "e",
+        "d",
+        "c",
+        "b",
+        "a",
+        "",
+    ]  # reverse search to determine
+    # last letter used
+    try:
+        matching_dirs = [
+            dir
+            for letter in test_letters
+            for dir in os.listdir(output_path)
+            if dir == f"{defect_name_wout_charge}{letter}_{charge}"
+            and os.path.isdir(
+                f"{output_path}/{defect_name_wout_charge}{letter}_{charge}"
+            )
+        ]
+    except Exception:
+        matching_dirs = []
+
+    if len(matching_dirs) > 0:  # defect species with same name already present
+        # check if Unperturbed structures match
+        match_found = False
+        for dir in matching_dirs:
+            try:
+                prev_unperturbed_struc = Structure.from_file(
+                    f"{output_path}/{dir}/Unperturbed/POSCAR"
+                )
+                current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
+                    "Defect Structure"
+                ].copy()
+                for i in [prev_unperturbed_struc, current_unperturbed_struc]:
+                    i.remove_oxidation_states()
+                if prev_unperturbed_struc == current_unperturbed_struc:
+                    warnings.warn(
+                        f"The previously-generated defect folder {dir} in "
+                        f"{os.path.basename(os.path.abspath(output_path))} "
+                        f"has the same Unperturbed defect structure as the current "
+                        f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
+                        f"be overwritten."
+                    )
+                    defect_name = dir
+                    match_found = True
+                    break
+
+            except Exception:  # Unperturbed structure could not be parsed / compared to
+                # distorted_defect_dict
+                pass
+
+        if not match_found:  # no matching structure found, assume inequivalent defects
+            last_letter = [
+                letter
+                for letter in test_letters
+                for dir in matching_dirs
+                if dir == f"{defect_name_wout_charge}{letter}_{charge}"
+            ][0]
+            prev_dir_name = f"{defect_name_wout_charge}{last_letter}_{charge}"
+            if last_letter == "":  # rename prev defect folder
+                new_prev_dir_name = f"{defect_name_wout_charge}a_{charge}"
+                new_current_dir_name = f"{defect_name_wout_charge}b_{charge}"
+                warnings.warn(
+                    f"A previously-generated defect folder {prev_dir_name} exists in "
+                    f"{os.path.basename(os.path.abspath(output_path))}, "
+                    f"and the Unperturbed defect structure could not be matched to the "
+                    f"current defect species: {defect_name}. These are assumed to be "
+                    f"inequivalent defects, so the previous {prev_dir_name} will be "
+                    f"renamed to {new_prev_dir_name} and ShakeNBreak files for the "
+                    f"current defect will be saved to {new_current_dir_name}, "
+                    f"to prevent overwriting."
+                )
+                shutil.move(
+                    f"{output_path}/{prev_dir_name}",
+                    f"{output_path}/{new_prev_dir_name}",
+                )
+                defect_name = new_current_dir_name
+
+            else:  # don't rename prev defect folder just rename current folder
+                next_letter = test_letters[test_letters.index(last_letter) - 1]
+                new_current_dir_name = (
+                    f"{defect_name_wout_charge}{next_letter}_{charge}"
+                )
+                warnings.warn(
+                    f"Previously-generated defect folders ({prev_dir_name}...) exist in "
+                    f"{os.path.basename(os.path.abspath(output_path))}, "
+                    f"and the Unperturbed defect structures could not be matched to the "
+                    f"current defect species: {defect_name}. These are assumed to be "
+                    f"inequivalent defects, so ShakeNBreak files for the current defect "
+                    f"will be saved to {new_current_dir_name} to prevent overwriting."
+                )
+                defect_name = new_current_dir_name
+
+    _create_folder(os.path.join(output_path, defect_name))
     for (
         distortion,
         single_defect_dict,
@@ -938,9 +1035,11 @@ def _update_defect_dict(defect, defect_name, defect_dict):
 
     elif defect_name in [name[:-1] for name in defect_dict.keys()]:
         # rename defect to {defect_name}{iterated letter}
-        last_letter = [
+        last_letters = [
             name[-1] for name in defect_dict.keys() if name[:-1] == defect_name
-        ].sort()[-1]
+        ]
+        last_letters.sort()
+        last_letter = last_letters[-1]
         new_letter = chr(ord(last_letter) + 1)
         defect_name = f"{defect_name}{new_letter}"
         defect_dict[defect_name] = defect
