@@ -544,11 +544,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     self.defect_charges_dict, self.VASP_CDTE_DATA_DIR, stol=0.01
                 )
             )  # same call as before, but with stol
-            # self.assertEqual(
-            #     len(w), 21
-            # )  # many warnings due to difficulty in structure matching (20), no data parsed
-            # from Int_Cd_2_1 (1)
-            # with small stol (confirming stol has been passed to compare_structures)
+            # many warnings due to difficulty in structure matching (20) – with small stol
+            # (confirming stol has been passed to compare_structures), and no data parsed from
+            # Int_Cd_2_1 (1)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
             warning_message = (
