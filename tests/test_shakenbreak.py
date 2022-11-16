@@ -2,11 +2,13 @@ import copy
 import os
 import shutil
 import unittest
+import warnings
 from unittest.mock import call, patch
 
 import pytest
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
 from shakenbreak import energy_lowering_distortions, input, io, plotting, cli
 
@@ -23,13 +25,17 @@ def if_present_rm(path):
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def setUp(self):
+        warnings.simplefilter("ignore", UnknownPotcarWarning)
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.cdte_defect_dict = loadfn(
+        # Refactor doped defect dict to dict of Defect() objects
+        self.cdte_doped_defect_dict = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
-        self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
+
+        self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
+
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
@@ -60,18 +66,22 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
+        for charge in [-1,-2]:
+            shutil.copyfile(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"),
+                f"vac_1_Cd_{charge}/Unperturbed/POSCAR",
+            )  # so when we generate SnB files in `test_SnB_integration` it recognises it as
+            # being the same defect
+
         self.defect_charges_dict = (
             energy_lowering_distortions.read_defects_directories()
         )
         self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
     def tearDown(self):
-        for fake_dir in [
-            "vac_1_Cd_-1",
-            "vac_1_Cd_-2",
-            "vac_1_Cd_0",
-        ]:
-            if_present_rm(f"{fake_dir}")
+        for i in os.listdir():
+            if "vac_1_Cd" in i:
+                if_present_rm(i)
         if_present_rm("distortion_metadata.json")
         if_present_rm("parsed_defects_dict.json")
 
@@ -87,7 +97,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         # Generate input files
         dist = input.Distortions(
-            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
+            {"vac_1_Cd": reduced_V_Cd},
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
@@ -200,7 +210,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 )
             )
             mock_print.assert_any_call(
-                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, and unperturbed: -0.76 eV."
+                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
+                "and unperturbed: -0.76 eV."
             )
             mock_print.assert_any_call(
                 "Comparing structures to specified ref_structure (Cd31 Te32)..."
@@ -213,6 +224,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             #     "Low-energy distorted structure for vac_1_Cd_-1 already "
             #     "found with charge states [0], storing together."
             # )
+            print(mock_print.call_args_list)
             mock_print.not_called_with(
                 "Low-energy distorted structure for vac_1_Cd_-1 already "
                 "found with charge states [0], storing together."

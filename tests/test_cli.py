@@ -3057,11 +3057,7 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         defect = "v_Cd"  # in example results
-        # if w:
-        #     self.assertFalse(
-        #         any([war.category == UserWarning for war in w])
-        #     )  # no User Warnings
-        # This fails on GA but fine locally - commeting it for now
+        self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 0)
 
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
@@ -3136,9 +3132,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        # if w:
-        #     self.assertFalse(any([war.category == UserWarning for war in w]))
-        # This fails on GA, commenting for now
+        self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 0)
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
