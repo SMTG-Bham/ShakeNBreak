@@ -77,12 +77,19 @@ More information about each function and its inputs/outputs are available from t
 We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
 
 ## Code Compatibility
-`ShakeNBreak` is built to natively function using `pymatgen` `Defect` objects ([docs available here](https://materialsproject.github.io/pymatgen-analysis-defects/)) and be compatible with the most recent version of `pymatgen`. If you are receiving `pymatgen`-related errors when using `ShakeNBreak`, you may need to update `pymatgen` and/or `ShakeNBreak`, which can be done with:
+`ShakeNBreak` is built to natively function using `pymatgen` `Defect` objects ([docs available here](https://materialsproject.github.io/pymatgen-analysis-defects/)) and be compatible with the most recent version of `pymatgen`.
+If you are receiving `pymatgen`-related errors when using `ShakeNBreak`, you may need to update `pymatgen` and/or `ShakeNBreak`, which can be done with:
 ```bash
 pip install --upgrade pymatgen shakenbreak
 ```
 
-`ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures), **_but also_** can take in `pymatgen` `Structure` objects, `doped` defect dictionaries or structure files (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code (such as `doped`, `DASP`, `PyLada`, `PyCDT`, `Spinney`, `DefAP`, `PyDEF`, `pydefect`...) that generates these files.
+`ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures),
+**_but also_** can take in `pymatgen` `Structure` objects, `doped` defect dictionaries or structure files
+(e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code
+(such as [`doped`](https://github.com/SMTG-UCL/doped), [`pydefect`](https://github.com/kumagai-group/pydefect),
+[`PyCDT`](https://github.com/mbkumar/pycdt), [`PyLada`](https://github.com/pylada/pylada-defects),
+[`DASP`](http://hzwtech.com/files/software/DASP/htmlEnglish/index.html), [`Spinney`](https://gitlab.com/Marrigoni/spinney/-/tree/master),
+[`DefAP`](https://github.com/DefAP/defap), [`PyDEF`](https://github.com/PyDEF2/PyDEF-2.0)...) that generates these files.
 Please let us know if you have any issues with compatibility, or if you would like to see any additional features added to `ShakeNBreak` to make it more compatible with your code.
 
 ## Contributing
