@@ -137,18 +137,18 @@ class CLITestCase(unittest.TestCase):
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
                 )
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
                 )
         if_present_rm(
             os.path.join(
@@ -391,8 +391,9 @@ class CLITestCase(unittest.TestCase):
                     0.5,
                     0.6,
                 ],
-                "rattle_stdev": 0.28333683853583164,
                 "local_rattle": False,
+                "mc_rattle_parameters":
+                    {"stdev": 0.28333683853583164}
             },
             "defects": {
                 defect_name: {
@@ -405,6 +406,7 @@ class CLITestCase(unittest.TestCase):
                                 [46, "Te"],
                             ],
                             "distortion_parameters": {
+                                "distortion_increment": 0.1,
                                 "bond_distortions": [
                                     -0.6,
                                     -0.5,
@@ -420,7 +422,9 @@ class CLITestCase(unittest.TestCase):
                                     0.5,
                                     0.6,
                                 ],
-                                "rattle_stdev": 0.28333683853583164,
+                                "local_rattle": False,
+                                "mc_rattle_parameters":
+                                    {"stdev": 0.28333683853583164,}
                             },
                         },
                     },
@@ -655,8 +659,9 @@ class CLITestCase(unittest.TestCase):
                     0.5,
                     0.6,
                 ],
-                "rattle_stdev": 0.28333683853583164,
                 "local_rattle": False,
+                "mc_rattle_parameters":
+                    {"stdev": 0.28333683853583164}
             },
             "defects": {
                 defect_name: {
@@ -674,6 +679,7 @@ class CLITestCase(unittest.TestCase):
                                 [42, "Te"],
                             ],
                             "distortion_parameters": {
+                                "distortion_increment": 0.1,
                                 "bond_distortions": [
                                     -0.6,
                                     -0.5,
@@ -689,7 +695,9 @@ class CLITestCase(unittest.TestCase):
                                     0.5,
                                     0.6,
                                 ],
-                                "rattle_stdev": 0.28333683853583164,
+                                "local_rattle": False,
+                                "mc_rattle_parameters":
+                                    {"stdev": 0.28333683853583164}
                             },
                         },
                     },
@@ -958,8 +966,9 @@ local_rattle: False
             "distortion_parameters": {
                 "distortion_increment": 0.25,
                 "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
-                "rattle_stdev": 0.28333683853583164,
                 "local_rattle": False,
+                "mc_rattle_parameters":
+                    {"stdev": 0.28333683853583164, }
             },
             "defects": {
                 defect_name: {
@@ -976,6 +985,7 @@ local_rattle: False
                                 [2, "Cd"],
                             ],
                             "distortion_parameters": {
+                                "distortion_increment": 0.25,
                                 "bond_distortions": [
                                     -0.5,
                                     -0.25,
@@ -983,7 +993,9 @@ local_rattle: False
                                     0.25,
                                     0.5,
                                 ],
-                                "rattle_stdev": 0.28333683853583164,
+                                "local_rattle": False,
+                                "mc_rattle_parameters":
+                                    {"stdev": 0.28333683853583164}
                             },
                         },
                     },
@@ -2785,7 +2797,7 @@ Chosen VASP error message: {error_string}
         defect_name = "v_Ti"
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd": {
+                "v_Cd_s0": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -2832,10 +2844,10 @@ Chosen VASP error message: {error_string}
             )
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png"))
         )
         if w:
             [
@@ -3031,10 +3043,10 @@ Chosen VASP error message: {error_string}
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_s0_-1.png"))
         )
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
@@ -3056,7 +3068,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        defect = "v_Cd"  # in example results
+        defect = "v_Cd_s0"  # in example results
         self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 0)
 
         self.assertIn(
@@ -3078,15 +3090,18 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}"
+            f"/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}"
+            f"/{defect}_-2/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/{defect}_-1/Bond_Distortion_-60.0%_from_0\n",
+            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/"
+            f"{defect}_-1/Bond_Distortion_-60.0%_from_0\n",
             result.output,
         )
         vac_ti = "v_Ti"
@@ -3112,13 +3127,13 @@ Chosen VASP error message: {error_string}
         # test "*High_Energy*" ignored and doesn't cause errors
         if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-48.0%_High_Energy"
             )
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-60.0%"),
+                os.path.join(self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-60.0%"),
                 os.path.join(
-                    self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                    self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-48.0%_High_Energy"
                 ),
             )
         with warnings.catch_warnings(record=True) as w:
@@ -3142,12 +3157,14 @@ Chosen VASP error message: {error_string}
             result.output,
         )
         self.assertIn(
-            f"Writing low-energy distorted structure to {self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_20.0%_from_-1\n",
+            f"Writing low-energy distorted structure to"
+            f" {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
             result.output,
         )
         self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/v_Cd_-2,"
-            f" so just writing distorted POSCAR file to {self.EXAMPLE_RESULTS}/v_Cd_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
+            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/{defect}_-2,"
+            f" so just writing distorted POSCAR file to "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)
@@ -3321,11 +3338,11 @@ Chosen VASP error message: {error_string}
         defect = "vac_1_Cd_0"  # in self.VASP_CDTE_DATA_DIR
         if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-48.0%_High_Energy"
             )
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-60.0%"),
                 os.path.join(
                     self.VASP_CDTE_DATA_DIR,
                     f"{defect}/Bond_Distortion_-48.0%_High_Energy",

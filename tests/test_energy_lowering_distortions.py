@@ -734,8 +734,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
         struct_rattled = distortions.rattle(struct, stdev=0.35)
         struct_rattled.to(
-            "POSCAR",
-            f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR",
+            fmt="POSCAR",
+            filename=f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR",
         )
 
         defect_charges_dict = {
