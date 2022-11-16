@@ -231,8 +231,8 @@ def snb():
     "--name",
     "-n",
     help="Defect name for folder and metadata generation. Defaults to "
-    "pymatgen standard: '{Defect Type}_mult{Supercell "
-    "Multiplicity}'",
+    "'{Defect.name}_m{Defect.multiplicity}' for interstitials and "
+    "'{Defect.name}_s{Defect.defect_site_index}' for vacancies and substitutions.",
     default=None,
     type=str,
 )
@@ -390,8 +390,6 @@ def generate(
     Dist = input.Distortions(
         defects={
             name: defect_object,  # So that user can specify defect name.
-            # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
-            # names would be the same)
         },
         padding=padding,
         **user_settings,

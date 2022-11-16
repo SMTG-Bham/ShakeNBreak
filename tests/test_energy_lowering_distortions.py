@@ -898,7 +898,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         mock_print.assert_any_call(
             "vac_1_Cd_-3: Energy difference between minimum, found with Rattled_from_-2 bond "
             "distortion, and unperturbed: -0.15 eV."
-        )  # Fails on GA?
+        )
         # "has also been found" not in any mock_print call (i.e. Rattled_from_-2 in
         # `vac_1_Cd_-1`directory not compared to Rattled in `vac_1_Cd_-2` directory)
         self.assertFalse(
