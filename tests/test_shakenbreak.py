@@ -209,32 +209,20 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                     defect_charges_dict
                 )
             )
-            mock_print.assert_any_call(
-                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
-                "and unperturbed: -0.76 eV."
-            )
-            mock_print.assert_any_call(
-                "Comparing structures to specified ref_structure (Cd31 Te32)..."
-            )
-            mock_print.assert_any_call(
-                "\nComparing and pruning defect structures across charge states..."
-            )
-            # TODO: check this!!
-            # mock_print.assert_any_call(
-            #     "Low-energy distorted structure for vac_1_Cd_-1 already "
-            #     "found with charge states [0], storing together."
-            # )
-            print(mock_print.call_args_list)
-            mock_print.not_called_with(
-                "Low-energy distorted structure for vac_1_Cd_-1 already "
-                "found with charge states [0], storing together."
-            )  # not called because -1 groundstate is -55.0%_from_0 (i.e. imported from 0)
-
-        mock_print.not_called_with(
-            "Ground-state structure found for vac_1_Cd with charges [-2] has also "
-            "been found for charge state -1 (according to structure matching). "
-            "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
-        )  # not called because -2 groundstate is -7.5%_from_-1 (i.e. imported from -1)
+        mock_print.assert_any_call(
+            "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
+            "and unperturbed: -0.76 eV."
+        )
+        mock_print.assert_any_call(
+            "Comparing structures to specified ref_structure (Cd31 Te32)..."
+        )
+        mock_print.assert_any_call(
+            "\nComparing and pruning defect structures across charge states..."
+        )
+        mock_print.assert_any_call(
+            "Low-energy distorted structure for vac_1_Cd_-1 already "
+            "found with charge states [0], storing together."
+        )
 
         # Test that energy_lowering_distortions parsing functions run ok if run on folders where
         # we've already done _some_ re-tests from other structures (-55.0%_from_0 for -1 but not

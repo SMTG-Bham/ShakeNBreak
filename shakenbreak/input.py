@@ -1727,13 +1727,15 @@ class Distortions:
         self._mc_rattle_kwargs = mc_rattle_kwargs
 
         # Create dictionary to keep track of the bond distortions applied
+        rattle_parameters = self._mc_rattle_kwargs.copy()
+        rattle_parameters["stdev"] = self.stdev
         self.distortion_metadata = {
             "distortion_parameters": {
                 "distortion_increment": self.distortion_increment,  # None if user specified
                 # bond_distortions
                 "bond_distortions": self.bond_distortions,
-                "rattle_stdev": self.stdev,
                 "local_rattle": self.local_rattle,
+                "mc_rattle_parameters": rattle_parameters,
             },
             "defects": {},
         }  # dict with distortion parameters, useful for posterior analysis
@@ -1889,16 +1891,20 @@ class Distortions:
             distortion_metadata["defects"][defect_name][
                 "defect_site_index"
             ] = defect_site_index  # store site index of defect if not vacancy
+        rattle_parameters = self._mc_rattle_kwargs.copy()
+        rattle_parameters["stdev"] = self.stdev
         distortion_metadata["defects"][defect_name]["charges"].update(
             {
                 int(charge): {
                     "num_nearest_neighbours": num_nearest_neighbours,
                     "distorted_atoms": distorted_atoms,
-                    "distortion_parameters": {
+                    "distortion_parameters": {  # store distortion parameters used for each charge
+                        # state, in case posterior runs use different settings for certain defects
+                        "distortion_increment": self.distortion_increment,  # None if user specified
+                        # bond_distortions
                         "bond_distortions": self.bond_distortions,
-                        # store distortions used for each charge state in case posterior runs
-                        # use finer mesh for only certain defects
-                        "rattle_stdev": self.stdev,
+                        "local_rattle": self.local_rattle,
+                        "mc_rattle_parameters": rattle_parameters,
                     },
                 }
             }

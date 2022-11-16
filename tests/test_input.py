@@ -140,7 +140,7 @@ class InputTestCase(unittest.TestCase):
             "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 2,
             "distorted_atoms": [(10 + 1, "Cd"), (22 + 1, "Cd")],  # +1 because
-            # interstitial is added at the beggining of the structure
+            # interstitial is added at the beginning of the structure
             "defect_site_index": 1,
         }
         self.Int_Cd_2_NN_10_distortion_parameters = {
@@ -157,7 +157,7 @@ class InputTestCase(unittest.TestCase):
                 (38 + 1, "Te"),
                 (54 + 1, "Te"),
                 (62 + 1, "Te"),
-                # +1 because interstitial is added at the beggining of the structure
+                # +1 because interstitial is added at the beginning of the structure
             ],
             "defect_site_index": 1,
         }
@@ -474,9 +474,8 @@ class InputTestCase(unittest.TestCase):
         )
         Int_Cd_2_distorted_dict["distorted_structure"].remove_oxidation_states()
         Int_Cd_2_distorted_dict["undistorted_structure"].remove_oxidation_states()
-        # With pymatgen-analysis-defects, interstitial is added at the beggining
-        # (rather than at the end) -
-        # so we need to shift all indexes + 1
+        # With pymatgen-analysis-defects, interstitial is added at the beginning
+        # (rather than at the end) - so we need to shift all indexes + 1
         output["distorted_atoms"] = [(11, "Cd"), (23, "Cd")]
         output["defect_site_index"] = 1
         np.testing.assert_equal(Int_Cd_2_distorted_dict, output)
@@ -530,7 +529,7 @@ class InputTestCase(unittest.TestCase):
                 (62 + 1, "Te"),
             ],
         )
-        # Interstitial is added at the beggining - shift all indexes + 1
+        # Interstitial is added at the beginning - shift all indexes + 1
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: 1\n"
             + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
@@ -933,7 +932,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
-
     def test_update_defect_dict(self):
         # basic usage of this function has been implicitly tested already, so just test extreme
         # case of four identical defect names
@@ -1074,94 +1072,94 @@ class InputTestCase(unittest.TestCase):
 
         # Use customised names for defects
 
-        # dist = input.Distortions(
-        #     self.cdte_defects,
-        #     oxidation_states=oxidation_states,
-        #     bond_distortions=bond_distortions,
-        #     local_rattle=False,
-        #     stdev=0.25,  # old default
-        #     seed=42,  # old default
-        # )
-        # with patch("builtins.print") as mock_print:
-        #     _, distortion_metadata = dist.write_vasp_files(
-        #         incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-        #         verbose=False,
-        #     )
-        #
-        # # check if expected folders were created:
-        # self.assertTrue(
-        #     set(self.cdte_defect_folders_old_names).issubset(set(os.listdir()))
-        # )
-        # # check expected info printing:
-        # mock_print.assert_any_call(
-        #     "Applying ShakeNBreak...",
-        #     "Will apply the following bond distortions:",
-        #     "['-0.6', '-0.55', '-0.5', '-0.45', '-0.4', '-0.35', '-0.3', "
-        #     "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
-        #     "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
-        #     "'0.5', '0.55', '0.6'].",
-        #     "Then, will rattle with a std dev of 0.25 Å \n",
-        # )
-        # mock_print.assert_any_call(
-        #     "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
-        # )  # bold print
-        # mock_print.assert_any_call(
-        #     "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
-        #     "neighbours: 0"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect vac_1_Cd in charge state: -1. Number of distorted "
-        #     "neighbours: 1"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
-        # )
-        # # test correct distorted neighbours based on oxidation states:
-        # mock_print.assert_any_call(
-        #     "\nDefect vac_2_Te in charge state: -2. Number of distorted "
-        #     "neighbours: 4"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect as_1_Cd_on_Te in charge state: -2. Number of "
-        #     "distorted neighbours: 2"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect as_1_Te_on_Cd in charge state: -2. Number of "
-        #     "distorted neighbours: 2"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect Int_Cd_1 in charge state: 0. Number of distorted " "neighbours: 2"
-        # )
-        # mock_print.assert_any_call(
-        #     "\nDefect Int_Te_1 in charge state: -2. Number of distorted "
-        #     "neighbours: 0"
-        # )
-        #
-        # # check if correct files were created:
-        # V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        # self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        # V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
-        # self.assertEqual(
-        #     V_Cd_POSCAR.comment,
-        #     "-50.0%__num_neighbours=2__vac_1_Cd",
-        # )  # default
-        # self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # # but tested locally
-        #
-        # Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
-        # self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        # Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
-        # self.assertEqual(
-        #     Int_Cd_2_POSCAR.comment,
-        #     "-60.0%__num_neighbours=2__Int_Cd_2",
-        # )
-        # self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
-        #     Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
-        # )
+        dist = input.Distortions(
+            self.cdte_defects,
+            oxidation_states=oxidation_states,
+            bond_distortions=bond_distortions,
+            local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
+        )
+        with patch("builtins.print") as mock_print:
+            _, distortion_metadata = dist.write_vasp_files(
+                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                verbose=False,
+            )
+
+        # check if expected folders were created:
+        self.assertTrue(
+            set(self.cdte_defect_folders_old_names).issubset(set(os.listdir()))
+        )
+        # check expected info printing:
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.6', '-0.55', '-0.5', '-0.45', '-0.4', '-0.35', '-0.3', "
+            "'-0.25', '-0.2', '-0.15', '-0.1', '-0.05', '0.0', '0.05', "
+            "'0.1', '0.15', '0.2', '0.25', '0.3', '0.35', '0.4', '0.45', "
+            "'0.5', '0.55', '0.6'].",
+            "Then, will rattle with a std dev of 0.25 Å \n",
+        )
+        mock_print.assert_any_call(
+            "\033[1m" + "\nDefect: vac_1_Cd" + "\033[0m"
+        )  # bold print
+        mock_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        )
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: -2. Number of distorted "
+            "neighbours: 0"
+        )
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: -1. Number of distorted "
+            "neighbours: 1"
+        )
+        mock_print.assert_any_call(
+            "\nDefect vac_1_Cd in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        # test correct distorted neighbours based on oxidation states:
+        mock_print.assert_any_call(
+            "\nDefect vac_2_Te in charge state: -2. Number of distorted "
+            "neighbours: 4"
+        )
+        mock_print.assert_any_call(
+            "\nDefect as_1_Cd_on_Te in charge state: -2. Number of "
+            "distorted neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect as_1_Te_on_Cd in charge state: -2. Number of "
+            "distorted neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Int_Cd_1 in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Int_Te_1 in charge state: -2. Number of distorted "
+            "neighbours: 0"
+        )
+
+        # check if correct files were created:
+        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
+        self.assertEqual(
+            V_Cd_POSCAR.comment,
+            "-50.0%__num_neighbours=2__vac_1_Cd",
+        )  # default
+        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
+        # but tested locally
+
+        Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        self.assertEqual(
+            Int_Cd_2_POSCAR.comment,
+            "-60.0%__num_neighbours=2__Int_Cd_2",
+        )
+        self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
+            Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
+        )
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
@@ -1261,8 +1259,8 @@ class InputTestCase(unittest.TestCase):
                 "distortion_parameters": {
                     "distortion_increment": 0.25,
                     "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
-                    "rattle_stdev": 0.25,
                     "local_rattle": False,
+                    "mc_rattle_parameters": {"rattle_stdev": 0.25},
                 },
                 "defects": {
                     "Int_Cd_2": {
@@ -1279,6 +1277,7 @@ class InputTestCase(unittest.TestCase):
                                     (39, "Te"),
                                 ],  # Defect added at index 0
                                 "distortion_parameters": {
+                                    "distortion_increment": 0.25,
                                     "bond_distortions": [
                                         -0.5,
                                         -0.25,
@@ -1286,7 +1285,8 @@ class InputTestCase(unittest.TestCase):
                                         0.25,
                                         0.5,
                                     ],
-                                    "rattle_stdev": 0.25,
+                                    "local_rattle": False,
+                                    "mc_rattle_parameters": {"rattle_stdev": 0.25},
                                 },
                             },
                         },
@@ -1299,6 +1299,7 @@ class InputTestCase(unittest.TestCase):
                                 "num_nearest_neighbours": 2,
                                 "distorted_atoms": [[33, "Te"], [42, "Te"]],
                                 "distortion_parameters": {
+                                    "distortion_increment": None,
                                     "bond_distortions": [
                                         -0.6,
                                         -0.55,
@@ -1326,7 +1327,8 @@ class InputTestCase(unittest.TestCase):
                                         0.55,
                                         0.6,
                                     ],
-                                    "rattle_stdev": 0.15,
+                                    "local_rattle": False,
+                                    "mc_rattle_parameters": {"rattle_stdev": 0.15},
                                 },
                             },
                         },
@@ -1528,7 +1530,6 @@ class InputTestCase(unittest.TestCase):
         mock_print.assert_any_call(
             "\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m"
         )
-
         vacancies_dist_metadata = loadfn(
             f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json"
         )
@@ -2105,10 +2106,7 @@ class InputTestCase(unittest.TestCase):
             {"Int_Cd_2": int_Cd_2},
             bond_distortions=[
                 -0.6,
-            ],  # zero electron change
-            local_rattle=False,
-            stdev=0.28333683853583164,  # 10% of CdTe bond length, default
-            seed=40,  # Seed used to generate test structure
+            ],
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
@@ -2511,9 +2509,11 @@ class InputTestCase(unittest.TestCase):
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
-        mock_print.assert_any_call("Defect charge states will be set to the range: 0 – {Defect "
-                                   "oxidation state}, with a `padding = 1` on either side of this "
-                                   "range.")
+        mock_print.assert_any_call(
+            "Defect charge states will be set to the range: 0 – {Defect "
+            "oxidation state}, with a `padding = 1` on either side of this "
+            "range."
+        )
         self.assertDictEqual(
             dist.defects_dict, {"v_Cd_s0": self.cdte_defects["vac_1_Cd"]}
         )
