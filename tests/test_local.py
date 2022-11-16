@@ -271,7 +271,7 @@ class DistortionLocalTestCase(unittest.TestCase):
     def test_create_vasp_input(self):
         """Test create_vasp_input function for INCARs and POTCARs"""
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
-            copy.deepcopy(self.cdte_defect_dict)
+            copy.deepcopy(self.cdte_doped_defect_dict)
         )
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
@@ -535,7 +535,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # distorted neighbours and their identities
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd": {
+                "v_Cd_s0": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -577,13 +577,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png"))
         )
         compare_images(
-            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"),
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
@@ -595,19 +595,19 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         # generate docs example plots:
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/v_Cd_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0"
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0"
         )
         for i in range(1,7):
             shutil.copyfile(
-                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Unperturbed/CONTCAR",
-                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_{i}0.0%/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Unperturbed/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_{i}0.0%/CONTCAR",
             )
-        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
+        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
         energies_dict["distortions"][-0.5] = energies_dict["distortions"][-0.6]
-        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
+        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
         shutil.copyfile(
-            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-60.0%/CONTCAR",
-            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-60.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-50.0%/CONTCAR",
         )
 
         result = runner.invoke(
@@ -615,7 +615,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             [
                 "plot",
                 "-d",
-                "v_Cd_0",
+                "v_Cd_s0_0",
                 "-cb",
                 "-p",
                 self.EXAMPLE_RESULTS,
@@ -623,23 +623,24 @@ class DistortionLocalTestCase(unittest.TestCase):
                 "svg",
             ],
         )
-        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg", "../docs/v_Cd_0_colorbar.svg")
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg",
+                        "../docs/v_Cd_s0_0_colorbar.svg")
         result = runner.invoke(
             snb,
             [
                 "plot",
                 "-d",
-                "v_Cd_0",
+                "v_Cd_s0_0",
                 "-p",
                 self.EXAMPLE_RESULTS,
                 "-f",
                 "svg",
             ],
         )
-        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg", "../docs/v_Cd_0.svg")
-        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_0")
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg", "../docs/v_Cd_s0_0.svg")
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0")
         shutil.move(
-            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0", f"{self.EXAMPLE_RESULTS}/v_Cd_0"
+            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0"
         )
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()

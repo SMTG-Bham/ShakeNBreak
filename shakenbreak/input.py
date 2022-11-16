@@ -2448,8 +2448,8 @@ class Distortions:
                 ):
                     _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
                     struct.to(
-                        "cif",
-                        f"{output_path}/{defect_name}_{charge}/"
+                        fmt="cif",
+                        filename=f"{output_path}/{defect_name}_{charge}/"
                         + f"{dist}/structure.cif",
                     )
                     if not write_structures_only and cp2k_input:
