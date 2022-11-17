@@ -822,6 +822,8 @@ class InputTestCase(unittest.TestCase):
                 incar_settings=kwarged_incar_settings,
             )
         user_warnings = [warning for warning in w if warning.category == UserWarning]
+        print(user_warnings)  # failing on GH actions, check
+        print([warning.message for warning in user_warnings])
         self.assertEqual(len(user_warnings), 1)
         self.assertTrue(  # here we get this warning because no Unperturbed structures were
             # written so couldn't be compared
@@ -1255,137 +1257,177 @@ class InputTestCase(unittest.TestCase):
                 verbose=True,
             )
 
-            kwarged_Int_Cd_2_dict = {
-                "distortion_parameters": {
-                    "distortion_increment": 0.25,
-                    "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
-                    "local_rattle": False,
-                    "mc_rattle_parameters": {"rattle_stdev": 0.25},
-                },
-                "defects": {
-                    "Int_Cd_2": {
-                        "unique_site": self.Int_Cd_2_dict[
-                            "bulk_supercell_site"
-                        ].frac_coords,
-                        "charges": {
-                            1: {
-                                "num_nearest_neighbours": 4,
-                                "distorted_atoms": [
-                                    (11, "Cd"),
-                                    (23, "Cd"),
-                                    (30, "Cd"),
-                                    (39, "Te"),
-                                ],  # Defect added at index 0
-                                "distortion_parameters": {
-                                    "distortion_increment": 0.25,
-                                    "bond_distortions": [
-                                        -0.5,
-                                        -0.25,
-                                        0.0,
-                                        0.25,
-                                        0.5,
-                                    ],
-                                    "local_rattle": False,
-                                    "mc_rattle_parameters": {"rattle_stdev": 0.25},
-                                },
+        kwarged_Int_Cd_2_dict = {
+            "distortion_parameters": {
+                "distortion_increment": 0.25,
+                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                "local_rattle": False,
+                "mc_rattle_parameters": {"stdev": 0.25, "seed": 42},
+            },
+            "defects": {
+                "Int_Cd_2": {
+                    "unique_site": self.Int_Cd_2_dict[
+                        "bulk_supercell_site"
+                    ].frac_coords,
+                    "charges": {
+                        1: {
+                            "num_nearest_neighbours": 4,
+                            "distorted_atoms": [
+                                (11, "Cd"),
+                                (23, "Cd"),
+                                (30, "Cd"),
+                                (39, "Te"),
+                            ],  # Defect added at index 0
+                            "distortion_parameters": {
+                                "distortion_increment": 0.25,
+                                "bond_distortions": [
+                                    -0.5,
+                                    -0.25,
+                                    0.0,
+                                    0.25,
+                                    0.5,
+                                ],
+                                "local_rattle": False,
+                                "mc_rattle_parameters": {"stdev": 0.25, "seed": 42},
                             },
                         },
-                        "defect_site_index": 1,
-                    },  # Defect added at index 0
-                    "vac_1_Cd": {
-                        "unique_site": [0.0, 0.0, 0.0],
-                        "charges": {
-                            0: {
-                                "num_nearest_neighbours": 2,
-                                "distorted_atoms": [[33, "Te"], [42, "Te"]],
-                                "distortion_parameters": {
-                                    "distortion_increment": None,
-                                    "bond_distortions": [
-                                        -0.6,
-                                        -0.55,
-                                        -0.5,
-                                        -0.45,
-                                        -0.4,
-                                        -0.35,
-                                        -0.3,
-                                        -0.25,
-                                        -0.2,
-                                        -0.15,
-                                        -0.1,
-                                        -0.05,
-                                        0.0,
-                                        0.05,
-                                        0.1,
-                                        0.15,
-                                        0.2,
-                                        0.25,
-                                        0.3,
-                                        0.35,
-                                        0.4,
-                                        0.45,
-                                        0.5,
-                                        0.55,
-                                        0.6,
-                                    ],
-                                    "local_rattle": False,
-                                    "mc_rattle_parameters": {"rattle_stdev": 0.15},
+                    },
+                    "defect_site_index": 1,
+                },  # Defect added at index 0
+                "vac_1_Cd": {
+                    "unique_site": [0.0, 0.0, 0.0],
+                    "charges": {
+                        0: {
+                            "num_nearest_neighbours": 2,
+                            "distorted_atoms": [[33, "Te"], [42, "Te"]],
+                            "distortion_parameters": {
+                                "distortion_increment": None,
+                                "bond_distortions": [
+                                    -0.6,
+                                    -0.55,
+                                    -0.5,
+                                    -0.45,
+                                    -0.4,
+                                    -0.35,
+                                    -0.3,
+                                    -0.25,
+                                    -0.2,
+                                    -0.15,
+                                    -0.1,
+                                    -0.05,
+                                    0.0,
+                                    0.05,
+                                    0.1,
+                                    0.15,
+                                    0.2,
+                                    0.25,
+                                    0.3,
+                                    0.35,
+                                    0.4,
+                                    0.45,
+                                    0.5,
+                                    0.55,
+                                    0.6,
+                                ],
+                                "local_rattle": False,
+                                "mc_rattle_parameters": {
+                                    "stdev": 0.15,
+                                    "width": 0.3,
+                                    "max_attempts": 10000,
+                                    "max_disp": 1.0,
+                                    "seed": 20,
+                                    "d_min": 2.1250262890187375,
+                                    "nbr_cutoff": 3.4,
+                                    "n_iter": 3,
+                                    "active_atoms": np.array(
+                                        [
+                                            0,
+                                            1,
+                                            2,
+                                            3,
+                                            4,
+                                            5,
+                                            6,
+                                            7,
+                                            8,
+                                            9,
+                                            10,
+                                            11,
+                                            12,
+                                            13,
+                                            14,
+                                            15,
+                                            16,
+                                            17,
+                                            18,
+                                            19,
+                                            20,
+                                            21,
+                                            22,
+                                            23,
+                                            24,
+                                            25,
+                                            26,
+                                            27,
+                                            28,
+                                            29,
+                                            30,
+                                        ]
+                                    ),
                                 },
                             },
                         },
                     },
                 },
-            }
-            np.testing.assert_equal(
-                distortion_metadata["defects"]["Int_Cd_2"]["charges"][
-                    1
-                ],  # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1],
-            )
-            self.assertTrue(os.path.exists("distortion_metadata.json"))
-            # check defects from old metadata file are in new metadata file
-            metadata = loadfn("distortion_metadata.json")
-            for defect in metadata["defects"].values():
-                defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
-                # json converts integer keys to strings
-            metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"] = [
-                tuple(x)
-                for x in metadata["defects"]["Int_Cd_2"]["charges"][1][
-                    "distorted_atoms"
-                ]
-            ]
-            np.testing.assert_equal(
-                metadata,  # check defect in distortion_defect_dict
-                kwarged_Int_Cd_2_dict,
-            )
+            },
+        }
+        np.testing.assert_equal(
+            distortion_metadata["defects"]["Int_Cd_2"]["charges"][
+                1
+            ],  # check defect in distortion_defect_dict
+            kwarged_Int_Cd_2_dict["defects"]["Int_Cd_2"]["charges"][1],
+        )
+        self.assertTrue(os.path.exists("distortion_metadata.json"))
+        # check defects from old metadata file are in new metadata file
+        metadata = loadfn("distortion_metadata.json")
+        for defect in metadata["defects"].values():
+            defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
+            # json converts integer keys to strings
+        metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"] = [
+            tuple(x)
+            for x in metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"]
+        ]
+        np.testing.assert_equal(
+            metadata,  # check defect in distortion_defect_dict
+            kwarged_Int_Cd_2_dict,
+        )
 
-            # check expected info printing:
-            mock_Int_Cd_2_print.assert_any_call(
-                "Applying ShakeNBreak...",
-                "Will apply the following bond distortions:",
-                "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
-                "Then, will rattle with a std dev of 0.25 Å \n",
-            )
-            mock_Int_Cd_2_print.assert_any_call(
-                "\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m"
-            )
-            mock_Int_Cd_2_print.assert_any_call(
-                "\033[1m"
-                + "Number of missing electrons in neutral state: 3"
-                + "\033[0m"
-            )
-            mock_Int_Cd_2_print.assert_any_call(
-                "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 4"
-            )
-            mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
-            mock_Int_Cd_2_print.assert_any_call(
-                f"\tDefect Site Index / Frac Coords: 1\n"
-                + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
-                + "(2.71, 30, 'Cd'), (2.71, 39, 'Te')]\n"
-                + "            Distorted Neighbour Distances:\n\t[(1.36, 11, 'Cd'), (1.36, 23, 'Cd'), "
-                + "(1.36, 30, 'Cd'), (1.36, 39, 'Te')]"
-            )  # Defect added at index 0, so atom indexing + 1 wrt original structure
-            # check correct folder was created:
-            self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
+        # check expected info printing:
+        mock_Int_Cd_2_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
+            "Then, will rattle with a std dev of 0.25 Å \n",
+        )
+        mock_Int_Cd_2_print.assert_any_call(
+            "\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m"
+        )
+        mock_Int_Cd_2_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 3" + "\033[0m"
+        )
+        mock_Int_Cd_2_print.assert_any_call(
+            "\nDefect Int_Cd_2 in charge state: +1. Number of distorted neighbours: 4"
+        )
+        mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
+        mock_Int_Cd_2_print.assert_any_call(
+            f"\tDefect Site Index / Frac Coords: 1\n"
+            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
+            + "(2.71, 30, 'Cd'), (2.71, 39, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.36, 11, 'Cd'), (1.36, 23, 'Cd'), "
+            + "(1.36, 30, 'Cd'), (1.36, 39, 'Te')]"
+        )  # Defect added at index 0, so atom indexing + 1 wrt original structure
+        # check correct folder was created:
+        self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
 
         # check correct output for "extra" electrons and positive charge state:
         with patch("builtins.print") as mock_Int_Cd_2_print:
