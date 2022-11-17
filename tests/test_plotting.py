@@ -30,7 +30,6 @@ _DATA_DIR = os.path.join(_file_path, "data")
 
 class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
-
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.organized_V_Cd_distortion_data = loadfn(
@@ -88,6 +87,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             if file.endswith(".svg") or file.endswith(".png"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/{file}")
         if_present_rm("Int_Se_1_6.png")
+        if_present_rm("vac_1_Cd_0.png")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
@@ -683,7 +683,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
         # test no print statements with verbose = False
         plotting._save_plot(
-            fig=fig, defect_name=defect_name, output_path="."
+            fig=fig, defect_name=defect_name, output_path=".", save_format="png"
         )
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
@@ -691,6 +691,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 fig=fig,
                 defect_name=defect_name,
                 output_path=".",
+                save_format="png",
                 verbose=False,
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
