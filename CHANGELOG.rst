@@ -1,6 +1,23 @@
 Change Log
 ==========
 
+v22.11.17
+--------
+
+Main changes:
+
+- Refactor :code:`Distortions()` to a list or simple-format dict of :code:`Defect` objects as input.
+  Same for :code:`Distortions.from_structures()`
+- Update defect naming to :code:`{Defect.name}_s{Defect.defect_site_index}` for vacancies/substitutions and
+  :code:`{Defect.name}_m{Defect.multiplicity}` for interstitials. Append "a", "b", "c" etc in cases of inequivalent
+  defects
+- Make :code:`ShakeNBreak` compatible with most recent :code:`pymatgen` and :code:`pymatgen-analysis-defects` packages.
+- Update legend format in plots and site index/multiplicity labelling, make default format png.
+- Update default charge state setting to match :code:`pymatgen-analysis-defects` oxi state + padding approach.
+- A lot of additional warning and error catches.
+- Miscellaneous warnings and docs updates.
+
+
 v22.11.7
 --------
 
