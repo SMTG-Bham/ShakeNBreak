@@ -35,6 +35,8 @@ If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudo
 ```
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). More details given [here](https://pymatgen.org/installation.html#potcar-setup).
 
+The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)) will be installed with the package, and will be used by default for plotting.
+
 ### Developer installation
 For development work, ShakeNBreak can also be installed from a copy of the source directory:
 
