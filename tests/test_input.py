@@ -881,14 +881,14 @@ class InputTestCase(unittest.TestCase):
                 distorted_defect_dict=V_Cd_charged_defect_dict,
                 incar_settings={},
             )
-        user_warnings = [warning for warning in w if warning.category == UserWarning]
-        self.assertEqual(len(user_warnings), 1)
-        self.assertTrue(  # here we get this warning because no Unperturbed structures were
-            # written so couldn't be compared
-            f"The previously-generated defect folder vac_1_Cdb_0 in "
-            f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect structure "
-            f"as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be "
-            f"overwritten." in str(user_warnings[-1].message)
+        self.assertTrue(
+            any(
+                f"The previously-generated defect folder vac_1_Cdb_0 in "
+                f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect "
+                f"structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in "
+                f"vac_1_Cdb_0 will be overwritten." in str(warning.message)
+                for warning in w
+            )
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         self.assertTrue(os.path.exists("vac_1_Cda_0"))
@@ -911,16 +911,16 @@ class InputTestCase(unittest.TestCase):
                 distorted_defect_dict=V_Cd_charged_defect_dict,
                 incar_settings={},
             )
-        user_warnings = [warning for warning in w if warning.category == UserWarning]
-        self.assertEqual(len(user_warnings), 1)
-        self.assertTrue(  # here we get this warning because no Unperturbed structures were
-            # written so couldn't be compared
-            f"Previously-generated defect folders (vac_1_Cdb_0...) exist in "
-            f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structures "
-            f"could not be matched to the current defect species: vac_1_Cd_0. These are "
-            f"assumed to be inequivalent defects, so ShakeNBreak files for the current defect "
-            f"will be saved to vac_1_Cdc_0 to prevent overwriting."
-            in str(user_warnings[-1].message)
+        self.assertTrue(
+            any(
+                f"Previously-generated defect folders (vac_1_Cdb_0...) exist in "
+                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structures "
+                f"could not be matched to the current defect species: vac_1_Cd_0. These are "
+                f"assumed to be inequivalent defects, so ShakeNBreak files for the current defect "
+                f"will be saved to vac_1_Cdc_0 to prevent overwriting."
+                in str(warning.message)
+                for warning in w
+            )
         )
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         self.assertTrue(os.path.exists("vac_1_Cda_0"))
