@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import unittest
 import warnings
@@ -501,7 +502,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="v_Cd_0", output_path=self.EXAMPLE_RESULTS
+            defect_species="v_Cd_s0_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
             max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict, verbose=True)
@@ -921,7 +922,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 orbital_projections=True,
             )
-            self.assertAlmostEqual(
+            self.assertEqual(
                 str(w[-1].message),
                 "Could not find defect vac_1_Ti_0 in distortion_metadata.json file. Will not "
                 "include distance between defect and sites with significant magnetization.",
@@ -966,6 +967,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
 
         # Non existent structure
+        os.mkdir(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
+        shutil.copyfile(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
+                        f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR")
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
                 defect_species="vac_1_Ti_0",
@@ -976,11 +980,34 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-            self.assertEqual(
-                str(w[-1].message),
-                "Structure for vac_1_Ti_0 either not converged or not found. "
-                "Skipping magnetisation analysis.",
+        self.assertTrue(any("Structure for vac_1_Ti_0 either not converged or not found. Skipping "
+                            "magnetisation analysis." in str(warning.message) for warning in w))
+
+        # ISPIN = 1 OUTCAR:
+        shutil.copyfile(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/CONTCAR",
+                        f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/CONTCAR")
+        with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR") as f:
+            outcar_string = f.read()
+        ispin1_outcar_string = re.sub("ISPIN  =      2    spin polarized calculation?",
+                                      "ISPIN = 1", outcar_string)
+        with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR", "w") as f:
+            f.write(ispin1_outcar_string)
+        with warnings.catch_warnings(record=True) as w:
+            mags = analysis.get_site_magnetizations(
+                defect_species="vac_1_Ti_0",
+                output_path=os.path.join(self.DATA_DIR, "vasp"),
+                distortions=[
+                    0.2,
+                ],
+                threshold=0.3,
+                defect_site=[0.0, 0.16666666666666669, 0.25],
             )
+        self.assertTrue(any(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR is "
+                            f"from a "
+                            "non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
+                            "is not possible. Skipping." in str(warning.message) for warning in w))
+        if_present_rm(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
+
         # Non existent OUTCAR
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
@@ -992,7 +1019,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-            self.assertTrue("OUTCAR file not found in path" in str(w[-1].message))
+            self.assertTrue(any("OUTCAR file not found in path" in str(warning.message) for
+                                warning in w))
 
 
 if __name__ == "__main__":

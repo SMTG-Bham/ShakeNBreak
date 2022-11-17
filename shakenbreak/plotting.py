@@ -247,44 +247,51 @@ def _format_defect_name(
     def _check_matching_defect_format_with_site_num(
         element, name, pre_def_type_list, post_def_type_list
     ):
-        match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
-        if match:
-            items = match.groups()
-            for match_generator in [
-                (
-                    fstring in name
-                    for pre_def_type in pre_def_type_list
-                    for fstring in [
-                        f"{pre_def_type}{items[1]}{element}",
-                        f"{pre_def_type}{element}{items[1]}",
-                        f"{pre_def_type}{items[1]}_{element}",
-                        f"{pre_def_type}{element}_{items[1]}",
-                    ]
-                ),
-            ]:
-                if any(match_generator):
-                    return True, items[1]
+        for site_preposition in ["s", "m", "mult", ""]:
+            for site_postposition in [r"[a-z]", ""]:
+                match = re.match(
+                    r"([a-z_]+)("
+                    + site_preposition
+                    + r"[0-9]+"
+                    + site_postposition
+                    + r")",
+                    name,
+                    re.I,
+                )
 
-            for match_generator in [
-                (
-                    fstring in name
-                    for post_def_type in post_def_type_list
-                    for fstring in [
-                        f"{element}{items[1]}{post_def_type}",
-                        f"{items[1]}{element}{post_def_type}",
-                        f"{element}{items[1]}_{post_def_type}",
-                        f"{items[1]}_{element}{post_def_type}",
-                    ]
-                ),
-            ]:
-                if any(match_generator):
-                    return True, items[1]
+                if match:
+                    items = match.groups()
+                    for match_generator in [
+                        (
+                            fstring in name
+                            for pre_def_type in pre_def_type_list
+                            for fstring in [
+                                f"{pre_def_type}{items[1]}{element}",
+                                f"{pre_def_type}{element}{items[1]}",
+                                f"{pre_def_type}{items[1]}_{element}",
+                                f"{pre_def_type}{element}_{items[1]}",
+                            ]
+                        ),
+                    ]:
+                        if any(match_generator):
+                            return True, items[1].replace("mult", "m")
 
-            else:
-                return False, None
+                    for match_generator in [
+                        (
+                            fstring in name
+                            for post_def_type in post_def_type_list
+                            for fstring in [
+                                f"{element}{items[1]}{post_def_type}",
+                                f"{items[1]}{element}{post_def_type}",
+                                f"{element}{items[1]}_{post_def_type}",
+                                f"{items[1]}_{element}{post_def_type}",
+                            ]
+                        ),
+                    ]:
+                        if any(match_generator):
+                            return True, items[1].replace("mult", "m")
 
-        else:
-            return False, None
+        return False, None
 
     def _try_vacancy_interstitial_match(
         element,
@@ -313,7 +320,7 @@ def _format_defect_name(
                 post_vacancy_strings,
             )
             if match_found:
-                defect_name = f"$V_{{{element}_{site_num}}}^{{{charge}}}$"
+                defect_name = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
 
             else:
                 match_found, site_num = _check_matching_defect_format_with_site_num(
@@ -323,7 +330,7 @@ def _format_defect_name(
                     post_interstitial_strings,
                 )
                 if match_found:
-                    defect_name = f"{element}$_{{i_{site_num}}}^{{{charge}}}$"
+                    defect_name = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
 
         if (
             _check_matching_defect_format(
@@ -360,24 +367,36 @@ def _format_defect_name(
         if (
             defect_name and include_site_num_in_name
         ):  # if we have a match, check if we can add the site number
-            match = re.match(r"([a-z_]+)([0-9]+)", name, re.I)
-            if match:
-                items = match.groups()
-                if any(
-                    fstring in name
-                    for fstring in [
-                        f"{items[1]}_{substituting_element}_{orig_site_element}",
-                        f"{substituting_element}_{orig_site_element}_{items[1]}",
-                        f"{items[1]}_{substituting_element}_on_{orig_site_element}",
-                        f"{substituting_element}_on_{orig_site_element}_{items[1]}",
-                    ]
-                ):
-                    defect_name = (
-                        f"{substituting_element}$_{{{orig_site_element}_{items[1]}}}^"
-                        f"{{{charge}}}$"
+            for site_preposition in ["s", "m", "mult", ""]:
+                for site_postposition in [r"[a-z]", ""]:
+                    match = re.match(
+                        r"([a-z_]+)("
+                        + site_preposition
+                        + r"[0-9]+"
+                        + site_postposition
+                        + r")",
+                        name,
+                        re.I,
                     )
 
-        return defect_name
+                    if match:
+                        items = match.groups()
+                        if any(
+                            fstring in name
+                            for fstring in [
+                                f"{items[1]}_{substituting_element}_{orig_site_element}",
+                                f"{substituting_element}_{orig_site_element}_{items[1]}",
+                                f"{items[1]}_{substituting_element}_on_{orig_site_element}",
+                                f"{substituting_element}_on_{orig_site_element}_{items[1]}",
+                            ]
+                        ):
+                            defect_name = (
+                                f"{substituting_element}$_{{{orig_site_element}_{{{items[1]}}}}}^"
+                                f"{{{charge}}}$"
+                            )
+                            return defect_name.replace("mult", "m")
+
+        return defect_name.replace("mult", "m")
 
     def _defect_name_from_matching_elements(
         element_matches, name, include_site_num_in_name
@@ -1131,7 +1150,7 @@ def plot_all_defects(
     line_color: Optional[str] = None,
     add_title: Optional[bool] = True,
     save_plot: bool = True,
-    save_format: str = "svg",
+    save_format: str = "png",
     verbose: bool = True,
 ) -> dict:
     """
@@ -1179,7 +1198,7 @@ def plot_all_defects(
             (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plots (warnings and where they're saved).
 
@@ -1311,7 +1330,7 @@ def plot_defect(
     line_color: Optional[str] = None,
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: bool = True,
 ) -> Optional[Figure]:
     """
@@ -1373,7 +1392,7 @@ def plot_defect(
             (Default: True)
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: "svg")
+            (Default: "png")
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 
@@ -1533,7 +1552,7 @@ def plot_colorbar(
     output_path: Optional[str] = ".",
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: Optional[bool] = True,
 ) -> Optional[Figure]:
     """
@@ -1592,7 +1611,7 @@ def plot_colorbar(
             (Default: 'Energy (eV)')
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 
@@ -1659,6 +1678,7 @@ def plot_colorbar(
     )
 
     # Plotting
+    line = None  # to later check if line was plotted, for legend formatting
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
         if (
             "Rattled" in energies_dict["distortions"].keys()
@@ -1705,7 +1725,7 @@ def plot_colorbar(
             )
             if len(non_imported_sorted_indices) > 1:  # more than one point
                 # Plot line connecting points
-                ax.plot(
+                (line,) = ax.plot(
                     [sorted_distortions[i] for i in non_imported_sorted_indices],
                     [sorted_energies[i] for i in non_imported_sorted_indices],
                     ls="-",
@@ -1785,7 +1805,23 @@ def plot_colorbar(
             ],
         )
 
-        plt.legend(frameon=True).set_zorder(
+        # reformat 'line' legend handle to include 'im' datapoint handle
+        handles, labels = ax.get_legend_handles_labels()
+        # get handle and label that corresponds to line, if line present:
+        if line:
+            line_handle, line_label = [
+                (handle, label)
+                for handle, label in zip(handles, labels)
+                if label == legend_label
+            ][0]
+            # remove line handle and label from handles and labels
+            handles = [handle for handle in handles if handle != line_handle]
+            labels = [label for label in labels if label != line_label]
+            # add line handle and label to handles and labels, with datapoint handle
+            handles = [(im, line_handle)] + handles
+            labels = [line_label] + labels
+
+        plt.legend(handles, labels, scatteryoffsets=[0.5], frameon=True).set_zorder(
             100
         )  # make sure it's on top of the other points
 
@@ -1822,7 +1858,7 @@ def plot_datasets(
     linewidth: Optional[float] = None,
     save_plot: Optional[bool] = False,
     output_path: Optional[str] = ".",
-    save_format: Optional[str] = "svg",
+    save_format: Optional[str] = "png",
     verbose: Optional[bool] = True,
 ) -> Figure:
     """
@@ -1882,7 +1918,7 @@ def plot_datasets(
             (Default: ".")
         save_format (:obj:`str`):
             Format to save the plot as.
-            (Default: 'svg')
+            (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
 

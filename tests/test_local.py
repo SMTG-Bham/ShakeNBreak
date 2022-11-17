@@ -21,7 +21,7 @@ from matplotlib.testing.compare import compare_images
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import StructureMatcher
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar
+from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar, UnknownPotcarWarning
 
 from shakenbreak import input, vasp, cli
 from shakenbreak.cli import snb
@@ -66,44 +66,34 @@ class DistortionLocalTestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
     def setUp(self):
+        warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
-        self.cdte_defect_dict = loadfn(
+
+        # Refactor doped defect dict to dict of Defect() objects
+        self.cdte_doped_defect_dict = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
-        # Refactor doped defect dict to dict of Defect() objects
         self.cdte_defects = {
-            defect_type: [
-                cli.generate_defect_object(defect_dict, self.cdte_defect_dict["bulk"])
-                for defect_dict
-                in self.cdte_defect_dict[defect_type]
-            ] for defect_type in self.cdte_defect_dict.keys() if defect_type != "bulk"
-        }
-        # Use custom names (similar to DOPED/PyCDT)
-        self.cdte_named_defects = {
-            "vacancies": {
-                "vac_1_Cd": self.cdte_defects["vacancies"][0],
-                "vac_2_Te": self.cdte_defects["vacancies"][1],
-            },
-            "substitutions": {
-                "as_1_Cd_on_Te": self.cdte_defects["substitutions"][0],
-                "as_1_Te_on_Cd": self.cdte_defects["substitutions"][1],
-            },
-            "interstitials": {
-                "Int_Cd_1": self.cdte_defects["interstitials"][0],
-                "Int_Cd_2": self.cdte_defects["interstitials"][1],
-                "Int_Cd_3": self.cdte_defects["interstitials"][2],
-                "Int_Te_1": self.cdte_defects["interstitials"][3],
-                "Int_Te_2": self.cdte_defects["interstitials"][4],
-                "Int_Te_3": self.cdte_defects["interstitials"][5],
-            },
-        }
-        self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
-        self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+            defect_dict["name"]: cli.generate_defect_object(
+                single_defect_dict=defect_dict,
+                bulk_dict=self.cdte_doped_defect_dict["bulk"],
+            )
+            for defects_type, defect_dict_list in self.cdte_doped_defect_dict.items()
+            if "bulk" not in defects_type
+            for defect_dict in defect_dict_list
+        }  # with doped/PyCDT names
+
+        self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
+        self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
-        self.Int_Cd_2 = cli.generate_defect_object(self.Int_Cd_2_dict, self.cdte_defect_dict["bulk"])
+        self.V_Cd = cli.generate_defect_object(
+            self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"]
+        )
+        self.Int_Cd_2 = cli.generate_defect_object(
+            self.Int_Cd_2_dict, self.cdte_doped_defect_dict["bulk"]
+        )
 
         self.V_Cd_struc = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
@@ -269,24 +259,33 @@ class DistortionLocalTestCase(unittest.TestCase):
             ):
                 shutil.rmtree(i)
 
-        for defect_folder in os.listdir(self.EXAMPLE_RESULTS):
+        for defect_folder in [
+            dir for dir in os.listdir(self.EXAMPLE_RESULTS)
+            if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{dir}")
+        ]:
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect_folder}"):
                 if file.endswith(".png"):
                     os.remove(f"{self.EXAMPLE_RESULTS}/{defect_folder}/{file}")
-
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function for INCARs and POTCARs"""
         vasp_defect_inputs = vasp_input.prepare_vasp_defect_inputs(
-            copy.deepcopy(self.cdte_defect_dict)
+            copy.deepcopy(self.cdte_doped_defect_dict)
         )
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
             vasp_defect_inputs["vac_1_Cd_0"],
             self.V_Cd_minus0pt5_struc_rattled,
             "V_Cd Rattled",
         )
+        # make unperturbed defect entry:
+        V_Cd_unperturbed_dict = _update_struct_defect_dict(
+            vasp_defect_inputs["vac_1_Cd_0"],
+            self.V_Cd_struc,
+            "V_Cd Unperturbed",
+        )
         V_Cd_charged_defect_dict = {
+            "Unperturbed": V_Cd_unperturbed_dict,
             "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
@@ -356,7 +355,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
         dist = input.Distortions(
-            self.cdte_named_defects,
+            self.cdte_defects,
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             local_rattle=False,
@@ -425,11 +424,8 @@ class DistortionLocalTestCase(unittest.TestCase):
             "-50.0%__num_neighbours=2__vac_1_Cd",
         )  # default
         V_Cd_POSCAR.structure.remove_oxidation_states()
-        # sm = StructureMatcher()
-        # self.assertTrue(
-        #     sm.get_rms_dist(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)[0] < 0.1
-        # )
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        # V_Cd_minus0pt5_struc_rattled was with old default seed = 42 and stdev = 0.25
 
         # Check INCAR
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
@@ -465,9 +461,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         )
         struc = Int_Cd_2_POSCAR.structure
         struc.remove_oxidation_states()
-        self.assertEqual(
-            struc, self.Int_Cd_2_minus0pt6_struc_rattled
-        )
+        self.assertEqual(struc, self.Int_Cd_2_minus0pt6_struc_rattled)
 
         # check INCAR
         V_Cd_INCAR = Incar.from_file(V_Cd_minus50_folder + "/INCAR")
@@ -522,8 +516,9 @@ class DistortionLocalTestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    f"{defect}/{defect}.png")))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
+        )
         compare_images(
             os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Ti_0_cli_colorbar_disp.png",
@@ -540,7 +535,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # distorted neighbours and their identities
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd": {
+                "v_Cd_s0": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -578,14 +573,17 @@ class DistortionLocalTestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    f"{defect}/{defect}.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "v_Cd_0/v_Cd_0.png")))
-        self.assertTrue(os.path.exists(os.path.join(self.EXAMPLE_RESULTS,
-                                                    "v_Cd_-1/v_Cd_-1.png")))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
+        )
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
+        )
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png"))
+        )
         compare_images(
-            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"),
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
@@ -594,6 +592,56 @@ class DistortionLocalTestCase(unittest.TestCase):
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
             if "yaml" in file or "png" in file
         ]
+
+        # generate docs example plots:
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0"
+        )
+        for i in range(1,7):
+            shutil.copyfile(
+                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Unperturbed/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_{i}0.0%/CONTCAR",
+            )
+        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
+        energies_dict["distortions"][-0.5] = energies_dict["distortions"][-0.6]
+        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-60.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-50.0%/CONTCAR",
+        )
+
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "-d",
+                "v_Cd_s0_0",
+                "-cb",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "svg",
+            ],
+        )
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg",
+                        "../docs/v_Cd_s0_0_colorbar.svg")
+        result = runner.invoke(
+            snb,
+            [
+                "plot",
+                "-d",
+                "v_Cd_s0_0",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "svg",
+            ],
+        )
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg", "../docs/v_Cd_s0_0.svg")
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0")
+        shutil.move(
+            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0"
+        )
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
 
@@ -841,23 +889,23 @@ POTCAR:
 """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        defect_name = "v_Cd"  # pymatgen-analysis-defects default name
+        defect_name = "v_Cd_s0"  # SnB default name
         runner = CliRunner()
         result = runner.invoke(
-                snb,
-                [
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c 0",
-                    "-v",
-                    "--config",
-                    f"test_config.yml",
-                ],
-                catch_exceptions=False,
-            )
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-v",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertTrue(os.path.exists(f"./{defect_name}_0"))
         self.assertTrue(os.path.exists(f"./{defect_name}_0/Bond_Distortion_-50.0%"))
@@ -872,7 +920,7 @@ POTCAR:
                 os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}")
             )
         # Check POTCAR file
-        with open(f"Vac_Cd_mult32_0/Bond_Distortion_-50.0%/POTCAR") as myfile:
+        with open(f"{defect_name}_0/Bond_Distortion_-50.0%/POTCAR") as myfile:
             first_line = myfile.readline()
         self.assertIn("PAW_PBE Cd_GW", first_line)
         # Check KPOINTS file
@@ -885,32 +933,31 @@ POTCAR:
         self.assertEqual(incar.pop("IBRION"), 2)
         self.assertEqual(incar.pop("EDIFF"), 1e-5)
         self.assertEqual(incar.pop("ROPT"), "1e-3 1e-3")
-        # TODO: fix this
-        # Test custom name
-        # defect_name = "vac_1_Cd"
-        # runner = CliRunner()
-        # result = runner.invoke(
-        #     snb,
-        #     [
-        #         "generate",
-        #         "-d",
-        #         f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-        #         "-b",
-        #         f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-        #         "-c 0",
-        #         "-n",
-        #         "vac_1_Cd",
-        #         "--config",
-        #         f"test_config.yml",
-        #     ],
-        #     catch_exceptions=False,
-        # )
-        # cwd = os.getcwd()
-        # self.assertEqual(result.exit_code, 0)
-        # # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0"))
-        # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0/Bond_Distortion_-50.0%"))
-        # test warning when input file doesn't match expected format:
 
+        # Test custom name
+        defect_name = "vac_1_Cd"
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "-n",
+                "vac_1_Cd",
+                "--config",
+                f"test_config.yml",
+            ],
+            catch_exceptions=False,
+        )
+        cwd = os.getcwd()
+        self.assertEqual(result.exit_code, 0)
+        # self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0"))
+        self.assertTrue(os.path.exists(f"{cwd}/vac_1_Cd_0/Bond_Distortion_-50.0%"))
+
+        # test warning when input file doesn't match expected format:
         os.remove("distortion_metadata.json")
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
@@ -928,18 +975,29 @@ POTCAR:
                 ],
                 catch_exceptions=False,
             )
-        incar_dict = Incar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR").as_dict()
+        incar_dict = Incar.from_file(
+            f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR"
+        ).as_dict()
         self.assertEqual(incar_dict["IBRION"], 2)  # default setting
         # assert UserWarning about unparsed input file
         user_warnings = [warning for warning in w if warning.category == UserWarning]
-        self.assertEqual(len(user_warnings), 1)
-        self.assertEqual(
-            "Input file test_config.yml specified but no valid INCAR tags found. "
-            "Should be in the format of VASP INCAR file.",
-            str(user_warnings[-1].message),
+        self.assertEqual(len(user_warnings), 2)  # wrong INCAR format and overwriting folder
+        self.assertTrue(
+            any("Input file test_config.yml specified but no valid INCAR tags found. "
+            "Should be in the format of VASP INCAR file."
+            in str(warning.message) for warning in user_warnings)
+        )
+        self.assertTrue(  # here we get this warning because no Unperturbed structures were
+            # written so couldn't be compared
+            any(f"The previously-generated defect folder v_Cd_s0_0 in "
+            f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect structure "
+            f"as the current defect species: v_Cd_s0_0. ShakeNBreak files in v_Cd_s0_0 will be "
+            f"overwritten." in str(warning.message) for warning in user_warnings)
         )
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:
-            self.assertTrue(os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}"))
+            self.assertTrue(
+                os.path.exists(f"{defect_name}_0/Bond_Distortion_-50.0%/{file}")
+            )
 
 
 if __name__ == "__main__":

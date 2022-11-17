@@ -14,312 +14,11 @@ import numpy as np
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Element, Structure
+from pymatgen.core.structure import Element, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Incar
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
-
-
-def identify_defect(
-    defect_structure, bulk_structure, defect_coords=None, defect_index=None
-) -> Defect:
-    """
-    By comparing the defect and bulk structures, identify the defect present and its site in
-    the supercell, and generate a pymatgen defect object
-    (pymatgen.analysis.defects.core.Defect) from this.
-
-    Args:
-        defect_structure (:obj:`Structure`):
-            defect structure
-        bulk_structure (:obj:`Structure`):
-            bulk structure
-        defect_coords (:obj:`list`):
-            Fractional coordinates of the defect site in the supercell.
-        defect_index (:obj:`int`):
-            Index of the defect site in the supercell.
-
-    Returns: :obj:`Defect`
-    """
-    natoms_defect = len(defect_structure)
-    natoms_bulk = len(bulk_structure)
-    if natoms_defect == natoms_bulk - 1:
-        defect_type = "vacancy"
-    elif natoms_defect == natoms_bulk + 1:
-        defect_type = "interstitial"
-    elif natoms_defect == natoms_bulk:
-        defect_type = "substitution"
-    else:
-        raise ValueError(
-            f"Could not identify defect type from number of atoms in defect ({natoms_defect}) "
-            f"and bulk ({natoms_bulk}) structures. "
-            "ShakeNBreak CLI is currently only built for point defects, please contact the "
-            "developers if you would like to use the method for complex defects"
-        )
-
-    if defect_coords is not None:
-        if defect_index is None:
-            site_displacement_tol = (
-                0.01  # distance tolerance for site matching to identify defect, increases in
-                # jumps of 0.1 Å
-            )
-
-            def _possible_sites_in_sphere(structure, frac_coords, tol):
-                """Find possible sites in sphere of radius tol."""
-                return sorted(
-                    structure.get_sites_in_sphere(
-                        structure.lattice.get_cartesian_coords(frac_coords),
-                        tol,
-                        include_index=True,
-                    ),
-                    key=lambda x: x[1],
-                )
-
-            max_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_structure, defect_coords, 2.5
-            )
-            max_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_structure, defect_coords, 2.5
-            )
-            expanded_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_structure, defect_coords, 3.0
-            )
-            expanded_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_structure, defect_coords, 3.0
-            )
-
-            # there should be one site (including specie identity) which does not match between
-            # bulk and defect structures
-            def _remove_matching_sites(bulk_site_list, defect_site_list):
-                """Remove matching sites from bulk and defect structures."""
-                bulk_sites_list = list(bulk_site_list)
-                defect_sites_list = list(defect_site_list)
-                for defect_site in defect_sites_list:
-                    for bulk_site in bulk_sites_list:
-                        if (
-                            defect_site.distance(bulk_site) < 0.5
-                            and defect_site.specie == bulk_site.specie
-                        ):
-                            if bulk_site in bulk_sites_list:
-                                bulk_sites_list.remove(bulk_site)
-                            if defect_site in defect_sites_list:
-                                defect_sites_list.remove(defect_site)
-                return bulk_sites_list, defect_sites_list
-
-            non_matching_bulk_sites, _ = _remove_matching_sites(
-                max_possible_defect_sites_in_bulk_struc,
-                expanded_possible_defect_sites_in_defect_struc,
-            )
-            _, non_matching_defect_sites = _remove_matching_sites(
-                expanded_possible_defect_sites_in_bulk_struc,
-                max_possible_defect_sites_in_defect_struc,
-            )
-
-            if (
-                len(non_matching_bulk_sites) == 0
-                and len(non_matching_defect_sites) == 0
-            ):
-                warnings.warn(
-                    f"Coordinates {defect_coords} were specified for (auto-determined) "
-                    f"{defect_type} defect, but there are no extra/missing/different species "
-                    f"within a 2.5 Å radius of this site when comparing bulk and defect "
-                    f"structures. "
-                    f"If you are trying to generate non-defect polaronic distortions, please use "
-                    f"the distort() and rattle() functions in shakenbreak.distortions via the "
-                    f"Python API. "
-                    f"Reverting to auto-site matching instead."
-                )
-
-            else:
-                searched = "bulk or defect"
-                possible_defects = []
-                while site_displacement_tol < 2.5:  # loop over distance tolerances
-                    possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                        bulk_structure, defect_coords, site_displacement_tol
-                    )
-                    possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                        defect_structure, defect_coords, site_displacement_tol
-                    )
-                    if (
-                        defect_type == "vacancy"
-                    ):  # defect site should be in bulk structure but not defect structure
-                        possible_defects, _ = _remove_matching_sites(
-                            possible_defect_sites_in_bulk_struc,
-                            expanded_possible_defect_sites_in_defect_struc,
-                        )
-                        searched = "bulk"
-                    else:
-                        # defect site should be in defect structure but not bulk structure
-                        _, possible_defects = _remove_matching_sites(
-                            expanded_possible_defect_sites_in_bulk_struc,
-                            possible_defect_sites_in_defect_struc,
-                        )
-                        searched = "defect"
-
-                    if len(possible_defects) == 1:
-                        defect_index = possible_defects[0][2]
-                        break
-
-                    site_displacement_tol += 0.1
-
-                if defect_index is None:
-                    warnings.warn(
-                        f"Could not locate (auto-determined) {defect_type} defect site within a "
-                        f"2.5 Å radius of specified coordinates {defect_coords} in {searched} "
-                        f"structure (found {len(possible_defects)} possible defect sites). "
-                        "Will attempt auto site-matching instead."
-                    )
-
-        else:  # both defect_coords and defect_index given
-            warnings.warn(
-                "Both defect_coords and defect_index were provided. Only one is needed, so "
-                "just defect_index will be used to determine the defect site"
-            )
-
-    # if defect_index is None:
-    # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
-    # so we can warn user if manual specification and auto site-matching give conflicting results
-    site_displacement_tol = (
-        0.01  # distance tolerance for site matching to identify defect, increases in
-        # jumps of 0.1 Å
-    )
-    auto_matching_defect_index = None
-    possible_defects = []
-    try:
-        while site_displacement_tol < 1.5:  # loop over distance tolerances
-            bulk_sites = [site.frac_coords for site in bulk_structure]
-            defect_sites = [site.frac_coords for site in defect_structure]
-            dist_matrix = defect_structure.lattice.get_all_distances(
-                bulk_sites, defect_sites
-            )
-            min_dist_with_index = [
-                [
-                    min(dist_matrix[bulk_index]),
-                    int(bulk_index),
-                    int(dist_matrix[bulk_index].argmin()),
-                ]
-                for bulk_index in range(len(dist_matrix))
-            ]  # list of [min dist, bulk ind, defect ind]
-
-            site_matching_indices = []
-            if defect_type in ["vacancy", "interstitial"]:
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    if mindist < site_displacement_tol:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-                    elif defect_type == "vacancy":
-                        possible_defects.append([bulk_index, bulk_sites[bulk_index][:]])
-
-                if defect_type == "interstitial":
-                    possible_defects = [
-                        [ind, fc[:]]
-                        for ind, fc in enumerate(defect_sites)
-                        if ind not in np.array(site_matching_indices)[:, 1]
-                    ]
-
-            elif defect_type == "substitution":
-                for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                    species_match = (
-                        bulk_structure[bulk_index].specie
-                        == defect_structure[def_struc_index].specie
-                    )
-                    if mindist < site_displacement_tol and species_match:
-                        site_matching_indices.append([bulk_index, def_struc_index])
-
-                    elif not species_match:
-                        possible_defects.append(
-                            [def_struc_index, defect_sites[def_struc_index][:]]
-                        )
-
-            if len(set(np.array(site_matching_indices)[:, 0])) != len(
-                set(np.array(site_matching_indices)[:, 1])
-            ):
-                raise ValueError(
-                    "Error occurred in site_matching routine. Double counting of site matching "
-                    f"occurred: {site_matching_indices}\nAbandoning structure parsing."
-                )
-
-            if len(possible_defects) == 1:
-                auto_matching_defect_index = possible_defects[0][0]
-                break
-
-            site_displacement_tol += 0.1
-    except Exception:
-        pass  # failed auto-site matching, rely on user input or raise error if no user input
-
-    if defect_index is None and auto_matching_defect_index is None:
-        raise ValueError(
-            "Defect coordinates could not be identified from auto site-matching. "
-            f"Found {len(possible_defects)} possible defect sites – check bulk and defect "
-            "structures correspond to the same supercell and/or specify defect site with "
-            "--defect-coords or --defect-index."
-        )
-    if defect_index is None and auto_matching_defect_index is not None:
-        defect_index = auto_matching_defect_index
-
-    if defect_type == "vacancy":
-        defect_site = bulk_structure[defect_index]
-    else:
-        defect_site = defect_structure[defect_index]
-
-    if defect_index is not None and auto_matching_defect_index is not None:
-        if defect_index != auto_matching_defect_index:
-            if defect_type == "vacancy":
-                auto_matching_defect_site = bulk_structure[auto_matching_defect_index]
-            else:
-                auto_matching_defect_site = defect_structure[auto_matching_defect_index]
-
-            def _site_info(site):
-                return (
-                    f"{site.species_string} at [{site._frac_coords[0]:.3f},"
-                    f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
-                )
-
-            if defect_coords is not None:
-                warnings.warn(
-                    f"Note that specified coordinates {defect_coords} for (auto-determined)"
-                    f" {defect_type} defect gave a match to defect site:"
-                    f" {_site_info(defect_site)} in {searched} structure, but auto site-matching "
-                    f"predicted a different defect site: {_site_info(auto_matching_defect_site)}. "
-                    f"Will use user-specified site: {_site_info(defect_site)}."
-                )
-            else:
-                warnings.warn(
-                    f"Note that specified defect index {defect_index} for (auto-determined)"
-                    f" {defect_type} defect gives defect site: {_site_info(defect_site)}, "
-                    f"but auto site-matching predicted a different defect site:"
-                    f" {_site_info(auto_matching_defect_site)}. "
-                    f"Will use user-specified site: {_site_info(defect_site)}."
-                )
-
-    for_monty_defect = {
-        "@module": "pymatgen.analysis.defects.core",
-        "@class": defect_type.capitalize(),
-        "structure": bulk_structure,
-        "site": defect_site,
-    }
-    try:
-        defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError:
-        # This means we have the old version of pymatgen-analysis-defects,
-        # where the class attributes were different (defect_site instead of site
-        # and no user_charges)
-        v_ana_def = version("pymatgen-analysis-defects")
-        v_pmg = version("pymatgen")
-        if v_ana_def < "2022.9.14":
-            return TypeError(
-                f"You have the version {v_ana_def}"
-                " of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package"
-                " and try again."
-            )
-        if v_pmg < "2022.7.25":
-            return TypeError(
-                f"You have the version {v_pmg}"
-                " of the package `pymatgen`,"
-                " which is incompatible. Please update this package"
-                " and try again."
-            )
-    return defect
 
 
 def _get_substituted_site(defect_object: Defect, defect_name: str):
@@ -341,88 +40,6 @@ def _get_substituted_site(defect_object: Defect, defect_name: str):
     defindex = poss_deflist[0][2]
     sub_site_in_bulk = defect_object.structure[defindex]  # bulk site of substitution
     return sub_site_in_bulk
-
-
-def _generate_defect_dict(
-    defect_object: dict,
-    charges: list,
-    defect_name: str,
-) -> dict:
-    """
-    Create defect dictionary from a pymatgen Defect object.
-
-    Args:
-        defect_object (:obj:`Defect`):
-            `pymatgen.analysis.defects.core.Defect` object.
-        charges (:obj:`list`):
-            List of charge states for the defect.
-        defect_name(:obj:`str`):
-            Name of the defect, to use as key in the defect dict.
-
-    Returns: :obj:`dict`
-    """
-    single_defect_dict = {
-        "name": defect_name,
-        "defect_type": defect_object.as_dict()["@class"].lower(),
-        "site_multiplicity": defect_object.multiplicity,
-        "supercell": {
-            "size": [1, 1, 1],
-            "structure": defect_object.defect_structure,
-        },
-        "charges": charges,
-    }
-
-    if single_defect_dict["defect_type"] != "vacancy":
-        # redefine bulk supercell site to ensure it exactly matches defect dict structure,
-        # in case defect_object.generate_defect_structure() redefines coordinates using periodic
-        # images (e.g. moving (0, 0.5, 0) to (1, 0.5, 1))
-        bulk_supercell_site = sorted(
-            single_defect_dict["supercell"]["structure"].get_sites_in_sphere(
-                defect_object.site.coords, 0.01, include_index=True, include_image=True
-            ),
-            key=lambda x: x[1],
-        )[0][0].to_unit_cell()
-
-        single_defect_dict["bulk_supercell_site"] = bulk_supercell_site
-
-    else:  # if vacancy, defect site doesn't exist in generated defect structure
-        single_defect_dict["bulk_supercell_site"] = defect_object.site
-
-    if single_defect_dict["defect_type"] in ["substitution", "antisite"]:
-        # get bulk_site
-        sub_site_in_bulk = _get_substituted_site(
-            defect_object=defect_object,
-            defect_name=defect_name,
-        )
-
-        single_defect_dict["unique_site"] = sub_site_in_bulk
-        single_defect_dict["site_specie"] = sub_site_in_bulk.specie.symbol
-        single_defect_dict["substitution_specie"] = defect_object.site.specie.symbol
-
-    else:
-        single_defect_dict["unique_site"] = defect_object.site
-        single_defect_dict["site_specie"] = defect_object.site.specie.symbol
-
-    if single_defect_dict["defect_type"] == "vacancy":
-        defects_dict = {
-            "vacancies": [
-                single_defect_dict,
-            ]
-        }
-    elif single_defect_dict["defect_type"] == "interstitial":
-        defects_dict = {
-            "interstitials": [
-                single_defect_dict,
-            ]
-        }
-    elif single_defect_dict["defect_type"] == "substitution":
-        defects_dict = {
-            "substitutions": [
-                single_defect_dict,
-            ]
-        }
-
-    return defects_dict
 
 
 def generate_defect_object(
@@ -462,32 +79,31 @@ def generate_defect_object(
     }
     try:
         defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError:
-        # This means we have the old version of pymatgen-analysis-defects,
-        # where the class attributes were different (defect_site instead of site
-        # and no user_charges)
+    except TypeError as exc:
+        # This means we have the old version of pymatgen-analysis-defects, where the class
+        # attributes were different (defect_site instead of site and no user_charges)
         v_ana_def = version("pymatgen-analysis-defects")
         v_pmg = version("pymatgen")
         if v_ana_def < "2022.9.14":
-            return TypeError(
-                f"You have the version {v_ana_def}"
-                " of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package (with `pip install "
+                "shakenbreak`) and try again."
             )
         if v_pmg < "2022.7.25":
-            return TypeError(
-                f"You have the version {v_pmg}"
-                " of the package `pymatgen`,"
-                " which is incompatible. Please update this package"
-                " and try again."
+            raise TypeError(
+                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
+                f"Please update this package (with `pip install shakenbreak`) and try again."
             )
-    else:
-        # Specify defect charge states
-        if isinstance(charges, list):  # Priority to charges argument
-            defect.user_charges = charges
-        elif "charges" in single_defect_dict.keys():
-            defect.user_charges = single_defect_dict["charges"]
+        else:
+            raise exc
+
+    # Specify defect charge states
+    if isinstance(charges, list):  # Priority to charges argument
+        defect.user_charges = charges
+    elif "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
+
     return defect
 
 
@@ -504,23 +120,6 @@ def _parse_defect_dirs(path) -> list:
             ]
         )  # only parse defect directories that contain distortion folders
     ]
-
-
-def _get_defect_type_plural(defect: Defect):
-    """Generate the defect type (in plural, e.g. vacancies)
-    for a given Defect object.
-
-    Args:
-        defect (:obj: Defect): Defect object
-    """
-    defect_type = str(defect.as_dict()["@class"].lower())
-    if defect_type == "vacancy":
-        defect_type_plural = "vacancies"
-    elif defect_type == "substitution":
-        defect_type_plural = "substitutions"
-    elif defect_type == "interstitial":
-        defect_type_plural = "interstitials"
-    return defect_type_plural
 
 
 def CommandWithConfigFile(
@@ -583,28 +182,38 @@ def snb():
 @click.option("--charge", "-c", help="Defect charge state", default=None, type=int)
 @click.option(
     "--min-charge",
-    "--min",
+    "-min",
     help="Minimum defect charge state for which to generate distortions",
     default=None,
     type=int,
 )
 @click.option(
     "--max-charge",
-    "--max",
+    "-max",
     help="Maximum defect charge state for which to generate distortions",
     default=None,
     type=int,
 )
 @click.option(
+    "--padding",
+    "-p",
+    help="If `--charge` or `--min-charge` & `--max-charge` are not set, "
+    "defect charges will be set to the range: 0 – {Defect oxidation state}, "
+    "with a `--padding` on either side of this range.",
+    default=1,
+    type=int,
+)
+@click.option(
     "--defect-index",
-    "--idx",
-    help="Index of defect site in defect structure, in case auto site-matching fails",
+    "-idx",
+    help="Index of defect site in defect structure (if substitution/interstitial) "
+    "or bulk structure (if vacancy), in case auto site-matching fails",
     default=None,
     type=int,
 )
 @click.option(
     "--defect-coords",
-    "--def-coords",
+    "-def-coords",
     help="Fractional coordinates of defect site in defect structure, in case auto "
     "site-matching fails. In the form 'x y z' (3 arguments)",
     type=click.Tuple([float, float, float]),
@@ -622,8 +231,8 @@ def snb():
     "--name",
     "-n",
     help="Defect name for folder and metadata generation. Defaults to "
-    "pymatgen standard: '{Defect Type}_mult{Supercell "
-    "Multiplicity}'",
+    "'{Defect.name}_m{Defect.multiplicity}' for interstitials and "
+    "'{Defect.name}_s{Defect.defect_site_index}' for vacancies and substitutions.",
     default=None,
     type=str,
 )
@@ -659,6 +268,7 @@ def generate(
     charge,
     min_charge,
     max_charge,
+    padding,
     defect_index,
     defect_coords,
     code,
@@ -685,6 +295,8 @@ def generate(
             "charge",
             "min_charge",
             "max_charge",
+            "padding",
+            "charges",
             "defect_index",
             "defect_coords",
             "code",
@@ -726,15 +338,13 @@ def generate(
     defect_struc = Structure.from_file(defect)
     bulk_struc = Structure.from_file(bulk)
 
-    defect_object = identify_defect(
+    defect_object = input.identify_defect(
         defect_structure=defect_struc,
         bulk_structure=bulk_struc,
         defect_index=defect_index,
         defect_coords=defect_coords,
     )
     if verbose and defect_index is None and defect_coords is None:
-        # TODO: better to always print this when verbose = True
-        # in case user gives wrong defect position?
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -750,6 +360,7 @@ def generate(
         charges = [
             charge,
         ]
+        defect_object.user_charges = charges  # Update charge states
 
     elif max_charge is not None or min_charge is not None:
         if max_charge is None or min_charge is None:
@@ -760,32 +371,27 @@ def generate(
         charge_lims = [min_charge, max_charge]
         charges = list(
             range(min(charge_lims), max(charge_lims) + 1)
-        )  # just in case user mixes min and max
-        # because of different signs ("+1 to -3" etc)
+        )  # just in case user mixes min and max because of different signs ("+1 to -3" etc)
+        defect_object.user_charges = charges  # Update charge states
 
-    else:
-        warnings.warn(
-            "No charge (range) set for defect, assuming default range of +/-2"
-        )
-        charges = list(range(-2, +3))
+    if user_settings and "charges" in user_settings:
+        charges = user_settings.pop("charges", None)
+        if defect_object.user_charges:
+            warnings.warn(
+                "Defect charges were specified using the CLI option, but `charges` "
+                "was also specified in the `--config` file – this will be ignored!"
+            )
+        else:
+            defect_object.user_charges = charges  # Update charge states
 
     if name is None:
-        name = (
-            defect_object.name
-        )  # v_X, X_i or X_Y for vacancies, interstitials, substitutions
-
-    # Update charge states
-    defect_object.user_charges = charges
-    defect_type_plural = _get_defect_type_plural(defect_object)
+        name = input._get_defect_name_from_obj(defect_object)
 
     Dist = input.Distortions(
-        defects_dict={
-            defect_type_plural: {
-                name: defect_object,  # So that user can specify defect name.
-                # (E.g. for symmetry inequivalent defects, default pymatgen-analysis-defects
-                # names would be the same)
-            }
+        defects={
+            name: defect_object,  # So that user can specify defect name.
         },
+        padding=padding,
         **user_settings,
     )
     if code.lower() == "vasp":
@@ -852,8 +458,6 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
-    # with open("./parsed_defects_dict.pickle", "wb") as fp:
-    #     pickle.dump(defect_object, fp)
     dumpfn(defect_object, "./parsed_defects_dict.json")
 
 
@@ -886,6 +490,15 @@ def generate(
     "-b",
     help="Path to bulk structure",
     type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "--padding",
+    "-p",
+    help="For any defects where `charge` is not set in the --config file, "
+    "charges will be set to the range: 0 – {Defect oxidation state}, "
+    "with a `--padding` on either side of this range.",
+    default=1,
+    type=int,
 )
 @click.option(
     "--code",
@@ -924,6 +537,7 @@ def generate(
 def generate_all(
     defects,
     bulk,
+    padding,
     structure_file,
     code,
     config,
@@ -962,6 +576,9 @@ def generate_all(
             "input_file",
             "verbose",
             "oxidation_states",
+            "charges",
+            "charge",
+            "padding",
             "dict_number_electrons_user",
             "distortion_increment",
             "bond_distortions",
@@ -997,7 +614,8 @@ def generate_all(
         defect_name = None
         # if user included cif/POSCAR as part of the defect structure name, remove it
         for substring in ("cif", "POSCAR", structure_file):
-            defect = defect.replace(substring, "")
+            if defect != substring:
+                defect = defect.replace(substring, "")
         for symbol in ("-", "_", "."):
             if defect.endswith(symbol):  # trailing characters
                 defect = defect[:-1]
@@ -1012,6 +630,8 @@ def generate_all(
                     f"Will parse defect name from folders/files."
                 )
         if not defect_name:
+            # if user didn't specify defect names in config file,
+            # check if defect filename is recognised
             try:
                 defect_name = plotting._format_defect_name(
                     defect, include_site_num_in_name=False
@@ -1024,16 +644,7 @@ def generate_all(
                 except Exception:
                     pass
             if defect_name:
-                # if user didn't specify defect names in config file,
-                # check if defect filename is recognised
                 defect_name = defect
-
-        if not defect_name:
-            raise ValueError(
-                "Error in defect name parsing; could not parse defect name "
-                f"from {defect}. Please include its name in the 'defects' section of "
-                "the config file."
-            )
 
         return defect_name
 
@@ -1041,14 +652,12 @@ def generate_all(
         charges = None
         if isinstance(defect_settings, dict):
             if defect_name in defect_settings:
-                charges = defect_settings.get(defect_name).get("charges")
-        if not charges:
-            warnings.warn(
-                f"No charge (range) set for defect {defect_name} in config file,"
-                " assuming default range of +/-2"
-            )
-            charges = list(range(-2, +3))
-        return charges
+                charges = defect_settings.get(defect_name).get("charges", None)
+                if charges is None:
+                    charges = [
+                        defect_settings.get(defect_name).get("charge", None),
+                    ]
+        return charges  # determing using padding if not set in config file
 
     def parse_defect_position(defect_name, defect_settings):
         if defect_settings:
@@ -1068,7 +677,10 @@ def generate_all(
         if os.path.isfile(f"{defects}/{defect}"):
             try:  # try to parse structure from it
                 defect_struc = Structure.from_file(f"{defects}/{defect}")
-                defect_name = parse_defect_name(defect, defect_settings)
+                defect_name = parse_defect_name(
+                    defect, defect_settings
+                )  # None if not recognised
+
             except Exception:
                 continue
 
@@ -1103,12 +715,11 @@ def generate_all(
             warnings.warn(f"Could not parse {defects}/{defect} as a defect, skipping.")
             continue
 
-        # Check if charges / indices are provided in config file
-        charges = parse_defect_charges(defect_name, defect_settings)
+        # Check if indices are provided in config file
         defect_index, defect_coords = parse_defect_position(
             defect_name, defect_settings
         )
-        defect_object = identify_defect(
+        defect_object = input.identify_defect(
             defect_structure=defect_struc,
             bulk_structure=bulk_struc,
             defect_index=defect_index,
@@ -1126,22 +737,20 @@ def generate_all(
                 f"with site {site_info}"
             )
 
-        # Update charges and defect name
+        if defect_name is None:  # name based on defect object
+            defect_name = input._get_defect_name_from_obj(defect_object)
+
+        # Update charges if specified in config file
+        charges = parse_defect_charges(defect_name, defect_settings)
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
-        defect_type_plural = _get_defect_type_plural(defect_object)
-        if defect_type_plural in defects_dict:  # vacancies, antisites or interstitials
-            defects_dict[defect_type_plural] += {defect_name: deepcopy(defect_object)}
-        else:
-            defects_dict.update(
-                {
-                    defect_type_plural: {defect_name: deepcopy(defect_object)},
-                }
-            )
+        defect_name = input._update_defect_dict(
+            defect_object, defect_name, defects_dict
+        )
 
     # Apply distortions and write input files
-    Dist = input.Distortions(defects_dict, **user_settings)
+    Dist = input.Distortions(defects_dict, padding=padding, **user_settings)
     if code.lower() == "vasp":
         if input_file:
             incar = Incar.from_file(input_file)
@@ -1315,7 +924,6 @@ def run(submit_command, job_script, job_name_option, all, verbose):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1385,7 +993,6 @@ def parse(defect, all, path, code):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1517,7 +1124,6 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 )
 @click.option(
     "--code",
-    "-c",
     help="Code used to run the geometry optimisations. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1550,7 +1156,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     "-f",
     help="Format to save the plot as.",
     type=str,
-    default="svg",
+    default="png",
     show_default=True,
 )
 @click.option(
@@ -1721,7 +1327,6 @@ def plot(
 )
 @click.option(
     "--code",
-    "-c",
     help="Code to generate relaxation input files for. "
     "Options: 'vasp', 'cp2k', 'espresso', 'castep', 'fhi-aims'.",
     type=str,
@@ -1737,7 +1342,8 @@ def plot(
     show_default=True,
 )
 @click.option(
-    "--min",
+    "--min_energy",
+    "-min",
     help="Minimum energy difference (in eV) between the ground-state"
     " defect structure, relative to the `Unperturbed` structure,"
     " to consider it as having found a new energy-lowering"
@@ -1764,7 +1370,7 @@ def plot(
     is_flag=True,
     show_default=True,
 )
-def regenerate(path, code, filename, min, metastable, verbose):
+def regenerate(path, code, filename, min_energy, metastable, verbose):
     """
     Identify defect species undergoing energy-lowering distortions and
     test these distortions for the other charge states of the defect.
@@ -1790,7 +1396,7 @@ def regenerate(path, code, filename, min, metastable, verbose):
         code=code,
         structure_filename=filename,
         write_input_files=True,
-        min_e_diff=min,
+        min_e_diff=min_energy,
         metastable=metastable,
         verbose=verbose,
     )
@@ -1871,41 +1477,50 @@ def groundstate(
             )
         ]
     ):  # distortion subfolders in cwd
-        cwd_name = os.getcwd().split("/")[-1]
-        dummy_h = Element("H")
-        if any(
-            [
-                substring in cwd_name.lower()
-                for substring in ("as", "vac", "int", "sub", "v", "i", "on")
-            ]
-        ) or any(
-            [
-                (
-                    dummy_h.is_valid_symbol(substring[-2:])
-                    or substring[-1:] == "v"
-                    or substring[-2:] == "Va"
+        # check if defect folders also in cwd
+        for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
+            defect_name = None
+            try:
+                defect_name = plotting._format_defect_name(
+                    dir, include_site_num_in_name=False
                 )
-                for substring in cwd_name.split("_")
-            ]  # underscore preceded by either an element symbol or "v" (new pymatgen defect
-            # naming convention)
-        ):  # cwd is defect name, assume current directory is the defect folder
-            if path != ".":
-                warnings.warn(
-                    "`--path` option ignored when running from within defect folder ("
-                    "determined to be the case here based on current directory and "
-                    "subfolder names)."
-                )
+            except Exception:
+                try:
+                    defect_name = plotting._format_defect_name(
+                        f"{dir}_0", include_site_num_in_name=False
+                    )
+                except Exception:
+                    pass
 
-            energy_lowering_distortions.write_groundstate_structure(
-                all=False,
-                output_path=os.getcwd(),
-                groundstate_folder=directory,
-                groundstate_filename=groundstate_filename,
-                structure_filename=structure_filename,
-                verbose=not non_verbose,
+            if (
+                defect_name
+            ):  # recognised defect folder found in cwd, warn user and proceed
+                # assuming they want to just parse the distortion folders in cwd
+                warnings.warn(
+                    f"Both distortion folders and defect folders (i.e. {dir}) were "
+                    f"found in the current directory. The defect folders will be "
+                    f"ignored and the groundstate structure from the distortion folders "
+                    f"in this directory will be generated."
+                )
+                break
+
+        # assume current directory is the defect folder
+        if path != ".":
+            warnings.warn(
+                "`--path` option ignored when running from within defect folder (assumed to be "
+                "the case here as distortion folders found in current directory)."
             )
 
-            return
+        energy_lowering_distortions.write_groundstate_structure(
+            all=False,
+            output_path=os.getcwd(),
+            groundstate_folder=directory,
+            groundstate_filename=groundstate_filename,
+            structure_filename=structure_filename,
+            verbose=not non_verbose,
+        )
+
+        return
 
     # otherwise, assume top level directory is the path
     energy_lowering_distortions.write_groundstate_structure(

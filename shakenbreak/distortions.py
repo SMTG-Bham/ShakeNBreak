@@ -164,7 +164,8 @@ def distort(
         distorted = [(round(i[0], 2), i[1], i[2]) for i in distorted]
         nearest = [(round(i[0], 2), i[1], i[2]) for i in nearest]  # round numbers
         print(
-            f"""\tDefect Site Index / Frac Coords: {site_index or frac_coords}
+            f"""\tDefect Site Index / Frac Coords: {
+            site_index or np.around(frac_coords, decimals=3)}
             Original Neighbour Distances: {nearest}
             Distorted Neighbour Distances:\n\t{distorted}"""
         )

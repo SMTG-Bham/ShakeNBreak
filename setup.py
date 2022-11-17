@@ -131,7 +131,7 @@ fonts = package_files("fonts/")
 
 setup(
     name="shakenbreak",
-    version="22.11.07",
+    version="22.11.17",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automatise the process of defect structure searching. "
@@ -140,9 +140,9 @@ setup(
     "https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
     long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
-    author_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    author_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
-    maintainer_email="irea.lois.20@ucl.ac.uk, sean.kavanagh.19@ucl.ac.uk",
+    maintainer_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     readme="README.md",  # PyPI readme
     url="https://github.com/SMTG-UCL/ShakeNBreak",
     license="MIT",
@@ -161,7 +161,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "numpy",
-        "pymatgen==2022.10.22",
+        "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",

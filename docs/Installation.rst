@@ -19,6 +19,12 @@ Within your ``VASP`` pseudopotential top directory, you should have a folder nam
 which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). More details given
 `here <https://pymatgen.org/installation.html#potcar-setup>`_.
 
+.. NOTE::
+   The font `Montserrat <https://fonts.google.com/specimen/Montserrat/about>`
+   (`Open Font License <https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL>`_)
+   will be installed with the package, and will be used by default for plotting. If you prefer to use a different
+   font, you can change the font in the ``matplotlib`` style sheet (in ``shakenbreak/shakenbreak.mplstyle``).
+
 Developer's installation (*optional*)
 -----------------------------------------
 

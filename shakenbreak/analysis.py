@@ -187,7 +187,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
 
     Returns:
         :obj:`tuple`:
-            (Energies dictionary, Energy difference, ground state bond distortion)
+            (Energy difference, ground state bond distortion)
     """
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
@@ -339,7 +339,6 @@ def analyse_defect_site(
         raise ValueError("Either site_num or vac_site must be specified")
 
     if name is not None:
-        # print("==> ", name + " structural analysis ", " <==")
         input._bold_print(name + " structural analysis ")
     print("Analysing site", struct[isite].specie, struct[isite].frac_coords)
     coordination = crystalNN.get_local_order_parameters(struct, isite)
@@ -1153,7 +1152,7 @@ def get_site_magnetizations(
                 "should be the distortion factor (e.g. 0.2) or the "
                 "Unperturbed/Rattled name."
             )
-            return None
+            continue
         structure = io.read_vasp_structure(
             f"{output_path}/{defect_species}/{dist_label}/CONTCAR"
         )
@@ -1162,7 +1161,7 @@ def get_site_magnetizations(
                 f"Structure for {defect_species} either not converged or not "
                 "found. Skipping magnetisation analysis."
             )
-            return None
+            continue
         if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
             # for vacancies, append fake atom
             structure.append(
@@ -1175,8 +1174,14 @@ def get_site_magnetizations(
                 f"{dist_label}/OUTCAR. "
                 "Skipping magnetization analysis."
             )
-            return None
+            continue
         outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+        if not outcar.spin:
+            warnings.warn(
+                f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "
+                f"calculation (ISPIN = 1), so magnetization analysis is not possible. Skipping."
+            )
+            continue
         if verbose:
             print(
                 f"Analysing distortion {distortion}. "

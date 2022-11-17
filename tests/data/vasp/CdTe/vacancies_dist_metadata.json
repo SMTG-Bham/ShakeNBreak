@@ -4,11 +4,14 @@
         "bond_distortions": [
             -0.3
         ],
-        "rattle_stdev": 0.25,
-        "local_rattle": false
+        "local_rattle": false,
+        "mc_rattle_parameters": {
+            "seed": 42,
+            "stdev": 0.25
+        }
     },
     "defects": {
-        "v_Cd": {
+        "v_Cd_s0": {
             "unique_site": [
                 0.0,
                 0.0,
@@ -28,15 +31,20 @@
                         ]
                     ],
                     "distortion_parameters": {
+                        "distortion_increment": null,
                         "bond_distortions": [
                             -0.3
                         ],
-                        "rattle_stdev": 0.25
+                        "local_rattle": false,
+                        "mc_rattle_parameters": {
+                            "seed": 42,
+                            "stdev": 0.25
+                        }
                     }
                 }
             }
         },
-        "v_Te": {
+        "v_Te_s32": {
             "unique_site": [
                 0.125,
                 0.125,
@@ -56,10 +64,15 @@
                         ]
                     ],
                     "distortion_parameters": {
+                        "distortion_increment": null,
                         "bond_distortions": [
                             -0.3
                         ],
-                        "rattle_stdev": 0.25
+                        "local_rattle": false,
+                        "mc_rattle_parameters": {
+                            "seed": 42,
+                            "stdev": 0.25
+                        }
                     }
                 }
             }
