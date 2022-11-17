@@ -98,6 +98,9 @@ SnB_run_loop () {
         if [ "$verbose" = true ]
           then echo "${i%?} fully relaxed"
         fi
+      if [ -f "${i}"/DOSCAR ]  # remove DOSCAR to save space
+        then rm "${i}"/DOSCAR
+      fi
       fi;
     done
 }

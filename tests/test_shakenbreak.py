@@ -2,11 +2,13 @@ import copy
 import os
 import shutil
 import unittest
+import warnings
 from unittest.mock import call, patch
 
 import pytest
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
+from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
 from shakenbreak import energy_lowering_distortions, input, io, plotting, cli
 
@@ -23,13 +25,17 @@ def if_present_rm(path):
 
 class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def setUp(self):
+        warnings.simplefilter("ignore", UnknownPotcarWarning)
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.cdte_defect_dict = loadfn(
+        # Refactor doped defect dict to dict of Defect() objects
+        self.cdte_doped_defect_dict = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
-        self.V_Cd_dict = self.cdte_defect_dict["vacancies"][0]
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_defect_dict["bulk"])
+
+        self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
+
+        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
@@ -60,18 +66,22 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f"vac_1_Cd_-2/{fake_dir}/CONTCAR",
             )
 
+        for charge in [-1,-2]:
+            shutil.copyfile(
+                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"),
+                f"vac_1_Cd_{charge}/Unperturbed/POSCAR",
+            )  # so when we generate SnB files in `test_SnB_integration` it recognises it as
+            # being the same defect
+
         self.defect_charges_dict = (
             energy_lowering_distortions.read_defects_directories()
         )
         self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
 
     def tearDown(self):
-        for fake_dir in [
-            "vac_1_Cd_-1",
-            "vac_1_Cd_-2",
-            "vac_1_Cd_0",
-        ]:
-            if_present_rm(f"{fake_dir}")
+        for i in os.listdir():
+            if "vac_1_Cd" in i:
+                if_present_rm(i)
         if_present_rm("distortion_metadata.json")
         if_present_rm("parsed_defects_dict.json")
 
@@ -87,7 +97,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         # Generate input files
         dist = input.Distortions(
-            {"vacancies": {"vac_1_Cd": reduced_V_Cd}},
+            {"vac_1_Cd": reduced_V_Cd},
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
@@ -124,7 +134,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(low_energy_defects)
+            energy_lowering_distortions.write_retest_inputs(low_energy_defects)
 
             mock_print.assert_any_call(
                 "Writing low-energy distorted structure to "
@@ -199,37 +209,27 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                     defect_charges_dict
                 )
             )
-            mock_print.assert_any_call(
-                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, and unperturbed: -0.76 eV."
-            )
-            mock_print.assert_any_call(
-                "Comparing structures to specified ref_structure (Cd31 Te32)..."
-            )
-            mock_print.assert_any_call(
-                "\nComparing and pruning defect structures across charge states..."
-            )
-            # TODO: check this!!
-            # mock_print.assert_any_call(
-            #     "Low-energy distorted structure for vac_1_Cd_-1 already "
-            #     "found with charge states [0], storing together."
-            # )
-            mock_print.not_called_with(
-                "Low-energy distorted structure for vac_1_Cd_-1 already "
-                "found with charge states [0], storing together."
-            )  # not called because -1 groundstate is -55.0%_from_0 (i.e. imported from 0)
-
-        mock_print.not_called_with(
-            "Ground-state structure found for vac_1_Cd with charges [-2] has also "
-            "been found for charge state -1 (according to structure matching). "
-            "Adding this charge to the corresponding entry in low_energy_defects[vac_1_Cd]."
-        )  # not called because -2 groundstate is -7.5%_from_-1 (i.e. imported from -1)
+        mock_print.assert_any_call(
+            "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
+            "and unperturbed: -0.76 eV."
+        )
+        mock_print.assert_any_call(
+            "Comparing structures to specified ref_structure (Cd31 Te32)..."
+        )
+        mock_print.assert_any_call(
+            "\nComparing and pruning defect structures across charge states..."
+        )
+        mock_print.assert_any_call(
+            "Low-energy distorted structure for vac_1_Cd_-1 already "
+            "found with charge states [0], storing together."
+        )
 
         # Test that energy_lowering_distortions parsing functions run ok if run on folders where
         # we've already done _some_ re-tests from other structures (-55.0%_from_0 for -1 but not
         # -2 and -7.5%_from_-1 for -2 but not for 0)(i.e. if we did this parsing early when only
         # some of the other charge states had converged etc)
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_distorted_inputs(low_energy_defects)
+            energy_lowering_distortions.write_retest_inputs(low_energy_defects)
 
             mock_print.assert_any_call(
                 "As ./vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1 already exists, it's assumed this "

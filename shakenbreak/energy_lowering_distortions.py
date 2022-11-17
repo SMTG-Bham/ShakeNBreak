@@ -189,9 +189,8 @@ def _compare_distortion(
         ):
             low_energy_defects[defect][index][property].append(value)
 
-    else:  # only add to list if it doesn't match _any_ of the
-        # other distortions and the structure was not previously
-        # found, then add it to the list of distortions for this
+    else:  # only add to list if it doesn't match _any_ of the other distortions and the
+        # structure was not previously found, then add it to the list of distortions for this
         # defect
         print(
             f"New (according to structure matching) low-energy "
@@ -631,7 +630,7 @@ def get_energy_lowering_distortions(
 
         # Write input files for the identified distortions
         if write_input_files:
-            write_distorted_inputs(
+            write_retest_inputs(
                 low_energy_defects=low_energy_defects,
                 output_path=output_path,
                 code=code,
@@ -821,7 +820,7 @@ def compare_struct_to_distortions(
         )  # T/F, matching structure, energy_diff, distortion factor
 
 
-def write_distorted_inputs(
+def write_retest_inputs(
     low_energy_defects: dict,
     output_path: str = ".",
     code: str = "vasp",
@@ -1076,7 +1075,7 @@ def _copy_cp2k_files(
     """
     if not input_filename:
         input_filename = "cp2k_input.inp"
-    distorted_structure.to("cif", f"{distorted_dir}/structure.cif")
+    distorted_structure.to(fmt="cif", filename=f"{distorted_dir}/structure.cif")
     if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{input_filename}"):
         shutil.copyfile(
             f"{output_path}/{defect_species}/Unperturbed/{input_filename}",
