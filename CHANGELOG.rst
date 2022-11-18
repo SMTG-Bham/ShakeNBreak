@@ -4,6 +4,12 @@ Change Log
 v22.11.18
 --------
 
+Add docs plots.
+
+
+v22.11.18
+--------
+
 Docs tutorial update.
 
 
