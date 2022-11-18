@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v22.11.18
+--------
+
+Docs tutorial update.
+
+
 v22.11.17
 --------
 
