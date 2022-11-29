@@ -170,6 +170,7 @@ setup(
         "hiphive",
         "monty",
         "click>8.0",
+        "importlib_metadata",
     ],
     extras_require={
         "tests": [
