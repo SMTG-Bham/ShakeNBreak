@@ -1,6 +1,16 @@
 Change Log
 ==========
 
+v22.11.29
+--------
+
+Main changes:
+- Add example notebook showing how to generate interstitials and apply SnB to them.
+- Fix typo in example notebook and docs.
+- Add comment about font installation to Installation guide.
+- Update paper.md with suggestions from editor.
+
+
 v22.11.18
 --------
 
