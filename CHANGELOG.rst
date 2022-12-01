@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v22.12.1
+--------
+
+- Minor updates to paper.md and paper.bib
+
 v22.11.29
 --------
 
