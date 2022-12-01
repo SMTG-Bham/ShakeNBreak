@@ -15,8 +15,8 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25/status.svg
- :target: https://joss.theoj.org/papers/6545bcc1a0439b16360ace684ac5aa25
+.. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
+   :target: https://doi.org/10.21105/joss.04817
 
 .. image:: https://img.shields.io/pypi/dm/shakenbreak
  :target: https://shakenbreak.readthedocs.io/en/latest/
