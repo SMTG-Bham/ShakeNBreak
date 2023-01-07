@@ -113,11 +113,29 @@ Automatic testing is run on the master and develop branches using Github Actions
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and Chris Savory.
 Code to identify defect species from input supercell structures was written based on the implementation in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
 
-## License
-ShakeNBreak is made available under the MIT License.
+## Studies using `ShakeNBreak`
+We'll add papers that use `ShakeNBreak` to this list as they come out!
+- J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a) 2023
+- Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation.
+- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_arXiv_](https://arxiv.org/abs/2207.09862) 2022
+- Y. T. Huang & S. R. Kavanagh et al. [_Nature Communications_](https://www.nature.com/articles/s41467-022-32669-3) 2022
+- S. R. Kavanagh, D. O. Scanlon, A. Walsh [_ACS Energy Letters_](https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380) 2021
+- S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
+
+<!-- Se -->
+<!-- BiOI -->
+<!-- Xinwei Sb2Se3 -->
+<!-- Kumagai collab paper -->
+<!-- Lavan LiNiO2 -->
+<!-- Sykes Magnetic oxide polarons -->
+<!-- Joe CuI -->
+<!-- Kat YTOS -->
+<!-- Adair CuSiSe3 -->
+<!-- Squires (and mention benchmark test against AIRSS? See Slack message -->
+<!-- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon _npj??_ 2022 -->
 
 ## Requirements
-`ShakeNBreak` is compatible with Python 3.8 & 3.9 and requires the following open-source python packages:
+`ShakeNBreak` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
 * [Pymatgen](https://pymatgen.org/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)
