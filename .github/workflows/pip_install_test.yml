@@ -15,8 +15,7 @@ jobs:
       max-parallel: 5
 
       matrix:
-        python-version: ['3.8', '3.9']  # Excluding 3.10 for the moment, as hiphive requires Numpy <1.22
-        # (because of numba) which is incompatible with Python 3.10, should be fixed soon...
+        python-version: ['3.8', '3.9', '3.10']
 
     name: Python ${{ matrix.python-version }} pip install
 
