@@ -55,6 +55,19 @@ Code contributions to support additional solid-state packages are welcome!
    :width: 800px
 |
 
+Literature
+------------------------
+
+- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_. *Journal of Open Source Software* 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_. *arXiv* **2022**
+
+
+.. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
+.. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
+.. _Identifying the Ground State Structures of Defects in Solids: https://doi.org/10.48550/arXiv.2207.09862
+.. _In Search of Hidden Defects: https://doi.org/10.1016/j.matt.2021.06.003
+
 Installation
 ========================
 
@@ -189,15 +202,60 @@ Unit tests are in the ``tests`` directory and can be run from the top directory 
 Automatic testing is run on the master and develop branches using Github Actions. Please
 run tests and add new tests for any new features whenever submitting pull requests.
 
-License
+Studies using ``ShakeNBreak``
+========================
+
+We'll add papers that use `ShakeNBreak` to this list as they come out!
+
+- J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, `ChemRxiv`_ 2023
+- Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
+- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `arXiv`_ 2022
+- Y. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
+- S. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
+- S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+
+.. Se
+.. BiOI
+.. Xinwei Sb2Se3
+.. Kumagai collab paper
+.. Lavan LiNiO2
+.. Sykes Magnetic oxide polarons
+.. Joe CuI
+.. Kat YTOS
+.. Adair CuSiSe3
+.. Squires (and mention benchmark test against AIRSS? See Slack message)
+.. I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon _npj??_ 2022
+
+.. _ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a
+.. _arXiv: https://arxiv.org/abs/2207.09862
+.. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
+.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
+.. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
+
+License and Citation
 ========================
 
 ``ShakeNBreak`` is made available under the MIT License.
 
+If you use it in your research, please cite:
+
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_. *Journal of Open Source Software* 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_. *arXiv* **2022**
+
+You may also find this Preview paper useful, which discusses the general problem of defect structure prediction:
+
+- Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
+
+.. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
+.. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
+.. _Identifying the Ground State Structures of Defects in Solids: https://doi.org/10.48550/arXiv.2207.09862
+.. _In Search of Hidden Defects: https://doi.org/10.1016/j.matt.2021.06.003
+
+
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8 & 3.9 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
