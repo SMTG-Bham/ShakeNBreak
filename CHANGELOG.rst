@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v23.01.7
+--------
+
+- Add 'Studies using ShakeNBreak' and 'How to Cite' to readme and docs.
+
+
 v22.12.2
 --------
 

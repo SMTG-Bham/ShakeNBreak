@@ -139,10 +139,12 @@ dmypy.json
 Affinity/
 .vscode/settings.json
 
-# Misscellaneous
+# Miscellaneous
 shakenbreak/.vscode/settings.json
 snb_test.ipynb
 
 # Sourcery
 .sourcery.yaml
-snd_test.ipynb
+
+# Conda Packaging Notes
+conda_packaging.md
