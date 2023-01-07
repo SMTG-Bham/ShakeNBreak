@@ -4,7 +4,7 @@
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
-<!--- add JOSS DOI badge here when ready, and published arxiv. Also update pypi package [![DOI]...-->
+<!--- Add npj published link when ready, and remove arXiv. [![DOI]...-->
 
 # `ShakeNBreak` (`SnB`)
 <img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
