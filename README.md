@@ -23,6 +23,11 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 
 ![](docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
+### Literature
+- Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003). _Matter_ 4 (8), 2602-2605, **2021**
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817). _Journal of Open Source Software_ 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
+
 ## Installation
 ShakeNBreak can be installed using `pip`:
 ```bash
@@ -131,8 +136,18 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 <!-- Joe CuI -->
 <!-- Kat YTOS -->
 <!-- Adair CuSiSe3 -->
-<!-- Squires (and mention benchmark test against AIRSS? See Slack message -->
+<!-- Squires (and mention benchmark test against AIRSS? See Slack message) -->
 <!-- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon _npj??_ 2022 -->
+
+## License and Citation
+ShakeNBreak is made available under the MIT License.
+
+If you use it in your research, please cite:
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817). _Journal of Open Source Software_ 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
+
+You may also find this Preview paper useful, which discusses the general problem of defect structure prediction:
+- Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003). _Matter_ 4 (8), 2602-2605, **2021**
 
 ## Requirements
 `ShakeNBreak` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
