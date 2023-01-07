@@ -134,17 +134,17 @@ setup(
     version="22.12.2",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
-    long_description="Python package to automatise the process of defect structure searching. "
-    "It employs chemically-guided bond distortions to locate ground-state and metastable structures"
-    " of point defects in solid materials. Read the [docs]("
-    "https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
+    long_description="Python package to automate the process of defect structure searching. <br>"
+    "Employs chemically-guided bond distortions to locate ground-state and metastable structures"
+    " of point defects in solid materials. <br>"
+    "Read the [docs](https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
     long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois, Seán R. Kavanagh",
     author_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
     maintainer_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
     readme="README.md",  # PyPI readme
-    url="https://github.com/SMTG-UCL/ShakeNBreak",
+    url="https://shakenbreak.readthedocs.io/en/latest/index.html",
     license="MIT",
     license_files=("LICENSE",),
     classifiers=[
