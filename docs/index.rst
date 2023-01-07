@@ -207,12 +207,12 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
-- J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, `ChemRxiv`_ 2023
-- Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
-- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `arXiv`_ 2022
-- Y. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
-- S. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
-- S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+- J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, `ChemRxiv`_ 2023
+- Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
+- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `arXiv`_ 2022
+- Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
+- S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
+- S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
 
 .. Se
 .. BiOI
