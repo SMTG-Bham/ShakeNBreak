@@ -221,6 +221,12 @@ setup(
         "develop": PostDevelopCommand,
         "egg_info": CustomEggInfoCommand,
     },
+    project_urls={
+        "Homepage": "https://shakenbreak.readthedocs.io/en/latest/index.html",
+        "Documentation": "https://shakenbreak.readthedocs.io/en/latest/index.html",
+        "Package": "https://pypi.org/project/shakenbreak/",
+        "Repository": "https://github.com/SMTG-UCL/shakenbreak",
+    },
 )
 
 
