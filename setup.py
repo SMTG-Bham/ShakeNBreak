@@ -2,9 +2,6 @@
 
 import os
 import warnings
-from distutils.cmd import Command
-from distutils.command import install_headers
-from distutils.command.build_py import build_py as _build_py
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
