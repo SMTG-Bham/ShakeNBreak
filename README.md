@@ -30,9 +30,14 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 - Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
 
 ## Installation
-ShakeNBreak can be installed using `pip`:
+`ShakeNBreak` can be installed using `pip`:
 ```bash
-  pip install --user shakenbreak
+  pip install shakenbreak
+```
+
+Alternatively if needed, it can also be installed from `conda` with:
+```bash
+  conda install -c conda-forge shakenbreak
 ```
 
 If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:
