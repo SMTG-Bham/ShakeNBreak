@@ -3,6 +3,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg)](https://anaconda.org/conda-forge/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 <!--- Add npj published link when ready, and remove arXiv. [![DOI]...-->
 
