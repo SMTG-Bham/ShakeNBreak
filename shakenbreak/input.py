@@ -183,7 +183,7 @@ def _create_vasp_input(
             Dictionary with the distorted structures of charged defect
         incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the
-            `doped` defaults
+            `doped` defaults.
         potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update the
             `doped` defaults. Using `pymatgen` syntax (e.g. {'POTCAR':
@@ -2157,7 +2157,9 @@ class Distortions:
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
                 for those tags. Highly recommended to look at output `INCAR`s,
                 or `SnB_input_files/incar.yaml` to see what the default `INCAR`
-                settings are.
+                settings are. Note that any flags that aren't numbers or
+                True/False need to be input as strings with quotation marks
+                (e.g. `{"ALGO": "All"}`).
                 (Default: None)
             potcar_settings (:obj:`dict`):
                 Dictionary of user VASP POTCAR settings, to overwrite/update

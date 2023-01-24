@@ -15,6 +15,9 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
+.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg
+ :target: https://anaconda.org/conda-forge/shakenbreak
+
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
    :target: https://doi.org/10.21105/joss.04817
 
@@ -71,11 +74,18 @@ Literature
 Installation
 ========================
 
-ShakeNBreak can be installed using ``pip``:
+``ShakeNBreak`` can be installed using ``pip``:
 
 .. code:: bash
 
-  pip install --user shakenbreak
+  pip install shakenbreak
+
+Alternatively if needed, it can also be installed from ``conda`` with:
+
+.. code:: bash
+
+  conda install -c conda-forge shakenbreak
+
 
 If using ``VASP``, in order for ``ShakeNBreak`` to automatically generate the pseudopotential
 input files (``POTCARs``), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``

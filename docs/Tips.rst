@@ -126,4 +126,23 @@ applicable to finding metastable states, as described in the `method paper <http
 For this, you can use the optional ``metastable`` argument for ``get_energy_lowering_distortions``;
 see `docs here <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.energy_lowering_distortions.html#shakenbreak.energy_lowering_distortions.get_energy_lowering_distortions>`_.
 
+
+Troubleshooting
+-------------------
+
+- A current known issue with ``numpy``/``pymatgen`` is that it might give an error similar to this:
+
+  .. code:: python
+
+      ValueError: numpy.ndarray size changed, may indicate binary incompatibility. Expected 88 from C header, got 80 from PyObject
+
+  This is due to a recent change in the ``numpy`` C API, see `here <https://stackoverflow.com/questions/66060487/valueerror-numpy-ndarray-size-changed-may-indicate-binary-incompatibility-exp>`_.
+  It should be fixed by reinstalling ``pymatgen``, so that it is rebuilt with the new ``numpy`` C API:
+
+  .. code:: bash
+
+      pip uninstall pymatgen
+      pip install pymatgen
+
+
 Have any tips for users from using `ShakeNBreak`? Please share it with the developers and we'll add them here!
