@@ -247,6 +247,8 @@ def write_vasp_gam_files(
             default settings. Highly recommended to look at
             `/SnB_input_files/incar.yaml`, or output INCARs or doped.vasp_input
             source code, to see what the default INCAR settings are.
+            Note that any flags that aren't numbers or True/False need to be
+            input as strings with quotation marks (e.g. `{"ALGO": "All"}`).
             (default: None)
         potcar_settings (:obj:`dict`):
             Dictionary of user POTCAR settings to override default settings.
