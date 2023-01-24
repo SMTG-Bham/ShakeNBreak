@@ -3,6 +3,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg)](https://anaconda.org/conda-forge/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 <!--- Add npj published link when ready, and remove arXiv. [![DOI]...-->
 
@@ -29,9 +30,14 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 - Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
 
 ## Installation
-ShakeNBreak can be installed using `pip`:
+`ShakeNBreak` can be installed using `pip`:
 ```bash
-  pip install --user shakenbreak
+  pip install shakenbreak
+```
+
+Alternatively if needed, it can also be installed from `conda` with:
+```bash
+  conda install -c conda-forge shakenbreak
 ```
 
 If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:

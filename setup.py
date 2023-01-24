@@ -2,9 +2,6 @@
 
 import os
 import warnings
-from distutils.cmd import Command
-from distutils.command import install_headers
-from distutils.command.build_py import build_py as _build_py
 
 from setuptools import find_packages, setup
 from setuptools.command.develop import develop
@@ -131,7 +128,7 @@ fonts = package_files("fonts/")
 
 setup(
     name="shakenbreak",
-    version="23.01.7",
+    version="24.01.7",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automate the process of defect structure searching. <br>"
@@ -165,7 +162,7 @@ setup(
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
-        "pandas",
+        "pandas>=1.1.0",
         "seaborn",
         "hiphive",
         "monty",
@@ -220,6 +217,12 @@ setup(
         "install": PostInstallCommand,
         "develop": PostDevelopCommand,
         "egg_info": CustomEggInfoCommand,
+    },
+    project_urls={
+        "Homepage": "https://shakenbreak.readthedocs.io/en/latest/index.html",
+        "Documentation": "https://shakenbreak.readthedocs.io/en/latest/index.html",
+        "Package": "https://pypi.org/project/shakenbreak/",
+        "Repository": "https://github.com/SMTG-UCL/shakenbreak",
     },
 )
 
