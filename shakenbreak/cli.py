@@ -1315,7 +1315,7 @@ def plot(
 @snb.command(
     name="regenerate",
     context_settings=CONTEXT_SETTINGS,
-    no_args_is_help=True,
+    no_args_is_help=False,
 )
 @click.option(
     "--path",
