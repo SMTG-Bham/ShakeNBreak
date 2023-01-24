@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v24.01.7
+--------
+
+- Specify `pandas` version in requirements.txt to equal or higher than 1.1.0
+- Refactor `snb-regenerate` to execute when no arguments are specified (rather than showing help message)
+
 v23.01.7
 --------
 
