@@ -162,7 +162,7 @@ setup(
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
-        "pandas",
+        "pandas>=1.1.0",
         "seaborn",
         "hiphive",
         "monty",
