@@ -1942,6 +1942,43 @@ Chosen VASP error message: {error_string}
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         if_present_rm("Bond_Distortion_10.0%/job_file")
 
+        # test not ignoring and renaming when positive energies present in *Unperturbed* OUTCAR
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        positive_energies_outcar_string = """
+        energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
+        energy  without entropy=     2923.36313118  energy(sigma->0) =     2923.36252910
+        energy  without entropy=     3785.53283598  energy(sigma->0) =     3785.53033686
+        energy  without entropy=     2944.54877982  energy(sigma->0) =     2944.54877982
+        energy  without entropy=     5882.47593917  energy(sigma->0) =     5882.47494166
+        energy  without entropy=      762.73605542  energy(sigma->0) =      762.73605542
+        energy  without entropy=      675.21988502  energy(sigma->0) =      675.21988502
+        """
+        shutil.move("Unperturbed/OUTCAR", "Unperturbed/OUTCAR_backup")
+        with open("Unperturbed/OUTCAR", "w") as fp:
+            fp.write(positive_energies_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertNotIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Running job for Unperturbed", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("Positive energies or forces error encountered for Unperturbed.", out)
+        self.assertIn("This typically indicates the initial defect structure supplied to "
+                      "ShakeNBreak is highly unstable, often with bond lengths smaller than the "
+                      "ionic radii.", out)
+        self.assertIn("Please check this defect structure and/or the relaxation output files.", out)
+        self.assertTrue(os.path.exists("Unperturbed"))  # not renamed
+        shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+        if_present_rm("Unperturbed/job_file")
+        if_present_rm("job_file")
+
     def test_parse(self):
         """Test parse() function.
         Implicitly, this also tests the io.parse_energies() function"""
