@@ -59,10 +59,18 @@ SnB_run_loop () {
           errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI|FEXC)" OUTCAR)
           if (( pos_energies > 0 )) ||  (( errors > 0 ))  # if there are positive energies or errors in OUTCAR
             then
-            echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
-            builtin cd .. || return
-            mv "${i%/}" "${i%/}_High_Energy"
-            continue
+            if [[ "$i" == *"Unperturbed"* ]]  # positive energies / errors for Unperturbed structure, indicates pathological defect structure
+              then
+              echo "Positive energies or forces error encountered for ${i%/}. "
+              echo "This typically indicates the initial defect structure supplied to ShakeNBreak is highly unstable, often with bond lengths smaller than the ionic radii."
+              echo "Please check this defect structure and/or the relaxation output files."
+              continue
+            else
+              echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
+              builtin cd .. || return
+              mv "${i%/}" "${i%/}_High_Energy"
+              continue
+            fi
           fi
           init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
           fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
