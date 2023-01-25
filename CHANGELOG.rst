@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v24.01.7
+v23.01.25
 --------
 
 - Specify `pandas` version in requirements.txt to equal or higher than 1.1.0
