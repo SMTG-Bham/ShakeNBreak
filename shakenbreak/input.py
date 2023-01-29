@@ -387,6 +387,31 @@ def _get_defect_site(
     return defect_site
 
 
+def _get_defect_entry_from_defect(
+    defect: Defect,
+    charge_state: int = 0,
+):
+    """Generate a DefectEntry from a Defect object, whose defect structure
+    corresponds to the defect supercell (rather than unit cell). This is the case
+    when initilising Defects() from DOPED or from structures specified by the user.
+    """
+    defect_entry = DefectEntry(
+        defect=defect,
+        charge_state=charge_state,
+        # The Defect() created from `doped` output, refers to the
+        # supercell rather than unit cell, so we can use the
+        # Defect attribites to access the defect supercell frac coords
+        sc_defect_frac_coords=defect.site.frac_coords,
+        sc_entry=ComputedStructureEntry(
+            structure=defect.defect_structure,
+            energy=0.0,  # needs to be set, so set to 0.0
+        ),
+    )
+    if defect_entry is None:
+        raise ValueError("DefectEntry could not be generated.")
+    return defect_entry
+
+
 def _most_common_oxi(element) -> int:
     """
     Convenience function to get the most common oxidation state of an element, using pymatgen's
@@ -1487,7 +1512,6 @@ class Distortions:
         self,
         defects: Union[list, dict],
         oxidation_states: Optional[dict] = None,
-        padding: int = 1,
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
         bond_distortions: Optional[list] = None,
@@ -1638,17 +1662,7 @@ class Distortions:
                         "entry present. Please try again providing a `bulk` entry in `defects`."
                     )
 
-                # TODO: remove unnecessary code:
-                # if (
-                #     self.padding != 1
-                # ):  # padding explicitly set but is ignored for doped/PyCDT dicts
-                #     warnings.warn(
-                #         f"`padding` was set to {self.padding} but this is ignored when "
-                #         f"generating distortions from a `doped`/`PyCDT` format dict ("
-                #         f"charge states specifiied in the input dict are used instead)"
-                #     )
-
-                # Transform doped/PyCDT defect_dict to dictionary of {name: Defect()}
+                # Transform doped/PyCDT defect_dict to dictionary of {name: [DefectEntry(), ...]}
                 self.defects_dict = {}
                 for key, defect_dict_list in defects.items():
                     if key != "bulk":  # loop for vacancies, antisites and interstitials
@@ -1660,30 +1674,26 @@ class Distortions:
                             )
                             # Generate a DefectEntry for each charge state
                             self.defects_dict[defect_dict["name"]] = [
-                                DefectEntry(
-                                    defect=defect,
-                                    charge_state=charge,
-                                    sc_entry=ComputedStructureEntry(
-                                        structure=defect.defect_structure,
-                                        energy=None,  # needs to be set, so set to None
-                                    ),
-                                    # The Defect() created from `doped` output, refers to the
-                                    # supercell rather than unit cell, so we can use the
-                                    # Defect attribites to access the defect supercell frac coords
-                                    sc_defect_frac_coords=defect.defect_site.frac_coords,
+                                _get_defect_entry_from_defect(
+                                    defect=defect, charge_state=charge
                                 )
-                                for charge in defect_dict["charge_states"]
+                                for charge in defect_dict["charges"]
                             ]
 
             else:
-                if not all(
-                    [isinstance(defect, DefectEntry) for defect in defects.values()]
-                ):
-                    raise TypeError(
-                        "Some entries in `defects` dict are not DefectEntries objects (required format, "
-                        "see docstring). Distortions can also be initialised from pymatgen "
-                        "Structures using `Distortions.from_structures()`"
-                    )
+                for defect_entry_list in defects.values():
+                    if not all(
+                        [
+                            isinstance(defect_entry, DefectEntry)
+                            for defect_entry in defect_entry_list
+                        ]
+                    ):
+                        raise TypeError(
+                            "Some entries in `defects` dict are not DefectEntries "
+                            "objects (required format, see docstring). "
+                            "Distortions can also be initialised from pymatgen "
+                            "Structures using `Distortions.from_structures()`"
+                        )
 
                 self.defects_dict = defects  # {"defect name": [DefectEntry, ...]}
 
@@ -1707,15 +1717,6 @@ class Distortions:
                 "Distortions can also be initialised from pymatgen Structures using "
                 "`Distortions.from_structures()`"
             )
-
-        # TODO: remove unnecessary code:
-        # if user_charges not set for all defects, print info about how charge states will be
-        # determined
-        # if all(not defect.user_charges for defect in self.defects_dict.values()):
-        #     print(
-        #         "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
-        #         f"with a `padding = {padding}` on either side of this range."
-        #     )
 
         list_of_defect_entries = list(self.defects_dict.values())[0]
         defect_object = list_of_defect_entries[0].defect
@@ -2894,9 +2895,15 @@ class Distortions:
                 )
                 if defect:
                     defect_name = _get_defect_name_from_obj(defect)
-                    defect_name = _update_defect_dict(
-                        defect, defect_name, pymatgen_defects_dict
-                    )
+                    # Generate a defect entry for each charge state
+                    defect.user_charges = defect.get_charge_states(padding=padding)
+                    for charge in defect.user_charges:
+                        defect_entry = _get_defect_entry_from_defect(
+                            defect=defect, charge_state=charge
+                        )
+                        defect_name = _update_defect_dict(
+                            defect_entry, defect_name, pymatgen_defects_dict
+                        )
 
             # Check if user gives dict with structure and defect_coords/defect_index
             elif isinstance(defect_structure, tuple) or isinstance(
@@ -2938,10 +2945,16 @@ class Distortions:
                     )
 
                 if defect:
+                    defect.user_charges = defect.get_charge_states(padding=padding)
                     defect_name = _get_defect_name_from_obj(defect)
-                    defect_name = _update_defect_dict(
-                        defect, defect_name, pymatgen_defects_dict
-                    )
+                    # Generate a defect entry for each charge state
+                    for charge in defect.user_charges:
+                        defect_entry = _get_defect_entry_from_defect(
+                            defect=defect, charge_state=charge
+                        )
+                        defect_name = _update_defect_dict(
+                            defect_entry, defect_name, pymatgen_defects_dict
+                        )
 
                 else:
                     warnings.warn(
@@ -2964,10 +2977,11 @@ class Distortions:
                 "correspond to the same supercell and/or specify defect site(s) by inputting "
                 "`defects = [(defect Structure, frac_coords/index), ...]` instead."
             )
+        # Check entries in defect dict
+
         return cls(
             defects=pymatgen_defects_dict,
             oxidation_states=oxidation_states,
-            padding=padding,
             dict_number_electrons_user=dict_number_electrons_user,
             distortion_increment=distortion_increment,
             bond_distortions=bond_distortions,
