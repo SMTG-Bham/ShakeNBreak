@@ -1371,7 +1371,7 @@ def apply_snb_distortions(
     defect_type = defect_object.defect_type.name.lower()
     defect_structure = defect_entry.sc_entry.structure
     # Get defect site
-    bulk_supercell_site = _get_bulk_defect_site(defect_object)  # bulk site
+    bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
     defect_site_index = defect_object.defect_site_index  # This is for the unit cell,
     # but is conserved in the supercell
 
@@ -1405,7 +1405,7 @@ def apply_snb_distortions(
                 seed = int(distortion_factor * 100)
 
             bond_distorted_defect = _apply_rattle_bond_distortions(
-                defect_object=defect_entry,
+                defect_entry=defect_entry,
                 num_nearest_neighbours=num_nearest_neighbours,
                 distortion_factor=distortion_factor,
                 local_rattle=local_rattle,
@@ -2007,7 +2007,7 @@ class Distortions:
     def _setup_distorted_defect_dict(
         self,
         defect_entry: DefectEntry,
-        defect_name: str,
+        # defect_name: str,
     ) -> dict:
         """
         Setup `distorted_defect_dict` with info for `defect` in
@@ -2028,7 +2028,7 @@ class Distortions:
         user_charges = defect.user_charges
         frac_coords = defect_entry.sc_defect_frac_coords
         defect_species = defect.site.species
-        if frac_coords:
+        if frac_coords is not None:
             defect_site = PeriodicSite(
                 species=defect_species,
                 coords=frac_coords,
@@ -2139,7 +2139,7 @@ class Distortions:
             neutral_defect_entry.defect.user_charges = [
                 defect_entry.charge_state for defect_entry in list_of_defect_entries
             ]
-            defect_object = neutral_defect_entry.defect
+            # defect_object = neutral_defect_entry.defect
             defect_frac_coords = neutral_defect_entry.sc_defect_frac_coords
 
             # Parse distortion specifications given by user for neutral
@@ -2161,7 +2161,8 @@ class Distortions:
             }
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
-                neutral_defect_entry, defect_name
+                neutral_defect_entry,
+                # defect_name
             )
 
             for charge in distorted_defects_dict[defect_name][
@@ -2174,7 +2175,7 @@ class Distortions:
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
-                    defect_object=defect_object,
+                    defect_entry=neutral_defect_entry,
                     defect_name=defect_name,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
@@ -2208,7 +2209,7 @@ class Distortions:
                 distorted_defects_dict[defect_name]["charges"][charge]["structures"] = {
                     "Unperturbed": defect_distorted_structures[
                         "Unperturbed"
-                    ].defect_structure,
+                    ].sc_entry.structure,
                     "distortions": {
                         dist: struct
                         for dist, struct in defect_distorted_structures[
