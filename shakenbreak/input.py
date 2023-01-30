@@ -1074,13 +1074,13 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
     If defect_name is already in defect_dict, rename it to "{defect_name}a",
     and iterate until a unique name is found for `defect`.
     """
-    defect_site = defect_entry.defect.defect_site
+    defect_site = defect_entry.defect.site
     # Check if a) defect name already exists in defect_dict and if so,
     # if its site is different from the defect already in the dict (e.g.
     # are they different charge states of the same defect or different defects?)
     if (
         defect_name in defect_dict
-        and defect_site != defect_dict[defect_name][0].defect.defect_site
+        and defect_site != defect_dict[defect_name][0].defect.site
     ):  # if name already exists, rename entry in
         # dict to {defect_name}a, and rename this entry to {defect_name}b
         prev_defect_entry = defect_dict.pop(defect_name)
@@ -1093,7 +1093,7 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
     elif defect_name in [
         name[:-1] for name in defect_dict.keys()
     ] and defect_site not in [
-        list_defect_entries[0].defect.defect_site
+        list_defect_entries[0].defect.site
         for list_defect_entries in defect_dict.values()
     ]:
         # rename defect to {defect_name}{iterated letter}
@@ -1110,7 +1110,7 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
 
     elif (
         defect_name in defect_dict
-        and defect_site == defect_dict[defect_name][0].defect.defect_site
+        and defect_site == defect_dict[defect_name][0].defect.site
     ):
         # if name already exists and site is the same, add to list
         # (e.g. just different charge states/DefectEntries of the same defect)
@@ -2132,16 +2132,14 @@ class Distortions:
             defect_name,
             list_of_defect_entries,
         ) in self.defects_dict.items():  # loop for each defect
-            # Get neutral defect object
-            neutral_defect_entry = [
-                entry for entry in list_of_defect_entries if entry.charge_state == 0
-            ][0]
+            # Get one defect object
+            defect_entry = list_of_defect_entries[0]
             # Store the charge states in the user_charges attribute of the defect
-            neutral_defect_entry.defect.user_charges = [
+            defect_entry.defect.user_charges = [
                 defect_entry.charge_state for defect_entry in list_of_defect_entries
             ]
-            # defect_object = neutral_defect_entry.defect
-            defect_frac_coords = neutral_defect_entry.sc_defect_frac_coords
+            # defect_object = defect_entry.defect
+            defect_frac_coords = defect_entry.sc_defect_frac_coords
 
             # Parse distortion specifications given by user for neutral
             # defect and use ShakeNBreak defaults if not given
@@ -2153,7 +2151,7 @@ class Distortions:
                 defect_name=defect_name,
                 oxidation_states=self.oxidation_states,
                 dict_number_electrons_user=self.dict_number_electrons_user,
-                defect_entry=neutral_defect_entry,
+                defect_entry=defect_entry,
             )
 
             self.distortion_metadata["defects"][defect_name] = {
@@ -2162,7 +2160,7 @@ class Distortions:
             }
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
-                neutral_defect_entry,
+                defect_entry,
                 # defect_name
             )
 
@@ -2176,7 +2174,7 @@ class Distortions:
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
-                    defect_entry=neutral_defect_entry,
+                    defect_entry=defect_entry,
                     defect_name=defect_name,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
