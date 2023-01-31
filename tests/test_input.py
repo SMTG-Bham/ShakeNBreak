@@ -988,7 +988,7 @@ class InputTestCase(unittest.TestCase):
             "Cd_i_m1b": [self.V_Cd_entry,],
         }
         v_cd_entry_copy = copy.deepcopy(self.V_Cd_entry)
-        # Change defect site
+        # Change defect site so that code detects that is sym ineq defect
         v_cd_entry_copy.defect.site = PeriodicSite(
             Species("Cd"), [0.5, 0.5, 0.5], self.V_Cd_struc.lattice
         )
@@ -1007,6 +1007,19 @@ class InputTestCase(unittest.TestCase):
                 new_defect_name: [v_cd_entry_copy],
             },
         )  # dict edited
+        # Test case with 3 sym ineq interstitials and several charge states
+        # for each of them
+        te_int_dict = {}
+        te_int_dict["Te_i_m32a"] = self.cdte_defects["Int_Te_1"]
+        te_int_dict["Te_i_m128"] = self.cdte_defects["Int_Te_2"]
+        # Only one charge state for "Int_Te_3"
+        te_int_dict["Te_i_m32b"] = [self.cdte_defects["Int_Te_3"][0],]
+        new_defect_name = input._update_defect_dict(
+            defect_entry=self.cdte_defects["Int_Te_3"][1],
+            defect_name="Te_i_m32",
+            defect_dict=te_int_dict
+        )
+
 
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
@@ -1895,18 +1908,24 @@ class InputTestCase(unittest.TestCase):
         vacancies = [
             defect_entry for defect_entry in self.cdte_defect_list
             if "v_" in defect_entry.defect.name
-            if defect_entry.charge_state == 0
+            if defect_entry.charge_state == 0  # only 1 charge state
         ]
-        for vacancy in vacancies:
-            vacancy.defect.user_charges = None  # not set
+        for defect_entry in vacancies:
+            defect_entry.defect.user_charges = None  # not set
         # Now we generate several defect_entries
         vacancies_entries = []
         for defect_entry in vacancies:
             defect = defect_entry.defect
-            vacancies_entries.extend(
-                [input._get_defect_entry_from_defect(defect, charge)
-                for charge in [1, 2, 3, 4, 5, 6]]
-            )
+            if defect.name == "v_Cd":
+                vacancies_entries.extend(
+                    [input._get_defect_entry_from_defect(defect, charge)
+                    for charge in [1,]]
+                )
+            elif defect.name == "v_Te":
+                vacancies_entries.extend(
+                    [input._get_defect_entry_from_defect(defect, charge)
+                    for charge in [1, 2, 3,]]
+                )
         # test default
         dist = input.Distortions(
             vacancies_entries,
@@ -1915,7 +1934,7 @@ class InputTestCase(unittest.TestCase):
         for defect_name in ["v_Cd_s0", "v_Te_s32"]:
             self.assertTrue(
                 os.path.exists(f"{defect_name}_1/Bond_Distortion_-30.0%/POSCAR")
-            )
+            )  # +1 charge state exists for both
             self.assertFalse(os.path.exists(f"{defect_name}_7"))
         self.assertFalse(os.path.exists("v_Cd_s0_2"))
         self.assertTrue(os.path.exists("v_Te_s32_3"))
