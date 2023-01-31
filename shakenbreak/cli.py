@@ -394,6 +394,13 @@ def generate(
         input._get_defect_entry_from_defect(defect_object, c)
         for c in defect_object.get_charge_states(padding)
     ]
+    # if user_charges not set for all defects, print info about how charge states will be
+    # determined
+    if not defect_object.user_charges:
+        print(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
+            f"with a `padding = {padding}` on either side of this range."
+        )
     Dist = input.Distortions(
         defects={
             name: defect_entries,  # So that user can specify defect name.
@@ -757,7 +764,16 @@ def generate_all(
             defect_name = input._update_defect_dict(
                 defect_entry, defect_name, defects_dict
             )
-
+    # if user_charges not set for all defects, print info about how charge states will be
+    # determined
+    if all(
+        not defect_entry_list[0].defect.user_charges
+        for defect_entry_list in defects_dict.values()
+    ):
+        print(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
+            f"with a `padding = {padding}` on either side of this range."
+        )
     # Apply distortions and write input files
     Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
