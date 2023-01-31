@@ -2884,6 +2884,12 @@ class Distortions:
                 f"Wrong format for `defects`. Should be a list of pymatgen Structure objects, but "
                 f"got {type(defects)} instead."
             )
+        if not padding:
+            print(
+                "Defect charge states will be set to the range: 0 – {Defect "
+                "oxidation state}, with a `padding = 1` on either side of this "
+                "range."
+            )
 
         for defect_structure in defects:
             if isinstance(defect_structure, Structure):
