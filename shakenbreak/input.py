@@ -2920,6 +2920,13 @@ class Distortions:
                 "oxidation state}, with a `padding = 1` on either side of this "
                 "range."
             )
+        else:
+            print(
+                "Defect charge states will be set to the range: 0 – {Defect "
+                "oxidation state}, "
+                + f"with a `padding = {padding}` on either side of this "
+                "range."
+            )
 
         for defect_structure in defects:
             if isinstance(defect_structure, Structure):
