@@ -229,7 +229,7 @@ class CLITestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
-        self.assertEqual(result.exit_code, 0)  # TODO: remove
+        self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Auto site-matching identified {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
             f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
