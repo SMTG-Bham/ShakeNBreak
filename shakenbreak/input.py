@@ -1075,9 +1075,8 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
     and iterate until a unique name is found for `defect`.
     """
     defect_site = defect_entry.defect.site
-    # Check if a) defect name already exists in defect_dict and if so,
-    # if its site is different from the defect already in the dict (e.g.
-    # are they different charge states of the same defect or different defects?)
+
+    # Different sym ineq site
     if (
         defect_name in defect_dict
         and defect_site != defect_dict[defect_name][0].defect.site
@@ -1090,13 +1089,28 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
             defect_entry,
         ]
 
-    elif defect_name in [
-        name[:-1] for name in defect_dict.keys()
-    ] and defect_site not in [
-        list_defect_entries[0].defect.site
-        for list_defect_entries in defect_dict.values()
-    ]:
-        # rename defect to {defect_name}{iterated letter}
+    # Same sym ineq site (but different charge state)
+    elif (
+        defect_name in defect_dict
+        and defect_site == defect_dict[defect_name][0].defect.site
+    ):
+        # if name already exists and site is the same, add to list
+        # (e.g. just different charge states/DefectEntries of the same defect)
+        defect_dict[defect_name].append(defect_entry)
+
+    # Different sym ineq site (compared to two or more other defects already present in dict)
+    elif (
+        defect_name in [name[:-1] for name in defect_dict.keys()]
+        and defect_site
+        not in [
+            list_defect_entries[0].defect.site
+            for list_defect_entries in defect_dict.values()
+            if list_defect_entries[0].defect.name == defect_entry.defect.name
+        ]  # check defect sites are different to ensure they are sym. ineq. defects
+        # rather than different charge states of the same defect
+    ):
+        # Defect in different symmetry equivalent site (compared to the other defects
+        # with same name), so  rename to {defect_name}{iterated letter}
         last_letters = [
             name[-1] for name in defect_dict.keys() if name[:-1] == defect_name
         ]
@@ -1108,18 +1122,34 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
             defect_entry,
         ]
 
+    # Same defect compared to two or more other defects already present in dict
     elif (
-        defect_name in defect_dict
-        and defect_site == defect_dict[defect_name][0].defect.site
+        defect_name in [name[:-1] for name in defect_dict.keys()]
+        and defect_site
+        in [
+            list_defect_entries[0].defect.site
+            for list_defect_entries in defect_dict.values()
+            if list_defect_entries[0].defect.name == defect_entry.defect.name
+        ]  # check defect sites are equal to ensure they are the same defect
+        # (e.g. different charge states)
     ):
-        # if name already exists and site is the same, add to list
-        # (e.g. just different charge states/DefectEntries of the same defect)
-        defect_dict[defect_name].append(defect_entry)
+        # Find the defect name that corresponds to the same defect site
+        for other_defect_name, list_defect_entries in defect_dict.items():
+            if (
+                list_defect_entries[0].defect.name
+                == defect_entry.defect.name  # same name
+                and list_defect_entries[0].defect.site == defect_site  # same site
+            ):
+                defect_dict[other_defect_name].append(defect_entry)
 
-    else:
+    # New defect
+    elif defect_name not in defect_dict:
         defect_dict[defect_name] = [
             defect_entry,
         ]
+
+    else:
+        raise ValueError("Problem updating defect_dict")
 
     return defect_name  # return defect_name in case it was updated
 
