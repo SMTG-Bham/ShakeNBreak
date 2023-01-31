@@ -1578,7 +1578,7 @@ seed: 42"""  # previous default
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-            f"{defects_dir}/{defect_name}_POSCAR",padding
+            f"{defects_dir}/{defect_name}_POSCAR",
         )
         result = runner.invoke(
             snb,

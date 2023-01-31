@@ -759,6 +759,7 @@ def generate_all(
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
+        # If charges were not specified by use, set them using padding
         for charge in defect_object.get_charge_states(padding=padding):
             defect_entry = input._get_defect_entry_from_defect(defect_object, charge)
             defect_name = input._update_defect_dict(
