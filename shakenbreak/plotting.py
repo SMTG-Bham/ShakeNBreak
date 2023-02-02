@@ -937,12 +937,12 @@ def _save_plot(
         )
 
 
-def _format_tick_labels(
+def _format_ticks(
     ax: mpl.axes.Axes,
-    energy_range: list,
+    energies_list: list,
 ) -> mpl.axes.Axes:
     """
-    Format axis labels of distortion plots and set limits of y axis.
+    Format axis ticks of distortion plots and set limits of y axis.
     For the y-axis (energies), show number with:
     - 1 decimal point if energy range is higher than 0.4 eV,
     - 3 decimal points if energy range is smaller than 0.1 eV,
@@ -951,33 +951,49 @@ def _format_tick_labels(
     Args:
         ax (obj:`mpl.axes.Axes`):
             matplotlib.axes.Axes of figure to format
-        energy_range (:obj:`list`):
+        energies_list (:obj:`list`):
             List of y (energy) values
 
     Returns:
         mpl.axes.Axes: Formatted axes
     """
-    if (max(energy_range) - min(energy_range)) > 0.4:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.1f}")  # 1 decimal point
-        )
-    elif (max(energy_range) - min(energy_range)) < 0.1:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.3f}")  # 3 decimal points
-        )
-    else:
-        ax.yaxis.set_major_formatter(
-            mpl.ticker.StrMethodFormatter("{x:,.2f}")
-        )  # else 2 decimal points
-    ax.xaxis.set_major_formatter(
-        mpl.ticker.StrMethodFormatter("{x:,.1f}")
-    )  # 1 decimal for distortion factor (x axis)
+    energy_range = max(energies_list) - min(energies_list)
+
+    tick_interval = None
+    if energy_range > 0.3:
+        tick_interval = 0.1
+    if energy_range > 0.6:
+        tick_interval = 0.2
+    if energy_range > 1.5:
+        tick_interval = 0.5
+    if energy_range > 2.5:
+        # probably something wrong... revert to default
+        tick_interval = None
+
+    ylim_lower = min(energies_list) - 0.1 * energy_range  # default lower limit
+
+    if tick_interval:  # set locator to tick_interval
+        loc = mpl.ticker.MultipleLocator(base=tick_interval)
+        # want the bottom tick to be no more thant (5%)*energy_range above the minimum energy to
+        # allow easy visual estimation of energy lowering and scale:
+        if (
+            min(energies_list) + 0.05 * energy_range
+        ) // tick_interval == ylim_lower // tick_interval:
+            # means bottom tick is at or above the minimum energy
+            ylim_lower = min(energies_list) - tick_interval
+
+    else:  # set locator to default (either <0.1 eV or >2.5 eV energy difference)
+        loc = mpl.ticker.AutoLocator()  # default locator
+
+    ax.yaxis.set_major_locator(loc)
+
     # Limits for y axis:
     ax.set_ylim(
-        bottom=min(energy_range) - 0.1 * (max(energy_range) - min(energy_range)),
-        top=max(energy_range) + 0.1 * (max(energy_range) - min(energy_range)),
+        bottom=ylim_lower,
+        top=max(energies_list) + 0.1 * energy_range,
     )  # add some extra space to avoid cutting off some data points
     # (e.g. using the energy range here in case units are meV)
+
     return ax
 
 
@@ -1797,9 +1813,9 @@ def plot_colorbar(
         # Formatting of tick labels.
         # For yaxis (i.e. energies): 1 decimal point if deltaE = (max E - min E) > 0.4 eV,
         # 2 if deltaE > 0.1 eV, otherwise 3.
-        ax = _format_tick_labels(
+        ax = _format_ticks(
             ax=ax,
-            energy_range=list(energies_dict["distortions"].values())
+            energies_list=list(energies_dict["distortions"].values())
             + [
                 energies_dict["Unperturbed"],
             ],
@@ -2135,9 +2151,9 @@ def plot_datasets(
     # Format tick labels:
     # For yaxis, 1 decimal point if energy difference between max E and min E
     # > 0.4 eV, 3 if E < 0.1 eV, 2 otherwise
-    ax = _format_tick_labels(
+    ax = _format_ticks(
         ax=ax,
-        energy_range=list(datasets[0]["distortions"].values())
+        energies_list=list(datasets[0]["distortions"].values())
         + [
             datasets[0]["Unperturbed"],
         ],
