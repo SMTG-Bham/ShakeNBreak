@@ -163,8 +163,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor"
         )
 
-    def test_format_tick_labels(self):
-        "Test format_tick_labels() function."
+    def test_format_ticks(self):
+        "Test format_ticks() function."
         # Test standard behaviour
         fig, ax = plt.subplots(1, 1)
         ax.plot(
@@ -181,19 +181,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
         semi_formatted_ax.set_ylim(
             -0.2, 0.4
         )  # set incorrect y limits (-0.2 rather than ~-0.8)
-        semi_formatted_ax.set_xticks(
-            ticks=[
-                -0.201,
-                -0.101,
-                0.000,
-            ],
-            labels=[
-                -0.201,
-                -0.101,
-                0.000,
-            ],
-            minor=False,
-        )  # set incorrect x ticks
         semi_formatted_ax.set_yticks(
             ticks=[
                 -0.804,
@@ -207,9 +194,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
             ],
             minor=False,
         )  # set incorrect y ticks
-        formatted_ax = plotting._format_tick_labels(
+        formatted_ax = plotting._format_ticks(
             ax=deepcopy(semi_formatted_ax),
-            energy_range=list(self.V_Cd_energies_dict["distortions"].values())
+            energies_list=list(self.V_Cd_energies_dict["distortions"].values())
             + [
                 self.V_Cd_energies_dict["Unperturbed"],
             ],
@@ -234,33 +221,16 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 + list(self.V_Cd_energies_dict["distortions"].values())
             ),
         )
-        # Check x tick labels have 1 decimal place
-        self.assertTrue(
-            len(
-                formatted_ax.xaxis.get_major_formatter()
-                .format_data(0.11111)
-                .split(".")[1]
-            )
-            == 1
-        )
-        # Check y tick labels have 1 decimal place if energy range is > 0.4 eV
-        self.assertTrue(
-            len(
-                formatted_ax.yaxis.get_major_formatter()
-                .format_data(0.11111)
-                .split(".")[1]
-            )
-            == 1
-        )
 
-        # Test y tick labels have 3 decimal places if energy range is < 0.1 eV
+        # check y tick locators set as expected (0.2 eV spacing for >0.6 eV range)
+        np.testing.assert_array_equal(mpl.ticker.MultipleLocator(base=0.2).tick_values(-0.3, 0.7),
+                         formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7))
+
+        # check y tick locators set as expected (0.1 eV spacing for >0.3 eV range)
         fig, ax = plt.subplots(1, 1)
-        energies = [
-            np.random.uniform(-0.099, 0)
-            for i in range(len(self.V_Cd_energies_dict["distortions"].keys()))
-        ]
+        energies = list(np.arange(-0.31, 0.0, 0.01))
         ax.plot(
-            list(self.V_Cd_energies_dict["distortions"].keys()),
+            np.arange(len(energies)),
             energies,
         )
         semi_formatted_ax = plotting._format_axis(
@@ -272,25 +242,19 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         semi_formatted_ax.set_yticks(
             ticks=[
-                -0.08041,
+                -0.28041,
                 -0.05011,
                 0.0001,
             ],
-            labels=[-0.08041, -0.05011, 0.0001],
+            labels=[-0.31041, -0.05011, 0.0001],
             minor=False,
         )  # set incorrect y ticks
-        formatted_ax = plotting._format_tick_labels(
+        formatted_ax = plotting._format_ticks(
             ax=deepcopy(semi_formatted_ax),
-            energy_range=energies,
+            energies_list=energies,
         )
-        self.assertTrue(
-            len(
-                formatted_ax.yaxis.get_major_formatter()
-                .format_data(0.11111)
-                .split(".")[1]
-            )
-            == 3
-        )
+        np.testing.assert_array_equal(mpl.ticker.MultipleLocator(base=0.1).tick_values(-0.3, 0.7),
+                                      formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7))
 
     def test_format_defect_name(self):
         """Test _format_defect_name() function."""
