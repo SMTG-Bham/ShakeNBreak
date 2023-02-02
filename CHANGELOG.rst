@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v23.02.22
+v23.02.02
 ----------
 - Refactor Distortions() class to take in DefectEntry objects as input, rather than Defect objects, to be
 compatible with `pymatgen-analysis-defects`.
