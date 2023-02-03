@@ -338,6 +338,8 @@ def generate(
     defect_struc = Structure.from_file(defect)
     bulk_struc = Structure.from_file(bulk)
 
+    # Note that here the Defect.defect_structure is the defect `supercell`
+    # structure, not the defect `primitive` structure.
     defect_object = input.identify_defect(
         defect_structure=defect_struc,
         bulk_structure=bulk_struc,
@@ -387,11 +389,22 @@ def generate(
     if name is None:
         name = input._get_defect_name_from_obj(defect_object)
 
+    # Refactor Defect into list of DefectEntry objects
+    defect_entries = [
+        input._get_defect_entry_from_defect(defect_object, c)
+        for c in defect_object.get_charge_states(padding)
+    ]
+    # if user_charges not set for all defects, print info about how charge states will be
+    # determined
+    if not defect_object.user_charges:
+        print(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
+            f"with a `padding = {padding}` on either side of this range."
+        )
     Dist = input.Distortions(
         defects={
-            name: defect_object,  # So that user can specify defect name.
+            name: defect_entries,  # So that user can specify defect name.
         },
-        padding=padding,
         **user_settings,
     )
     if code.lower() == "vasp":
@@ -458,6 +471,7 @@ def generate(
             distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
                 verbose=verbose,
             )
+    # Save Defect objects to file
     dumpfn(defect_object, "./parsed_defects_dict.json")
 
 
@@ -745,12 +759,24 @@ def generate_all(
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
-        defect_name = input._update_defect_dict(
-            defect_object, defect_name, defects_dict
+        # If charges were not specified by use, set them using padding
+        for charge in defect_object.get_charge_states(padding=padding):
+            defect_entry = input._get_defect_entry_from_defect(defect_object, charge)
+            defect_name = input._update_defect_dict(
+                defect_entry, defect_name, defects_dict
+            )
+    # if user_charges not set for all defects, print info about how charge states will be
+    # determined
+    if all(
+        not defect_entry_list[0].defect.user_charges
+        for defect_entry_list in defects_dict.values()
+    ):
+        print(
+            "Defect charge states will be set to the range: 0 – {Defect oxidation state}, "
+            f"with a `padding = {padding}` on either side of this range."
         )
-
     # Apply distortions and write input files
-    Dist = input.Distortions(defects_dict, padding=padding, **user_settings)
+    Dist = input.Distortions(defects_dict, **user_settings)
     if code.lower() == "vasp":
         if input_file:
             incar = Incar.from_file(input_file)
