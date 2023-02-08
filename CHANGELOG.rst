@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v23.02.08
+----------
+- Change `numpy` version requirement in `docs/requirements.txt` to `numpy>=1.21` to work with `numpy.typing.NDArray`.
+
 v23.02.02
 ----------
 - Refactor Distortions() class to take in DefectEntry objects as input, rather than Defect objects, to be
