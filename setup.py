@@ -128,7 +128,7 @@ fonts = package_files("fonts/")
 
 setup(
     name="shakenbreak",
-    version="23.02.02",
+    version="23.02.08",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description="Python package to automate the process of defect structure searching. <br>"
