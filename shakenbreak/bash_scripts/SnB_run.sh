@@ -50,7 +50,7 @@ SnB_run_loop () {
         then
         builtin cd "$i" || return
         if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]
-          then "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || "cp" ../"${job_filepath}" "./${job_filename}" || return
+          then "cp" ../"${job_filepath}" "./${job_filename}" || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
         fi
         if [ -f OUTCAR ]  # if OUTCAR exists so rerunning rather than 1st run
           then
