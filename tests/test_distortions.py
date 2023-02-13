@@ -207,12 +207,18 @@ class DistortionTestCase(unittest.TestCase):
                             f"distort, we ignore the elemental identity. The final distortion "
                             f"information is:"
                         )
+                        user_warnings = [
+                            warning for warning in w if warning.category == UserWarning
+                        ]
                         if num_neighbours > 0:
-                            self.assertEqual(len(w), 1)
-                            self.assertEqual(w[0].category, UserWarning)
-                            self.assertIn(warning_message, str(w[0].message))
+                            self.assertEqual(len(user_warnings), 1)
+                            self.assertIn(
+                                warning_message, str(user_warnings[0].message)
+                            )
                         else:
-                            self.assertEqual(len(w), 0)  # No warning if we distort none
+                            self.assertEqual(
+                                len(user_warnings), 0
+                            )  # No warning if we distort none
 
         # test the case where we do have some of the `distorted_element` neighbours, but less than
         # `num_nearest_neighbours` of them with 4.5 Å of the defect site
@@ -235,15 +241,19 @@ class DistortionTestCase(unittest.TestCase):
                         f"distort, we ignore the elemental identity. The final distortion "
                         f"information is:"
                     )
+                    user_warnings = [
+                        warning for warning in w if warning.category == UserWarning
+                    ]
                     if (
                         num_neighbours > 7
                     ):  # should only give warning when more than 7 distorted
                         # neighbours requested
-                        self.assertEqual(len(w), 1)
-                        self.assertEqual(w[0].category, UserWarning)
-                        self.assertIn(warning_message, str(w[0].message))
+                        self.assertEqual(len(user_warnings), 1)
+                        self.assertIn(warning_message, str(user_warnings[0].message))
                     else:
-                        self.assertEqual(len(w), 0)  # No warning if we distort none
+                        self.assertEqual(
+                            len(user_warnings), 0
+                        )  # No warning if we distort none
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""

@@ -268,22 +268,21 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "not be included in low_energy_defects (check relaxation folders with CONTCARs "
             "are present)."  # check this is skipped if no data
         )
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
         self.assertEqual(
-            len(w), 2
-        )  # 28  # No Int_Cd_2_1 data and parsing not possible
-        for warning in w:
-            self.assertEqual(warning.category, UserWarning)
+            len(user_warnings), 2
+        )  # No Int_Cd_2_1 data and parsing not possible
         self.assertIn(
             "Energies could not be parsed for defect 'Int_Cd_2_1' in "
             f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
             "check calculations have converged, and that distortion subfolders "
             "match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
             "Unperturbed)",
-            str(w[0].message),
+            str(user_warnings[0].message),
         )
         self.assertIn(
             f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
-            str(w[1].message),
+            str(user_warnings[1].message),
         )
 
         self.assertEqual(len(low_energy_defects_dict), 1)
@@ -347,22 +346,23 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "with charge -1."
             )
             mock_print.assert_any_call("\nInt_Cd_2")
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
             self.assertEqual(
-                len(w), 2
-            )  # 28  # No Int_Cd_2_1 data and parsing not possible
-            for warning in w:
-                self.assertEqual(warning.category, UserWarning)
+                len(user_warnings), 2
+            )  # No Int_Cd_2_1 data and parsing not possible
             self.assertIn(
                 "Energies could not be parsed for defect 'Int_Cd_2_1' in "
                 f"'{self.VASP_CDTE_DATA_DIR}'. If these directories are correct, "
                 "check calculations have converged, and that distortion subfolders "
                 "match ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, "
                 "Unperturbed)",
-                str(w[0].message),
+                str(user_warnings[0].message),
             )
             self.assertIn(
                 f"Path {self.VASP_CDTE_DATA_DIR}/Int_Cd_2_1/Int_Cd_2_1.yaml does not exist",
-                str(w[1].message),
+                str(user_warnings[1].message),
             )
             self.assertEqual(low_energy_defects_dict, {})
 
@@ -674,11 +674,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "not be included in low_energy_defects (check relaxation folders with CONTCARs "
                 "are present)."  # check this is skipped if no data
             )
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
             self.assertEqual(
-                len(w), 3
+                len(user_warnings), 3
             )  # No Int_Cd_2_1 data (2) and too large rattle warnings
-            for warning in w:
-                self.assertEqual(warning.category, UserWarning)
 
             warning_message = (
                 f"All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
@@ -693,7 +694,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"test with reduced `stdev`!"
             )
             self.assertTrue(
-                any([str(warning.message) == warning_message for warning in w])
+                any(
+                    [
+                        str(warning.message) == warning_message
+                        for warning in user_warnings
+                    ]
+                )
             )
 
     def test_get_energy_lowering_distortions_metastable(self):

@@ -179,9 +179,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             output = analysis._sort_data("fake_file")
             warning_message = f"Path fake_file does not exist"
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, (None, None, None))
 
         with warnings.catch_warnings(record=True) as w:
@@ -190,9 +192,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             warning_message = (
                 "No distortion results parsed from fake_file.yaml, returning None"
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, (None, None, None))
 
     def test_analyse_defect_site(self):
@@ -477,9 +481,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_energies_dict = analysis.get_energies(
                 defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
 
             energies_dict_keys_dict = {"distortions": None}
             self.assertEqual(
@@ -505,7 +511,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_species="v_Cd_s0_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
-            max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict, verbose=True)
+            max_dist_dict = analysis.calculate_struct_comparison(
+                defect_structures_dict, verbose=True
+            )
             mock_print.assert_called_with("Comparing structures to Unperturbed...")
         self.assertEqual(
             len(max_dist_dict), len(defect_structures_dict)
@@ -550,7 +558,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_structures_dict,
                 "disp",
                 ref_structure=self.V_Cd_minus0pt5_struc_rattled,
-                verbose=True
+                verbose=True,
             )
             mock_print.assert_called_with(
                 "Comparing structures to specified ref_structure (Cd31 Te32)..."
@@ -803,9 +811,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 "All structures in defect_structures_dict are not converged. "
                 "Returning None."
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, None)
 
     @patch("builtins.print")
@@ -968,8 +978,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         # Non existent structure
         os.mkdir(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
-        shutil.copyfile(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
-                        f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR")
+        shutil.copyfile(
+            f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
+            f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR",
+        )
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
                 defect_species="vac_1_Ti_0",
@@ -980,17 +992,27 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-        self.assertTrue(any("Structure for vac_1_Ti_0 either not converged or not found. Skipping "
-                            "magnetisation analysis." in str(warning.message) for warning in w))
+        self.assertTrue(
+            any(
+                "Structure for vac_1_Ti_0 either not converged or not found. Skipping "
+                "magnetisation analysis." in str(warning.message)
+                for warning in w
+            )
+        )
 
         # ISPIN = 1 OUTCAR:
-        shutil.copyfile(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/CONTCAR",
-                        f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/CONTCAR")
+        shutil.copyfile(
+            f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/CONTCAR",
+            f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/CONTCAR",
+        )
         with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR") as f:
             outcar_string = f.read()
-        ispin1_outcar_string = re.sub("ISPIN  =      2    spin polarized calculation?",
-                                      "ISPIN = 1", outcar_string)
-        with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR", "w") as f:
+        ispin1_outcar_string = re.sub(
+            "ISPIN  =      2    spin polarized calculation?", "ISPIN = 1", outcar_string
+        )
+        with open(
+            f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR", "w"
+        ) as f:
             f.write(ispin1_outcar_string)
         with warnings.catch_warnings(record=True) as w:
             mags = analysis.get_site_magnetizations(
@@ -1002,10 +1024,15 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-        self.assertTrue(any(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR is "
-                            f"from a "
-                            "non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
-                            "is not possible. Skipping." in str(warning.message) for warning in w))
+        self.assertTrue(
+            any(
+                f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR is "
+                f"from a "
+                "non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
+                "is not possible. Skipping." in str(warning.message)
+                for warning in w
+            )
+        )
         if_present_rm(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
 
         # Non existent OUTCAR
@@ -1019,8 +1046,12 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 threshold=0.3,
                 defect_site=[0.0, 0.16666666666666669, 0.25],
             )
-            self.assertTrue(any("OUTCAR file not found in path" in str(warning.message) for
-                                warning in w))
+            self.assertTrue(
+                any(
+                    "OUTCAR file not found in path" in str(warning.message)
+                    for warning in w
+                )
+            )
 
 
 if __name__ == "__main__":
