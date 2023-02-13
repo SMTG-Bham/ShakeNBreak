@@ -291,7 +291,7 @@ def parse_energies(
                     energies["distortions"][dist_name] = float(energy)
 
                 if not converged:
-                    print(f"{dist} not fully relaxed")
+                    print(f"{dist} for {defect} is not fully relaxed")
 
             elif not outcar:
                 # check if energy not found, but was previously parsed, then add to dict
