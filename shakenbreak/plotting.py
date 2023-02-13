@@ -311,26 +311,32 @@ def _format_defect_name(
         if post_interstitial_strings is None:
             post_interstitial_strings = recognised_post_interstitial_strings
         defect_name = None
+        defect_name_without_site_num = None
+        defect_name_with_site_num = None
 
-        if include_site_num_in_name:
+        match_found, site_num = _check_matching_defect_format_with_site_num(
+            element,
+            name,
+            pre_vacancy_strings,
+            post_vacancy_strings,
+        )
+        if match_found:
+            defect_name_with_site_num = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
+            defect_name_without_site_num = f"$V_{{{element}}}^{{{charge}}}$"
+
+        else:
             match_found, site_num = _check_matching_defect_format_with_site_num(
                 element,
                 name,
-                pre_vacancy_strings,
-                post_vacancy_strings,
+                pre_interstitial_strings,
+                post_interstitial_strings,
             )
             if match_found:
-                defect_name = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
+                defect_name_with_site_num = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+                defect_name_without_site_num = f"{element}$_i^{{{charge}}}$"
 
-            else:
-                match_found, site_num = _check_matching_defect_format_with_site_num(
-                    element,
-                    name,
-                    pre_interstitial_strings,
-                    post_interstitial_strings,
-                )
-                if match_found:
-                    defect_name = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+        if include_site_num_in_name and defect_name_with_site_num is not None:
+            defect_name = defect_name_with_site_num
 
         if (
             _check_matching_defect_format(
@@ -349,6 +355,9 @@ def _format_defect_name(
             and defect_name is None
         ):
             defect_name = f"{element}$_i^{{{charge}}}$"
+
+        if defect_name is None and defect_name_without_site_num is not None:
+            defect_name = defect_name_without_site_num
 
         return defect_name
 

@@ -281,49 +281,96 @@ class PlottingDefectsTestCase(unittest.TestCase):
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "$V_{Cd_{1}}^{0}$")
-        # test interstitial case
+
+        # test interstitial case with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="Int_Cd_1_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Cd$_i^{0}$")
+        # test interstitial case with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="Int_Cd_1_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
-        # test lowercase interstitial
+        # test lowercase interstitial with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="int_Cd_1_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Cd$_i^{0}$")
+        # test lowercase interstitial with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="int_Cd_1_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
-        # test uppercase vacancy (pymatgen default name)
+        # test uppercase vacancy (pymatgen default name) with site number excluded
         formatted_name = plotting._format_defect_name(
             defect_species="Vac_1_Cd_0",
             include_site_num_in_name=False,
         )
         self.assertEqual(formatted_name, "$V_{Cd}^{0}$")
+        # test uppercase vacancy (pymatgen default name) with site number included
+        formatted_name = plotting._format_defect_name(
+            defect_species="Vac_1_Cd_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "$V_{Cd_{1}}^{0}$")
 
-        # test substitution with site number
+        # test substitution with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_Ni_on_Li_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Ni$_{Li}^{0}$")
+
+        # test substitution with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="as_1_Ni_on_Li_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Ni$_{Li_{1}}^{0}$")
 
-        # test substitution with site number, current doped format
+        # test substitution with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_2_Na_on_P_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Na$_{P}^{0}$")
+
+        # test substitution with site number included, current doped format
         formatted_name = plotting._format_defect_name(
             defect_species="as_2_Na_on_P_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Na$_{P_{2}}^{0}$")
 
-        # test interstitial with site number, current doped format
+        # test interstitial with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="inter_12_P_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "P$_i^{0}$")
+
+        # test interstitial with site number included, current doped format
         formatted_name = plotting._format_defect_name(
             defect_species="inter_12_P_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "P$_{i_{12}}^{0}$")
 
-        # test vacancy with site number, current doped format
+        # test vacancy with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="vac_4_P_-2",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "$V_{P}^{-2}$")
+
+        # test vacancy with site number included, current doped format
         formatted_name = plotting._format_defect_name(
             defect_species="vac_4_P_-2",
             include_site_num_in_name=True,
