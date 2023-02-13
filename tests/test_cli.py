@@ -2272,7 +2272,7 @@ Chosen VASP error message: {error_string}
         )  # Bond_Distortion_-20.0%_not_converged now included
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-20.0%_not_converged not fully relaxed", result.output
+            "Bond_Distortion_-20.0%_not_converged for v_Ti_0 is not fully relaxed", result.output
         )
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
@@ -2374,7 +2374,7 @@ Chosen VASP error message: {error_string}
             high_energies_dict, energies
         )  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
-        self.assertIn("not fully relaxed", result.output)
+        self.assertIn("Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output)
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
             any(
