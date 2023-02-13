@@ -309,6 +309,27 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(formatted_name, "Ni$_{Li_{1}}^{0}$")
 
+        # test substitution with site number, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_2_Na_on_P_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "Na$_{P_{2}}^{0}$")
+
+        # test interstitial with site number, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="inter_12_P_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "P$_{i_{12}}^{0}$")
+
+        # test vacancy with site number, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="vac_4_P_-2",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "$V_{P_{4}}^{-2}$")
+
         # check exceptions raised: invalid charge or defect_species
         # test error catching:
         with self.assertRaises(ValueError) as e:

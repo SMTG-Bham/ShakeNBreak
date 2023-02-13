@@ -396,7 +396,9 @@ def _format_defect_name(
                             )
                             return defect_name.replace("mult", "m")
 
-        return defect_name.replace("mult", "m")
+        if defect_name:
+            defect_name = defect_name.replace("mult", "m")
+        return defect_name
 
     def _defect_name_from_matching_elements(
         element_matches, name, include_site_num_in_name
@@ -501,7 +503,7 @@ def _format_defect_name(
                 site = defect_species.split("_")[2]
                 if include_site_num_in_name:
                     # by default include defect site in defect name for interstitials
-                    defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
+                    defect_name = f"{site_element}$_{{i_{{{site}}}}}^{{{charge}}}$"
                 else:
                     defect_name = f"{site_element}$_i^{{{charge}}}$"
             else:
@@ -514,13 +516,13 @@ def _format_defect_name(
                 include_site_num_in_name
             ):  # whether to include the site number in defect name
                 if defect_type.lower() == "vac":
-                    defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
+                    defect_name = f"$V_{{{site_element}_{{{site}}}}}^{{{charge}}}$"
                     # double brackets to treat it literally (tex), then extra {} for
                     # python str formatting
                 elif defect_type.lower() in ["as", "sub"]:
                     subs_element = defect_species.split("_")[4]
                     defect_name = (
-                        f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
+                        f"{site_element}$_{{{subs_element}_{{{site}}}}}^{{{charge}}}$"
                     )
                 elif defect_type.capitalize() != "Int":
                     raise ValueError(
