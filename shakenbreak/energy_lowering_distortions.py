@@ -176,12 +176,15 @@ def _compare_distortion(
 
     if len(matching_distortion_dict) > 0:  # if it matches _any_ other distortion
         index = list(matching_distortion_dict.keys())[0]  # should only be one
-        print(
-            f"Low-energy distorted structure for {defect_species} "
-            f"already found with charge states "
-            f"{low_energy_defects[defect][index]['charges']}, "
-            f"storing together."
-        )
+        if charge not in low_energy_defects[defect][index]["charges"]:
+            # only print message if charge state not already stored (this can happen when using
+            # the --metastable option with small noise in the energies)
+            print(
+                f"Low-energy distorted structure for {defect_species} "
+                f"already found with charge states "
+                f"{low_energy_defects[defect][index]['charges']}, "
+                f"storing together."
+            )
         # Store together the info of all distortions leading to the same structure
         for property, value in zip(
             ["charges", "structures", "energy_diffs", "bond_distortions"],
@@ -434,7 +437,7 @@ def get_energy_lowering_distortions(
                 io.parse_energies(defect_species, output_path, code)
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
-                energies_file, verbose=verbose
+                energies_file, verbose=verbose, min_e_diff=min_e_diff
             )
             # Defect without data
             if energies_dict is None:
