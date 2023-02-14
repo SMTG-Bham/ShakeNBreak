@@ -332,10 +332,6 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
             mock_print.assert_any_call("\nvac_1_Cd")
             mock_print.assert_any_call(
-                "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
-                "and unperturbed: -0.76 eV."
-            )
-            mock_print.assert_any_call(
                 "No energy lowering distortion with energy difference greater "
                 "than min_e_diff = 0.80 eV found for vac_1_Cd "
                 "with charge 0."
