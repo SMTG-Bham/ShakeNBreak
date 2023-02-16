@@ -484,6 +484,21 @@ def _format_defect_name(
             include_site_num_in_name,
         )
 
+        if defect_name is None and len(possible_two_character_elements) == 1:
+            # possibly one single-character element and one two-character element
+            possible_one_character_elements = [
+                character
+                for character in trimmed_pre_charge_name.replace(possible_two_character_elements[0],"")
+                if dummy_h.is_valid_symbol(character)
+            ]
+            if len(possible_one_character_elements) > 0:
+                defect_name = _defect_name_from_matching_elements(
+                    possible_one_character_elements + possible_two_character_elements,
+                    pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
+                    # pre_charge_name for matching defect format
+                    include_site_num_in_name,
+                )
+
     if defect_name is None:
         # try single-character element match
         possible_one_character_elements = [
