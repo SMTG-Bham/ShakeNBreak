@@ -335,6 +335,20 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(formatted_name, "Ni$_{Li_{1}}^{0}$")
 
+        # test substitution with site number excluded, current doped format, two-letter subbed elt
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_P_on_Na_-1",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "P$_{Na}^{-1}$")
+
+        # test substitution with site number included, current doped format, two-letter subbed elt
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_P_on_Na_-1 ",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "P$_{Na_{1}}^{-1}$")
+
         # test substitution with site number excluded, current doped format
         formatted_name = plotting._format_defect_name(
             defect_species="as_2_Na_on_P_0",
