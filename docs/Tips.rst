@@ -122,7 +122,7 @@ Metastable Defects
 --------------------
 
 While the ``ShakeNBreak`` workflow is primarily geared toward ground-state structure identification, it can also be
-applicable to finding metastable states, as described in the `method paper <https://arxiv.org/abs/2207.09862>`_.
+applicable to finding metastable states, as described in the `method paper <https://www.nature.com/articles/s41524-023-00973-1>`_.
 For this, you can use the optional ``metastable`` argument for ``get_energy_lowering_distortions``;
 see `docs here <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.energy_lowering_distortions.html#shakenbreak.energy_lowering_distortions.get_energy_lowering_distortions>`_.
 
