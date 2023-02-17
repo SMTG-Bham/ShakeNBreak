@@ -1,11 +1,10 @@
 [![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
 [![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://shakenbreak.readthedocs.io/en/latest/)
-[![arXiv](https://img.shields.io/badge/arXiv-2207.09862-b31b1b.svg)](https://arxiv.org/abs/2207.09862)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg)](https://anaconda.org/conda-forge/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
-<!--- Add npj published link when ready, and remove arXiv. [![DOI]...-->
+[![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
 # `ShakeNBreak` (`SnB`)
 <img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state and metastable structures of point defects in solid materials.
@@ -27,7 +26,7 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 ### Literature
 - Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003). _Matter_ 4 (8), 2602-2605, **2021**
 - Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817). _Journal of Open Source Software_ 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.1038/s41524-023-00973-1) _npj Comput Mater_ 9, 25 **2023**
 
 ## Installation
 `ShakeNBreak` can be installed using `pip`:
@@ -126,16 +125,16 @@ Code to identify defect species from input supercell structures was written base
 
 ## Studies using `ShakeNBreak`
 We'll add papers that use `ShakeNBreak` to this list as they come out!
+- X. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh, [_arXiv_](https://arxiv.org/abs/2302.04901) 2023
 - J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a) 2023
 - Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation.
-- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_arXiv_](https://arxiv.org/abs/2207.09862) 2022
+- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_npj Comput Mater_](https://doi.org/10.1038/s41524-023-00973-1) 2023
 - Y. T. Huang & S. R. Kavanagh et al. [_Nature Communications_](https://www.nature.com/articles/s41467-022-32669-3) 2022
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh [_ACS Energy Letters_](https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380) 2021
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
 
 <!-- Se -->
 <!-- BiOI -->
-<!-- Xinwei Sb2Se3 -->
 <!-- Kumagai collab paper -->
 <!-- Lavan LiNiO2 -->
 <!-- Sykes Magnetic oxide polarons -->
@@ -143,14 +142,13 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 <!-- Kat YTOS -->
 <!-- Adair CuSiSe3 -->
 <!-- Squires (and mention benchmark test against AIRSS? See Slack message) -->
-<!-- I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon _npj??_ 2022 -->
 
 ## License and Citation
 ShakeNBreak is made available under the MIT License.
 
 If you use it in your research, please cite:
 - Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817). _Journal of Open Source Software_ 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.48550/arXiv.2207.09862) _arXiv_ **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.1038/s41524-023-00973-1) _npj Comput Mater_ 9, 25 **2023**
 
 You may also find this Preview paper useful, which discusses the general problem of defect structure prediction:
 - Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003). _Matter_ 4 (8), 2602-2605, **2021**
