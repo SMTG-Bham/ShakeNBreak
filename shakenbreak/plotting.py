@@ -1979,21 +1979,22 @@ def plot_datasets(
 
     _install_custom_font()
     # Set up figure
-    fig, ax = plt.subplots(1, 1)
-    # Line colors
-    if not colors:
-        colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
-        # colors to use for each dataset
-    elif len(colors) < len(datasets):
-        if verbose:
-            warnings.warn(
-                f"Insufficient colors provided for {len(datasets)} datasets. "
-                "Using default colors."
-            )
-        colors = _get_line_colors(number_of_colors=len(datasets))
-    # Title and labels of axis
-    if title:
-        ax.set_title(title)
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        fig, ax = plt.subplots(1, 1)
+        # Line colors
+        if not colors:
+            colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
+            # colors to use for each dataset
+        elif len(colors) < len(datasets):
+            if verbose:
+                warnings.warn(
+                    f"Insufficient colors provided for {len(datasets)} datasets. "
+                    "Using default colors."
+                )
+            colors = _get_line_colors(number_of_colors=len(datasets))
+        # Title and labels of axis
+        if title:
+            ax.set_title(title)
 
     try:
         formatted_defect_name = _format_defect_name(
@@ -2184,6 +2185,16 @@ def plot_datasets(
             datasets[0]["Unperturbed"],
         ],
     )
+    # If several datasets, check min & max energy are included
+    if len(datasets) > 1:
+        min_energy = min(
+            [min(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        max_energy = max(
+            [max(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        ax.set_ylim(min_energy - 0.1 * (max_energy - min_energy), max_energy + 0.1 * (max_energy - min_energy))
+
 
     ax.legend(frameon=True).set_zorder(
         100
