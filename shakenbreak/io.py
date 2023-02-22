@@ -82,6 +82,8 @@ def parse_energies(
         }
         if "Unperturbed" in defect_energies_dict:
             sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
+        if "Dimer" in defect_energies_dict:
+            sorted_energies_dict["Dimer"] = defect_energies_dict["Dimer"]
         return sorted_energies_dict
 
     def save_file(energies, defect, path):
@@ -229,7 +231,12 @@ def parse_energies(
                 any(
                     [
                         substring in dir
-                        for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
+                        for substring in [
+                            "Bond_Distortion",
+                            "Rattled",
+                            "Unperturbed",
+                            "Dimer",
+                        ]
                     ]
                 )
                 and "High_Energy" not in dir
@@ -363,6 +370,7 @@ def parse_energies(
                                     "Bond_Distortion",
                                     "Rattled",
                                     "Unperturbed",
+                                    "Dimer",
                                 ]
                             ]
                         )

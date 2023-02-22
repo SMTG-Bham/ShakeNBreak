@@ -474,7 +474,7 @@ def get_structures(
         distortion_subdirectories = [
             i
             for i in next(os.walk(f"{output_path}/{defect_species}"))[1]
-            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("Rattled" in i)
+            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("Rattled" in i) or ("Dimer" in i)
         ]  # distortion subdirectories
         if not distortion_subdirectories:
             raise FileNotFoundError(
