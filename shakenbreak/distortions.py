@@ -174,7 +174,7 @@ def distort(
 
 
 def apply_dimer_distortion(
-    structure: pymatgen.core.structure.Structure,
+    structure: Structure,
     site_index: Optional[int] = None,
     frac_coords: Optional[np.array] = None,
 ) -> dict:
