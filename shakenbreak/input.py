@@ -1486,6 +1486,20 @@ def apply_snb_distortions(
                     "defect_site_index"
                 ] = bond_distorted_defect["defect_site_index"]
 
+        # Apply dimer distortion
+        if defect_type == "vacancy":
+            defect_site_index = None
+            frac_coords = bulk_supercell_site.frac_coords
+        else:
+            frac_coords = None
+        distorted_defect_dict["distortions"]["Dimer"] = (
+            distortions.apply_dimer_distortion(
+                structure=defect_structure,
+                site_index=defect_site_index,
+                frac_coords=frac_coords,
+            )
+        )
+
     elif (
         num_nearest_neighbours == 0
     ):  # when no extra/missing electrons, just rattle the structure.
@@ -1520,6 +1534,12 @@ def apply_snb_distortions(
                 **mc_rattle_kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
+        # Add dimer distorted structure
+        distorted_defect_dict["distortions"]["Dimer"] = distortions.apply_dimer_distortion(
+            structure=defect_structure,
+            site_index=defect_site_index,
+            frac_coords=frac_coords,
+        )
         distorted_defect_dict["distortion_parameters"] = {
             "unique_site": bulk_supercell_site.frac_coords,
             "num_distorted_neighbours": num_nearest_neighbours,
