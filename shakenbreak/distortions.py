@@ -176,7 +176,7 @@ def distort(
 def apply_dimer_distortion(
     structure: Structure,
     site_index: Optional[int] = None,
-    frac_coords: Optional[np.array] = None,
+    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
 ) -> dict:
     """
     Apply a dimer distortion to a defect structure.
