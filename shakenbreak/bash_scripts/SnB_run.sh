@@ -99,7 +99,8 @@ SnB_run_loop () {
         if [ -f "./${job_filename}" ]
           then echo "Running job for ${i%?}"
           folder_shortname="${i##*_}"
-          ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}"
+          # Remove % from folder_shortname as messes with some HPC schedulers
+          ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"
         fi
         builtin cd .. || return
       else
