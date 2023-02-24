@@ -1648,7 +1648,7 @@ seed: 42"""  # previous default
             "Bond_Distortion_10.0% fully relaxed", out
         )  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
-        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
 
         if_present_rm("job_file")
@@ -1674,7 +1674,7 @@ seed: 42"""  # previous default
             "Bond_Distortion_10.0% fully relaxed", out
         )  # also present but no OUTCAR
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
-        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%/job_file"))
 
         if_present_rm("../job_file")
@@ -1757,7 +1757,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn("Unperturbed fully relaxed", out)
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
-        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertIn(
             "Positive energies or forces error encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
@@ -1779,7 +1779,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn("Unperturbed fully relaxed", out)
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
-        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertNotIn(
             "Positive energies or forces encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
@@ -1813,7 +1813,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn("Unperturbed fully relaxed", out)
         self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
         self.assertIn("Running job for Bond_Distortion_10.0%", out)
-        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertNotIn(
             "Positive energies or forces error encountered for Bond_Distortion_10.0%, ignoring and "
             "renaming to Bond_Distortion_10.0%_High_Energy",
@@ -1859,7 +1859,7 @@ Chosen VASP error message: {error_string}
             self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
             self.assertNotIn("Running job for Bond_Distortion_10.0%", out)
             self.assertNotIn(
-                "this vac_1_Ti_0_10.0% job_file", out
+                "this vac_1_Ti_0_10.0 job_file", out
             )  # job submit command
             self.assertIn(
                 "Positive energies or forces error encountered for Bond_Distortion_10.0%, "
@@ -1905,7 +1905,7 @@ Chosen VASP error message: {error_string}
         self.assertNotIn(
             "Running job for Bond_Distortion_10.0%", out
         )  # not running job though!
-        self.assertNotIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertNotIn(
             "Positive energies or forces error encountered for Bond_Distortion_10.0%, "
             "ignoring and renaming to Bond_Distortion_10.0%_High_Energy",
@@ -1965,7 +1965,7 @@ Chosen VASP error message: {error_string}
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertNotIn("Unperturbed fully relaxed", out)
         self.assertNotIn("Running job for Unperturbed", out)
-        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertIn("this vac_1_Ti_0_10.0 job_file", out)  # job submit command
         self.assertIn("Positive energies or forces error encountered for Unperturbed.", out)
         self.assertIn("This typically indicates the initial defect structure supplied to "
                       "ShakeNBreak is highly unstable, often with bond lengths smaller than the "
