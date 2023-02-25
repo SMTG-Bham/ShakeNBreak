@@ -661,10 +661,12 @@ def _get_voronoi_multiplicity(site, structure):
 
 
 def get_defect_type_and_composition_diff(bulk, defect):
-    """This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    """
+    This code is pulled from `doped`. Will be replaced by importing from `doped` in future
     versions, once issues with `pymatgen` compatibility has been resolved.
     Get the difference in composition between a bulk structure and a defect structure.
-    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species"""
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species
+    """
     bulk_comp = bulk.composition.get_el_amt_dict()
     defect_comp = defect.composition.get_el_amt_dict()
 
@@ -692,10 +694,12 @@ def get_defect_type_and_composition_diff(bulk, defect):
 def get_defect_site_idxs_and_unrelaxed_structure(
     bulk, defect, defect_type, composition_diff, unique_tolerance=1
 ):
-    """This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    """
+    This code is pulled from `doped`. Will be replaced by importing from `doped` in future
     versions, once issues with `pymatgen` compatibility has been resolved.
     Get the defect site and unrelaxed structure.
-    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species"""
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species
+    """
     if defect_type == "substitution":
         old_species = [el for el, amt in composition_diff.items() if amt == -1][0]
         new_species = [el for el, amt in composition_diff.items() if amt == 1][0]
