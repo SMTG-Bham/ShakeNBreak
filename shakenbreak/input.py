@@ -29,6 +29,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
+from pymatgen.util.coord import pbc_diff
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
@@ -659,6 +660,196 @@ def _get_voronoi_multiplicity(site, structure):
     return multiplicity
 
 
+def get_defect_type_and_composition_diff(bulk, defect):
+    """This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    versions, once issues with `pymatgen` compatibility has been resolved.
+    Get the difference in composition between a bulk structure and a defect structure.
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species"""
+    bulk_comp = bulk.composition.get_el_amt_dict()
+    defect_comp = defect.composition.get_el_amt_dict()
+
+    composition_diff = {
+        element: int(defect_amount - bulk_comp.get(element, 0))
+        for element, defect_amount in defect_comp.items()
+        if int(defect_amount - bulk_comp.get(element, 0)) != 0
+    }
+
+    if len(composition_diff) == 1 and list(composition_diff.values())[0] == 1:
+        defect_type = "interstitial"
+    elif len(composition_diff) == 1 and list(composition_diff.values())[0] == -1:
+        defect_type = "vacancy"
+    elif len(composition_diff) == 2:
+        defect_type = "substitution"
+    else:
+        raise RuntimeError(
+            "Could not determine defect type from composition difference of bulk "
+            "and defect structures."
+        )
+
+    return defect_type, composition_diff
+
+
+def get_defect_site_idxs_and_unrelaxed_structure(
+    bulk, defect, defect_type, composition_diff, unique_tolerance=1
+):
+    """This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    versions, once issues with `pymatgen` compatibility has been resolved.
+    Get the defect site and unrelaxed structure.
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species"""
+    if defect_type == "substitution":
+        old_species = [el for el, amt in composition_diff.items() if amt == -1][0]
+        new_species = [el for el, amt in composition_diff.items() if amt == 1][0]
+
+        bulk_new_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == new_species]
+        )
+        defect_new_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == new_species]
+        )
+
+        if bulk_new_species_coords.size > 0:  # intrinsic substitution
+            # find coords of new species in defect structure, taking into account periodic boundaries
+            distance_matrix = np.linalg.norm(
+                pbc_diff(bulk_new_species_coords[:, None], defect_new_species_coords),
+                axis=2,
+            )
+            site_matches = distance_matrix.argmin(axis=1)
+
+            if len(np.unique(site_matches)) != len(site_matches):
+                raise RuntimeError(
+                    "Could not uniquely determine site of new species in defect structure"
+                )
+
+            defect_site_idx = list(
+                set(np.arange(len(defect_new_species_coords), dtype=int))
+                - set(site_matches)
+            )[0]
+
+        else:  # extrinsic substitution
+            defect_site_idx = 0
+
+        defect_coords = defect_new_species_coords[defect_site_idx]
+
+        # now find the closest old_species site in the bulk structure to the defect site
+        # again, make sure to use periodic boundaries
+        bulk_old_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == old_species]
+        )
+        distances = np.linalg.norm(
+            pbc_diff(bulk_old_species_coords, defect_coords), axis=1
+        )
+        original_site_idx = distances.argmin()
+
+        # if there are any other matches with a distance within unique_tolerance of the located
+        # site then unique matching failed
+        if (
+            len(distances[distances < distances[original_site_idx] * unique_tolerance])
+            > 1
+        ):
+            raise RuntimeError(
+                "Could not uniquely determine site of old species in bulk structure"
+            )
+
+        # currently, original_site_idx is indexed with respect to the old species only.
+        # Need to get the index in the full structure
+        bulk_coords = np.array([s.frac_coords for s in bulk])
+        bulk_site_idx = np.linalg.norm(
+            pbc_diff(bulk_coords, bulk_old_species_coords[original_site_idx]), axis=1
+        ).argmin()
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.remove_sites([bulk_site_idx])
+        unrelaxed_defect_structure.append(new_species, bulk_coords[bulk_site_idx])
+        defect_site_idx = len(unrelaxed_defect_structure) - 1  # last one to be added
+
+    elif defect_type == "vacancy":
+        old_species = list(composition_diff.keys())[0]
+
+        bulk_old_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == old_species]
+        )
+        defect_old_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == old_species]
+        )
+
+        # make sure to do take into account periodic boundaries
+        distance_matrix = np.linalg.norm(
+            pbc_diff(bulk_old_species_coords[:, None], defect_old_species_coords),
+            axis=2,
+        )
+        site_matches = distance_matrix.argmin(axis=0)
+
+        if len(np.unique(site_matches)) != len(site_matches):
+            raise RuntimeError(
+                "Could not uniquely determine site of vacancy in defect structure"
+            )
+
+        original_site_idx = list(
+            set(np.arange(len(bulk_old_species_coords), dtype=int)) - set(site_matches)
+        )[0]
+
+        # currently, original_site_idx is indexed with respect to the old species only.
+        # Need to get the index in the full structure
+        bulk_coords = np.array([s.frac_coords for s in bulk])
+        bulk_site_idx = np.linalg.norm(
+            pbc_diff(bulk_coords, bulk_old_species_coords[original_site_idx]), axis=1
+        ).argmin()
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.remove_sites([bulk_site_idx])
+        defect_site_idx = None
+
+    elif defect_type == "interstitial":
+        new_species = list(composition_diff.keys())[0]
+
+        bulk_new_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == new_species]
+        )
+        defect_new_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == new_species]
+        )
+
+        if bulk_new_species_coords.size > 0:  # intrinsic interstitial
+            # make sure to take into account periodic boundaries
+            distance_matrix = np.linalg.norm(
+                pbc_diff(bulk_new_species_coords[:, None], defect_new_species_coords),
+                axis=2,
+            )
+            site_matches = distance_matrix.argmin(axis=1)
+
+            if len(np.unique(site_matches)) != len(site_matches):
+                raise RuntimeError(
+                    "Could not uniquely determine site of interstitial in defect structure"
+                )
+
+            defect_site_idx = list(
+                set(np.arange(len(defect_new_species_coords), dtype=int))
+                - set(site_matches)
+            )[0]
+
+        else:  # extrinsic interstitial
+            defect_site_idx = 0
+
+        defect_site_coords = defect_new_species_coords[defect_site_idx]
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.append(new_species, defect_site_coords)
+        bulk_site_idx = None
+        defect_site_idx = len(unrelaxed_defect_structure) - 1  # last one to be added
+
+    else:
+        raise ValueError(f"Invalid defect type: {defect_type}")
+
+    return (
+        bulk_site_idx,
+        defect_site_idx,
+        unrelaxed_defect_structure,
+    )
+
+
 def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
 ) -> Defect:
@@ -681,21 +872,16 @@ def identify_defect(
 
     Returns: :obj:`Defect`
     """
-    natoms_defect = len(defect_structure)
-    natoms_bulk = len(bulk_structure)
-    if natoms_defect == natoms_bulk - 1:
-        defect_type = "vacancy"
-    elif natoms_defect == natoms_bulk + 1:
-        defect_type = "interstitial"
-    elif natoms_defect == natoms_bulk:
-        defect_type = "substitution"
-    else:
-        raise ValueError(
-            f"Could not identify defect type from number of atoms in defect ({natoms_defect}) "
-            f"and bulk ({natoms_bulk}) structures. "
-            "ShakeNBreak is currently only built for point defects, please contact the "
-            "developers if you would like to use the method for complex defects"
+    # identify defect site, structural information, and create defect object
+    try:
+        defect_type, comp_diff = get_defect_type_and_composition_diff(
+            bulk_structure, defect_structure
         )
+    except RuntimeError as exc:
+        raise ValueError(
+            "Could not identify defect type from number of sites in structure: "
+            f"{len(bulk_sc_structure)} in bulk vs. {len(initial_defect_structure)} in defect?"
+        ) from exc
 
     # remove oxidation states before site-matching
     defect_struc = (
@@ -851,97 +1037,33 @@ def identify_defect(
                 "just defect_index will be used to determine the defect site"
             )
 
+    failed_matching_error_message = (
+        "Defect coordinates could not be identified from auto site-matching. Check bulk and "
+        "defect structures correspond to the same supercell and/or specify defect site with "
+        "--defect-coords or --defect-index (if using the SnB CLI), or 'defect_coords' or "
+        "'defect_index' keys in the input dictionary if using the SnB Python API."
+    )
+
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
-    site_displacement_tol = (
-        0.01  # distance tolerance for site matching to identify defect, increases in
-        # jumps of 0.1 Å
-    )
+    unrelaxed_defect_structure = None
     auto_matching_bulk_site_index = None
     auto_matching_defect_site_index = None
-    possible_defects = []
-    site_matching_indices = []
 
     try:
-        bulk_sites = [site.frac_coords for site in bulk_struc]
-        defect_sites = [site.frac_coords for site in defect_struc]
-        matched_bulk_indices = []
-        matched_defect_indices = []
-        dist_matrix = defect_struc.lattice.get_all_distances(bulk_sites, defect_sites)
-        min_dist_with_index = [
-            [
-                min(dist_matrix[bulk_index]),
-                int(bulk_index),
-                int(dist_matrix[bulk_index].argmin()),
-            ]
-            for bulk_index in range(len(dist_matrix))
-        ]  # list of [min dist, bulk ind, defect ind]
+        (
+            auto_matching_bulk_site_index,
+            auto_matching_defect_site_index,
+            unrelaxed_defect_structure,
+        ) = get_defect_site_idxs_and_unrelaxed_structure(
+            bulk_structure, defect_structure, defect_type, comp_diff
+        )
 
-        while site_displacement_tol < 5:  # loop over distance tolerances
-            for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                species_match = (
-                    bulk_struc[bulk_index].specie
-                    == defect_struc[def_struc_index].specie
-                )
-
-                matched_bulk_indices = [i[0] for i in site_matching_indices]
-                matched_defect_indices = [i[1] for i in site_matching_indices]
-                if (
-                    mindist < site_displacement_tol
-                    and species_match
-                    and bulk_index not in matched_bulk_indices
-                    and def_struc_index not in matched_defect_indices
-                ):
-                    site_matching_indices.append([bulk_index, def_struc_index])
-
-                elif (
-                    mindist < site_displacement_tol
-                    and defect_type == "substitution"
-                    and not species_match
-                ):
-                    possible_defects.append(
-                        [def_struc_index, defect_sites[def_struc_index][:], bulk_index]
-                    )
-
-            if defect_type == "interstitial":
-                if site_matching_indices:
-                    possible_defects = [
-                        [ind, fc[:], None]
-                        for ind, fc in enumerate(defect_sites)
-                        if ind not in matched_defect_indices
-                    ]
-
-            elif defect_type == "vacancy":
-                if site_matching_indices:
-                    possible_defects = [
-                        [None, fc[:], ind]
-                        for ind, fc in enumerate(bulk_sites)
-                        if ind not in matched_bulk_indices
-                    ]
-
-            if len(possible_defects) == 1:
-                auto_matching_defect_site_index = possible_defects[0][0]
-                auto_matching_bulk_site_index = possible_defects[0][2]
-                break
-
-            if (
-                site_matching_indices
-                and auto_matching_bulk_site_index is None
-                and auto_matching_defect_site_index is None
-            ):
-                # failed auto-site matching, rely on user input or raise error if no user input
-                if len(set(np.array(site_matching_indices)[:, 0])) != len(
-                    set(np.array(site_matching_indices)[:, 1])
-                ):
-                    raise ValueError(
-                        "Error occurred in site_matching routine. Double counting of site matching "
-                        f"occurred: {site_matching_indices}\nAbandoning structure parsing."
-                    )
-
-            site_displacement_tol += 0.1
-
-    except Exception:
-        pass  # failed auto-site matching, rely on user input or raise error if no user input
+    except Exception as exc:
+        if defect_site_index is None and bulk_site_index is None:
+            raise ValueError(failed_matching_error_message) from exc
+        else:
+            pass  # failed auto-site matching, rely on user input or raise error if no user input
 
     if (
         defect_site_index is None
@@ -949,12 +1071,7 @@ def identify_defect(
         and auto_matching_bulk_site_index is None
         and auto_matching_defect_site_index is None
     ):
-        raise ValueError(
-            "Defect coordinates could not be identified from auto site-matching. Check bulk and "
-            "defect structures correspond to the same supercell and/or specify defect site with "
-            "--defect-coords or --defect-index (if using the SnB CLI), or 'defect_coords' or "
-            "'defect_index' keys in the input dictionary if using the SnB Python API."
-        )
+        raise ValueError(failed_matching_error_message)
 
     if (
         defect_site_index is None
