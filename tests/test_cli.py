@@ -18,8 +18,9 @@ from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
-from shakenbreak.cli import generate_defect_object, snb
+from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
+from shakenbreak.input import generate_defect_object
 
 file_path = os.path.dirname(__file__)
 
@@ -68,10 +69,10 @@ class CLITestCase(unittest.TestCase):
         self.V_Cd_minus0pt55_CONTCAR_struc = Structure.from_file(
             f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
-        self.cdte_defect_dict = loadfn(
+        self.cdte_doped_defect_dict = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
-        self.Int_Cd_2_dict = self.cdte_defect_dict["interstitials"][1]
+        self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
         self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
@@ -168,46 +169,6 @@ class CLITestCase(unittest.TestCase):
         if os.path.exists("./previous_default_rattle_settings.yaml"):
             os.remove("./previous_default_rattle_settings.yaml")
 
-    def test_generate_defect_object(self):
-        """Test generate_defect_object"""
-        # Test interstitial
-        defect = generate_defect_object(
-            single_defect_dict=self.Int_Cd_2_dict,
-            bulk_dict=self.cdte_defect_dict["bulk"],
-        )
-        self.assertEqual(defect.user_charges, self.Int_Cd_2_dict["charges"])
-        self.assertEqual(
-            list(defect.site.frac_coords),
-            list(self.Int_Cd_2_dict["bulk_supercell_site"].frac_coords),
-        )
-        self.assertEqual(
-            str(defect.as_dict()["@class"].lower()), self.Int_Cd_2_dict["defect_type"]
-        )
-        # Test vacancy
-        vacancy = self.cdte_defect_dict["vacancies"][0]
-        defect = generate_defect_object(
-            single_defect_dict=vacancy,
-            bulk_dict=self.cdte_defect_dict["bulk"],
-        )
-        self.assertEqual(defect.user_charges, vacancy["charges"])
-        self.assertEqual(
-            list(defect.site.frac_coords),
-            list(vacancy["bulk_supercell_site"].frac_coords),
-        )
-        self.assertEqual(
-            str(defect.as_dict()["@class"].lower()), vacancy["defect_type"]
-        )
-        # Test substitution
-        subs = self.cdte_defect_dict["substitutions"][0]
-        defect = generate_defect_object(
-            single_defect_dict=subs,
-            bulk_dict=self.cdte_defect_dict["bulk"],
-        )
-        self.assertEqual(defect.user_charges, subs["charges"])
-        self.assertEqual(
-            list(defect.site.frac_coords), list(subs["bulk_supercell_site"].frac_coords)
-        )
-        self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
     def test_snb_generate(self):
         """Implicitly, the `snb-generate` tests also test the functionality of
@@ -1137,8 +1098,8 @@ seed: 42
         # test parsed defects json
         parsed_defects_dict = loadfn("parsed_defects_dict.json")
         vac = generate_defect_object(
-            self.cdte_defect_dict["vacancies"][0],
-            self.cdte_defect_dict["bulk"],
+            self.cdte_doped_defect_dict["vacancies"][0],
+            self.cdte_doped_defect_dict["bulk"],
             charges=[
                 0,
             ],  # CLI charge

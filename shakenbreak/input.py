@@ -10,7 +10,6 @@ import itertools
 import os
 import shutil
 import warnings
-from collections import Counter
 from importlib.metadata import version
 from typing import Optional, Tuple, Type, Union
 
@@ -1055,6 +1054,76 @@ def identify_defect(
     return defect
 
 
+def generate_defect_object(
+    single_defect_dict: dict,
+    bulk_dict: dict,
+    charges: Optional[list] = None,
+    verbose: bool = False,
+) -> Defect:
+    """
+    Create Defect() object from a DOPED/PyCDT single_defect_dict.
+
+    Args:
+        single_defect_dict (:obj:`dict`):
+            DOPED/PyCDT defect dictionary.
+        bulk_dict (:obj:`dict`):
+            DOPED/PyCDT entry for bulk in the defects dictionary,
+            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
+        charges (:obj:`list`):
+            List of charge states for the defect.
+        verbose (:obj:`bool`):
+            Whether to print information about the defect object being parsed.
+
+    Returns: :obj:`Defect`
+    """
+    if verbose:
+        print(f"Creating defect object for {single_defect_dict['name']}")
+    defect_type = single_defect_dict["defect_type"]
+    if defect_type == "antisite":
+        defect_type = (
+            "substitution"  # antisites are represented with Substitution class
+        )
+    # Get bulk structure
+    bulk_structure = bulk_dict["supercell"]["structure"]
+    # Get defect site
+    defect_site = single_defect_dict["bulk_supercell_site"]
+    for_monty_defect = {
+        "@module": "pymatgen.analysis.defects.core",
+        "@class": defect_type.capitalize(),
+        "structure": bulk_structure,
+        "site": defect_site,
+        # "user_charges": single_defect_dict["charges"]  # doesn't work
+    }
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError as exc:
+        # This means we have the old version of pymatgen-analysis-defects, where the class
+        # attributes were different (defect_site instead of site and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            raise TypeError(
+                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package (with `pip install "
+                "shakenbreak`) and try again."
+            )
+        if v_pmg < "2022.7.25":
+            raise TypeError(
+                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
+                f"Please update this package (with `pip install shakenbreak`) and try again."
+            )
+        else:
+            raise exc
+
+    # Specify defect charge states
+    if isinstance(charges, list):  # Priority to charges argument
+        defect.user_charges = charges
+    elif "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
+
+    return defect
+
+
 def _get_defect_name_from_obj(defect):
     """Get the SnB defect name from defect object"""
     defect_type = defect.defect_type.name.lower()
@@ -1698,7 +1767,7 @@ class Distortions:
                     if key != "bulk":  # loop for vacancies, antisites and interstitials
                         for defect_dict in defect_dict_list:  # loop for each defect
                             # transform defect_dict to Defect object
-                            defect = cli.generate_defect_object(
+                            defect = generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=defects["bulk"],
                             )
@@ -2817,7 +2886,7 @@ class Distortions:
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
         **mc_rattle_kwargs,
-    ) -> None:
+    ) -> "Distortions":
         """
         Initialise Distortions() class from defect and bulk structures.
 
