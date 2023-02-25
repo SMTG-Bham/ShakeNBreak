@@ -80,7 +80,7 @@ SnB_run_loop() {
           if [ "$verbose" = true ]; then
             echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
           fi
-          echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >> OUTCAR
+          echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
           builtin cd .. || return
           continue
         fi
@@ -96,7 +96,7 @@ SnB_run_loop() {
         echo "Running job for ${i%?}"
         folder_shortname="${i##*_}"
         # Remove % from folder_shortname as messes with some HPC schedulers
-        ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"
+        ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"
       fi
       builtin cd .. || return
     else
