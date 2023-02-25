@@ -884,7 +884,7 @@ def identify_defect(
     except RuntimeError as exc:
         raise ValueError(
             "Could not identify defect type from number of sites in structure: "
-            f"{len(bulk_sc_structure)} in bulk vs. {len(initial_defect_structure)} in defect?"
+            f"{len(bulk_structure)} in bulk vs. {len(defect_structure)} in defect?"
         ) from exc
 
     # remove oxidation states before site-matching
