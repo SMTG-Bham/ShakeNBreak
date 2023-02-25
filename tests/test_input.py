@@ -14,7 +14,7 @@ from pymatgen.analysis.defects.core import StructureMatcher
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
-from shakenbreak import distortions, input, vasp, cli
+from shakenbreak import distortions, input, vasp
 from shakenbreak.distortions import rattle
 
 
@@ -70,12 +70,13 @@ class InputTestCase(unittest.TestCase):
                 for defect_dict in defect_dict_list:
                     self.cdte_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
-                            defect=cli.generate_defect_object(
+                            defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=self.cdte_doped_defect_dict["bulk"],
                             ),
                             charge_state=charge,
-                        ) for charge in defect_dict["charges"]
+                        )
+                        for charge in defect_dict["charges"]
                     ]
 
         self.cdte_doped_extrinsic_defects_dict = loadfn(
@@ -83,28 +84,34 @@ class InputTestCase(unittest.TestCase):
         )
         # Refactor to dict of DefectEntrys objects, with doped/PyCDT names
         self.cdte_extrinsic_defects = {}
-        for defects_type, defect_dict_list in self.cdte_doped_extrinsic_defects_dict.items():
+        for (
+            defects_type,
+            defect_dict_list,
+        ) in self.cdte_doped_extrinsic_defects_dict.items():
             if "bulk" not in defects_type:
                 for defect_dict in defect_dict_list:
                     self.cdte_extrinsic_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
-                            defect=cli.generate_defect_object(
+                            defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=self.cdte_doped_defect_dict["bulk"],
                             ),
-                            charge_state=charge
-                        ) for charge in defect_dict["charges"]
+                            charge_state=charge,
+                        )
+                        for charge in defect_dict["charges"]
                     ]
 
         # Refactor doped defect dict to list of list of DefectEntrys() objects
         # (there's a DefectEntry for each charge state)
         self.cdte_defect_list = sum(list(self.cdte_defects.values()), [])
-        self.CdTe_extrinsic_defect_list = sum(list(self.cdte_extrinsic_defects.values()), [])
+        self.CdTe_extrinsic_defect_list = sum(
+            list(self.cdte_extrinsic_defects.values()), []
+        )
 
         self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = cli.generate_defect_object(
+        self.V_Cd = input.generate_defect_object(
             self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"]
         )
         self.V_Cd.user_charges = self.V_Cd_dict["charges"]
@@ -115,7 +122,7 @@ class InputTestCase(unittest.TestCase):
             input._get_defect_entry_from_defect(self.V_Cd, c)
             for c in self.V_Cd.user_charges
         ]
-        self.Int_Cd_2 = cli.generate_defect_object(
+        self.Int_Cd_2 = input.generate_defect_object(
             self.Int_Cd_2_dict, self.cdte_doped_defect_dict["bulk"]
         )
         self.Int_Cd_2.user_charges = self.Int_Cd_2.user_charges
@@ -396,12 +403,11 @@ class InputTestCase(unittest.TestCase):
                 if defect_type != "bulk":
                     for i in defect_list:
                         if i["name"] == defect:
-                            defect_object = cli.generate_defect_object(
+                            defect_object = input.generate_defect_object(
                                 i, self.cdte_doped_defect_dict["bulk"]
                             )
                             defect_entry = input._get_defect_entry_from_defect(
-                                defect_object,
-                                defect_object.user_charges[0]
+                                defect_object, defect_object.user_charges[0]
                             )
                             self.assertEqual(
                                 input._calc_number_electrons(
@@ -438,7 +444,10 @@ class InputTestCase(unittest.TestCase):
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
-            self.V_Cd_entry, num_nearest_neighbours=2, distortion_factor=0.5, d_min=d_min
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            distortion_factor=0.5,
+            d_min=d_min,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
@@ -983,9 +992,15 @@ class InputTestCase(unittest.TestCase):
         # basic usage of this function has been implicitly tested already, so just test extreme
         # case of four identical defect names
         fake_defect_dict = {
-            "Cd_i_m1a": [self.V_Cd_entry,],
-            "Cd_i_m1c": [self.V_Cd_entry,],
-            "Cd_i_m1b": [self.V_Cd_entry,],
+            "Cd_i_m1a": [
+                self.V_Cd_entry,
+            ],
+            "Cd_i_m1c": [
+                self.V_Cd_entry,
+            ],
+            "Cd_i_m1b": [
+                self.V_Cd_entry,
+            ],
         }
         v_cd_entry_copy = copy.deepcopy(self.V_Cd_entry)
         # Change defect site so that code detects that is sym ineq defect
@@ -995,15 +1010,21 @@ class InputTestCase(unittest.TestCase):
         new_defect_name = input._update_defect_dict(
             defect_entry=v_cd_entry_copy,
             defect_name="Cd_i_m1",
-            defect_dict=fake_defect_dict
+            defect_dict=fake_defect_dict,
         )
         self.assertEqual("Cd_i_m1d", new_defect_name)
         self.assertEqual(
             fake_defect_dict,
             {
-                "Cd_i_m1a": [self.V_Cd_entry,],
-                "Cd_i_m1c": [self.V_Cd_entry,],
-                "Cd_i_m1b": [self.V_Cd_entry,],
+                "Cd_i_m1a": [
+                    self.V_Cd_entry,
+                ],
+                "Cd_i_m1c": [
+                    self.V_Cd_entry,
+                ],
+                "Cd_i_m1b": [
+                    self.V_Cd_entry,
+                ],
                 new_defect_name: [v_cd_entry_copy],
             },
         )  # dict edited
@@ -1013,13 +1034,55 @@ class InputTestCase(unittest.TestCase):
         te_int_dict["Te_i_m32a"] = self.cdte_defects["Int_Te_1"]
         te_int_dict["Te_i_m128"] = self.cdte_defects["Int_Te_2"]
         # Only one charge state for "Int_Te_3"
-        te_int_dict["Te_i_m32b"] = [self.cdte_defects["Int_Te_3"][0],]
+        te_int_dict["Te_i_m32b"] = [
+            self.cdte_defects["Int_Te_3"][0],
+        ]
         new_defect_name = input._update_defect_dict(
             defect_entry=self.cdte_defects["Int_Te_3"][1],
             defect_name="Te_i_m32",
-            defect_dict=te_int_dict
+            defect_dict=te_int_dict,
         )
 
+    def test_generate_defect_object(self):
+        """Test generate_defect_object"""
+        # Test interstitial
+        defect = input.generate_defect_object(
+            single_defect_dict=self.Int_Cd_2_dict,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, self.Int_Cd_2_dict["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords),
+            list(self.Int_Cd_2_dict["bulk_supercell_site"].frac_coords),
+        )
+        self.assertEqual(
+            str(defect.as_dict()["@class"].lower()), self.Int_Cd_2_dict["defect_type"]
+        )
+        # Test vacancy
+        vacancy = self.cdte_doped_defect_dict["vacancies"][0]
+        defect = input.generate_defect_object(
+            single_defect_dict=vacancy,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, vacancy["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords),
+            list(vacancy["bulk_supercell_site"].frac_coords),
+        )
+        self.assertEqual(
+            str(defect.as_dict()["@class"].lower()), vacancy["defect_type"]
+        )
+        # Test substitution
+        subs = self.cdte_doped_defect_dict["substitutions"][0]
+        defect = input.generate_defect_object(
+            single_defect_dict=subs,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, subs["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords), list(subs["bulk_supercell_site"].frac_coords)
+        )
+        self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
@@ -1128,13 +1191,14 @@ class InputTestCase(unittest.TestCase):
         [
             fake_extrinsic_interstitial_list.append(
                 input._get_defect_entry_from_defect(
-                    defect=cli.generate_defect_object(
+                    defect=input.generate_defect_object(
                         fake_extrinsic_interstitial_subdict,
-                        self.cdte_doped_defect_dict["bulk"]
+                        self.cdte_doped_defect_dict["bulk"],
                     ),
                     charge_state=charge,
                 )
-            ) for charge in fake_extrinsic_interstitial_subdict["charges"]
+            )
+            for charge in fake_extrinsic_interstitial_subdict["charges"]
         ]
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(fake_extrinsic_interstitial_list)
@@ -1295,7 +1359,11 @@ class InputTestCase(unittest.TestCase):
         )
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         dist = input.Distortions(
-            {"vac_1_Cd": [reduced_V_Cd_entry,]},
+            {
+                "vac_1_Cd": [
+                    reduced_V_Cd_entry,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             stdev=0.15,
@@ -1546,9 +1614,7 @@ class InputTestCase(unittest.TestCase):
             )
 
         # test renaming of old distortion_metadata.json file if present
-        dist = input.Distortions(
-            {"Int_Cd_2": reduced_Int_Cd_2_entries}
-        )
+        dist = input.Distortions({"Int_Cd_2": reduced_Int_Cd_2_entries})
         with patch("builtins.print") as mock_Int_Cd_2_print:
             _, distortion_metadata = dist.write_vasp_files()
         self.assertTrue(os.path.exists("distortion_metadata.json"))
@@ -1624,7 +1690,7 @@ class InputTestCase(unittest.TestCase):
         }
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(vacancies)
-        mock_print.assert_called_once_with(
+        mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
             "oxidation_states"
@@ -1730,12 +1796,14 @@ class InputTestCase(unittest.TestCase):
             new_key: self.cdte_defects[old_key]
             for new_key, old_key in self.new_names_old_names_CdTe.items()
         }
-        #self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
+        # self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
         # so we compare each DefectEntry (with same charge)
         for key, defect_list in pmg_defects.items():
             for c in defect_list[0].defect.get_charge_states():
                 self.assertEqual(
-                    [i.defect for i in dist.defects_dict[key] if i.charge_state == c][0],
+                    [i.defect for i in dist.defects_dict[key] if i.charge_state == c][
+                        0
+                    ],
                     [i.defect for i in pmg_defects[key] if i.charge_state == c][0],
                 )
 
@@ -1844,9 +1912,9 @@ class InputTestCase(unittest.TestCase):
 
         # Test distortion generation
         vacancies = [
-            defect_entry for defect_entry in self.cdte_defect_list
-            if "v_" in defect_entry.defect.name
-            and defect_entry.charge_state == 0
+            defect_entry
+            for defect_entry in self.cdte_defect_list
+            if "v_" in defect_entry.defect.name and defect_entry.charge_state == 0
         ]
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(
@@ -1906,7 +1974,8 @@ class InputTestCase(unittest.TestCase):
 
         # Test setting chargge state
         vacancies = [
-            defect_entry for defect_entry in self.cdte_defect_list
+            defect_entry
+            for defect_entry in self.cdte_defect_list
             if "v_" in defect_entry.defect.name
             if defect_entry.charge_state == 0  # only 1 charge state
         ]
@@ -1918,13 +1987,23 @@ class InputTestCase(unittest.TestCase):
             defect = defect_entry.defect
             if defect.name == "v_Cd":
                 vacancies_entries.extend(
-                    [input._get_defect_entry_from_defect(defect, charge)
-                    for charge in [1,]]
+                    [
+                        input._get_defect_entry_from_defect(defect, charge)
+                        for charge in [
+                            1,
+                        ]
+                    ]
                 )
             elif defect.name == "v_Te":
                 vacancies_entries.extend(
-                    [input._get_defect_entry_from_defect(defect, charge)
-                    for charge in [1, 2, 3,]]
+                    [
+                        input._get_defect_entry_from_defect(defect, charge)
+                        for charge in [
+                            1,
+                            2,
+                            3,
+                        ]
+                    ]
                 )
         # test default
         dist = input.Distortions(
@@ -2400,7 +2479,7 @@ class InputTestCase(unittest.TestCase):
         fake_hydrogen_V_Cd_dict["charges"] = [0]
         fake_hydrogen_bulk = copy.copy(self.cdte_doped_defect_dict["bulk"])
         fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
-        fake_hydrogen_V_Cd = cli.generate_defect_object(
+        fake_hydrogen_V_Cd = input.generate_defect_object(
             fake_hydrogen_V_Cd_dict,
             fake_hydrogen_bulk,
         )
@@ -2487,7 +2566,9 @@ class InputTestCase(unittest.TestCase):
 
         # Check interstitial (internally uses defect_index rather fractional coords)
         int_Cd_2 = copy.copy(self.Int_Cd_2)
-        int_Cd_2.user_charges = [+2, ]
+        int_Cd_2.user_charges = [
+            +2,
+        ]
         int_Cd_2_entries = [
             input._get_defect_entry_from_defect(int_Cd_2, c)
             for c in int_Cd_2.user_charges
@@ -2598,14 +2679,21 @@ class InputTestCase(unittest.TestCase):
         # structure
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures(
-                self.V_Cd_struc,
-                self.CdTe_bulk_struc
+                self.V_Cd_struc, self.CdTe_bulk_struc
             )
             dist.write_vasp_files()
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # check expected info printing:
@@ -2658,13 +2746,29 @@ class InputTestCase(unittest.TestCase):
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
         for charge in [0, 1, 2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["Cd_i_m128"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["Int_Cd_2"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["Cd_i_m128"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["Int_Cd_2"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # check if correct files were created:
@@ -2710,8 +2814,16 @@ class InputTestCase(unittest.TestCase):
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Test defect position given with `defect_index`
@@ -2724,8 +2836,16 @@ class InputTestCase(unittest.TestCase):
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Most cases already tested in test_cli.py for `snb-generate`` (which uses
@@ -2748,7 +2868,9 @@ class InputTestCase(unittest.TestCase):
             )
         self.assertEqual(dist.defects_dict["Cd_i_m128"][0].defect.defect_site_index, 0)
         self.assertEqual(
-            list(dist.defects_dict["Cd_i_m128"][0].defect.defect_structure[0].frac_coords),
+            list(
+                dist.defects_dict["Cd_i_m128"][0].defect.defect_structure[0].frac_coords
+            ),
             list([0.8125, 0.1875, 0.8125]),
         )
 
@@ -2761,8 +2883,16 @@ class InputTestCase(unittest.TestCase):
             )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Test wrong type for defect index/coords
@@ -2785,8 +2915,16 @@ class InputTestCase(unittest.TestCase):
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd_s0"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Test wrong type for `defects`

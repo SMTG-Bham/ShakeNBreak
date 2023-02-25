@@ -35,7 +35,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
 
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
+        self.V_Cd = input.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )

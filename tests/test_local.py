@@ -76,7 +76,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
         self.cdte_defects = {
-            defect_dict["name"]: cli.generate_defect_object(
+            defect_dict["name"]: input.generate_defect_object(
                 single_defect_dict=defect_dict,
                 bulk_dict=self.cdte_doped_defect_dict["bulk"],
             )
@@ -88,10 +88,10 @@ class DistortionLocalTestCase(unittest.TestCase):
         self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = cli.generate_defect_object(
+        self.V_Cd = input.generate_defect_object(
             self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"]
         )
-        self.Int_Cd_2 = cli.generate_defect_object(
+        self.Int_Cd_2 = input.generate_defect_object(
             self.Int_Cd_2_dict, self.cdte_doped_defect_dict["bulk"]
         )
 
