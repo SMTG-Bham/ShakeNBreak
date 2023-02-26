@@ -36,6 +36,7 @@ defects:
 
 # Code specific section
 # For VASP, we can specify POTCARs like this:
+POTCAR_FUNCTIONAL: PBE  # (Default = PBE)
 POTCAR:
   Sn: Sn_d  # Element matching its POTCAR symbol
   Te: Te

@@ -59,6 +59,17 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
         seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
 
+        # Code specific section
+        # For VASP, we can specify POTCARs like this:
+        POTCAR_FUNCTIONAL: PBE  # (Default = PBE)
+        POTCAR:
+          Sn: Sn_d  # Element matching its POTCAR symbol
+          Te: Te
+        # For Quantum Espresso, we can specify the pseudopotentials like:
+        pseudopotentials:
+          Cd: Cd_pbe_v1.uspp.F.UPF
+          Te: Te.pbe-n-rrkjus_psl.1.0.0.UPF
+
 
 .. NOTE::
     By default, :code:`ShakeNBreak` generates input files for the :code:`VASP` code, but this can be controlled with the
@@ -142,6 +153,17 @@ the following directory structures will be parsed correctly:
         max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
         local_rattle: False  # If True, rattle displacements will tail-off as we more away from the defect site. Not recommended as typically worsens performance.
         seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
+
+        # Code specific section
+        # For VASP, we can specify POTCARs like this:
+        POTCAR_FUNCTIONAL: PBE  # (Default = PBE)
+        POTCAR:
+          Sn: Sn_d  # Element matching its POTCAR symbol
+          Te: Te
+        # For Quantum Espresso, we can specify the pseudopotentials like:
+        pseudopotentials:
+          Cd: Cd_pbe_v1.uspp.F.UPF
+          Te: Te.pbe-n-rrkjus_psl.1.0.0.UPF
 
 The ``generate_all`` command will create a folder for each charged defect in the current directory, each containing
 distortion folders with the relaxation input files and structures. If using ``VASP``:
