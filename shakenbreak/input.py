@@ -5,7 +5,6 @@ as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 """
 import copy
 import datetime
-import functools
 import itertools
 import os
 import shutil
@@ -393,14 +392,14 @@ def _get_defect_entry_from_defect(
 ):
     """Generate a DefectEntry from a Defect object, whose defect structure
     corresponds to the defect supercell (rather than unit cell). This is the case
-    when initilising Defects() from DOPED or from structures specified by the user.
+    when initialising Defects() from DOPED or from structures specified by the user.
     """
     defect_entry = DefectEntry(
         defect=defect,
         charge_state=charge_state,
         # The Defect() created from `doped` output, refers to the
         # supercell rather than unit cell, so we can use the
-        # Defect attribites to access the defect supercell frac coords
+        # Defect attributes to access the defect supercell frac coords
         sc_defect_frac_coords=defect.site.frac_coords,
         sc_entry=ComputedStructureEntry(
             structure=defect.defect_structure,
@@ -1962,7 +1961,12 @@ class Distortions:
             )
 
         # Check if all expected oxidation states are provided
-        guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        try:
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=-1)[0]
+            if not guessed_oxidation_states:
+                guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        except:
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
@@ -2228,7 +2232,6 @@ class Distortions:
     def _setup_distorted_defect_dict(
         self,
         defect_entry: DefectEntry,
-        # defect_name: str,
     ) -> dict:
         """
         Setup `distorted_defect_dict` with info for `defect` in
@@ -2237,8 +2240,6 @@ class Distortions:
         Args:
             defect_entry (:obj:`pymatgen.analysis.defects.thermo.DefectEntry()`):
                 DefectEntry object to generate `distorted_defect_dict` from.
-            defect_name (:obj:`str`):
-                Name of the defect.
 
         Returns:
             :obj:`dict`
@@ -2381,7 +2382,6 @@ class Distortions:
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
                 defect_entry,
-                # defect_name
             )
 
             for charge in distorted_defects_dict[defect_name][
