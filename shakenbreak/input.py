@@ -1965,7 +1965,7 @@ class Distortions:
             guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=-1)[0]
             if not guessed_oxidation_states:
                 guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
-        except:
+        except Exception:
             guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         for list_of_defect_entries in self.defects_dict.values():
