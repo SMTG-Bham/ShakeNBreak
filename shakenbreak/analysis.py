@@ -151,7 +151,9 @@ def _format_distortion_names(
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
-        "Unperturbed" in distortion_label or "Rattled" in distortion_label
+        "Unperturbed" in distortion_label
+        or "Rattled" in distortion_label
+        or "Dimer" in distortion_label
     ) and "from" not in distortion_label:
         distortion = distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
@@ -166,6 +168,8 @@ def _format_distortion_names(
         # distortions from other charge state of the defect
         distortion = distortion_label.split("Bond_Distortion_")[-1]
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
+        distortion = distortion_label
+    elif "Dimer" in distortion_label and "_from_" in distortion_label:
         distortion = distortion_label
     else:
         distortion = "Label_not_recognized"
