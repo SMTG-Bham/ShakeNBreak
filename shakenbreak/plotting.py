@@ -2158,6 +2158,17 @@ def plot_datasets(
             datasets[0]["Unperturbed"],
         ],
     )
+    # If several datasets, check min & max energy are included
+    if len(datasets) > 1:
+        min_energy = min(
+            [min(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        max_energy = max(
+            [max(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        ax.set_ylim(
+            min_energy - 0.1 * (max_energy - min_energy), max_energy + 0.1 * (max_energy - min_energy)
+        )
 
     ax.legend(frameon=True).set_zorder(
         100
