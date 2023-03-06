@@ -120,7 +120,7 @@ def _get_distortion_filename(distortion) -> str:
             # runs from other charge states
         elif "Rattled_from_" in distortion:
             distortion_label = distortion
-        elif distortion == "Unperturbed" or distortion == "Rattled":
+        elif distortion == "Unperturbed" or distortion == "Rattled" or distortion == "Dimer":
             distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
         else:
             try:  # try converting to float, in case user entered '0.5'
