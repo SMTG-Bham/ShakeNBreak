@@ -157,7 +157,7 @@ setup(
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
     install_requires=[
-        "numpy",
+        "numpy<1.24,>=1.18",  # required by numba
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
