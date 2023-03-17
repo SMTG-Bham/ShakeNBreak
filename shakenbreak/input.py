@@ -429,8 +429,25 @@ def _most_common_oxi(element) -> int:
     oxi_probabilities = [
         (k, v) for k, v in comp_obj.oxi_prob.items() if k.element == element_obj
     ]
-    most_common = max(oxi_probabilities, key=lambda x: x[1])[0]
-    return most_common.oxi_state
+    if oxi_probabilities:  # not empty
+        most_common = max(oxi_probabilities, key=lambda x: x[1])[
+            0]  # breaks if icsd oxi states is empty
+        return most_common.oxi_state
+    else:
+        if element_obj.common_oxidation_states:
+            return element_obj.common_oxidation_states[0]  # known common oxidation state
+        else:  # no known common oxidation state, make guess and warn user
+            if element_obj.oxidation_states:
+                guess_oxi = element_obj.oxidation_states[0]
+            else:
+                guess_oxi = 0
+
+            warnings.warn(
+                f"No known common oxidation states in pymatgen/ICSD dataset for element "
+                f"{element_obj.name}, guessing as {guess_oxi:+}. You should set this in the "
+                f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!")
+
+            return guess_oxi
 
 
 def _calc_number_electrons(

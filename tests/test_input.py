@@ -382,6 +382,14 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(input._most_common_oxi("S"), -2)
         self.assertEqual(input._most_common_oxi("Se"), -2)
         self.assertEqual(input._most_common_oxi("N"), -3)
+        # no ICSD oxidation state in pymatgen for Au, At, so uses
+        # element_obj.common_oxidation_states[0]:
+        self.assertEqual(input._most_common_oxi("Au"), 3)
+        self.assertEqual(input._most_common_oxi("At"), -1)
+        self.assertEqual(input._most_common_oxi("Po"), -2)
+        self.assertEqual(input._most_common_oxi("Ac"), +3)
+        self.assertEqual(input._most_common_oxi("Fr"), +1)
+        self.assertEqual(input._most_common_oxi("Ra"), +2)
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
