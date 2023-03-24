@@ -175,7 +175,7 @@ def distort(
 
 def rattle(
     structure: Structure,
-    stdev: float = 0.25,
+    stdev: Optional[float] = None,
     d_min: float = 2.25,
     n_iter: int = 1,
     active_atoms: Optional[list] = None,
@@ -194,9 +194,10 @@ def rattle(
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Structure as a pymatgen object
         stdev (:obj:`float`):
-            Standard deviation (in Angstroms) of the Gaussian distribution from
-            which atomic displacement distances are drawn.
-            (Default: 0.25)
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms). Monte Carlo rattle
             moves that put atoms at distances less than this will be heavily
@@ -233,6 +234,21 @@ def rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
+
+    if not stdev:
+        sorted_distances = np.sort(structure.distance_matrix.flatten())
+        stdev = (
+                0.1 * sorted_distances[len(structure) + 40]
+        )
+        print(f"Using a rattle stdev of {stdev} \u212B")
+        if stdev > 0.4 or stdev < 0.02:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
+                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"set `stdev` manually"
+            )
+            stdev = 0.25
 
     rattled_ase_struct = generate_mc_rattled_structures(
         ase_struct,
@@ -462,7 +478,7 @@ def local_mc_rattle(
     structure: Structure,
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    stdev: float = 0.25,
+    stdev: Optional[float] = None,
     d_min: float = 2.25,
     n_iter: int = 1,
     active_atoms: Optional[list] = None,
@@ -488,9 +504,10 @@ def local_mc_rattle(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
         stdev (:obj:`float`):
-            Standard deviation (in Angstroms) of the Gaussian distribution from
-            which atomic displacement distances are drawn.
-            (Default: 0.25)
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms). Monte Carlo rattle
             moves that put atoms at distances less than this will be heavily
@@ -539,6 +556,22 @@ def local_mc_rattle(
             "Insufficient information to apply local rattle, no `site_index`"
             " or `frac_coords` provided."
         )
+
+    if not stdev:
+        sorted_distances = np.sort(structure.distance_matrix.flatten())
+        stdev = (
+                0.1 * sorted_distances[len(structure) + 40]
+        )  # ignoring interstitials by ignoring the first 10 non-zero bond lengths (double
+        # counted in the distance matrix)
+        print(f"Using stdev of {stdev} \u212B for local rattle")
+        if stdev > 0.4 or stdev < 0.02:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
+                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"set `stdev` manually"
+            )
+            stdev = 0.25
 
     local_rattled_ase_struct = _generate_local_mc_rattled_structures(
         ase_struct,

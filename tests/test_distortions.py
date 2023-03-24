@@ -269,6 +269,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(
             distortions.rattle(
                 self.V_Cd_minus0pt5_struc,
+                stdev=0.25,
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
             ),
@@ -303,6 +304,17 @@ class DistortionTestCase(unittest.TestCase):
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
                 stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+                seed=40,  # distortion_factor * 100, default
+            ),
+            self.Int_Cd_2_minus0pt6_struc_rattled,
+        )
+
+        self.assertEqual(
+            distortions.rattle(
+                self.Int_Cd_2_minus0pt6_struc,
+                d_min=d_min,
+                active_atoms=rattling_atom_indices,
+                # stdev=0.28333683853583164,  # 10% of CdTe bond length, default
                 seed=40,  # distortion_factor * 100, default
             ),
             self.Int_Cd_2_minus0pt6_struc_rattled,
