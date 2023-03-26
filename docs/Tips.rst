@@ -102,14 +102,67 @@ particularly useful in certain cases if:
   defect, but unlikely to distort or rebond. This has been seen in studies in our research groups (reference to be
   added when preprinted).
 
+Bulk Phase Transformations
+------------------
+
+If you perform :code:`ShakeNBreak` calculations with a supercell structure for which a lower energy polymorph exists
+(i.e. by using a bulk structure which has imaginary phonon modes), often the symmetry-breaking introduced by
+:code:`ShakeNBreak` can cause your defect supercell to relax to this lower energy bulk structure. If this is the case,
+it will typically cause *all* distortion calculations to yield a significantly lower energy structure than the
+``Unperturbed`` relaxation, for *most* (if not all) defects calculated; as any significant symmetry-breaking in the
+supercell is allowing the structure to rearrange to the lower energy polymorph. :code:`ShakeNBreak` will print a cautionary
+warning in these cases, and one way to manually check this is to visually compare the relaxed structure from one of the
+low energy distortion calculations, with the relaxed ``Unperturbed`` structure, and the bulk supercell, and see how the
+regions away from the defect site compare.
+
+Often this is useful information, as it may reveal a previously-unknown low-energy polymorph for your host system.
+However, it also means that your original higher energy bulk structure is no longer an appropriate reference structure
+for calculating your final defect formation energies, and so you should instead obtain the bulk supercell corresponding
+to this lower energy polymorph, and use this as the reference structure for calculating defect formation energies.
+The recommended workflow for doing this is to firstly try obtaining this lower energy polymorph in the defect-free host
+system using similar atom rattling to that used in the :code:`ShakeNBreak` distorted structure generation:
+
+..  code-block:: python
+
+    from shakenbreak.distortions import rattle, Structure
+    bulk = Structure.from_file("path/to/Bulk_Supercell_POSCAR")
+    rattled_supercell = rattle(bulk)
+    rattled_supercell.to(fmt="POSCAR",
+                         filename="Rattled_Bulk_Supercell_POSCAR")
+
+Then calculate the energy of this rattled supercell and compare to the original high-symmetry bulk supercell.
+If it's significantly lower energy (similar to the energy difference between your ``Unperturbed`` and distorted defect
+relaxations), then this is likely the lower energy polymorph for your host system.
+
+If this does not yield a significantly lower energy polymorph, then it's recommended to calculate the phonon dispersion
+of your host material, and check if there are any imaginary phonon modes (indicating the presence of a nearby
+lower-symmetry lower-energy polymorph). If this is the case, then you can try to obtain this lower energy polymorph
+using a code like |ModeMap|_ or similar, to generate the distorted structure corresponding to this imaginary mode.
+
+.. _ModeMap: https://github.com/JMSkelton/ModeMap
+
+This workflow also serves to explicitly test if indeed a phase transformation is occurring in your defect supercell(s).
+If this does indeed reveal a significantly lower energy polymorph for your host material, depending on how different this
+structure is, you might want to regenerate the defects in this new supercell and possibly re-run :code:`ShakeNBreak` on
+these – particularly for any defects that did not show an energy-lowering relative to ``Unperturbed`` in the original
+supercell (suggesting that they remained 'stuck' in the original higher-energy arrangement).
+
+In certain cases, it's possible that you witness behaviour similar to the above, despite no lower energy polymorph
+existing for your host material. This can be the case in certain high-symmetry materials (e.g. we have witnessed this
+in incipient ferroelectrics), where defects introduce strong local symmetry-breaking (i.e. a 'local phase
+transformation') which is missed by the standard approach with unperturbed defect relaxations. These are cases where
+:code:`ShakeNBreak` is particularly important for your material, you can continue your calculations as normal, ignoring
+these warnings.
+
+
 Defect Complexes
 ------------------
 
-At present, ``ShakeNBreak`` is optimised to work with isolated *point* defects. However, it can also be used with
+At present, :code:`ShakeNBreak` is optimised to work with isolated *point* defects. However, it can also be used with
 complex defects (and has been found to be important in these cases as well, e.g. this |chemsci|_), but requires some
 workarounds as the ``pymatgen`` defect functions are not natively built for this.
 This involves generating the defect *complex* as a ``pymatgen`` ``Defect`` object using one of the *point*
-defects as the 'bulk' structure and the other as the 'defect', then feeding this to ``ShakeNBreak`` in order to
+defects as the 'bulk' structure and the other as the 'defect', then feeding this to :code:`ShakeNBreak` in order to
 generate the distortions. If you are trying to do this and are running into issues, you can contact the developers and
 we can share some guidance for this (until improved ``pymatgen``-based functionality comes about for complex defects).
 
@@ -121,7 +174,7 @@ we can share some guidance for this (until improved ``pymatgen``-based functiona
 Metastable Defects
 --------------------
 
-While the ``ShakeNBreak`` workflow is primarily geared toward ground-state structure identification, it can also be
+While the :code:`ShakeNBreak` workflow is primarily geared toward ground-state structure identification, it can also be
 applicable to finding metastable states, as described in the `method paper <https://www.nature.com/articles/s41524-023-00973-1>`_.
 For this, you can use the optional ``metastable`` argument for ``get_energy_lowering_distortions``;
 see `docs here <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.energy_lowering_distortions.html#shakenbreak.energy_lowering_distortions.get_energy_lowering_distortions>`_.
