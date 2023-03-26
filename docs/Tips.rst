@@ -137,9 +137,8 @@ relaxations), then this is likely the lower energy polymorph for your host syste
 If this does not yield a significantly lower energy polymorph, then it's recommended to calculate the phonon dispersion
 of your host material, and check if there are any imaginary phonon modes (indicating the presence of a nearby
 lower-symmetry lower-energy polymorph). If this is the case, then you can try to obtain this lower energy polymorph
-using a code like |ModeMap|_ or similar, to generate the distorted structure corresponding to this imaginary mode.
-
-.. _ModeMap: https://github.com/JMSkelton/ModeMap
+using a code like `_ModeMap <https://github.com/JMSkelton/ModeMap>`_ or similar, to generate the distorted structure
+corresponding to this imaginary mode.
 
 This workflow also serves to explicitly test if indeed a phase transformation is occurring in your defect supercell(s).
 If this does indeed reveal a significantly lower energy polymorph for your host material, depending on how different this
