@@ -285,6 +285,17 @@ class DistortionTestCase(unittest.TestCase):
             self.V_Cd_minus0pt5_struc_0pt1_rattled,
         )
 
+        # test default d_min setting:
+        self.assertEqual(
+            distortions.rattle(
+                self.V_Cd_minus0pt5_struc,
+                stdev=0.1,
+                # d_min=d_min,
+                active_atoms=rattling_atom_indices,
+            ),
+            self.V_Cd_minus0pt5_struc_0pt1_rattled,
+        )
+
     def test_rattle_Int_Cd_2(self):
         """Test structure rattle function for Int_Cd_2"""
         sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
@@ -309,10 +320,11 @@ class DistortionTestCase(unittest.TestCase):
             self.Int_Cd_2_minus0pt6_struc_rattled,
         )
 
+        # test defaults:
         self.assertEqual(
             distortions.rattle(
                 self.Int_Cd_2_minus0pt6_struc,
-                d_min=d_min,
+                # d_min=d_min,  # default
                 active_atoms=rattling_atom_indices,
                 # stdev=0.28333683853583164,  # 10% of CdTe bond length, default
                 seed=40,  # distortion_factor * 100, default

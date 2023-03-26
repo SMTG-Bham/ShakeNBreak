@@ -1368,8 +1368,8 @@ def _apply_rattle_bond_distortions(
     num_nearest_neighbours: int,
     distortion_factor: float,
     local_rattle: bool = False,
-    stdev: float = 0.25,
-    d_min: Optional[float] = 2.25,
+    stdev: Optional[float] = None,
+    d_min: Optional[float] = None,
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -1397,8 +1397,9 @@ def _apply_rattle_bond_distortions(
             (Default: False)
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution
-            from which atomic displacement distances are drawn.
-            (Default: 0.25)
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -1493,71 +1494,36 @@ def _apply_rattle_bond_distortions(
         )  # returns True for matching indices
         active_atoms = rattling_atom_indices[~idx]  # remove matching indices
 
-    try:
-        if local_rattle:
-            bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
-                structure=bond_distorted_defect["distorted_structure"],
-                frac_coords=frac_coords,
-                site_index=defect_site_index,
-                stdev=stdev,
-                d_min=d_min,
-                active_atoms=active_atoms,
-                **mc_rattle_kwargs,
-            )
-        else:
-            bond_distorted_defect["distorted_structure"] = distortions.rattle(
-                structure=bond_distorted_defect["distorted_structure"],
-                stdev=stdev,
-                d_min=d_min,
-                active_atoms=active_atoms,
-                **mc_rattle_kwargs,
-            )
-    except Exception as ex:
-        if "attempts" in str(ex):
-            distorted_defect_struc = bond_distorted_defect["distorted_structure"]
-            sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
-            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
-            if local_rattle:
-                bond_distorted_defect[
-                    "distorted_structure"
-                ] = distortions.local_mc_rattle(
-                    structure=bond_distorted_defect["distorted_structure"],
-                    frac_coords=frac_coords,
-                    site_index=defect_site_index,
-                    stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
-                    active_atoms=active_atoms,
-                    max_attempts=7000,  # default is 5000
-                    **mc_rattle_kwargs,
-                )
-            else:
-                bond_distorted_defect["distorted_structure"] = distortions.rattle(
-                    structure=bond_distorted_defect["distorted_structure"],
-                    stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
-                    active_atoms=active_atoms,
-                    max_attempts=7000,  # default is 5000
-                    **mc_rattle_kwargs,
-                )
-            if verbose:
-                warnings.warn(
-                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                    f"significantly smaller than this present), setting d_min to "
-                    f"{reduced_d_min:.2f} \u212B for this defect."
-                )
-        else:
-            raise ex
+    if local_rattle:
+        bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            frac_coords=frac_coords,
+            site_index=defect_site_index,
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
+    else:
+        bond_distorted_defect["distorted_structure"] = distortions.rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
 
     return bond_distorted_defect
 
 
 def apply_snb_distortions(
     defect_entry: DefectEntry,
-    defect_name: str,
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
-    stdev: float = 0.25,
+    stdev: Optional[float] = None,
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -1570,8 +1536,6 @@ def apply_snb_distortions(
     Args:
         defect_entry (:obj:`DefectEntry`):
             pymatgen.analysis.defects.thermo.DefectEntry object.
-        defect_name (:obj:`str`):
-            Name of the defect species.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -1584,8 +1548,9 @@ def apply_snb_distortions(
             (Default: False)
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution
-            from which atomic displacement distances are drawn.
-            (Default: 0.25)
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`, optional):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at distances
@@ -1635,20 +1600,6 @@ def apply_snb_distortions(
     bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
     defect_site_index = defect_object.defect_site_index  # This is for the unit cell,
     # but is conserved in the supercell
-
-    if not d_min:
-        sorted_distances = np.sort(defect_structure.distance_matrix.flatten())
-        d_min = (
-            0.8 * sorted_distances[len(defect_structure) + 20]
-        )  # ignoring interstitials by
-        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
 
     seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
@@ -1716,6 +1667,7 @@ def apply_snb_distortions(
                 frac_coords=frac_coords,
                 stdev=stdev,
                 d_min=d_min,
+                verbose=verbose,
                 **mc_rattle_kwargs,
             )
         else:
@@ -1723,6 +1675,7 @@ def apply_snb_distortions(
                 defect_structure,
                 stdev=stdev,
                 d_min=d_min,
+                verbose=verbose,
                 **mc_rattle_kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
@@ -2412,7 +2365,6 @@ class Distortions:
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
                     defect_entry=defect_entry,
-                    defect_name=defect_name,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
                     local_rattle=self.local_rattle,
