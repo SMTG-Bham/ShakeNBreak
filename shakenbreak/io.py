@@ -328,6 +328,21 @@ def parse_energies(
                     f"with reduced `stdev`!"
                 )
 
+            elif "Unperturbed" in energies and all(
+                [
+                    value - energies["Unperturbed"] < -0.1
+                    for value in energies["distortions"].values()
+                ]
+            ):
+                warnings.warn(
+                    f"All distortions parsed for {defect} are <-0.1 eV lower energy than "
+                    f"unperturbed. If this happens for multiple defects/charge states, "
+                    f"it can indicate that a bulk phase transformation is occurring within your "
+                    f"defect supercell. If so, see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#bulk-phase"
+                    f"-transformations for advice on dealing with this phenomenon."
+                )
+
             # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
             # warn user about output files not being parsed for this entry
             for key, value in prev_energies_dict.items():

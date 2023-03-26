@@ -169,7 +169,6 @@ class CLITestCase(unittest.TestCase):
         if os.path.exists("./previous_default_rattle_settings.yaml"):
             os.remove("./previous_default_rattle_settings.yaml")
 
-
     def test_snb_generate(self):
         """Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
@@ -353,8 +352,7 @@ class CLITestCase(unittest.TestCase):
                     0.6,
                 ],
                 "local_rattle": False,
-                "mc_rattle_parameters":
-                    {"stdev": 0.28333683853583164}
+                "mc_rattle_parameters": {"stdev": 0.28333683853583164},
             },
             "defects": {
                 defect_name: {
@@ -384,8 +382,9 @@ class CLITestCase(unittest.TestCase):
                                     0.6,
                                 ],
                                 "local_rattle": False,
-                                "mc_rattle_parameters":
-                                    {"stdev": 0.28333683853583164,}
+                                "mc_rattle_parameters": {
+                                    "stdev": 0.28333683853583164,
+                                },
                             },
                         },
                     },
@@ -621,8 +620,7 @@ class CLITestCase(unittest.TestCase):
                     0.6,
                 ],
                 "local_rattle": False,
-                "mc_rattle_parameters":
-                    {"stdev": 0.28333683853583164}
+                "mc_rattle_parameters": {"stdev": 0.28333683853583164},
             },
             "defects": {
                 defect_name: {
@@ -657,8 +655,7 @@ class CLITestCase(unittest.TestCase):
                                     0.6,
                                 ],
                                 "local_rattle": False,
-                                "mc_rattle_parameters":
-                                    {"stdev": 0.28333683853583164}
+                                "mc_rattle_parameters": {"stdev": 0.28333683853583164},
                             },
                         },
                     },
@@ -926,8 +923,9 @@ local_rattle: False
                 "distortion_increment": 0.25,
                 "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
                 "local_rattle": False,
-                "mc_rattle_parameters":
-                    {"stdev": 0.28333683853583164, }
+                "mc_rattle_parameters": {
+                    "stdev": 0.28333683853583164,
+                },
             },
             "defects": {
                 defect_name: {
@@ -953,8 +951,7 @@ local_rattle: False
                                     0.5,
                                 ],
                                 "local_rattle": False,
-                                "mc_rattle_parameters":
-                                    {"stdev": 0.28333683853583164}
+                                "mc_rattle_parameters": {"stdev": 0.28333683853583164},
                             },
                         },
                     },
@@ -1151,7 +1148,7 @@ nonsense_key: nonsense_value"""
         self.assertEqual(
             "Defect charges were specified using the CLI option, but `charges` "
             "was also specified in the `--config` file – this will be ignored!",
-            str(w[0].message)
+            str(w[0].message),
         )
         self.tearDown()
 
@@ -1241,8 +1238,12 @@ seed: 42"""  # previous default
             + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te')]",
             result.output,
         )
-        self.assertNotIn(f"Defect {defect_name} in charge state: +2.", result.output)  # old default
-        for charge in [1,] + list(range(-1, 2)):
+        self.assertNotIn(
+            f"Defect {defect_name} in charge state: +2.", result.output
+        )  # old default
+        for charge in [
+            1,
+        ] + list(range(-1, 2)):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
                 self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
         for dist in ["Unperturbed", "Rattled"]:
@@ -1841,7 +1842,7 @@ Chosen VASP error message: {error_string}
             "ZPOTRF",
             "ZTRTRI",
             "FEXCP",
-            "FEXCF"
+            "FEXCF",
         ]:
             _test_OUTCAR_error(error)
 
@@ -1927,11 +1928,19 @@ Chosen VASP error message: {error_string}
         self.assertNotIn("Unperturbed fully relaxed", out)
         self.assertNotIn("Running job for Unperturbed", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
-        self.assertIn("Positive energies or forces error encountered for Unperturbed.", out)
-        self.assertIn("This typically indicates the initial defect structure supplied to "
-                      "ShakeNBreak is highly unstable, often with bond lengths smaller than the "
-                      "ionic radii.", out)
-        self.assertIn("Please check this defect structure and/or the relaxation output files.", out)
+        self.assertIn(
+            "Positive energies or forces error encountered for Unperturbed.", out
+        )
+        self.assertIn(
+            "This typically indicates the initial defect structure supplied to "
+            "ShakeNBreak is highly unstable, often with bond lengths smaller than the "
+            "ionic radii.",
+            out,
+        )
+        self.assertIn(
+            "Please check this defect structure and/or the relaxation output files.",
+            out,
+        )
         self.assertTrue(os.path.exists("Unperturbed"))  # not renamed
         shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
         if_present_rm("Bond_Distortion_10.0%/job_file")
@@ -2233,7 +2242,8 @@ Chosen VASP error message: {error_string}
         )  # Bond_Distortion_-20.0%_not_converged now included
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-20.0%_not_converged for v_Ti_0 is not fully relaxed", result.output
+            "Bond_Distortion_-20.0%_not_converged for v_Ti_0 is not fully relaxed",
+            result.output,
         )
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
@@ -2335,7 +2345,9 @@ Chosen VASP error message: {error_string}
             high_energies_dict, energies
         )  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
-        self.assertIn("Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output)
+        self.assertIn(
+            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+        )
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
             any(
@@ -2351,6 +2363,61 @@ Chosen VASP error message: {error_string}
                     f"– This often indicates a complex PES with multiple minima, "
                     f"thus energy-lowering distortions particularly likely, so important to "
                     f"test with reduced `stdev`!" == str(i.message)
+                    for i in w
+                    if i.category == UserWarning
+                ]
+            )
+        )
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
+
+        # test warning when all parsed distortions are <-0.1 eV lower energy than unperturbed
+        defect = "v_Ti_3"
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0",
+            f"{self.EXAMPLE_RESULTS}/{defect}",
+        )
+        low_energy_outcar_string = """
+                energy  without entropy=      -1175.0  energy(sigma->0) =      -1175.0
+                """  # unperturbed final energy is -1173.02056574 eV
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%/OUTCAR",
+            "w+",
+        ) as f:
+            f.write(low_energy_outcar_string)
+
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        low_energies_dict = {
+            "distortions": {-0.4: -1175.0},
+            "Unperturbed": -1173.02056574,
+        }  # energies still parsed despite being odd
+        self.assertEqual(low_energies_dict, energies)  # energies still parsed
+        # test print statement about not being fully relaxed
+        self.assertIn(
+            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+        )
+        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
+        self.assertTrue(
+            any(
+                [
+                    f"All distortions parsed for {defect} are <-0.1 eV lower energy than "
+                    f"unperturbed. If this happens for multiple defects/charge states, "
+                    f"it can indicate that a bulk phase transformation is occurring within your "
+                    f"defect supercell. If so, see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#bulk-phase"
+                    f"-transformations for advice on dealing with this phenomenon."
+                    == str(i.message)
                     for i in w
                     if i.category == UserWarning
                 ]
@@ -2840,10 +2907,14 @@ Chosen VASP error message: {error_string}
             )
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
+            )
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png"))
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png")
+            )
         )
         if w:
             [
@@ -3039,10 +3110,14 @@ Chosen VASP error message: {error_string}
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
+            )
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_s0_-1.png"))
+            os.path.exists(
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_s0_-1.png")
+            )
         )
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
@@ -3065,7 +3140,9 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         defect = "v_Cd_s0"  # in example results
-        self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 0)
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 0
+        )
 
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
@@ -3127,9 +3204,12 @@ Chosen VASP error message: {error_string}
             )
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-60.0%"),
                 os.path.join(
-                    self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-48.0%_High_Energy"
+                    self.EXAMPLE_RESULTS, f"{defect}_0/Bond_Distortion_-60.0%"
+                ),
+                os.path.join(
+                    self.EXAMPLE_RESULTS,
+                    f"{defect}_0/Bond_Distortion_-48.0%_High_Energy",
                 ),
             )
         with warnings.catch_warnings(record=True) as w:
@@ -3143,7 +3223,9 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 0)
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 0
+        )
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
