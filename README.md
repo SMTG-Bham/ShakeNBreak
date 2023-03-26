@@ -134,6 +134,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
 
 <!-- Se -->
+<!-- Oba book -->
 <!-- BiOI -->
 <!-- Kumagai collab paper -->
 <!-- Lavan LiNiO2 -->
