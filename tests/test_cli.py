@@ -490,7 +490,7 @@ class CLITestCase(unittest.TestCase):
         # with rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc)
+            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
                 snb,
@@ -534,7 +534,7 @@ class CLITestCase(unittest.TestCase):
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc)
+            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
                 snb,
@@ -2407,7 +2407,40 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
         )
-        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
+        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 0)  # no warning when
+        # <2 parsed distortions
+
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_40.0%",
+        )
+        shutil.copytree(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_0.0%",
+        )  # now 3 parsed distortions with energies <-0.1 eV lower than unperturbed
+
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "parse",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                ],
+                catch_exceptions=False,
+            )
+        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+        low_energies_dict = {
+            "distortions": {-0.4: -1175.0, 0.0: -1175.0, 0.4: -1175.0},
+            "Unperturbed": -1173.02056574,
+        }  # energies still parsed despite being odd
+        self.assertEqual(low_energies_dict, energies)  # energies still parsed
+        # test print statement about not being fully relaxed
+        self.assertIn(
+            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+        )
         self.assertTrue(
             any(
                 [

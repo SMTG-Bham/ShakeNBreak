@@ -328,11 +328,15 @@ def parse_energies(
                     f"with reduced `stdev`!"
                 )
 
-            elif "Unperturbed" in energies and all(
-                [
-                    value - energies["Unperturbed"] < -0.1
-                    for value in energies["distortions"].values()
-                ]
+            elif (
+                "Unperturbed" in energies
+                and all(
+                    [
+                        value - energies["Unperturbed"] < -0.1
+                        for value in energies["distortions"].values()
+                    ]
+                )
+                and len(energies["distortions"]) > 2
             ):
                 warnings.warn(
                     f"All distortions parsed for {defect} are <-0.1 eV lower energy than "
