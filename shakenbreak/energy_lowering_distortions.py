@@ -1217,7 +1217,7 @@ def write_groundstate_structure(
     (default "groundstate_POSCAR"), to then run continuation calculations.
 
     Args:
-        all (:obj: `bool`):
+        all (:obj:`bool`):
             Write groundstate structures for all defect folders in the
             (top-level) directory, specified by `output_path`. If False,
             `output_path` should be a single defect folder, for which the
