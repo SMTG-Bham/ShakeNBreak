@@ -602,6 +602,8 @@ def _calculate_atomic_disp(
     struct1: Structure,
     struct2: Structure,
     stol: float = 0.5,
+    ltol: float = 0.3,
+    angle_tol: float = 5,
 ) -> tuple:
     """
     Calculate root mean square displacement and atomic displacements,
@@ -627,7 +629,7 @@ def _calculate_atomic_disp(
             normalized displacements between the two structures.
     """
     sm = StructureMatcher(
-        ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
+        ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True
     )
     struct1, struct2 = sm._process_species([struct1, struct2])
     struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
@@ -645,6 +647,8 @@ def calculate_struct_comparison(
     metric: str = "max_dist",
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
+    ltol: float = 0.3,
+    angle_tol: float = 5,
     min_dist: float = 0.1,
     verbose: bool = True,
 ) -> dict:
@@ -732,6 +736,8 @@ def calculate_struct_comparison(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
                     stol=stol,
+                    ltol=ltol,
+                    angle_tol=angle_tol,
                 )
                 if metric == "disp":
                     disp_dict[distortion] = (
