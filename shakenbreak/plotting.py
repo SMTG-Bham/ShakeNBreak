@@ -2051,9 +2051,23 @@ def plot_datasets(
                     label="Rattled",
                 )
 
+            # Plot Dimer
+            if "Dimer" in dataset["distortions"].keys():
+                ax.scatter(  # Scatter plot for Rattled (1 datapoint)
+                    0.0,
+                    dataset["distortions"]["Dimer"],
+                    c=colors[dataset_number],
+                    s=50,
+                    marker=default_style_settings["marker"],
+                    label="Dimer",
+                )
+
             if (
                 len(sorted_distortions) > 0
-                and len([key for key in dataset["distortions"] if key != "Rattled"]) > 0
+                and len([
+                    key for key in dataset["distortions"]
+                    if (key != "Rattled" and key != "Dimer")
+                ]) > 0
             ):  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
