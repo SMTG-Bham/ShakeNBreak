@@ -1694,7 +1694,7 @@ def apply_snb_distortions(
 class Distortions:
     """
     Class to apply rattle and bond distortion to all defects in `defects`
-    (each defect as a pymatgen.analysis.defects.core.Defect() object).
+    (each defect as a pymatgen.analysis.defects.thermo.DefectEntry() object).
     """
 
     def __init__(
