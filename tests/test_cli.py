@@ -237,7 +237,7 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            f"-50.0%__num_neighbours=2__{defect_name}",
+            f"-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
@@ -1012,7 +1012,7 @@ local_rattle: False
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            "-50.0%__num_neighbours=2__Wally_McDoodle",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,

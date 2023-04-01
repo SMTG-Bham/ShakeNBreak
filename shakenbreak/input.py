@@ -2183,19 +2183,23 @@ class Distortions:
         charge: int,
         defect_name: str,
     ) -> str:
-        """Generate comment for structure files."""
+        """
+        Generate comment for structure files. Note that this gets truncated to 40 characters in
+        the CONTCAR file.
+        """
+        frac_coords = self.distortion_metadata["defects"][defect_name]["unique_site"]
+        approx_coords = f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
         poscar_comment = (
             str(
                 key_distortion.split("_")[-1]
             )  # Get distortion factor (-60.%) or 'Rattled'
-            + "__num_neighbours="
+            + " N(Distort)="
             + str(
                 self.distortion_metadata["defects"][defect_name]["charges"][charge][
                     "num_nearest_neighbours"
                 ]
             )
-            + "__"
-            + defect_name
+            + f" {approx_coords}"
         )
         return poscar_comment
 

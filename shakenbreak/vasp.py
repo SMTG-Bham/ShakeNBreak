@@ -1,5 +1,4 @@
 """Module to generate VASP input files for defect calculations"""
-import functools
 import os
 import warnings
 from copy import deepcopy  # See https://stackoverflow.com/a/22341377/14020960 why
@@ -84,11 +83,6 @@ class _PotcarSingleMod(PotcarSingle):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-
-    # @staticmethod
-    # def from_file(filename):
-    #    with smart_open.smart_open(filename, "rt") as f:
-    #        return PotcarSingle(f.read())
 
     @staticmethod
     def from_symbol_and_functional(symbol, functional=None):
@@ -177,7 +171,6 @@ class DefectRelaxSet(MPRelaxSet):
 
     def __init__(self, structure, **kwargs):
         charge = kwargs.pop("charge", 0)
-
         super(self.__class__, self).__init__(structure, **kwargs)
         self.charge = charge
 
@@ -186,8 +179,7 @@ class DefectRelaxSet(MPRelaxSet):
         """Get Incar object"""
         inc = super(self.__class__, self).incar
         try:
-            if self.charge:
-                inc["NELECT"] = self.nelect - self.charge
+            inc["NELECT"] = self.nelect - self.charge
         except Exception:
             print("NELECT flag is not set due to non-availability of POTCARs")
 
