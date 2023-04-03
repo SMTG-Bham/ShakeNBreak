@@ -96,8 +96,9 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
-which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). More details given
-`here <https://pymatgen.org/installation.html#potcar-setup>`_.
+which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
+`doped README <https://github.com/SMTG-UCL/doped/tree/master#installation>`_ instructions if you have difficulty with
+this.
 
 Developer installation
 ------------------------
