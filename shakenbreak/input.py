@@ -1198,13 +1198,13 @@ def generate_defect_object(
     verbose: bool = False,
 ) -> Defect:
     """
-    Create Defect() object from a DOPED/PyCDT single_defect_dict.
+    Create Defect() object from a doped/PyCDT single_defect_dict.
 
     Args:
         single_defect_dict (:obj:`dict`):
-            DOPED/PyCDT defect dictionary.
+            doped/PyCDT defect dictionary.
         bulk_dict (:obj:`dict`):
-            DOPED/PyCDT entry for bulk in the defects dictionary,
+            doped/PyCDT entry for bulk in the defects dictionary,
             (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
         charges (:obj:`list`):
             List of charge states for the defect.
