@@ -121,7 +121,6 @@ Automatic testing is run on the master and develop branches using Github Actions
 
 ## Acknowledgements
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and Chris Savory.
-Code to identify defect species from input supercell structures was written based on the implementation in [PyCDT](https://doi.org/10.1016/j.cpc.2018.01.004) by Broberg et al.
 
 ## Studies using `ShakeNBreak`
 We'll add papers that use `ShakeNBreak` to this list as they come out!
