@@ -124,13 +124,15 @@ Automatic testing is run on the master and develop branches using Github Actions
 
 ## Studies using `ShakeNBreak`
 We'll add papers that use `ShakeNBreak` to this list as they come out!
+- A. Nicolson, S. R. Kavanagh, C. N. Savory, G. W. Watson, D. O. Scanlon [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/642d2207a029a26b4cf05137) 2023
 - X. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh, [_arXiv_](https://arxiv.org/abs/2302.04901) 2023
-- J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a) 2023
+- J. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon, [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/63d2a2c41fb2a8767ee1e06f) 2023
 - Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation.
 - I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_npj Comput Mater_](https://doi.org/10.1038/s41524-023-00973-1) 2023
 - Y. T. Huang & S. R. Kavanagh et al. [_Nature Communications_](https://www.nature.com/articles/s41467-022-32669-3) 2022
-- S. R. Kavanagh, D. O. Scanlon, A. Walsh [_ACS Energy Letters_](https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380) 2021
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
+- S. R. Kavanagh, D. O. Scanlon, A. Walsh [_ACS Energy Letters_](https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380) 2021
+
 
 <!-- Se -->
 <!-- Oba book -->
@@ -140,7 +142,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 <!-- Sykes Magnetic oxide polarons -->
 <!-- Joe CuI -->
 <!-- Kat YTOS -->
-<!-- Adair CuSiSe3 -->
 <!-- Squires (and mention benchmark test against AIRSS? See Slack message) -->
 
 ## License and Citation

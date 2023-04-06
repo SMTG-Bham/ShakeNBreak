@@ -216,30 +216,31 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
+- A\. Nicolson, S. R. Kavanagh, C. N. Savory, G. W. Watson, D. O. Scanlon `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/642d2207a029a26b4cf05137>`__ 2023
 - X\. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh `arXiv`_ 2023
 - J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon `ChemRxiv`_ 2023
 - Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Comput Mater`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
-- S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+- S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
 
 .. Se
+.. Oba book
 .. BiOI
 .. Kumagai collab paper
 .. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
 .. Joe CuI
 .. Kat YTOS
-.. Adair CuSiSe3
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 .. _arXiv: https://arxiv.org/abs/2302.04901
-.. _ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a
+.. _ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/63d2a2c41fb2a8767ee1e06f
 .. _npj Comput Mater: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
-.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
 .. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
+.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
 
 License and Citation
 ========================
