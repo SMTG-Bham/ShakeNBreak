@@ -76,7 +76,7 @@ SnB_run_loop() {
         num_energies=$(grep -c entropy= OUTCAR)
         # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the initial energy
         # then calculation is essentially converged, don't rerun
-        if ((num_energies > 50)) && (($(echo "$energy_diff < 0.002" | bc -l))); then
+        if ((num_energies > 50)) && (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
           if [ "$verbose" = true ]; then
             echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
           fi
