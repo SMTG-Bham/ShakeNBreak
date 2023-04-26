@@ -70,6 +70,7 @@ SnB_run_loop() {
             continue
           fi
         fi
+
         init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
         fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
         energy_diff=$(echo "$init_energy - $fin_energy" | bc)
@@ -81,16 +82,24 @@ SnB_run_loop() {
             echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
           fi
           echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
+          # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
           builtin cd .. || return
           continue
         fi
+
+        # if electronic convergence is not being reached, change ALGO to All
+        if grep -q "aborting loop EDIFF was not reached" OUTCAR && ! grep -q "aborting loop because EDIFF is reached" OUTCAR; then
+          # unconverged electronic loops and no converged electronic loops
+          if [ "$verbose" = true ]; then
+            echo "${i%?} is showing poor electronic convergence, changing ALGO to All."
+          fi
+          sed -i 's/ALGO.*/ALGO = All/g' INCAR
+        fi
         echo "${i%?} not (fully) relaxed, saving files and rerunning"
-        # shellcheck disable=SC2093
         bash "${DIR}"/save_vasp_files.sh
         if [ -s CONTCAR ]; then # CONTCAR not empty (i.e. at least one ionic step made), cp to POSCAR
           "cp" CONTCAR POSCAR
         fi
-        # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
       fi
       if [ -f "./${job_filename}" ]; then
         echo "Running job for ${i%?}"

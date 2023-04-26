@@ -1943,8 +1943,52 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(os.path.exists("Unperturbed"))  # not renamed
         shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
-        if_present_rm("Bond_Distortion_10.0%/job_file")
         if_present_rm("Unperturbed/job_file")
+
+        # test changing ALGO to All with poor electronic convergence
+        poor_electronic_convergence_outcar_string = """
+                energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
+                aborting loop EDIFF was not reached
+                energy  without entropy=     2923.36313118  energy(sigma->0) =     2923.36252910
+                aborting loop EDIFF was not reached
+                """
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(poor_electronic_convergence_outcar_string)
+        with open("Bond_Distortion_10.0%/INCAR", "w") as fp:
+            fp.write("ALGO = Fast")
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Bond_Distortion_10.0% fully relaxed", out)  # also present
+        self.assertIn("Running job for Bond_Distortion_10.0%", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
+        self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
+        self.assertIn("Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO "
+                      "to All.", out)
+        self.assertIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        print(out)
+        self.assertIn("ALGO = All", open("Bond_Distortion_10.0%/INCAR").read())
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 3)  # INCAR, CONTCAR, OUTCAR
+        self.assertEqual(len([i for i in saved_files if "INCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
+        os.remove("Bond_Distortion_10.0%/OUTCAR")
+        os.remove("Bond_Distortion_10.0%/POSCAR")
+        os.remove("Bond_Distortion_10.0%/INCAR")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
         if_present_rm("job_file")
 
     def test_parse(self):
