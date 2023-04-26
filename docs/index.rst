@@ -64,7 +64,7 @@ Literature
 - Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
 - Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
 - Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_, *npj Comput Mater* 9, 25, **2023**
-- News & Views: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023**
+- News & Views: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023** (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
@@ -226,7 +226,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
-- (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023
+- (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
 .. Oba book
