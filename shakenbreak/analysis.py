@@ -227,7 +227,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     return energy_diff, gs_distortion
 
 
-def _sort_data(energies_file: str, verbose: bool = True) -> tuple:
+def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.05) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
     of ground-state defect structure relative to `Unperturbed` structure
@@ -244,6 +244,11 @@ def _sort_data(energies_file: str, verbose: bool = True) -> tuple:
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
+        min_e_diff (:obj: `float`):
+            Minimum energy difference (in eV) between the ground-state
+            defect structure, relative to the `Unperturbed` structure,
+            to consider it as having found a new energy-lowering
+            distortion. Default is 0.05 eV.
 
     Returns:
         defect_energies_dict (:obj:`dict`):
@@ -278,7 +283,7 @@ def _sort_data(energies_file: str, verbose: bool = True) -> tuple:
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".yaml")[0]
     if verbose:
-        if energy_diff and energy_diff < -0.1:
+        if energy_diff and float(energy_diff) < -min_e_diff:
             print(
                 f"{defect_name}: Energy difference between minimum, found with "
                 f"{gs_distortion} bond distortion, and unperturbed: "

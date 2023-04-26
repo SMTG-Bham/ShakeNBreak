@@ -207,12 +207,18 @@ class DistortionTestCase(unittest.TestCase):
                             f"distort, we ignore the elemental identity. The final distortion "
                             f"information is:"
                         )
+                        user_warnings = [
+                            warning for warning in w if warning.category == UserWarning
+                        ]
                         if num_neighbours > 0:
-                            self.assertEqual(len(w), 1)
-                            self.assertEqual(w[0].category, UserWarning)
-                            self.assertIn(warning_message, str(w[0].message))
+                            self.assertEqual(len(user_warnings), 1)
+                            self.assertIn(
+                                warning_message, str(user_warnings[0].message)
+                            )
                         else:
-                            self.assertEqual(len(w), 0)  # No warning if we distort none
+                            self.assertEqual(
+                                len(user_warnings), 0
+                            )  # No warning if we distort none
 
         # test the case where we do have some of the `distorted_element` neighbours, but less than
         # `num_nearest_neighbours` of them with 4.5 Å of the defect site
@@ -235,15 +241,19 @@ class DistortionTestCase(unittest.TestCase):
                         f"distort, we ignore the elemental identity. The final distortion "
                         f"information is:"
                     )
+                    user_warnings = [
+                        warning for warning in w if warning.category == UserWarning
+                    ]
                     if (
                         num_neighbours > 7
                     ):  # should only give warning when more than 7 distorted
                         # neighbours requested
-                        self.assertEqual(len(w), 1)
-                        self.assertEqual(w[0].category, UserWarning)
-                        self.assertIn(warning_message, str(w[0].message))
+                        self.assertEqual(len(user_warnings), 1)
+                        self.assertIn(warning_message, str(user_warnings[0].message))
                     else:
-                        self.assertEqual(len(w), 0)  # No warning if we distort none
+                        self.assertEqual(
+                            len(user_warnings), 0
+                        )  # No warning if we distort none
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""
@@ -259,6 +269,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(
             distortions.rattle(
                 self.V_Cd_minus0pt5_struc,
+                stdev=0.25,
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
             ),
@@ -269,6 +280,17 @@ class DistortionTestCase(unittest.TestCase):
                 self.V_Cd_minus0pt5_struc,
                 stdev=0.1,
                 d_min=d_min,
+                active_atoms=rattling_atom_indices,
+            ),
+            self.V_Cd_minus0pt5_struc_0pt1_rattled,
+        )
+
+        # test default d_min setting:
+        self.assertEqual(
+            distortions.rattle(
+                self.V_Cd_minus0pt5_struc,
+                stdev=0.1,
+                # d_min=d_min,
                 active_atoms=rattling_atom_indices,
             ),
             self.V_Cd_minus0pt5_struc_0pt1_rattled,
@@ -293,6 +315,18 @@ class DistortionTestCase(unittest.TestCase):
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
                 stdev=0.28333683853583164,  # 10% of CdTe bond length, default
+                seed=40,  # distortion_factor * 100, default
+            ),
+            self.Int_Cd_2_minus0pt6_struc_rattled,
+        )
+
+        # test defaults:
+        self.assertEqual(
+            distortions.rattle(
+                self.Int_Cd_2_minus0pt6_struc,
+                # d_min=d_min,  # default
+                active_atoms=rattling_atom_indices,
+                # stdev=0.28333683853583164,  # 10% of CdTe bond length, default
                 seed=40,  # distortion_factor * 100, default
             ),
             self.Int_Cd_2_minus0pt6_struc_rattled,

@@ -9,7 +9,6 @@ on:
     branches:
       - main
       - develop
-      - pymatgen>2022.8.23_compatibility
   workflow_dispatch:
 
 jobs:

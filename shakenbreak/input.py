@@ -5,12 +5,10 @@ as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 """
 import copy
 import datetime
-import functools
 import itertools
 import os
 import shutil
 import warnings
-from collections import Counter
 from importlib.metadata import version
 from typing import Optional, Tuple, Type, Union
 
@@ -30,6 +28,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 from pymatgen.io.vasp.sets import BadInputSetWarning
+from pymatgen.util.coord import pbc_diff
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
@@ -393,14 +392,14 @@ def _get_defect_entry_from_defect(
 ):
     """Generate a DefectEntry from a Defect object, whose defect structure
     corresponds to the defect supercell (rather than unit cell). This is the case
-    when initilising Defects() from DOPED or from structures specified by the user.
+    when initialising Defects() from DOPED or from structures specified by the user.
     """
     defect_entry = DefectEntry(
         defect=defect,
         charge_state=charge_state,
         # The Defect() created from `doped` output, refers to the
         # supercell rather than unit cell, so we can use the
-        # Defect attribites to access the defect supercell frac coords
+        # Defect attributes to access the defect supercell frac coords
         sc_defect_frac_coords=defect.site.frac_coords,
         sc_entry=ComputedStructureEntry(
             structure=defect.defect_structure,
@@ -430,8 +429,25 @@ def _most_common_oxi(element) -> int:
     oxi_probabilities = [
         (k, v) for k, v in comp_obj.oxi_prob.items() if k.element == element_obj
     ]
-    most_common = max(oxi_probabilities, key=lambda x: x[1])[0]
-    return most_common.oxi_state
+    if oxi_probabilities:  # not empty
+        most_common = max(oxi_probabilities, key=lambda x: x[1])[
+            0]  # breaks if icsd oxi states is empty
+        return most_common.oxi_state
+    else:
+        if element_obj.common_oxidation_states:
+            return element_obj.common_oxidation_states[0]  # known common oxidation state
+        else:  # no known common oxidation state, make guess and warn user
+            if element_obj.oxidation_states:
+                guess_oxi = element_obj.oxidation_states[0]
+            else:
+                guess_oxi = 0
+
+            warnings.warn(
+                f"No known common oxidation states in pymatgen/ICSD dataset for element "
+                f"{element_obj.name}, guessing as {guess_oxi:+}. You should set this in the "
+                f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!")
+
+            return guess_oxi
 
 
 def _calc_number_electrons(
@@ -660,6 +676,200 @@ def _get_voronoi_multiplicity(site, structure):
     return multiplicity
 
 
+def get_defect_type_and_composition_diff(bulk, defect):
+    """
+    This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    versions, once issues with `pymatgen` compatibility has been resolved.
+    Get the difference in composition between a bulk structure and a defect structure.
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species
+    """
+    bulk_comp = bulk.composition.get_el_amt_dict()
+    defect_comp = defect.composition.get_el_amt_dict()
+
+    composition_diff = {
+        element: int(defect_amount - bulk_comp.get(element, 0))
+        for element, defect_amount in defect_comp.items()
+        if int(defect_amount - bulk_comp.get(element, 0)) != 0
+    }
+
+    if len(composition_diff) == 1 and list(composition_diff.values())[0] == 1:
+        defect_type = "interstitial"
+    elif len(composition_diff) == 1 and list(composition_diff.values())[0] == -1:
+        defect_type = "vacancy"
+    elif len(composition_diff) == 2:
+        defect_type = "substitution"
+    else:
+        raise RuntimeError(
+            "Could not determine defect type from composition difference of bulk "
+            "and defect structures."
+        )
+
+    return defect_type, composition_diff
+
+
+def get_defect_site_idxs_and_unrelaxed_structure(
+    bulk, defect, defect_type, composition_diff, unique_tolerance=1
+):
+    """
+    This code is pulled from `doped`. Will be replaced by importing from `doped` in future
+    versions, once issues with `pymatgen` compatibility has been resolved.
+    Get the defect site and unrelaxed structure.
+    Contributed by Dr. Alex Ganose (@ Imperial Chemistry) and refactored for extrinsic species
+    """
+    if defect_type == "substitution":
+        old_species = [el for el, amt in composition_diff.items() if amt == -1][0]
+        new_species = [el for el, amt in composition_diff.items() if amt == 1][0]
+
+        bulk_new_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == new_species]
+        )
+        defect_new_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == new_species]
+        )
+
+        if bulk_new_species_coords.size > 0:  # intrinsic substitution
+            # find coords of new species in defect structure, taking into account periodic boundaries
+            distance_matrix = np.linalg.norm(
+                pbc_diff(bulk_new_species_coords[:, None], defect_new_species_coords),
+                axis=2,
+            )
+            site_matches = distance_matrix.argmin(axis=1)
+
+            if len(np.unique(site_matches)) != len(site_matches):
+                raise RuntimeError(
+                    "Could not uniquely determine site of new species in defect structure"
+                )
+
+            defect_site_idx = list(
+                set(np.arange(len(defect_new_species_coords), dtype=int))
+                - set(site_matches)
+            )[0]
+
+        else:  # extrinsic substitution
+            defect_site_idx = 0
+
+        defect_coords = defect_new_species_coords[defect_site_idx]
+
+        # now find the closest old_species site in the bulk structure to the defect site
+        # again, make sure to use periodic boundaries
+        bulk_old_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == old_species]
+        )
+        distances = np.linalg.norm(
+            pbc_diff(bulk_old_species_coords, defect_coords), axis=1
+        )
+        original_site_idx = distances.argmin()
+
+        # if there are any other matches with a distance within unique_tolerance of the located
+        # site then unique matching failed
+        if (
+            len(distances[distances < distances[original_site_idx] * unique_tolerance])
+            > 1
+        ):
+            raise RuntimeError(
+                "Could not uniquely determine site of old species in bulk structure"
+            )
+
+        # currently, original_site_idx is indexed with respect to the old species only.
+        # Need to get the index in the full structure
+        bulk_coords = np.array([s.frac_coords for s in bulk])
+        bulk_site_idx = np.linalg.norm(
+            pbc_diff(bulk_coords, bulk_old_species_coords[original_site_idx]), axis=1
+        ).argmin()
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.remove_sites([bulk_site_idx])
+        unrelaxed_defect_structure.append(new_species, bulk_coords[bulk_site_idx])
+        defect_site_idx = len(unrelaxed_defect_structure) - 1  # last one to be added
+
+    elif defect_type == "vacancy":
+        old_species = list(composition_diff.keys())[0]
+
+        bulk_old_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == old_species]
+        )
+        defect_old_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == old_species]
+        )
+
+        # make sure to do take into account periodic boundaries
+        distance_matrix = np.linalg.norm(
+            pbc_diff(bulk_old_species_coords[:, None], defect_old_species_coords),
+            axis=2,
+        )
+        site_matches = distance_matrix.argmin(axis=0)
+
+        if len(np.unique(site_matches)) != len(site_matches):
+            raise RuntimeError(
+                "Could not uniquely determine site of vacancy in defect structure"
+            )
+
+        original_site_idx = list(
+            set(np.arange(len(bulk_old_species_coords), dtype=int)) - set(site_matches)
+        )[0]
+
+        # currently, original_site_idx is indexed with respect to the old species only.
+        # Need to get the index in the full structure
+        bulk_coords = np.array([s.frac_coords for s in bulk])
+        bulk_site_idx = np.linalg.norm(
+            pbc_diff(bulk_coords, bulk_old_species_coords[original_site_idx]), axis=1
+        ).argmin()
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.remove_sites([bulk_site_idx])
+        defect_site_idx = None
+
+    elif defect_type == "interstitial":
+        new_species = list(composition_diff.keys())[0]
+
+        bulk_new_species_coords = np.array(
+            [site.frac_coords for site in bulk if site.specie.name == new_species]
+        )
+        defect_new_species_coords = np.array(
+            [site.frac_coords for site in defect if site.specie.name == new_species]
+        )
+
+        if bulk_new_species_coords.size > 0:  # intrinsic interstitial
+            # make sure to take into account periodic boundaries
+            distance_matrix = np.linalg.norm(
+                pbc_diff(bulk_new_species_coords[:, None], defect_new_species_coords),
+                axis=2,
+            )
+            site_matches = distance_matrix.argmin(axis=1)
+
+            if len(np.unique(site_matches)) != len(site_matches):
+                raise RuntimeError(
+                    "Could not uniquely determine site of interstitial in defect structure"
+                )
+
+            defect_site_idx = list(
+                set(np.arange(len(defect_new_species_coords), dtype=int))
+                - set(site_matches)
+            )[0]
+
+        else:  # extrinsic interstitial
+            defect_site_idx = 0
+
+        defect_site_coords = defect_new_species_coords[defect_site_idx]
+
+        # create unrelaxed defect structure
+        unrelaxed_defect_structure = bulk.copy()
+        unrelaxed_defect_structure.append(new_species, defect_site_coords)
+        bulk_site_idx = None
+        defect_site_idx = len(unrelaxed_defect_structure) - 1  # last one to be added
+
+    else:
+        raise ValueError(f"Invalid defect type: {defect_type}")
+
+    return (
+        bulk_site_idx,
+        defect_site_idx,
+        unrelaxed_defect_structure,
+    )
+
+
 def identify_defect(
     defect_structure, bulk_structure, defect_coords=None, defect_index=None
 ) -> Defect:
@@ -682,21 +892,16 @@ def identify_defect(
 
     Returns: :obj:`Defect`
     """
-    natoms_defect = len(defect_structure)
-    natoms_bulk = len(bulk_structure)
-    if natoms_defect == natoms_bulk - 1:
-        defect_type = "vacancy"
-    elif natoms_defect == natoms_bulk + 1:
-        defect_type = "interstitial"
-    elif natoms_defect == natoms_bulk:
-        defect_type = "substitution"
-    else:
-        raise ValueError(
-            f"Could not identify defect type from number of atoms in defect ({natoms_defect}) "
-            f"and bulk ({natoms_bulk}) structures. "
-            "ShakeNBreak is currently only built for point defects, please contact the "
-            "developers if you would like to use the method for complex defects"
+    # identify defect site, structural information, and create defect object
+    try:
+        defect_type, comp_diff = get_defect_type_and_composition_diff(
+            bulk_structure, defect_structure
         )
+    except RuntimeError as exc:
+        raise ValueError(
+            "Could not identify defect type from number of sites in structure: "
+            f"{len(bulk_structure)} in bulk vs. {len(defect_structure)} in defect?"
+        ) from exc
 
     # remove oxidation states before site-matching
     defect_struc = (
@@ -852,97 +1057,33 @@ def identify_defect(
                 "just defect_index will be used to determine the defect site"
             )
 
+    failed_matching_error_message = (
+        "Defect coordinates could not be identified from auto site-matching. Check bulk and "
+        "defect structures correspond to the same supercell and/or specify defect site with "
+        "--defect-coords or --defect-index (if using the SnB CLI), or 'defect_coords' or "
+        "'defect_index' keys in the input dictionary if using the SnB Python API."
+    )
+
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
-    site_displacement_tol = (
-        0.01  # distance tolerance for site matching to identify defect, increases in
-        # jumps of 0.1 Å
-    )
+    unrelaxed_defect_structure = None
     auto_matching_bulk_site_index = None
     auto_matching_defect_site_index = None
-    possible_defects = []
-    site_matching_indices = []
 
     try:
-        bulk_sites = [site.frac_coords for site in bulk_struc]
-        defect_sites = [site.frac_coords for site in defect_struc]
-        matched_bulk_indices = []
-        matched_defect_indices = []
-        dist_matrix = defect_struc.lattice.get_all_distances(bulk_sites, defect_sites)
-        min_dist_with_index = [
-            [
-                min(dist_matrix[bulk_index]),
-                int(bulk_index),
-                int(dist_matrix[bulk_index].argmin()),
-            ]
-            for bulk_index in range(len(dist_matrix))
-        ]  # list of [min dist, bulk ind, defect ind]
+        (
+            auto_matching_bulk_site_index,
+            auto_matching_defect_site_index,
+            unrelaxed_defect_structure,
+        ) = get_defect_site_idxs_and_unrelaxed_structure(
+            bulk_structure, defect_structure, defect_type, comp_diff
+        )
 
-        while site_displacement_tol < 5:  # loop over distance tolerances
-            for mindist, bulk_index, def_struc_index in min_dist_with_index:
-                species_match = (
-                    bulk_struc[bulk_index].specie
-                    == defect_struc[def_struc_index].specie
-                )
-
-                matched_bulk_indices = [i[0] for i in site_matching_indices]
-                matched_defect_indices = [i[1] for i in site_matching_indices]
-                if (
-                    mindist < site_displacement_tol
-                    and species_match
-                    and bulk_index not in matched_bulk_indices
-                    and def_struc_index not in matched_defect_indices
-                ):
-                    site_matching_indices.append([bulk_index, def_struc_index])
-
-                elif (
-                    mindist < site_displacement_tol
-                    and defect_type == "substitution"
-                    and not species_match
-                ):
-                    possible_defects.append(
-                        [def_struc_index, defect_sites[def_struc_index][:], bulk_index]
-                    )
-
-            if defect_type == "interstitial":
-                if site_matching_indices:
-                    possible_defects = [
-                        [ind, fc[:], None]
-                        for ind, fc in enumerate(defect_sites)
-                        if ind not in matched_defect_indices
-                    ]
-
-            elif defect_type == "vacancy":
-                if site_matching_indices:
-                    possible_defects = [
-                        [None, fc[:], ind]
-                        for ind, fc in enumerate(bulk_sites)
-                        if ind not in matched_bulk_indices
-                    ]
-
-            if len(possible_defects) == 1:
-                auto_matching_defect_site_index = possible_defects[0][0]
-                auto_matching_bulk_site_index = possible_defects[0][2]
-                break
-
-            if (
-                site_matching_indices
-                and auto_matching_bulk_site_index is None
-                and auto_matching_defect_site_index is None
-            ):
-                # failed auto-site matching, rely on user input or raise error if no user input
-                if len(set(np.array(site_matching_indices)[:, 0])) != len(
-                    set(np.array(site_matching_indices)[:, 1])
-                ):
-                    raise ValueError(
-                        "Error occurred in site_matching routine. Double counting of site matching "
-                        f"occurred: {site_matching_indices}\nAbandoning structure parsing."
-                    )
-
-            site_displacement_tol += 0.1
-
-    except Exception:
-        pass  # failed auto-site matching, rely on user input or raise error if no user input
+    except Exception as exc:
+        if defect_site_index is None and bulk_site_index is None:
+            raise ValueError(failed_matching_error_message) from exc
+        else:
+            pass  # failed auto-site matching, rely on user input or raise error if no user input
 
     if (
         defect_site_index is None
@@ -950,12 +1091,7 @@ def identify_defect(
         and auto_matching_bulk_site_index is None
         and auto_matching_defect_site_index is None
     ):
-        raise ValueError(
-            "Defect coordinates could not be identified from auto site-matching. Check bulk and "
-            "defect structures correspond to the same supercell and/or specify defect site with "
-            "--defect-coords or --defect-index (if using the SnB CLI), or 'defect_coords' or "
-            "'defect_index' keys in the input dictionary if using the SnB Python API."
-        )
+        raise ValueError(failed_matching_error_message)
 
     if (
         defect_site_index is None
@@ -1051,6 +1187,76 @@ def identify_defect(
             )
         else:
             raise exc
+
+    return defect
+
+
+def generate_defect_object(
+    single_defect_dict: dict,
+    bulk_dict: dict,
+    charges: Optional[list] = None,
+    verbose: bool = False,
+) -> Defect:
+    """
+    Create Defect() object from a doped/PyCDT single_defect_dict.
+
+    Args:
+        single_defect_dict (:obj:`dict`):
+            doped/PyCDT defect dictionary.
+        bulk_dict (:obj:`dict`):
+            doped/PyCDT entry for bulk in the defects dictionary,
+            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
+        charges (:obj:`list`):
+            List of charge states for the defect.
+        verbose (:obj:`bool`):
+            Whether to print information about the defect object being parsed.
+
+    Returns: :obj:`Defect`
+    """
+    if verbose:
+        print(f"Creating defect object for {single_defect_dict['name']}")
+    defect_type = single_defect_dict["defect_type"]
+    if defect_type == "antisite":
+        defect_type = (
+            "substitution"  # antisites are represented with Substitution class
+        )
+    # Get bulk structure
+    bulk_structure = bulk_dict["supercell"]["structure"]
+    # Get defect site
+    defect_site = single_defect_dict["bulk_supercell_site"]
+    for_monty_defect = {
+        "@module": "pymatgen.analysis.defects.core",
+        "@class": defect_type.capitalize(),
+        "structure": bulk_structure,
+        "site": defect_site,
+        # "user_charges": single_defect_dict["charges"]  # doesn't work
+    }
+    try:
+        defect = MontyDecoder().process_decoded(for_monty_defect)
+    except TypeError as exc:
+        # This means we have the old version of pymatgen-analysis-defects, where the class
+        # attributes were different (defect_site instead of site and no user_charges)
+        v_ana_def = version("pymatgen-analysis-defects")
+        v_pmg = version("pymatgen")
+        if v_ana_def < "2022.9.14":
+            raise TypeError(
+                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
+                " which is incompatible. Please update this package (with `pip install "
+                "shakenbreak`) and try again."
+            )
+        if v_pmg < "2022.7.25":
+            raise TypeError(
+                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
+                f"Please update this package (with `pip install shakenbreak`) and try again."
+            )
+        else:
+            raise exc
+
+    # Specify defect charge states
+    if isinstance(charges, list):  # Priority to charges argument
+        defect.user_charges = charges
+    elif "charges" in single_defect_dict.keys():
+        defect.user_charges = single_defect_dict["charges"]
 
     return defect
 
@@ -1162,8 +1368,8 @@ def _apply_rattle_bond_distortions(
     num_nearest_neighbours: int,
     distortion_factor: float,
     local_rattle: bool = False,
-    stdev: float = 0.25,
-    d_min: Optional[float] = 2.25,
+    stdev: Optional[float] = None,
+    d_min: Optional[float] = None,
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -1191,8 +1397,9 @@ def _apply_rattle_bond_distortions(
             (Default: False)
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution
-            from which atomic displacement distances are drawn.
-            (Default: 0.25)
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -1287,71 +1494,36 @@ def _apply_rattle_bond_distortions(
         )  # returns True for matching indices
         active_atoms = rattling_atom_indices[~idx]  # remove matching indices
 
-    try:
-        if local_rattle:
-            bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
-                structure=bond_distorted_defect["distorted_structure"],
-                frac_coords=frac_coords,
-                site_index=defect_site_index,
-                stdev=stdev,
-                d_min=d_min,
-                active_atoms=active_atoms,
-                **mc_rattle_kwargs,
-            )
-        else:
-            bond_distorted_defect["distorted_structure"] = distortions.rattle(
-                structure=bond_distorted_defect["distorted_structure"],
-                stdev=stdev,
-                d_min=d_min,
-                active_atoms=active_atoms,
-                **mc_rattle_kwargs,
-            )
-    except Exception as ex:
-        if "attempts" in str(ex):
-            distorted_defect_struc = bond_distorted_defect["distorted_structure"]
-            sorted_distances = np.sort(distorted_defect_struc.distance_matrix.flatten())
-            reduced_d_min = sorted_distances[len(distorted_defect_struc)] + (1 * stdev)
-            if local_rattle:
-                bond_distorted_defect[
-                    "distorted_structure"
-                ] = distortions.local_mc_rattle(
-                    structure=bond_distorted_defect["distorted_structure"],
-                    frac_coords=frac_coords,
-                    site_index=defect_site_index,
-                    stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
-                    active_atoms=active_atoms,
-                    max_attempts=7000,  # default is 5000
-                    **mc_rattle_kwargs,
-                )
-            else:
-                bond_distorted_defect["distorted_structure"] = distortions.rattle(
-                    structure=bond_distorted_defect["distorted_structure"],
-                    stdev=stdev,
-                    d_min=reduced_d_min,  # min distance in supercell plus 1 stdev
-                    active_atoms=active_atoms,
-                    max_attempts=7000,  # default is 5000
-                    **mc_rattle_kwargs,
-                )
-            if verbose:
-                warnings.warn(
-                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                    f"significantly smaller than this present), setting d_min to "
-                    f"{reduced_d_min:.2f} \u212B for this defect."
-                )
-        else:
-            raise ex
+    if local_rattle:
+        bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            frac_coords=frac_coords,
+            site_index=defect_site_index,
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
+    else:
+        bond_distorted_defect["distorted_structure"] = distortions.rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
 
     return bond_distorted_defect
 
 
 def apply_snb_distortions(
     defect_entry: DefectEntry,
-    defect_name: str,
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
-    stdev: float = 0.25,
+    stdev: Optional[float] = None,
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     verbose: bool = False,
@@ -1364,8 +1536,6 @@ def apply_snb_distortions(
     Args:
         defect_entry (:obj:`DefectEntry`):
             pymatgen.analysis.defects.thermo.DefectEntry object.
-        defect_name (:obj:`str`):
-            Name of the defect species.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -1378,8 +1548,9 @@ def apply_snb_distortions(
             (Default: False)
         stdev (:obj:`float`):
             Standard deviation (in Angstroms) of the Gaussian distribution
-            from which atomic displacement distances are drawn.
-            (Default: 0.25)
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`, optional):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at distances
@@ -1429,20 +1600,6 @@ def apply_snb_distortions(
     bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
     defect_site_index = defect_object.defect_site_index  # This is for the unit cell,
     # but is conserved in the supercell
-
-    if not d_min:
-        sorted_distances = np.sort(defect_structure.distance_matrix.flatten())
-        d_min = (
-            0.8 * sorted_distances[len(defect_structure) + 20]
-        )  # ignoring interstitials by
-        # ignoring the first 10 non-zero bond lengths (double counted in the distance matrix)
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
 
     seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
@@ -1510,6 +1667,7 @@ def apply_snb_distortions(
                 frac_coords=frac_coords,
                 stdev=stdev,
                 d_min=d_min,
+                verbose=verbose,
                 **mc_rattle_kwargs,
             )
         else:
@@ -1517,6 +1675,7 @@ def apply_snb_distortions(
                 defect_structure,
                 stdev=stdev,
                 d_min=d_min,
+                verbose=verbose,
                 **mc_rattle_kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
@@ -1535,7 +1694,7 @@ def apply_snb_distortions(
 class Distortions:
     """
     Class to apply rattle and bond distortion to all defects in `defects`
-    (each defect as a pymatgen.analysis.defects.core.Defect() object).
+    (each defect as a pymatgen.analysis.defects.thermo.DefectEntry() object).
     """
 
     def __init__(
@@ -1698,7 +1857,7 @@ class Distortions:
                     if key != "bulk":  # loop for vacancies, antisites and interstitials
                         for defect_dict in defect_dict_list:  # loop for each defect
                             # transform defect_dict to Defect object
-                            defect = cli.generate_defect_object(
+                            defect = generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=defects["bulk"],
                             )
@@ -1772,7 +1931,12 @@ class Distortions:
             )
 
         # Check if all expected oxidation states are provided
-        guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        try:
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=-1)[0]
+            if not guessed_oxidation_states:
+                guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        except Exception:
+            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
@@ -2019,26 +2183,29 @@ class Distortions:
         charge: int,
         defect_name: str,
     ) -> str:
-        """Generate comment for structure files."""
+        """
+        Generate comment for structure files. Note that this gets truncated to 40 characters in
+        the CONTCAR file.
+        """
+        frac_coords = self.distortion_metadata["defects"][defect_name]["unique_site"]
+        approx_coords = f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
         poscar_comment = (
             str(
                 key_distortion.split("_")[-1]
             )  # Get distortion factor (-60.%) or 'Rattled'
-            + "__num_neighbours="
+            + " N(Distort)="
             + str(
                 self.distortion_metadata["defects"][defect_name]["charges"][charge][
                     "num_nearest_neighbours"
                 ]
             )
-            + "__"
-            + defect_name
+            + f" {approx_coords}"
         )
         return poscar_comment
 
     def _setup_distorted_defect_dict(
         self,
         defect_entry: DefectEntry,
-        # defect_name: str,
     ) -> dict:
         """
         Setup `distorted_defect_dict` with info for `defect` in
@@ -2047,8 +2214,6 @@ class Distortions:
         Args:
             defect_entry (:obj:`pymatgen.analysis.defects.thermo.DefectEntry()`):
                 DefectEntry object to generate `distorted_defect_dict` from.
-            defect_name (:obj:`str`):
-                Name of the defect.
 
         Returns:
             :obj:`dict`
@@ -2191,7 +2356,6 @@ class Distortions:
 
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
                 defect_entry,
-                # defect_name
             )
 
             for charge in distorted_defects_dict[defect_name][
@@ -2205,7 +2369,6 @@ class Distortions:
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
                     defect_entry=defect_entry,
-                    defect_name=defect_name,
                     num_nearest_neighbours=num_nearest_neighbours,
                     bond_distortions=self.bond_distortions,
                     local_rattle=self.local_rattle,
@@ -2817,7 +2980,7 @@ class Distortions:
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
         **mc_rattle_kwargs,
-    ) -> None:
+    ) -> "Distortions":
         """
         Initialise Distortions() class from defect and bulk structures.
 

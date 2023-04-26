@@ -175,8 +175,9 @@ def distort(
 
 def rattle(
     structure: Structure,
-    stdev: float = 0.25,
-    d_min: float = 2.25,
+    stdev: Optional[float] = None,
+    d_min: Optional[float] = None,
+    verbose: bool = False,
     n_iter: int = 1,
     active_atoms: Optional[list] = None,
     nbr_cutoff: float = 5,
@@ -194,14 +195,18 @@ def rattle(
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Structure as a pymatgen object
         stdev (:obj:`float`):
-            Standard deviation (in Angstroms) of the Gaussian distribution from
-            which atomic displacement distances are drawn.
-            (Default: 0.25)
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
-            Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-            moves that put atoms at distances less than this will be heavily
-            penalised.
-            (Default: 2.25)
+            Minimum interatomic distance (in Angstroms) in the rattled
+            structure. Monte Carlo rattle moves that put atoms at
+            distances less than this will be heavily penalised.
+            Default is to set this to 80% of the nearest neighbour
+            distance in the defect supercell (ignoring interstitials).
+        verbose (:obj:`bool`):
+            Whether to print information about the rattling process.
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles to perform.
             (Default: 1)
@@ -233,20 +238,77 @@ def rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
+    sorted_distances = np.sort(structure.distance_matrix.flatten())
 
-    rattled_ase_struct = generate_mc_rattled_structures(
-        ase_struct,
-        n_configs=1,
-        rattle_std=stdev,
-        d_min=d_min,
-        n_iter=n_iter,
-        active_atoms=active_atoms,
-        nbr_cutoff=nbr_cutoff,
-        width=width,
-        max_attempts=max_attempts,
-        max_disp=max_disp,
-        seed=seed,
-    )[0]
+    if stdev is None:
+        stdev = (
+                0.1 * sorted_distances[len(structure) + 40]
+        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
+        # in the distance matrix)
+        if stdev > 0.4 or stdev < 0.02:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
+                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"set `stdev` manually"
+            )
+            stdev = 0.25
+
+    if d_min is None:
+        d_min = (
+            0.8 * sorted_distances[len(structure) + 40]
+        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
+        # in the distance matrix)
+        if d_min < 1.0:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
+
+    try:
+        rattled_ase_struct = generate_mc_rattled_structures(
+            ase_struct,
+            n_configs=1,
+            rattle_std=stdev,
+            d_min=d_min,
+            n_iter=n_iter,
+            active_atoms=active_atoms,
+            nbr_cutoff=nbr_cutoff,
+            width=width,
+            max_attempts=max_attempts,
+            max_disp=max_disp,
+            seed=seed,
+        )[0]
+
+    except Exception as ex:
+        if "attempts" in str(ex):
+            reduced_d_min = sorted_distances[len(structure)] + (1 * stdev)
+            rattled_ase_struct = generate_mc_rattled_structures(
+                ase_struct,
+                n_configs=1,
+                rattle_std=stdev,
+                d_min=reduced_d_min,
+                n_iter=n_iter,
+                active_atoms=active_atoms,
+                nbr_cutoff=nbr_cutoff,
+                width=width,
+                max_attempts=7000,  # default is 5000
+                max_disp=max_disp,
+                seed=seed,
+            )[0]
+
+            if verbose:
+                warnings.warn(
+                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                    f"significantly smaller than this present), setting d_min to"
+                    f" {reduced_d_min:.2f} \u212B for this defect."
+                )
+
+        else:
+            raise ex
+
     rattled_structure = aaa.get_structure(rattled_ase_struct)
 
     return rattled_structure
@@ -462,8 +524,9 @@ def local_mc_rattle(
     structure: Structure,
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    stdev: float = 0.25,
-    d_min: float = 2.25,
+    stdev: Optional[float] = None,
+    d_min: Optional[float] = None,
+    verbose: Optional[bool] = False,
     n_iter: int = 1,
     active_atoms: Optional[list] = None,
     nbr_cutoff: float = 5,
@@ -488,14 +551,18 @@ def local_mc_rattle(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
         stdev (:obj:`float`):
-            Standard deviation (in Angstroms) of the Gaussian distribution from
-            which atomic displacement distances are drawn.
-            (Default: 0.25)
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
         d_min (:obj:`float`):
-            Minimum interatomic distance (in Angstroms). Monte Carlo rattle
-            moves that put atoms at distances less than this will be heavily
-            penalised.
-            (Default: 2.25)
+            Minimum interatomic distance (in Angstroms) in the rattled
+            structure. Monte Carlo rattle moves that put atoms at
+            distances less than this will be heavily penalised.
+            Default is to set this to 80% of the nearest neighbour
+            distance in the defect supercell (ignoring interstitials).
+        verbose (:obj:`bool`):
+            Whether to print out information about the rattling process.
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles to perform.
             (Default: 1)
@@ -527,6 +594,7 @@ def local_mc_rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
+    sorted_distances = np.sort(structure.distance_matrix.flatten())
 
     if isinstance(site_index, int):
         atom_number = site_index - 1  # Align atom number with python 0-indexing
@@ -540,20 +608,76 @@ def local_mc_rattle(
             " or `frac_coords` provided."
         )
 
-    local_rattled_ase_struct = _generate_local_mc_rattled_structures(
-        ase_struct,
-        site_index=atom_number,
-        n_configs=1,
-        rattle_std=stdev,
-        d_min=d_min,
-        n_iter=n_iter,
-        active_atoms=active_atoms,
-        nbr_cutoff=nbr_cutoff,
-        width=width,
-        max_attempts=max_attempts,
-        max_disp=max_disp,
-        seed=seed,
-    )[0]
+    if stdev is None:
+        stdev = (
+                0.1 * sorted_distances[len(structure) + 40]
+        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
+        # in the distance matrix)
+        if stdev > 0.4 or stdev < 0.02:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
+                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"set `stdev` manually"
+            )
+            stdev = 0.25
+
+    if d_min is None:
+        d_min = (
+                0.8 * sorted_distances[len(structure) + 40]
+        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
+        # in the distance matrix)
+        if d_min < 1.0:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
+
+    try:
+        local_rattled_ase_struct = _generate_local_mc_rattled_structures(
+            ase_struct,
+            site_index=atom_number,
+            n_configs=1,
+            rattle_std=stdev,
+            d_min=d_min,
+            n_iter=n_iter,
+            active_atoms=active_atoms,
+            nbr_cutoff=nbr_cutoff,
+            width=width,
+            max_attempts=max_attempts,
+            max_disp=max_disp,
+            seed=seed,
+        )[0]
+
+    except Exception as ex:
+        if "attempts" in str(ex):
+            reduced_d_min = sorted_distances[len(structure)] + (1 * stdev)
+            local_rattled_ase_struct = _generate_local_mc_rattled_structures(
+                ase_struct,
+                site_index=atom_number,
+                n_configs=1,
+                rattle_std=stdev,
+                d_min=reduced_d_min,
+                n_iter=n_iter,
+                active_atoms=active_atoms,
+                nbr_cutoff=nbr_cutoff,
+                width=width,
+                max_attempts=7000,  # default is 5000
+                max_disp=max_disp,
+                seed=seed,
+            )[0]
+
+            if verbose:
+                warnings.warn(
+                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                    f"significantly smaller than this present), setting d_min to"
+                    f" {reduced_d_min:.2f} \u212B for this defect."
+                )
+
+        else:
+            raise ex
 
     if isinstance(frac_coords, np.ndarray):
         local_rattled_ase_struct.pop(-1)  # remove fake V from vacancy structure

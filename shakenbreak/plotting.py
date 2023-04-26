@@ -311,26 +311,32 @@ def _format_defect_name(
         if post_interstitial_strings is None:
             post_interstitial_strings = recognised_post_interstitial_strings
         defect_name = None
+        defect_name_without_site_num = None
+        defect_name_with_site_num = None
 
-        if include_site_num_in_name:
+        match_found, site_num = _check_matching_defect_format_with_site_num(
+            element,
+            name,
+            pre_vacancy_strings,
+            post_vacancy_strings,
+        )
+        if match_found:
+            defect_name_with_site_num = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
+            defect_name_without_site_num = f"$V_{{{element}}}^{{{charge}}}$"
+
+        else:
             match_found, site_num = _check_matching_defect_format_with_site_num(
                 element,
                 name,
-                pre_vacancy_strings,
-                post_vacancy_strings,
+                pre_interstitial_strings,
+                post_interstitial_strings,
             )
             if match_found:
-                defect_name = f"$V_{{{element}_{{{site_num}}}}}^{{{charge}}}$"
+                defect_name_with_site_num = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+                defect_name_without_site_num = f"{element}$_i^{{{charge}}}$"
 
-            else:
-                match_found, site_num = _check_matching_defect_format_with_site_num(
-                    element,
-                    name,
-                    pre_interstitial_strings,
-                    post_interstitial_strings,
-                )
-                if match_found:
-                    defect_name = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+        if include_site_num_in_name and defect_name_with_site_num is not None:
+            defect_name = defect_name_with_site_num
 
         if (
             _check_matching_defect_format(
@@ -349,6 +355,9 @@ def _format_defect_name(
             and defect_name is None
         ):
             defect_name = f"{element}$_i^{{{charge}}}$"
+
+        if defect_name is None and defect_name_without_site_num is not None:
+            defect_name = defect_name_without_site_num
 
         return defect_name
 
@@ -396,7 +405,9 @@ def _format_defect_name(
                             )
                             return defect_name.replace("mult", "m")
 
-        return defect_name.replace("mult", "m")
+        if defect_name:
+            defect_name = defect_name.replace("mult", "m")
+        return defect_name
 
     def _defect_name_from_matching_elements(
         element_matches, name, include_site_num_in_name
@@ -473,6 +484,21 @@ def _format_defect_name(
             include_site_num_in_name,
         )
 
+        if defect_name is None and len(possible_two_character_elements) == 1:
+            # possibly one single-character element and one two-character element
+            possible_one_character_elements = [
+                character
+                for character in trimmed_pre_charge_name.replace(possible_two_character_elements[0],"")
+                if dummy_h.is_valid_symbol(character)
+            ]
+            if len(possible_one_character_elements) > 0:
+                defect_name = _defect_name_from_matching_elements(
+                    possible_one_character_elements + possible_two_character_elements,
+                    pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
+                    # pre_charge_name for matching defect format
+                    include_site_num_in_name,
+                )
+
     if defect_name is None:
         # try single-character element match
         possible_one_character_elements = [
@@ -501,7 +527,7 @@ def _format_defect_name(
                 site = defect_species.split("_")[2]
                 if include_site_num_in_name:
                     # by default include defect site in defect name for interstitials
-                    defect_name = f"{site_element}$_{{i_{site}}}^{{{charge}}}$"
+                    defect_name = f"{site_element}$_{{i_{{{site}}}}}^{{{charge}}}$"
                 else:
                     defect_name = f"{site_element}$_i^{{{charge}}}$"
             else:
@@ -514,13 +540,13 @@ def _format_defect_name(
                 include_site_num_in_name
             ):  # whether to include the site number in defect name
                 if defect_type.lower() == "vac":
-                    defect_name = f"$V_{{{site_element}_{site}}}^{{{charge}}}$"
+                    defect_name = f"$V_{{{site_element}_{{{site}}}}}^{{{charge}}}$"
                     # double brackets to treat it literally (tex), then extra {} for
                     # python str formatting
                 elif defect_type.lower() in ["as", "sub"]:
                     subs_element = defect_species.split("_")[4]
                     defect_name = (
-                        f"{site_element}$_{{{subs_element}_{site}}}^{{{charge}}}$"
+                        f"{site_element}$_{{{subs_element}_{{{site}}}}}^{{{charge}}}$"
                     )
                 elif defect_type.capitalize() != "Int":
                     raise ValueError(
@@ -1953,21 +1979,22 @@ def plot_datasets(
 
     _install_custom_font()
     # Set up figure
-    fig, ax = plt.subplots(1, 1)
-    # Line colors
-    if not colors:
-        colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
-        # colors to use for each dataset
-    elif len(colors) < len(datasets):
-        if verbose:
-            warnings.warn(
-                f"Insufficient colors provided for {len(datasets)} datasets. "
-                "Using default colors."
-            )
-        colors = _get_line_colors(number_of_colors=len(datasets))
-    # Title and labels of axis
-    if title:
-        ax.set_title(title)
+    with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
+        fig, ax = plt.subplots(1, 1)
+        # Line colors
+        if not colors:
+            colors = _get_line_colors(number_of_colors=len(datasets))  # get list of
+            # colors to use for each dataset
+        elif len(colors) < len(datasets):
+            if verbose:
+                warnings.warn(
+                    f"Insufficient colors provided for {len(datasets)} datasets. "
+                    "Using default colors."
+                )
+            colors = _get_line_colors(number_of_colors=len(datasets))
+        # Title and labels of axis
+        if title:
+            ax.set_title(title)
 
     try:
         formatted_defect_name = _format_defect_name(
@@ -2158,6 +2185,16 @@ def plot_datasets(
             datasets[0]["Unperturbed"],
         ],
     )
+    # If several datasets, check min & max energy are included
+    if len(datasets) > 1:
+        min_energy = min(
+            [min(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        max_energy = max(
+            [max(list(dataset["distortions"].values())) for dataset in datasets]
+        )
+        ax.set_ylim(min_energy - 0.1 * (max_energy - min_energy), max_energy + 0.1 * (max_energy - min_energy))
+
 
     ax.legend(frameon=True).set_zorder(
         100

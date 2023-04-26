@@ -11,7 +11,7 @@ most recent version of :code:`pymatgen`. If you are receiving :code:`pymatgen`-r
    pip install --upgrade pymatgen shakenbreak
 
 
-:code:`ShakeNBreak` can take :code:`pymatgen` :code:`Defect` objects as input (to then generate the trial distorted
+:code:`ShakeNBreak` can take :code:`pymatgen` :code:`DefectEntry` objects as input (to then generate the trial distorted
 structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects, :code:`doped` defect dictionaries or
 structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
 (such as `doped <https://github.com/SMTG-UCL/doped>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
