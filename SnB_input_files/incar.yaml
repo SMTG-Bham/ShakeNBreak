@@ -14,12 +14,12 @@ ISYM: '0 # Symmetry breaking extremely likely for defects'
 LASPH: true
 LCHARG: false
 LHFCALC: true
-LORBIT: 11
+LORBIT: 14
 LREAL: Auto
 LWAVE: false
 NCORE: 12
 NEDOS: 2000
-NELM: 100
+NELM: 40
 NSW: 300
 PREC: Accurate
 PRECFOCK: Fast

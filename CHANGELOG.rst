@@ -1,6 +1,17 @@
 Change Log
 ==========
 
+v23.04.26
+----------
+- Updates to `snb-run` (copy `job` from parent directory if present, switch to `ALGO = All` if poor electronic convergence...)
+- Make `format_defect_name()` more robust
+- Update docs and `README.md` with published article links
+- Formatting and cleanup
+- Make oxidation state guessing more efficient (previously was causing bottleneck with large cells)
+- Fix oxidation state guessing for rare elements
+- Add note to `Tips` docs page about bulk phase transformation behaviour
+- Refactor to `json` rather than `pickle`
+
 v23.02.08
 ----------
 - Change `numpy` version requirement in `docs/requirements.txt` to `numpy>=1.21` to work with `numpy.typing.NDArray`.

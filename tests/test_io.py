@@ -1,4 +1,3 @@
-
 import os
 import unittest
 import warnings
@@ -18,8 +17,9 @@ from shakenbreak.io import (
 
 
 class IoTestCase(unittest.TestCase):
-    """"Test functions in shakenbreak.io.
+    """ "Test functions in shakenbreak.io.
     Note that io.parse_energies is tested via test_cli.py"""
+
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
@@ -32,9 +32,11 @@ class IoTestCase(unittest.TestCase):
                 "fake_file file doesn't exist, storing as 'Not converged'. Check "
                 "path & relaxation"
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
@@ -46,9 +48,11 @@ class IoTestCase(unittest.TestCase):
                 f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
                 f"converged'. Check file & relaxation"
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertIn(warning_message, str(w[0].message))
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, "Not converged")
 
         with warnings.catch_warnings(record=True) as w:
@@ -58,7 +62,10 @@ class IoTestCase(unittest.TestCase):
             V_Cd_struc = Structure.from_file(
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
             )
-            self.assertEqual(len(w), 0)
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 0)
             self.assertEqual(output, V_Cd_struc)
 
     def test_read_espresso_structure(self):

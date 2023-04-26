@@ -291,7 +291,7 @@ def parse_energies(
                     energies["distortions"][dist_name] = float(energy)
 
                 if not converged:
-                    print(f"{dist} not fully relaxed")
+                    print(f"{dist} for {defect} is not fully relaxed")
 
             elif not outcar:
                 # check if energy not found, but was previously parsed, then add to dict
@@ -326,6 +326,25 @@ def parse_energies(
                     f"-ionic-materials. – This often indicates a complex PES with multiple minima, "
                     f"thus energy-lowering distortions particularly likely, so important to test "
                     f"with reduced `stdev`!"
+                )
+
+            elif (
+                "Unperturbed" in energies
+                and all(
+                    [
+                        value - energies["Unperturbed"] < -0.1
+                        for value in energies["distortions"].values()
+                    ]
+                )
+                and len(energies["distortions"]) > 2
+            ):
+                warnings.warn(
+                    f"All distortions parsed for {defect} are <-0.1 eV lower energy than "
+                    f"unperturbed. If this happens for multiple defects/charge states, "
+                    f"it can indicate that a bulk phase transformation is occurring within your "
+                    f"defect supercell. If so, see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#bulk-phase"
+                    f"-transformations for advice on dealing with this phenomenon."
                 )
 
             # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and

@@ -35,7 +35,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
 
-        self.V_Cd = cli.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
+        self.V_Cd = input.generate_defect_object(self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"])
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
             self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
@@ -223,10 +223,16 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         mock_print.assert_any_call(
             "\nComparing and pruning defect structures across charge states..."
         )
-        mock_print.assert_any_call(
-            "Low-energy distorted structure for vac_1_Cd_-1 already "
-            "found with charge states [0], storing together."
-        )
+        try:
+            mock_print.assert_any_call(
+                "Low-energy distorted structure for vac_1_Cd_-1 already "
+                "found with charge states [0], storing together."
+            )
+        except AssertionError:  # depends on parsing order, different on GH Actions to local
+            mock_print.assert_any_call(
+                "Low-energy distorted structure for vac_1_Cd_0 already "
+                "found with charge states [-1], storing together."
+            )
 
         # Test that energy_lowering_distortions parsing functions run ok if run on folders where
         # we've already done _some_ re-tests from other structures (-55.0%_from_0 for -1 but not

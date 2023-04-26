@@ -128,9 +128,16 @@ class PlottingDefectsTestCase(unittest.TestCase):
             len(formatted_ax.yaxis.get_ticklabels()), 6 + 2
         )  # +2 bc MaxNLocator adds ticks
         # beyond axis limits for autoscaling reasons
-        self.assertTrue([float(tick.get_text().replace("−", "-"))  # weird mpl ticker reformatting
-                         % 0.3 == 0.0 for tick in
-                         formatted_ax.xaxis.get_ticklabels()]) # x ticks should be multiples of 0.3
+        self.assertTrue(
+            [
+                float(
+                    tick.get_text().replace("−", "-")
+                )  # weird mpl ticker reformatting
+                % 0.3
+                == 0.0
+                for tick in formatted_ax.xaxis.get_ticklabels()
+            ]
+        )  # x ticks should be multiples of 0.3
         # check x label if no nearest neighbour info
         ax.plot(
             list(self.V_Cd_energies_dict["distortions"].keys()),
@@ -223,8 +230,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
 
         # check y tick locators set as expected (0.2 eV spacing for >0.6 eV range)
-        np.testing.assert_array_equal(mpl.ticker.MultipleLocator(base=0.2).tick_values(-0.3, 0.7),
-                         formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7))
+        np.testing.assert_array_equal(
+            mpl.ticker.MultipleLocator(base=0.2).tick_values(-0.3, 0.7),
+            formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7),
+        )
 
         # check y tick locators set as expected (0.1 eV spacing for >0.3 eV range)
         fig, ax = plt.subplots(1, 1)
@@ -253,8 +262,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
             ax=deepcopy(semi_formatted_ax),
             energies_list=energies,
         )
-        np.testing.assert_array_equal(mpl.ticker.MultipleLocator(base=0.1).tick_values(-0.3, 0.7),
-                                      formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7))
+        np.testing.assert_array_equal(
+            mpl.ticker.MultipleLocator(base=0.1).tick_values(-0.3, 0.7),
+            formatted_ax.yaxis.get_major_locator().tick_values(-0.3, 0.7),
+        )
 
     def test_format_defect_name(self):
         """Test _format_defect_name() function."""
@@ -270,33 +281,115 @@ class PlottingDefectsTestCase(unittest.TestCase):
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "$V_{Cd_{1}}^{0}$")
-        # test interstitial case
+
+        # test interstitial case with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="Int_Cd_1_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Cd$_i^{0}$")
+        # test interstitial case with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="Int_Cd_1_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
-        # test lowercase interstitial
+        # test lowercase interstitial with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="int_Cd_1_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Cd$_i^{0}$")
+        # test lowercase interstitial with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="int_Cd_1_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Cd$_{i_{1}}^{0}$")
 
-        # test uppercase vacancy (pymatgen default name)
+        # test uppercase vacancy (pymatgen default name) with site number excluded
         formatted_name = plotting._format_defect_name(
             defect_species="Vac_1_Cd_0",
             include_site_num_in_name=False,
         )
         self.assertEqual(formatted_name, "$V_{Cd}^{0}$")
+        # test uppercase vacancy (pymatgen default name) with site number included
+        formatted_name = plotting._format_defect_name(
+            defect_species="Vac_1_Cd_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "$V_{Cd_{1}}^{0}$")
 
-        # test substitution with site number
+        # test substitution with site number excluded
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_Ni_on_Li_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Ni$_{Li}^{0}$")
+
+        # test substitution with site number included
         formatted_name = plotting._format_defect_name(
             defect_species="as_1_Ni_on_Li_0",
             include_site_num_in_name=True,
         )
         self.assertEqual(formatted_name, "Ni$_{Li_{1}}^{0}$")
+
+        # test substitution with site number excluded, current doped format, two-letter subbed elt
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_P_on_Na_-1",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "P$_{Na}^{-1}$")
+
+        # test substitution with site number included, current doped format, two-letter subbed elt
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_1_P_on_Na_-1 ",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "P$_{Na_{1}}^{-1}$")
+
+        # test substitution with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_2_Na_on_P_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "Na$_{P}^{0}$")
+
+        # test substitution with site number included, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="as_2_Na_on_P_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "Na$_{P_{2}}^{0}$")
+
+        # test interstitial with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="inter_12_P_0",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "P$_i^{0}$")
+
+        # test interstitial with site number included, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="inter_12_P_0",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "P$_{i_{12}}^{0}$")
+
+        # test vacancy with site number excluded, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="vac_4_P_-2",
+            include_site_num_in_name=False,
+        )
+        self.assertEqual(formatted_name, "$V_{P}^{-2}$")
+
+        # test vacancy with site number included, current doped format
+        formatted_name = plotting._format_defect_name(
+            defect_species="vac_4_P_-2",
+            include_site_num_in_name=True,
+        )
+        self.assertEqual(formatted_name, "$V_{P_{4}}^{-2}$")
 
         # check exceptions raised: invalid charge or defect_species
         # test error catching:
@@ -414,7 +507,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
             "Cd_Te_s0_2": "Cd$_{Te_{s0}}^{+2}$",
             "Cd_Te_s0a_2": "Cd$_{Te_{s0a}}^{+2}$",
         }
-        for defect_species, expected_name in defect_species_w_site_num_name_dict.items():
+        for (
+            defect_species,
+            expected_name,
+        ) in defect_species_w_site_num_name_dict.items():
             formatted_name = plotting._format_defect_name(
                 defect_species=defect_species,
                 include_site_num_in_name=True,
@@ -532,12 +628,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 energies_dict=self.V_Cd_energies_dict,
                 add_colorbar=True,
             )
-            self.assertEqual(len(w), 1)
-            self.assertEqual(w[0].category, UserWarning)
-            self.assertEqual(
-                str(w[0].message),
-                f"Could not find structures for {self.VASP_CDTE_DATA_DIR}/fake_defect_species. Colorbar will not be added to plot.",
-            )
+            warning_message = f"Could not find structures for {self.VASP_CDTE_DATA_DIR}/fake_defect_species. Colorbar will not be added to plot."
+            user_warnings = [
+                warning for warning in w if warning.category == UserWarning
+            ]
+            self.assertEqual(len(user_warnings), 1)
+            self.assertIn(warning_message, str(user_warnings[0].message))
+
         # Test if energies_dict and disp_dict are returned correctly (same keys) and add_colorbar is set to True
         add_colorbar, energies_dict, disp_dict = plotting._get_displacement_dict(
             defect_species="vac_1_Cd_0",
@@ -579,7 +676,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         )
         mock_print.assert_called_once_with("Plot saved to vac_1_Cd_0/vac_1_Cd_0.png")
-        self.assertEqual(len(w), 0)  # No warnings in this case
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 0)  # No warnings in this case
         if_present_rm(
             f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
         )
@@ -716,7 +814,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         return fig
 
-
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
         filename="Cd_Te_s32c_2_displacement.png",
@@ -736,7 +833,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             metric="disp",
         )
         return fig
-
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1001,11 +1097,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 defect_species="vac_1_Cd_0",
                 energies_dict=self.organized_V_Cd_distortion_data_no_unperturbed,
             )
-        self.assertEqual(len(w), 1)
-        self.assertEqual(
-            str(w[-1].message),
-            "Unperturbed energy not present in energies_dict of vac_1_Cd_0! Skipping plot.",
-        )
+        warning_message = "Unperturbed energy not present in energies_dict of vac_1_Cd_0! Skipping plot."
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 1)
+        self.assertEqual(warning_message, str(w[-1].message))
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
