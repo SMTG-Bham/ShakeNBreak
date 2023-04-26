@@ -61,15 +61,17 @@ Code contributions to support additional solid-state packages are welcome!
 Literature
 ------------------------
 
-- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
-- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_. *Journal of Open Source Software* 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_. *npj Comput Mater* 9, 25, **2023**
+- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_, *npj Comput Mater* 9, 25, **2023**
+- News & Views: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023**
 
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
 .. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
 .. _Identifying the Ground State Structures of Defects in Solids: https://www.nature.com/articles/s41524-023-00973-1
 .. _In Search of Hidden Defects: https://doi.org/10.1016/j.matt.2021.06.003
+.. _The Devil is in the Defects: https://doi.org/10.1038/s41567-023-02049-9
 
 Installation
 ========================
@@ -185,7 +187,7 @@ Acknowledgements
 
 ``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
 used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
-Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and
+Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and
 Chris Savory.
 
 Contributing
@@ -218,12 +220,13 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 
 - A\. Nicolson, S. R. Kavanagh, C. N. Savory, G. W. Watson, D. O. Scanlon `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/642d2207a029a26b4cf05137>`__ 2023
 - X\. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh `arXiv`_ 2023
-- J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon `ChemRxiv`_ 2023
+- J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon `J Mater Chem A`_ 2023
 - Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Comput Mater`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
+- (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023
 
 .. Se
 .. Oba book
@@ -236,11 +239,12 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 .. _arXiv: https://arxiv.org/abs/2302.04901
-.. _ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/63d2a2c41fb2a8767ee1e06f
+.. _J Mater Chem A: https://doi.org/10.1039/D3TA00532A
 .. _npj Comput Mater: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
 .. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
 .. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
+.. _Nature Physics: https://doi.org/10.1038/s41567-023-02049-9
 
 License and Citation
 ========================
