@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v23.04.27
+----------
+- Update `numpy` requirement to `numpy>=1.21.2` to fix `numpy.typing.NDArray` import error.
+- Add News & Views free-to-read link to docs
+
 v23.04.26
 ----------
 - Updates to `snb-run` (copy `job` from parent directory if present, switch to `ALGO = All` if poor electronic convergence...)
