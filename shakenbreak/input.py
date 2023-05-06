@@ -484,13 +484,13 @@ def _calc_number_electrons(
     defect_type = defect_object.defect_type.name.lower()
     # We use the following variables:
     # site_specie: Original species on the bulk site
-    # substituting_specie: Site occuping the defect site
+    # substitution_specie: Site occuping the defect site
     if defect_type == "vacancy":
         site_specie = str(defect_object.site.specie.symbol)
-        substituting_specie = "Vac"
+        substitution_specie = "Vac"
 
     elif defect_type == "interstitial":
-        substituting_specie = str(defect_object.site.specie.symbol)
+        substitution_specie = str(defect_object.site.specie.symbol)
         # Consider interstitials as substituting a vacant (zero oxidation-state
         # position)
         site_specie = "Vac"
@@ -501,7 +501,7 @@ def _calc_number_electrons(
             defect_entry,
         )  # bulk site of substitution
         site_specie = sub_site_in_bulk.specie.symbol  # Species occuping the *bulk* site
-        substituting_specie = str(
+        substitution_specie = str(
             defect_object.site.specie.symbol
         )  # Current species occupying the defect site (e.g. the substitution)
 
@@ -509,7 +509,7 @@ def _calc_number_electrons(
         raise ValueError(f"`defect_dict` has an invalid `defect_type`: {defect_type}")
 
     num_electrons = (
-        oxidation_states[substituting_specie] - oxidation_states[site_specie]
+        oxidation_states[substitution_specie] - oxidation_states[site_specie]
     )
 
     if verbose:
@@ -2262,7 +2262,7 @@ class Distortions:
             distorted_defect_dict[
                 "substitution_specie"
             ] = sub_site_in_bulk.specie.symbol
-            distorted_defect_dict["substituting_specie"] = defect.site.specie.symbol
+            distorted_defect_dict["substitution_specie"] = defect.site.specie.symbol
         return distorted_defect_dict
 
     def write_distortion_metadata(
