@@ -166,9 +166,6 @@ class CLITestCase(unittest.TestCase):
         # Remove parsed vac_1_Ti_0 energies file
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml")
 
-        if os.path.exists("./previous_default_rattle_settings.yaml"):
-            os.remove("./previous_default_rattle_settings.yaml")
-
     def test_snb_generate(self):
         """Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
@@ -490,7 +487,9 @@ class CLITestCase(unittest.TestCase):
         # with rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
+            rattled_bulk = rattle(
+                self.CdTe_bulk_struc, stdev=0.25, d_min=2.25
+            )  # previous default
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
                 snb,
@@ -534,7 +533,9 @@ class CLITestCase(unittest.TestCase):
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
         with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
+            rattled_bulk = rattle(
+                self.CdTe_bulk_struc, stdev=0.25, d_min=2.25
+            )  # previous default
             rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
             result = runner.invoke(
                 snb,
@@ -1970,8 +1971,11 @@ Chosen VASP error message: {error_string}
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
-        self.assertIn("Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO "
-                      "to All.", out)
+        self.assertIn(
+            "Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO "
+            "to All.",
+            out,
+        )
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
@@ -2451,7 +2455,9 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
         )
-        self.assertTrue(len([i for i in w if i.category == UserWarning]) == 0)  # no warning when
+        self.assertTrue(
+            len([i for i in w if i.category == UserWarning]) == 0
+        )  # no warning when
         # <2 parsed distortions
 
         shutil.copytree(
