@@ -2359,7 +2359,6 @@ class Distortions:
                 }
                 and dictionary with distortion parameters for each defect.
         """
-
         self._print_distortion_info(
             bond_distortions=self.bond_distortions, stdev=self.stdev
         )
