@@ -333,7 +333,6 @@ def _get_bulk_comp(defect_object) -> Composition:
     return bulk_structure.composition
 
 
-# Needs to be refactored
 def _get_bulk_defect_site(
     defect_entry: DefectEntry,
 ) -> PeriodicSite:
@@ -366,23 +365,28 @@ def _get_bulk_defect_site(
 def _get_defect_site(
     defect_entry: DefectEntry,
 ) -> PeriodicSite:
-    """Get defect site in the bulk structure (e.g.
-    for a P substitution on Si, get the original Si site).
+    """Get defect site in the defect structure (e.g.
+    for a P substitution on Si, get the P substitution site).
     """
-    defect_frac_coords = defect_entry.sc_defect_frac_coords
-    defect_species = defect_entry.defect.site.species
-    if defect_frac_coords:
-        defect_site = PeriodicSite(
-            species=defect_species,
-            coords=defect_frac_coords,
-            coords_are_cartesian=False,
-            lattice=defect_entry.sc_entry.structure.lattice,
-        )
-    else:
-        raise ValueError(
+    try:
+        defect_frac_coords = defect_entry.sc_defect_frac_coords
+        if defect_frac_coords is None:
+            raise AttributeError
+    except AttributeError as e:
+        raise AttributeError(
             "DefectEntry does not have a `sc_defect_frac_coords` attribute. "
-            + "Try again setting the `defect_frac_coords` attribute when creating the DefectEntry."
-        )
+            "Try again setting the `defect_frac_coords` attribute when creating the DefectEntry."
+        ) from e
+
+    defect_species = defect_entry.defect.site.species
+
+    defect_site = PeriodicSite(
+        species=defect_species,
+        coords=defect_frac_coords,
+        coords_are_cartesian=False,
+        lattice=defect_entry.sc_entry.structure.lattice,
+    )
+
     return defect_site
 
 
@@ -431,11 +435,14 @@ def _most_common_oxi(element) -> int:
     ]
     if oxi_probabilities:  # not empty
         most_common = max(oxi_probabilities, key=lambda x: x[1])[
-            0]  # breaks if icsd oxi states is empty
+            0
+        ]  # breaks if icsd oxi states is empty
         return most_common.oxi_state
     else:
         if element_obj.common_oxidation_states:
-            return element_obj.common_oxidation_states[0]  # known common oxidation state
+            return element_obj.common_oxidation_states[
+                0
+            ]  # known common oxidation state
         else:  # no known common oxidation state, make guess and warn user
             if element_obj.oxidation_states:
                 guess_oxi = element_obj.oxidation_states[0]
@@ -445,7 +452,8 @@ def _most_common_oxi(element) -> int:
             warnings.warn(
                 f"No known common oxidation states in pymatgen/ICSD dataset for element "
                 f"{element_obj.name}, guessing as {guess_oxi:+}. You should set this in the "
-                f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!")
+                f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!"
+            )
 
             return guess_oxi
 
@@ -1823,7 +1831,7 @@ class Distortions:
                 )
 
             # Refactor list of DefectEntries into a dict matching defect name
-            # to list of defect entries (i.e. grouing all the charged defects/DefectEntries
+            # to list of defect entries (i.e. grouping all the charged defects/DefectEntries
             # of a single defect together in a list)
             for defect_entry in defects:
                 defect_name = _get_defect_name_from_obj(defect_entry.defect)
@@ -2188,7 +2196,9 @@ class Distortions:
         the CONTCAR file.
         """
         frac_coords = self.distortion_metadata["defects"][defect_name]["unique_site"]
-        approx_coords = f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
+        approx_coords = (
+            f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
+        )
         poscar_comment = (
             str(
                 key_distortion.split("_")[-1]
@@ -2482,7 +2492,6 @@ class Distortions:
 
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
-
             dict_transf = {
                 k: v for k, v in defect_dict.items() if k != "charges"
             }  # Single defect dict
@@ -2605,9 +2614,7 @@ class Distortions:
 
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
-
             for charge in defect_dict["charges"]:  # loop for each charge state
-
                 for dist, struct in zip(
                     [
                         "Unperturbed",
@@ -2715,7 +2722,6 @@ class Distortions:
         for defect_name, defect_dict in distorted_defects_dict.items():
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
-
                 if not write_structures_only and cp2k_input:
                     cp2k_input.update({"FORCE_EVAL": {"DFT": {"CHARGE": charge}}})
 
@@ -2797,7 +2803,6 @@ class Distortions:
         for defect_name, defect_dict in distorted_defects_dict.items():
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
-
                 for dist, struct in zip(
                     [
                         "Unperturbed",
@@ -2915,7 +2920,6 @@ class Distortions:
             )
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
-
             # loop for each charge state of defect
             for charge in defect_dict["charges"]:
                 if isinstance(ase_calculator, Aims) and not write_structures_only:
