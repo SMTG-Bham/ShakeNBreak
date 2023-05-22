@@ -10,7 +10,7 @@ from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
-from shakenbreak import energy_lowering_distortions, input, io, plotting, cli
+from shakenbreak import cli, energy_lowering_distortions, input, io, plotting
 
 file_path = os.path.dirname(__file__)
 

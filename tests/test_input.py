@@ -5,12 +5,12 @@ import shutil
 import unittest
 import warnings
 from unittest.mock import patch
-from monty.serialization import loadfn, dumpfn
 
 import numpy as np
 from ase.calculators.aims import Aims
-from pymatgen.core.periodic_table import Species
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import StructureMatcher
+from pymatgen.core.periodic_table import Species
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
