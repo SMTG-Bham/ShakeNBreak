@@ -332,7 +332,9 @@ def _format_defect_name(
                 post_interstitial_strings,
             )
             if match_found:
-                defect_name_with_site_num = f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+                defect_name_with_site_num = (
+                    f"{element}$_{{i_{{{site_num}}}}}^{{{charge}}}$"
+                )
                 defect_name_without_site_num = f"{element}$_i^{{{charge}}}$"
 
         if include_site_num_in_name and defect_name_with_site_num is not None:
@@ -488,7 +490,9 @@ def _format_defect_name(
             # possibly one single-character element and one two-character element
             possible_one_character_elements = [
                 character
-                for character in trimmed_pre_charge_name.replace(possible_two_character_elements[0],"")
+                for character in trimmed_pre_charge_name.replace(
+                    possible_two_character_elements[0], ""
+                )
                 if dummy_h.is_valid_symbol(character)
             ]
             if len(possible_one_character_elements) > 0:
@@ -1327,7 +1331,9 @@ def plot_all_defects(
                         ) = analysis._read_distortion_metadata(
                             output_path=f"{output_path}/{defect_species}"
                         )
-                    except FileNotFoundError:  # distortion_metadata.json not found in this folder
+                    except (
+                        FileNotFoundError
+                    ):  # distortion_metadata.json not found in this folder
                         pass
                 if distortion_metadata and type(distortion_metadata) == dict:
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
@@ -2018,7 +2024,6 @@ def plot_datasets(
 
     # all energies relative to the unperturbed energy of first dataset
     for dataset_number, dataset in enumerate(datasets):
-
         for key, energy in dataset["distortions"].items():
             dataset["distortions"][key] = (
                 energy - datasets[0]["Unperturbed"]
@@ -2193,8 +2198,10 @@ def plot_datasets(
         max_energy = max(
             [max(list(dataset["distortions"].values())) for dataset in datasets]
         )
-        ax.set_ylim(min_energy - 0.1 * (max_energy - min_energy), max_energy + 0.1 * (max_energy - min_energy))
-
+        ax.set_ylim(
+            min_energy - 0.1 * (max_energy - min_energy),
+            max_energy + 0.1 * (max_energy - min_energy),
+        )
 
     ax.legend(frameon=True).set_zorder(
         100

@@ -242,7 +242,7 @@ def rattle(
 
     if stdev is None:
         stdev = (
-                0.1 * sorted_distances[len(structure) + 40]
+            0.1 * sorted_distances[len(structure) + 40]
         )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
         # in the distance matrix)
         if stdev > 0.4 or stdev < 0.02:
@@ -413,7 +413,6 @@ def _local_mc_rattle_displacements(
             dist_defect_to_i = atoms.get_distance(site_index, i, mic=True)
 
             for n in range(max_attempts):
-
                 # generate displacement
                 delta_disp = rs.normal(
                     0.0,
@@ -610,7 +609,7 @@ def local_mc_rattle(
 
     if stdev is None:
         stdev = (
-                0.1 * sorted_distances[len(structure) + 40]
+            0.1 * sorted_distances[len(structure) + 40]
         )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
         # in the distance matrix)
         if stdev > 0.4 or stdev < 0.02:
@@ -624,7 +623,7 @@ def local_mc_rattle(
 
     if d_min is None:
         d_min = (
-                0.8 * sorted_distances[len(structure) + 40]
+            0.8 * sorted_distances[len(structure) + 40]
         )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
         # in the distance matrix)
         if d_min < 1.0:
