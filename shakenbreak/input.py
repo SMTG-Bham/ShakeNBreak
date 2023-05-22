@@ -20,6 +20,7 @@ from ase.calculators.espresso import Espresso
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
+from pymatgen.analysis.defects.supercells import get_sc_fromstruct
 from pymatgen.analysis.defects.thermo import DefectEntry
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
@@ -1368,6 +1369,39 @@ def _update_defect_dict(defect_entry, defect_name, defect_dict):
     return defect_name  # return defect_name in case it was updated
 
 
+def _find_sc_defect_coords(defect_entry):
+    """Find defect fractioncal coordinates in defect supercell.
+    Targets cases where user generated DefectEntry manually and
+    didn't set the `sc_defect_frac_coords` attribute
+
+    Args:
+        defect_entry (DefectEntry): DefectEntry object
+
+    Returns:
+        frac_coords (list): Fractional coordinates of defect in defect supercell
+    """
+    frac_coords = defect_entry.sc_defect_frac_coords
+    if frac_coords is None:
+        defect_sc = defect_entry.sc_entry.structure
+        bulk_prim = defect_entry.defect.structure
+        sc_mat = get_sc_fromstruct(
+            bulk_prim,
+            min_atoms=len(defect_sc) - 3,  # 3 atom tolerance in case defect complex
+            max_atoms=len(defect_sc) + 3,
+            min_length=min(defect_sc.lattice.abc),
+            force_diagonal=False,
+        )
+        bulk_sc = bulk_prim * sc_mat
+        # Identify defect frac coords
+        defect = identify_defect(
+            defect_structure=defect_sc,
+            bulk_structure=bulk_sc,
+        )
+        frac_coords = defect.site.frac_coords
+        defect_entry.sc_defect_frac_coords = frac_coords
+    return frac_coords
+
+
 # Main functions
 
 
@@ -2234,20 +2268,18 @@ class Distortions:
         user_charges = defect.user_charges
         frac_coords = defect_entry.sc_defect_frac_coords
         defect_species = defect.site.species
-        if frac_coords is not None:
-            defect_site = PeriodicSite(
-                species=defect_species,
-                coords=frac_coords,
-                coords_are_cartesian=False,
-                lattice=defect_entry.sc_entry.structure.lattice,
-            )
-            pristine_site = _get_bulk_defect_site(defect_entry)
-        elif frac_coords is None:
-            # TODO: Need to use identify_defect and warn user
-            raise ValueError(
-                "The DefectEntry must have a sc_defect_frac_coords attribute set! "
-                + "Try again setting that attribute when creating the DefectEntry."
-            )
+        if frac_coords is None:
+            # If user didn't set sc_defect_frac_coords, we'll use identify_defect() to find it
+            frac_coords = _find_sc_defect_coords(defect_entry)
+            defect_entry.sc_defect_frac_coords = frac_coords
+
+        defect_site = PeriodicSite(
+            species=defect_species,
+            coords=frac_coords,
+            coords_are_cartesian=False,
+            lattice=defect_entry.sc_entry.structure.lattice,
+        )
+        pristine_site = _get_bulk_defect_site(defect_entry)
 
         try:
             distorted_defect_dict = {
@@ -2327,6 +2359,7 @@ class Distortions:
                 }
                 and dictionary with distortion parameters for each defect.
         """
+
         self._print_distortion_info(
             bond_distortions=self.bond_distortions, stdev=self.stdev
         )
@@ -2343,8 +2376,11 @@ class Distortions:
             defect_entry.defect.user_charges = [
                 defect_entry.charge_state for defect_entry in list_of_defect_entries
             ]
-            # defect_object = defect_entry.defect
             defect_frac_coords = defect_entry.sc_defect_frac_coords
+            if defect_frac_coords is None:  # in case user generated DefectEntry
+                # manually and didn't set sc_defect_frac_coords
+                defect_frac_coords = _find_sc_defect_coords(defect_entry)
+                defect_entry.sc_defect_frac_coords = defect_frac_coords
 
             # Parse distortion specifications given by user for neutral
             # defect and use ShakeNBreak defaults if not given
