@@ -156,6 +156,8 @@ If you use it in your research, please cite:
 You may also find this Preview paper useful, which discusses the general problem of defect structure prediction:
 - Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003). _Matter_ 4 (8), 2602-2605, **2021**
 
+`BibTeX` entries for these papers are provided in the [`CITATIONS.md`](CITATIONS.md) file.
+
 ## Requirements
 `ShakeNBreak` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
 * [Pymatgen](https://pymatgen.org/)

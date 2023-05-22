@@ -260,6 +260,8 @@ You may also find this Preview paper useful, which discusses the general problem
 
 - Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
 
+``BibTeX`` entries for these papers are provided in the repository `CITATIONS.md <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/CITATIONS.md>`_ file.
+
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
 .. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
 .. _Identifying the Ground State Structures of Defects in Solids: https://www.nature.com/articles/s41524-023-00973-1
