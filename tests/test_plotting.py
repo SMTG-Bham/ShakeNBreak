@@ -3,9 +3,9 @@ import os
 import shutil
 import unittest
 import warnings
+from collections import OrderedDict
 from copy import deepcopy
 from unittest.mock import patch
-from collections import OrderedDict
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt

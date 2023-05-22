@@ -33,7 +33,7 @@ workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ sty
         .. code:: bash
 
             $ isort . --profile black
-            $ black  --line-length 88 --diff --color shakenbreak
+            $ black  --diff --color shakenbreak
 
         Then run `pycodestyle <https://pycodestyle.pycqa.org/en/latest/>`_ to check the docstrings,
         followed by `flake8 <https://flake8.pycqa.org/en/latest/>`_, which will identify any remaining issues.
