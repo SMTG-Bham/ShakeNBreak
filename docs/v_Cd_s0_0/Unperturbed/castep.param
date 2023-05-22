@@ -1,0 +1,39 @@
+#######################################################
+#CASTEP param file: /Users/ireaml/Library/CloudStorage/OneDrive-ImperialCollegeLondon/07_Python_Packages/ShakeNBreak/docs/v_Cd_s0_0/Unperturbed/castep.param
+#Created using the Atomic Simulation Environment (ASE)#
+# Internal settings of the calculator
+# This can be switched off by settings
+# calc._export_settings = False
+# If stated, this will be automatically processed
+# by ase.io.castep.read_seed()
+# ASE_INTERFACE _build_missing_pspots : True
+# ASE_INTERFACE _castep_command : castep
+# ASE_INTERFACE _castep_pp_path : /Users/ireaml/Library/CloudStorage/OneDrive-ImperialCollegeLondon/07_Python_Packages/ShakeNBreak/docs
+# ASE_INTERFACE _check_checkfile : True
+# ASE_INTERFACE _copy_pspots : False
+# ASE_INTERFACE _directory : /Users/ireaml/Library/CloudStorage/OneDrive-ImperialCollegeLondon/07_Python_Packages/ShakeNBreak/docs/v_Cd_s0_0/Unperturbed
+# ASE_INTERFACE _export_settings : True
+# ASE_INTERFACE _find_pspots : False
+# ASE_INTERFACE _force_write : True
+# ASE_INTERFACE _label : castep
+# ASE_INTERFACE _link_pspots : True
+# ASE_INTERFACE _pedantic : False
+# ASE_INTERFACE _prepare_input_only : False
+# ASE_INTERFACE _rename_existing_dir : True
+# ASE_INTERFACE _set_atoms : False
+# ASE_INTERFACE _track_output : False
+# ASE_INTERFACE _try_reuse : False
+#######################################################
+
+GEOM_METHOD: BFGS
+GEOM_CONVERGENCE_WIN: 4
+GEOM_ENERGY_TOL: 0.00005 eV
+GEOM_FORCE_TOL: 0.05 ev/ang
+GEOM_MAX_ITER: 300
+XC_FUNCTIONAL: HSE06
+SMEARING_SCHEME: Gaussian
+ELEC_ENERGY_TOL: 0.00005 eV
+ELECTRONIC_MINIMIZER: CG
+MAX_SCF_CYCLES: 50
+BASIS_PRECISION: FINE
+CHARGE: 0
