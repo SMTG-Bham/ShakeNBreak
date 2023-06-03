@@ -64,7 +64,7 @@ Within its analysis toolbox, `ShakeNBreak` includes methods to quantify structur
 
 The distortion procedure, underlying rationale and its application to a wide range of semiconductors have recently been described [@Mosquera-Lois:2022]. In addition, the package has been employed to identify the defect structures reported in several studies [@Kavanagh:2021; @Kavanagh:2022], with the identified configurations having significant impact on predicted behaviour.
 
-![Example analysis for a cadmium vacancy defect in CdTe: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations for the Unperturbed configuration, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](figures/Figure_joss.png)
+![Example analysis for a cadmium vacancy defect in CdTe: a) plot of final energies versus bond distortion factor, with a colorbar quantifying the structural similarity between configurations b) analysis of site magnetisations for the Unperturbed configuration, c) distances between the defect and its nearest neighbours and d) resemblance of the defect environment to difference structural motifs. \label{fig1}](../figures/Figure_joss.png)
 
 # Acknowledgements
 
