@@ -131,7 +131,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="23.04.27",
+    version="23.06.03",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
