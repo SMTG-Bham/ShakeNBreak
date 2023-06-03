@@ -149,12 +149,18 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Physics",
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
+    python_requires=">=3.6, <3.11",
     install_requires=[
         "numpy<1.24,>=1.21.2",
         "pymatgen>=2022.10.22",
@@ -171,7 +177,7 @@ setup(
     extras_require={
         "tests": [
             "pytest>=7.1.3",
-            "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
+            "pytest-mpl==0.16.1",
         ],
         "docs": [
             "sphinx",
