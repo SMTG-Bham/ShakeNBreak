@@ -111,7 +111,7 @@ html_context = {
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.6", None),
+    "python": ("https://docs.python.org/3.7", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
     "pymatgen": ("http://pymatgen.org/", None),
     "matplotlib": ("http://matplotlib.org", None),

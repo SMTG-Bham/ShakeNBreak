@@ -150,7 +150,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -160,7 +159,7 @@ setup(
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.6, <3.11",
+    python_requires=">=3.7, <3.11",
     install_requires=[
         "numpy<1.24,>=1.21.2",
         "pymatgen>=2022.10.22",
