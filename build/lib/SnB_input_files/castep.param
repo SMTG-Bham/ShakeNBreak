@@ -1,0 +1,21 @@
+# Example CASTEP .param file
+# For keyword description, see https://www.tcm.phy.cam.ac.uk/castep/documentation/WebHelp/content/modules/castep/keywords/
+
+# Geometry optimization parameters
+GEOM_METHOD: BFGS
+GEOM_CONVERGENCE_WIN : 4
+GEOM_ENERGY_TOL : 0.00005 eV
+GEOM_FORCE_TOL : 0.05 ev/ang
+GEOM_MAX_ITER : 300
+
+# Exchange-correlation parameters
+XC_FUNCTIONAL : HSE06
+
+# Electronic minimization parameters
+SMEARING_SCHEME : Gaussian
+ELEC_ENERGY_TOL : 0.00005 eV
+ELECTRONIC_MINIMIZER: CG
+MAX_SCF_CYCLES: 50
+
+# Basis set parameters
+BASIS_PRECISION: FINE # 0.1 eV/atom
