@@ -227,7 +227,9 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     return energy_diff, gs_distortion
 
 
-def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.05) -> tuple:
+def _sort_data(
+    energies_file: str, verbose: bool = True, min_e_diff: float = 0.05
+) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
     of ground-state defect structure relative to `Unperturbed` structure
@@ -977,7 +979,7 @@ def get_homoionic_bonds(
         if site.species_string == element
     ]
     homoionic_bonds = {}
-    for (site_index, site) in sites:
+    for site_index, site in sites:
         neighbours = structure.get_neighbors(site, r=radius)
         if element in [site.species_string for site in neighbours]:
             site_neighbours = [

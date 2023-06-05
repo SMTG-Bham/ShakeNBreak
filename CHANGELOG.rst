@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v23.06.03
+----------
+- Make parsing of `DefectEntry`s more robust.
+- Update dependencies (now supporting `python=3.10` due to `numba` updates)
+- Refactor `CITATION.cff` to `CITATIONS.md`
+- Update docs, formatting and cleanup.
+
 v23.04.27
 ----------
 - Update `numpy` requirement to `numpy>=1.21.2` to fix `numpy.typing.NDArray` import error.

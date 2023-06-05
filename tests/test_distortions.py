@@ -4,8 +4,8 @@ import warnings
 from unittest.mock import patch
 
 import numpy as np
-from pymatgen.core.structure import Structure
 from monty.serialization import loadfn
+from pymatgen.core.structure import Structure
 
 from shakenbreak import distortions
 

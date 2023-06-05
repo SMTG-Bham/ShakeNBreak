@@ -23,7 +23,7 @@ from pymatgen.analysis.defects.core import StructureMatcher
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar, UnknownPotcarWarning
 
-from shakenbreak import input, vasp, cli
+from shakenbreak import cli, input, vasp
 from shakenbreak.cli import snb
 
 _file_path = os.path.dirname(__file__)

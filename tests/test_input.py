@@ -5,12 +5,12 @@ import shutil
 import unittest
 import warnings
 from unittest.mock import patch
-from monty.serialization import loadfn, dumpfn
 
 import numpy as np
 from ase.calculators.aims import Aims
-from pymatgen.core.periodic_table import Species
+from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import StructureMatcher
+from pymatgen.core.periodic_table import Species
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
@@ -390,6 +390,16 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(input._most_common_oxi("Ac"), +3)
         self.assertEqual(input._most_common_oxi("Fr"), +1)
         self.assertEqual(input._most_common_oxi("Ra"), +2)
+
+    def test_get_sc_defect_coords(self):
+        defect_entry = copy.deepcopy(self.V_Cd_entry)
+        intput_frac_coords = defect_entry.sc_defect_frac_coords
+        defect_entry.sc_defect_frac_coords = None
+        defect_entry.charge_state = 0
+        Dist = input.Distortions(defects=[defect_entry,])
+        defect_dict, _ = Dist.apply_distortions()
+        output_frac_coords = defect_dict['v_Cd_s0']['defect_supercell_site'].frac_coords
+        self.assertEqual(intput_frac_coords.tolist(), output_frac_coords.tolist())
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):

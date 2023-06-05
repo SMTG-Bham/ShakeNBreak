@@ -125,22 +125,21 @@ def package_files(directory):
 input_files = package_files("SnB_input_files/")
 fonts = package_files("fonts/")
 
+with open("README.md", "r", encoding="utf-8") as file:
+    long_description = file.read()
+
 
 setup(
     name="shakenbreak",
-    version="23.04.27",
+    version="23.06.03",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
-    long_description="Python package to automate the process of defect structure searching. <br>"
-    "Employs chemically-guided bond distortions to locate ground-state and metastable structures"
-    " of point defects in solid materials. <br>"
-    "Read the [docs](https://shakenbreak.readthedocs.io/en/latest/index.html) for more info.",
+    long_description=long_description,
     long_description_content_type="text/markdown",
-    author="Irea Mosquera-Lois, Seán R. Kavanagh",
+    author="Irea Mosquera-Lois & Seán R. Kavanagh",
     author_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
-    maintainer="Irea Mosquera-Lois, Seán R. Kavanagh",
+    maintainer="Irea Mosquera-Lois & Seán R. Kavanagh",
     maintainer_email="i.mosquera-lois22@imperial.ac.uk, sean.kavanagh.19@ucl.ac.uk",
-    readme="README.md",  # PyPI readme
     url="https://shakenbreak.readthedocs.io/en/latest/index.html",
     license="MIT",
     license_files=("LICENSE",),
@@ -150,12 +149,16 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Physics",
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
+    python_requires=">=3.8, <3.11",
     install_requires=[
         "numpy<1.24,>=1.21.2",
         "pymatgen>=2022.10.22",
@@ -172,7 +175,7 @@ setup(
     extras_require={
         "tests": [
             "pytest>=7.1.3",
-            "pytest-mpl==0.15.1",  # New version 0.16.0 has a bug
+            "pytest-mpl==0.16.1",
         ],
         "docs": [
             "sphinx",
