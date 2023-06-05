@@ -2,6 +2,7 @@
 Module to apply energy lowering distortions found for a certain defect
 species (charge state) to other charge states of that defect.
 """
+
 import copy
 import os
 import shutil
