@@ -235,8 +235,8 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 .. _arXiv: https://arxiv.org/abs/2302.04901
-.. _J Mater Chem A: https://doi.org/10.1039/D3TA00532A
-.. _npj Comput Mater: https://www.nature.com/articles/s41524-023-00973-1
+.. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
+.. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
 .. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
 .. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380

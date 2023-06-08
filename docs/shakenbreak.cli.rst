@@ -3,15 +3,6 @@
 shakenbreak.cli module
 ===========================
 
-Functions
-------------
-The ``shakenbreak.cli`` module includes functions to identify the defect species from
-a given structure, as well as process it into a ``Defect`` object or a defect dictionary:
-
-.. autofunction:: shakenbreak.cli.identify_defect
-
-.. autofunction:: shakenbreak.cli.generate_defect_dict
-
 .. _cli_commands:
 
 Commands
