@@ -1741,7 +1741,7 @@ class Distortions:
 
     def __init__(
         self,
-        defects: Union[list, dict],
+        defects: Union[list, dict, DefectEntry],
         oxidation_states: Optional[dict] = None,
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
@@ -1752,16 +1752,12 @@ class Distortions:
     ):
         """
         Args:
-            defects (:obj:`dict_or_list_or_DefectEntry`):
-                List or dictionary of pymatgen.analysis.defects.thermo.DefectEntry() objects.
-                The DefectEntry objects are initialised with a pymatgen.analysis.defects.core.Defect,
-                a pymatgen.entries.computed_entries.ComputedStructureEntry (containing the
-                defect supercell) and the defect charge state (e.g.
-                DefectEntry(defect=Defect, sc_entry=ComputedStructureEntry, charge_state=+1)).
+            defects (Union[list, dict, DefectEntry]):
+                List or dictionary of, or single, pymatgen DefectEntry() objects.
                 E.g.: [DefectEntry(), DefectEntry(), ...], or single DefectEntry().
                 In this case, generated defect folders will be named in the format:
-                "{DefectEntry.defect.name}_m{DefectEntry.defect.multiplicity}" for interstitials and
-                "{DefectEntry.defect.name}_s{DefectEntry.defect.defect_site_index}" for
+                "{DefectEntry.defect.name}_m{DefectEntry.defect.multiplicity}" for interstitials
+                and "{DefectEntry.defect.name}_s{DefectEntry.defect.defect_site_index}" for
                 vacancies and substitutions.
                 The labels "a", "b", "c"... will be appended for defects with multiple
                 inequivalent sites.
@@ -1955,9 +1951,18 @@ class Distortions:
         if "stdev" in mc_rattle_kwargs:
             self.stdev = mc_rattle_kwargs.pop("stdev")
         else:
-            bulk_supercell = defect_object.structure
-            sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
-            self.stdev = 0.1 * sorted_distances[len(bulk_supercell)]
+            bulk_primitive = defect_object.structure
+            sorted_distances = np.sort(bulk_primitive.distance_matrix.flatten())
+            # get first finite distance:
+            try:
+                min_distance = sorted_distances[sorted_distances > 0.5][0]
+            except IndexError:  # single-atom primitive cell
+                bulk_supercell = bulk_primitive * [2, 2, 2]
+                sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
+                min_distance = sorted_distances[sorted_distances > 0.5][0]
+
+            self.stdev = 0.1 * min_distance
+
             if self.stdev > 0.4 or self.stdev < 0.02:
                 warnings.warn(
                     f"Automatic bond-length detection gave a bulk bond length of {10*self.stdev} "
@@ -1973,12 +1978,15 @@ class Distortions:
             )
 
         # Check if all expected oxidation states are provided
-        try:
-            guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=-1)[0]
-            if not guessed_oxidation_states:
-                guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
-        except Exception:
-            guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+        if len(bulk_comp.elements) == 1:  # single-element system, set oxidation state to 0
+            guessed_oxidation_states = {bulk_comp.elements[0].symbol: 0}
+        else:
+            try:
+                guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=-1)[0]
+                if not guessed_oxidation_states:
+                    guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
+            except Exception:
+                    guessed_oxidation_states = bulk_comp.oxi_state_guesses()[0]
 
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
