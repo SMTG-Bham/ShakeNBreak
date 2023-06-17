@@ -9,8 +9,10 @@ from unittest.mock import patch
 import numpy as np
 from ase.calculators.aims import Aims
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.core import StructureMatcher
-from pymatgen.core.periodic_table import Species
+from pymatgen.analysis.defects.generators import VacancyGenerator
+from pymatgen.analysis.defects.thermo import DefectEntry
+from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.core.periodic_table import Species, DummySpecies
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
 
@@ -396,9 +398,13 @@ class InputTestCase(unittest.TestCase):
         intput_frac_coords = defect_entry.sc_defect_frac_coords
         defect_entry.sc_defect_frac_coords = None
         defect_entry.charge_state = 0
-        Dist = input.Distortions(defects=[defect_entry,])
+        Dist = input.Distortions(
+            defects=[
+                defect_entry,
+            ]
+        )
         defect_dict, _ = Dist.apply_distortions()
-        output_frac_coords = defect_dict['v_Cd_s0']['defect_supercell_site'].frac_coords
+        output_frac_coords = defect_dict["v_Cd_s0"]["defect_supercell_site"].frac_coords
         self.assertEqual(intput_frac_coords.tolist(), output_frac_coords.tolist())
 
     @patch("builtins.print")
@@ -729,7 +735,6 @@ class InputTestCase(unittest.TestCase):
         self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
 
     def test_apply_snb_distortions_Int_Cd_2(self):
-
         """Test apply_distortions function for Int_Cd_2"""
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
             self.Int_Cd_2_entry,
@@ -1236,6 +1241,74 @@ class InputTestCase(unittest.TestCase):
         # test Distortions() initialised fine with a single Defect
         dist = input.Distortions(self.V_Cd_entries)
         self.assertEqual(dist.defects_dict["v_Cd_s0"], self.cdte_defects["vac_1_Cd"])
+
+    def test_Distortions_single_atom_primitive(self):
+        # test initialising Distortions with a single atom primitive cell
+        # also serves to test the DefectEntry generation workflow in the example notebook
+        Cu_primitive = Structure.from_file(f"{self.DATA_DIR}/vasp/Cu_prim_POSCAR")
+        vac_gen = VacancyGenerator()
+        vacancies = vac_gen.get_defects(Cu_primitive)
+        v_Cu = vacancies[0]
+
+        defect_supercell = v_Cu.get_supercell_structure(
+            min_length=10,  # in Angstrom
+            max_atoms=120,
+            min_atoms=20,
+            force_diagonal=False,
+            dummy_species="X",
+        )
+
+        def get_defect_entry_from_defect(  # from example notebook
+            defect,
+            defect_supercell,
+            charge_state,
+            dummy_species = DummySpecies("X"),
+        ):
+            """Generate DefectEntry object from Defect object.
+            This is used to describe a Defect using a certain simulation cell.
+            """
+            # Dummy species (used to keep track of the defect coords in the supercell)
+            # Find its fractional coordinates & remove it from supercell
+            dummy_site = [
+                site
+                for site in defect_supercell
+                if site.species.elements[0].symbol == dummy_species.symbol
+            ][0]
+            sc_defect_frac_coords = dummy_site.frac_coords
+            defect_supercell.remove(dummy_site)
+
+            computed_structure_entry = ComputedStructureEntry(
+                structure=defect_supercell,
+                energy=0.0,  # needs to be set, so set to 0.0
+            )
+            return DefectEntry(
+                defect=defect,
+                charge_state=charge_state,
+                sc_entry=computed_structure_entry,
+                sc_defect_frac_coords=sc_defect_frac_coords,
+            )
+
+        defect_entry = get_defect_entry_from_defect(
+            defect=v_Cu,
+            charge_state=0,
+            defect_supercell=defect_supercell,
+        )
+
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(
+                [
+                    defect_entry,
+                ]
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cu': 0}. If this is unreasonable you should manually set oxidation_states"
+            )
+
+        self.assertEqual(dist.oxidation_states, {"Cu": 0})
+        self.assertAlmostEqual(dist.stdev, 0.2529625487091717)
+        self.assertIn("v_Cu_s0", dist.defects_dict)
+        self.assertEqual(len(dist.defects_dict["v_Cu_s0"][0].sc_entry.structure), 107)
 
     def test_write_vasp_files(self):
         """Test `write_vasp_files` method"""
