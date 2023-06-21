@@ -1,6 +1,7 @@
 """ShakeNBreak command-line-interface (CLI)"""
 import fnmatch
 import os
+import sys
 import warnings
 from copy import deepcopy
 from subprocess import call
@@ -11,6 +12,7 @@ import click
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
+from pymatgen.io.vasp.outputs import Outcar
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
@@ -1465,3 +1467,62 @@ def groundstate(
         structure_filename=structure_filename,
         verbose=not non_verbose,
     )
+
+
+@snb.command(
+    name="mag",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=True,
+)
+@click.option(
+    "--outcar",
+    "-o",
+    help="Path to OUTCAR file",
+    default="OUTCAR",
+    type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "--threshold",
+    "-t",
+    help="Atoms with absolute magnetisation below this value are considered un-magnetised / "
+    "non-spin-polarised. The threshold for total magnetisation is 10x this value.",
+    default=0.01,
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about the magnetisation of the system.",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+def mag(outcar, threshold, verbose):
+    """
+    Checks if the magnetisation (spin polarisation) values of all atoms in the
+    VASP calculation are below a certain threshold, by pulling this data from the OUTCAR.
+    Returns a shell exit status of 0 if magnetisation is below the threshold and 1 if above.
+    """
+    try:
+        outcar_obj = Outcar(outcar)
+        abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
+
+    except:
+        if verbose:
+            print(f"Could not read magnetisation from OUTCAR file at {outcar}")
+        sys.exit(1)
+
+    if (
+        max(abs_mag_values)
+        < threshold  # no one atomic moment greater than threshold
+        and sum(abs_mag_values)
+        < threshold * 10  # total moment less than 10x threshold
+    ):
+        if verbose:
+            print(f"Magnetisation is below threshold (<{threshold}μB/atom)")
+        sys.exit(0)
+    else:
+        if verbose:
+            print(f"Magnetisation is above threshold (>{threshold}μB/atom)")
+        sys.exit(1)
