@@ -3758,6 +3758,11 @@ Chosen VASP error message: {error_string}
         self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
         self.assertEqual(result.exit_code, 1)
 
+        # test quiet output when no args set (no help message printed!)
+        result = runner.invoke(snb, ["mag"], catch_exceptions=False)
+        self.assertFalse(result.output)
+        self.assertEqual(result.exit_code, 1)
+
         # test ISPIN =2 OUTCAR with mag below threshold
         with open("INCAR", "w") as f:
             f.write("ISPIN = 2")
