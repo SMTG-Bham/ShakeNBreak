@@ -3,18 +3,13 @@ import fnmatch
 import os
 import warnings
 from copy import deepcopy
-from importlib.metadata import version
 from subprocess import call
-from typing import Optional
 
 import click
-import numpy as np
 
 # Monty and pymatgen
-from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Element, PeriodicSite, Structure
+from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
 
 # ShakeNBreak
