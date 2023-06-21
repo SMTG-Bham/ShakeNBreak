@@ -1472,7 +1472,7 @@ def groundstate(
 @snb.command(
     name="mag",
     context_settings=CONTEXT_SETTINGS,
-    no_args_is_help=True,
+    no_args_is_help=False,
 )
 @click.option(
     "--outcar",
