@@ -32,7 +32,6 @@ def if_present_rm(path):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
-
 class CLITestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
 
@@ -165,6 +164,22 @@ class CLITestCase(unittest.TestCase):
 
         # Remove parsed vac_1_Ti_0 energies file
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
+
+    def copy_v_Ti_OUTCARs(self):
+        """
+        Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
+        data directory
+        """
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR",
+            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR"
+        )
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
+            f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR",
+        )
 
     def test_snb_generate(self):
         """Implicitly, the `snb-generate` tests also test the functionality of
@@ -1577,6 +1592,7 @@ seed: 42"""  # previous default
     def test_run(self):
         """Test snb-run function"""
         os.chdir(self.VASP_TIO2_DATA_DIR)
+        self.copy_v_Ti_OUTCARs()
         proc = subprocess.Popen(
             ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -2037,6 +2053,7 @@ Chosen VASP error message: {error_string}
 
         # Test when OUTCAR not present in one of the distortion directories
         defect = "vac_1_Ti_0"  # folder in self.VASP_DIR
+        self.copy_v_Ti_OUTCARs()
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -2798,6 +2815,7 @@ Chosen VASP error message: {error_string}
 
         # Test analysing from inside the defect folder
         os.chdir(self.VASP_TIO2_DATA_DIR)
+        self.copy_v_Ti_OUTCARs()
         defect_name = "vac_1_Ti_0"
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
