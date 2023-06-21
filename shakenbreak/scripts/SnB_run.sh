@@ -100,6 +100,13 @@ SnB_run_loop() {
         if [ -s CONTCAR ]; then # CONTCAR not empty (i.e. at least one ionic step made), cp to POSCAR
           "cp" CONTCAR POSCAR
         fi
+
+        # check if calc was spin-polarised and magnetisation below threshold, then switch to ISPIN = 1
+        if grep -q "ISPIN  =      2" OUTCAR; then  # spin-polarised calc
+          if [ "snb-mag" ]; then
+            sed -i 's/ISPIN.*/ISPIN = 1  # atomic magnetization in previous run below threshold/INCAR'
+          fi
+        fi
       fi
       if [ -f "./${job_filename}" ]; then
         echo "Running job for ${i%?}"
