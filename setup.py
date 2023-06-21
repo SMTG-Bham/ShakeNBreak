@@ -205,6 +205,7 @@ setup(
             "snb-plot = shakenbreak.cli:plot",
             "snb-regenerate = shakenbreak.cli:regenerate",
             "snb-groundstate = shakenbreak.cli:groundstate",
+            "snb-mag = shakenbreak.cli:mag",
             "shakenbreak = shakenbreak.cli:snb",
             "shakenbreak-generate = shakenbreak.cli:generate",
             "shakenbreak-generate_all = shakenbreak.cli:generate_all",
@@ -214,6 +215,7 @@ setup(
             "shakenbreak-plot = shakenbreak.cli:plot",
             "shakenbreak-regenerate = shakenbreak.cli:regenerate",
             "shakenbreak-groundstate = shakenbreak.cli:groundstate",
+            "shakenbreak-mag = shakenbreak.cli:mag",
         ],
     },
     cmdclass={
