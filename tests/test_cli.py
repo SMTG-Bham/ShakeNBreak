@@ -2099,8 +2099,10 @@ Chosen VASP error message: {error_string}
 
         with open(f"Unperturbed/INCAR", "r") as fp:
             incar_string = fp.read()
-        self.assertIn("ISPIN = 1  # atomic magnetization in previous run below threshold",
-                      incar_string)  # INCAR changed to ISPIN = 1
+        self.assertIn(
+            "ISPIN = 1  # atomic magnetization in previous run below threshold",
+            incar_string,
+        )  # INCAR changed to ISPIN = 1
         self.assertEqual(len(os.listdir(f"Unperturbed")), 9)  # New files
 
         files = os.listdir("Unperturbed")
