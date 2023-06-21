@@ -1520,9 +1520,9 @@ def mag(outcar, threshold, verbose):
         < threshold * 10  # total moment less than 10x threshold
     ):
         if verbose:
-            print(f"Magnetisation is below threshold (<{threshold}μB/atom)")
+            print(f"Magnetisation is below threshold (<{threshold} μB/atom)")
         sys.exit(0)
     else:
         if verbose:
-            print(f"Magnetisation is above threshold (>{threshold}μB/atom)")
+            print(f"Magnetisation is above threshold (>{threshold} μB/atom)")
         sys.exit(1)
