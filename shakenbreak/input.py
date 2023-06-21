@@ -34,7 +34,7 @@ from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
 
-from shakenbreak import analysis, cli, distortions, io, vasp
+from shakenbreak import analysis, distortions, io, vasp
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 
