@@ -170,6 +170,25 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
 
+        if os.path.exists(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR_orig"):
+            shutil.move(
+                f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR_orig",
+                f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR",
+            )
+
+        files = os.listdir(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        for file in saved_files:
+            if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/{file}")
+
+        for i in ["Bond_Distortion_10.0%", "Bond_Distortion_-40.0%", "Unperturbed", ""]:
+            if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/{i}/POSCAR")
+            if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/{i}/INCAR")
+            if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/{i}/job_file")
+
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/INCAR")
+
     def copy_v_Ti_OUTCARs(self):
         """
         Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
@@ -1998,7 +2017,6 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
-        print(out)
         self.assertIn("ALGO = All", open("Bond_Distortion_10.0%/INCAR").read())
         files = os.listdir("Bond_Distortion_10.0%")
         saved_files = [file for file in files if "on" in file and "CAR_" in file]
@@ -2012,7 +2030,131 @@ Chosen VASP error message: {error_string}
         os.remove("Bond_Distortion_10.0%/POSCAR")
         os.remove("Bond_Distortion_10.0%/INCAR")
         if_present_rm("Bond_Distortion_10.0%/job_file")
-        if_present_rm("job_file")
+
+        # test changing ISPIN depending on magnetisation from previous runs
+        # in VASP TIO2 data directory here, with OUTCARs copied over
+        for i in ["Bond_Distortion_-40.0%", "Unperturbed"]:
+            with open(f"{i}/INCAR", "w") as fp:
+                fp.write("ISPIN = 2")
+
+        shutil.copyfile("Unperturbed/OUTCAR", "Unperturbed/OUTCAR_orig")
+        with open("Unperturbed/OUTCAR", "r") as f:
+            outcar_string = f.read()
+        final_mag_string = outcar_string[-5870:]
+        edited_final_mag_string = re.sub(
+            "[0-9]\.\d+", "0.000", final_mag_string
+        )  # zero magnetisation
+
+        with open("Unperturbed/OUTCAR", "w") as f:
+            f.write(
+                outcar_string[:-5870] + edited_final_mag_string
+            )  # zero magnetisation
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertIn("Unperturbed fully relaxed", out)
+        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn(
+            "ISPIN = 2", incar_string
+        )  # no change in INCAR as run was fully converged
+        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+
+        with open(f"Unperturbed/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn("ISPIN = 2", incar_string)  # ISPIN not changed in INCAR
+        self.assertEqual(
+            len(os.listdir(f"Unperturbed")), 4
+        )  # no new files (Unperturbed also has OUTCAR_orig)
+
+        # now trick snb-run into thinking calc not converged, so we test the rerun behaviour:
+        edited_outcar_string = re.sub(
+            "required accuracy",
+            "lol nope",
+            outcar_string[:-5870] + edited_final_mag_string,
+        )
+        with open("Unperturbed/OUTCAR", "w") as f:
+            f.write(edited_outcar_string)  # zero magnetisation, unconverged
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertNotIn("Unperturbed fully relaxed", out)
+        self.assertIn("Running job for Unperturbed", out)
+        self.assertIn("this vac_1_Ti_0_Unperturbed job_file", out)  # job submit command
+        self.assertIn(
+            "Unperturbed not (fully) relaxed, saving files and rerunning", out
+        )
+
+        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn(
+            "ISPIN = 2", incar_string
+        )  # no change in INCAR as run was fully converged
+        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+
+        with open(f"Unperturbed/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn("ISPIN = 1  # atomic magnetization in previous run below threshold",
+                      incar_string)  # INCAR changed to ISPIN = 1
+        self.assertEqual(len(os.listdir(f"Unperturbed")), 9)  # New files
+
+        files = os.listdir("Unperturbed")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        self.assertEqual(len(saved_files), 3)  # INCAR, CONTCAR, OUTCAR
+        self.assertEqual(len([i for i in saved_files if "INCAR" in i]), 1)
+        old_incar = [i for i in saved_files if "INCAR" in i][0]
+        with open(f"Unperturbed/{old_incar}", "r") as fp:
+            old_incar_string = fp.read()
+        self.assertIn(
+            "ISPIN = 2", old_incar_string
+        )  # Old INCAR unchanged from ISPIN = 2
+        self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        for i in saved_files:
+            os.remove(f"Unperturbed/{i}")
+
+        # test case of ISPIN = 1 OUTCAR (doesn't crash or anything), with snb-run
+        with open(f"Unperturbed/INCAR", "w") as fp:  # put INCAR back to ISPIN = 2
+            fp.write("ISPIN = 2")
+        ispin1_outcar_string = re.sub(
+            "ISPIN  =      2    spin polarized calculation?",
+            "ISPIN  =      1",
+            edited_outcar_string,
+        )
+        with open("Unperturbed/OUTCAR", "w") as f:
+            f.write(ispin1_outcar_string)  # zero magnetisation, unconverged, ISPIN = 1
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertNotIn("Unperturbed fully relaxed", out)
+        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn(
+            "ISPIN = 2", incar_string
+        )  # no change in INCAR as run was fully converged
+        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+
+        with open(f"Unperturbed/INCAR", "r") as fp:
+            incar_string = fp.read()
+        self.assertIn("ISPIN = 2", incar_string)  # ISPIN not changed in ICNAR
+        self.assertEqual(
+            len(os.listdir(f"Unperturbed")), 10
+        )  # new files as calc being rerun, but without changing ISPIN
 
     def test_parse(self):
         """Test parse() function.
