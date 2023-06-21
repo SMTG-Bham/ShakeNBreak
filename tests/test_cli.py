@@ -2,6 +2,7 @@ import copy
 import datetime
 import json
 import os
+import re
 import shutil
 import subprocess
 import unittest
@@ -31,6 +32,7 @@ def if_present_rm(path):
             os.remove(path)
         elif os.path.isdir(path):
             shutil.rmtree(path)
+
 
 class CLITestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
@@ -132,6 +134,7 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
@@ -174,7 +177,7 @@ class CLITestCase(unittest.TestCase):
         """
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR",
-            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR"
+            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR",
         )
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
@@ -3598,6 +3601,30 @@ Chosen VASP error message: {error_string}
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+    def test_mag(self):
+        """Test the snb-mag command"""
+        runner = CliRunner()
+        result = runner.invoke(
+            snb,
+            ["mag", "-v", "-o", f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR"],
+            catch_exceptions=False,
+        )
+        self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
+        self.assertEqual(result.exit_code, 1)
+
+        # test defaulting to current OUTCAR:
+        os.chdir(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed")
+        result = runner.invoke(snb, ["mag", "-v"], catch_exceptions=False)
+        self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
+        self.assertEqual(result.exit_code, 1)
+
+        # test ISPIN =2 OUTCAR with mag below threshold
+        with open("INCAR", "w") as f:
+            f.write("ISPIN = 2")
+        result = runner.invoke(snb, ["mag", "-v", "-t", "1"], catch_exceptions=False)
+        self.assertIn("Magnetisation is below threshold (<1.0 μB/atom)", result.output)
+        self.assertEqual(result.exit_code, 0)
 
 
 if __name__ == "__main__":
