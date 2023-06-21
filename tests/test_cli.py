@@ -168,13 +168,8 @@ class CLITestCase(unittest.TestCase):
         # Remove parsed vac_1_Ti_0 energies file
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/v_Ti_0.yaml")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR_orig")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
-
-        if os.path.exists(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR_orig"):
-            shutil.move(
-                f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR_orig",
-                f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR",
-            )
 
         files = os.listdir(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed")
         saved_files = [file for file in files if "on" in file and "CAR_" in file]

@@ -9,7 +9,7 @@ Commands
 --------------
 
 ``ShakeNBreak`` has eight main commands: ``snb-generate``, ``snb-generate_all``, ``snb-run``,
-``snb-parse``, ``snb-analyse``, ``snb-plot``, ``snb-regenerate`` and ``snb-groundstate``.
+``snb-parse``, ``snb-analyse``, ``snb-plot``, ``snb-regenerate``, ``snb-groundstate`` and ``snb-mag``.
 Their functionality and options are described below.
 
 See the `Structure generation <https://shakenbreak.readthedocs.io/en/latest/Generation.html>`_ and
