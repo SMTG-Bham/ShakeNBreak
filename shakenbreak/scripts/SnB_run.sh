@@ -50,7 +50,7 @@ SnB_run_loop() {
     if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR; then # check calculation fully relaxed and finished
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
-        "cp" ../"${job_filepath}" "./${job_filename}" || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
+        "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
       fi
       if [ -f OUTCAR ]; then # if OUTCAR exists so rerunning rather than 1st run
         # count number of ionic steps with positive energies, after the first 5 ionic steps
