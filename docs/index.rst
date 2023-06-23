@@ -30,12 +30,7 @@ Welcome to ShakeNBreak!
 
 ``ShakeNBreak`` (``SnB``) is a defect structure-searching method employing
 chemically-guided bond distortions to locate ground-state and metastable
-structures of point defects in solid materials. |logo|
-
-.. |logo| image:: toc.png
-  :width: 300
-  :alt: ShakeNBreak logo
-  :class: with-shadow float-right
+structures of point defects in solid materials.
 
 Main features include:
 
@@ -218,14 +213,15 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
-- A\. Nicolson, S. R. Kavanagh, C. N. Savory, G. W. Watson, D. O. Scanlon `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/642d2207a029a26b4cf05137>`__ 2023
-- X\. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh `arXiv`_ 2023
-- J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon `J Mater Chem A`_ 2023
+- A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
+- X\. Wang et al. `arXiv`_ 2023
+- J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
 - Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
-- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Comput Mater`_ 2023
+- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
+- C\. J. Krajewska et al. `Chemical Science`_ 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
@@ -234,17 +230,18 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Kumagai collab paper
 .. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
-.. Joe CuI
+.. Joe CuI preprint out soon
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 .. _arXiv: https://arxiv.org/abs/2302.04901
-.. _J Mater Chem A: https://doi.org/10.1039/D3TA00532A
-.. _npj Comput Mater: https://www.nature.com/articles/s41524-023-00973-1
+.. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
+.. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
 .. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
 .. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
 .. _Nature Physics: https://doi.org/10.1038/s41567-023-02049-9
+.. _Chemical Science: https://doi.org/10.1039/D1SC03775G
 
 License and Citation
 ========================

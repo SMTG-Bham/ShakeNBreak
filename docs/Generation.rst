@@ -220,3 +220,33 @@ To submit a single defect, we can simply run the command :code:`snb-run` within 
 .. code:: bash
 
     $ snb-run
+
+.. NOTE::
+    The ``snb-run`` command has some calculation auto-handling functions built into it. Some of these
+    are described in more detail on the `Tips & Tricks <https://shakenbreak.readthedocs
+    .io/en/latest/Tips.html>`_ page, and the short summary is:
+
+    - If the calculation is converged (``reached required accuracy`` printed in the VASP ``stdout`` file
+      and ``OUTCAR``) or has previously been renamed to ``*High_Energy*``, then ``snb-run`` will
+      move on to the next distortion directory. If the calculation is not converged but has done >=50
+      ionic steps with the energy changing by less than <2 meV (usually due to very small residual
+      forces which are negligible for the ``SnB`` structure-searching step of the defect workflow), this is
+      considered converged, is skipped by ``snb-run`` and a note is added to the bottom line of the
+      ``OUTCAR`` file.
+
+    - If the calculation is not converged, then ``snb-run`` will automatically save relevant output
+      files by copying them and appending the time & date (e.g. ``OUTCAR_12_10_01on21_06_23``), and
+      resubmit the calculation to the HPC scheduler. ``snb-run`` will also perform some checks to see if
+      the calculation settings should be modified:
+
+        - If poor electronic convergence is observed (all electronic loops hitting the ``NELM`` limit,
+          ``ALGO`` will be set to ``All`` in the ``INCAR`` to counteract this.
+
+        - If the calculation is spin-polarised (``ISPIN = 2``), but the magnetisation of each atom is
+          <0.01 μB (and the summed absolute values of the magnetisation is <0.1 μB), then ``snb-run``
+          automatically sets ``ISPIN = 1`` (i.e. no spin-polarisation) in the ``INCAR`` for the followin
+          relaxation, to aid efficiency.
+
+        - If positive energies are encountered after the 5th ionic step, or errors associated with
+          extreme forces (``EDDDAV``, ``ZHEGV``, ``CNORMN``, ``ZPOTRF``, ``ZTRTRI``, ``FEXC``) are
+          detected, then ``snb-run`` will rename this folder to ``X_High_Energy`` and skip it.

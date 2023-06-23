@@ -50,7 +50,7 @@ SnB_run_loop() {
     if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR; then # check calculation fully relaxed and finished
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
-        "cp" ../"${job_filepath}" "./${job_filename}" || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
+        "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
       fi
       if [ -f OUTCAR ]; then # if OUTCAR exists so rerunning rather than 1st run
         # count number of ionic steps with positive energies, after the first 5 ionic steps
@@ -99,6 +99,13 @@ SnB_run_loop() {
         bash "${DIR}"/save_vasp_files.sh
         if [ -s CONTCAR ]; then # CONTCAR not empty (i.e. at least one ionic step made), cp to POSCAR
           "cp" CONTCAR POSCAR
+        fi
+
+        # check if calc was spin-polarised and magnetisation below threshold, then switch to ISPIN = 1
+        if grep -q "ISPIN  =      2" OUTCAR; then  # spin-polarised calc
+          if snb-mag; then
+            sed -i 's/ISPIN.*/ISPIN = 1  # atomic magnetization in previous run below threshold/' INCAR
+          fi
         fi
       fi
       if [ -f "./${job_filename}" ]; then

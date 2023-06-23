@@ -131,7 +131,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="23.06.03",
+    version="23.06.23",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -205,6 +205,7 @@ setup(
             "snb-plot = shakenbreak.cli:plot",
             "snb-regenerate = shakenbreak.cli:regenerate",
             "snb-groundstate = shakenbreak.cli:groundstate",
+            "snb-mag = shakenbreak.cli:mag",
             "shakenbreak = shakenbreak.cli:snb",
             "shakenbreak-generate = shakenbreak.cli:generate",
             "shakenbreak-generate_all = shakenbreak.cli:generate_all",
@@ -214,6 +215,7 @@ setup(
             "shakenbreak-plot = shakenbreak.cli:plot",
             "shakenbreak-regenerate = shakenbreak.cli:regenerate",
             "shakenbreak-groundstate = shakenbreak.cli:groundstate",
+            "shakenbreak-mag = shakenbreak.cli:mag",
         ],
     },
     cmdclass={
