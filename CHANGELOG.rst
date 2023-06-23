@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v23.06.23
+----------
+- Add `snb-mag` function, and automatically check the magnetisation from `ISPIN = 2` `OUTCAR` files when continuing
+  relaxations with `snb-run` (and change to `ISPIN = 1` if magnetisation is negligible).
+- Update handling of minimum distances and oxidation states, to deal with single-atom primitive unit cells and
+  systems where `pymatgen` cannot guess the oxidation state (e.g. single-elements, intermetallics etc).
+- Docs updates
+
 v23.06.03
 ----------
 - Make parsing of `DefectEntry`s more robust.
