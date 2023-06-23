@@ -1,21 +1,18 @@
 """ShakeNBreak command-line-interface (CLI)"""
 import fnmatch
 import os
+import sys
 import warnings
 from copy import deepcopy
-from importlib.metadata import version
 from subprocess import call
-from typing import Optional
 
 import click
-import numpy as np
 
 # Monty and pymatgen
-from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.core import Defect
-from pymatgen.core.structure import Element, PeriodicSite, Structure
+from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
+from pymatgen.io.vasp.outputs import Outcar
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
@@ -826,8 +823,8 @@ def run(submit_command, job_script, job_name_option, all, verbose):
         job_name_option = "-N"
 
     call(
-        f"{os.path.dirname(__file__)}/bash_scripts/SnB_run.sh {optional_flags} {submit_command}"
-        f" {job_script} {job_name_option}",
+        f"{os.path.dirname(__file__)}/scripts/SnB_run.sh {optional_flags} {submit_command} {job_script} "
+        f"{job_name_option}",
         shell=True,
     )
 
@@ -1470,3 +1467,60 @@ def groundstate(
         structure_filename=structure_filename,
         verbose=not non_verbose,
     )
+
+
+@snb.command(
+    name="mag",
+    context_settings=CONTEXT_SETTINGS,
+    no_args_is_help=False,
+)
+@click.option(
+    "--outcar",
+    "-o",
+    help="Path to OUTCAR file",
+    default="OUTCAR",
+    type=click.Path(exists=True, dir_okay=False),
+)
+@click.option(
+    "--threshold",
+    "-t",
+    help="Atoms with absolute magnetisation below this value are considered un-magnetised / "
+    "non-spin-polarised. The threshold for total magnetisation is 10x this value.",
+    default=0.01,
+    type=float,
+    show_default=True,
+)
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about the magnetisation of the system.",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+def mag(outcar, threshold, verbose):
+    """
+    Checks if the magnetisation (spin polarisation) values of all atoms in the
+    VASP calculation are below a certain threshold, by pulling this data from the OUTCAR.
+    Returns a shell exit status of 0 if magnetisation is below the threshold and 1 if above.
+    """
+    try:
+        outcar_obj = Outcar(outcar)
+        abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
+
+    except Exception:
+        if verbose:
+            print(f"Could not read magnetisation from OUTCAR file at {outcar}")
+        sys.exit(1)
+
+    if (
+        max(abs_mag_values) < threshold  # no one atomic moment greater than threshold
+        and sum(abs_mag_values) < threshold * 10  # total moment less than 10x threshold
+    ):
+        if verbose:
+            print(f"Magnetisation is below threshold (<{threshold} μB/atom)")
+        sys.exit(0)
+    else:
+        if verbose:
+            print(f"Magnetisation is above threshold (>{threshold} μB/atom)")
+        sys.exit(1)

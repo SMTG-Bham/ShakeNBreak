@@ -26,6 +26,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
+        self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
         self.organized_V_Cd_distortion_data = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
@@ -69,6 +70,23 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "vasp/distortion_metadata.json"),
         ]:
             if_present_rm(i)
+
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
+
+    def copy_v_Ti_OUTCARs(self):
+        """
+        Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
+        data directory
+        """
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR",
+            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR"
+        )
+        shutil.copyfile(
+            f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
+            f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR",
+        )
 
     def test__format_distortion_names(self):
         self.assertEqual(
@@ -856,6 +874,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
     def test_get_site_magnetizations(self):
         """Test get_site_magnetizations() function"""
+        self.copy_v_Ti_OUTCARs()
         # Non existent defect folder
         self.assertRaises(
             FileNotFoundError,
@@ -977,6 +996,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
 
         # Non existent structure
+        self.copy_v_Ti_OUTCARs()
         os.mkdir(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
         shutil.copyfile(
             f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_-40.0%/OUTCAR",

@@ -1,6 +1,6 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
-exclude: ^(docs|tests|SnB_input_files|.github|shakenbreak/bash_scripts|CITATION*|MANIFEST*)
+exclude: ^(docs|tests|SnB_input_files|.github|shakenbreak/scripts|CITATION*|MANIFEST*)
 repos:
 
 
