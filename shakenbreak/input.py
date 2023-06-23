@@ -515,7 +515,7 @@ def _calc_number_electrons(
         )  # Current species occupying the defect site (e.g. the substitution)
 
     else:
-        raise ValueError(f"`defect_dict` has an invalid `defect_type`: {defect_type}")
+        raise ValueError(f"`defect_entry` has an invalid `defect_type`: {defect_type}")
 
     num_electrons = (
         oxidation_states[substitution_specie] - oxidation_states[site_specie]
@@ -1419,13 +1419,13 @@ def _apply_rattle_bond_distortions(
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure
-    (in `defect_dict`) by calling `distortion.distort` with either:
+    of `defect_entry` by calling `distortion.distort` with either:
             - fractional coordinates (for vacancies) or
             - defect site index (other defect types).
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            pymatgen.analysis.defects.thermo.DefectEntry()
+            The defect to distort, as a pymatgen `DefectEntry` object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to.
         distortion_factor (:obj:`float`):
@@ -1573,11 +1573,11 @@ def apply_snb_distortions(
 ) -> dict:
     """
     Applies rattle and bond distortions to `num_nearest_neighbours` of the
-    unperturbed defect structure (in `defect_dict`).
+    unperturbed defect structure of `defect_entry`.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            pymatgen.analysis.defects.thermo.DefectEntry object.
+            The defect to distort, as a pymatgen `DefectEntry` object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
