@@ -213,7 +213,7 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
-- A\. T. J. Nicolson et al. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/642d2207a029a26b4cf05137>`__ 2023
+- A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
 - X\. Wang et al. `arXiv`_ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
 - Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
