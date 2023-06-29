@@ -129,7 +129,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 - A. T. J. Nicolson et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA02429F) 2023
 - X. Wang et al. [_arXiv_](https://arxiv.org/abs/2302.04901) 2023
 - J. Cen et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA00532A) 2023
-- Q. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation.
+- J. Willis & R. Claes et al. [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2023-lttnf) 2023
 - I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_npj Computational Materials_](https://doi.org/10.1038/s41524-023-00973-1) 2023
 - Y. T. Huang & S. R. Kavanagh et al. [_Nature Communications_](https://www.nature.com/articles/s41467-022-32669-3) 2022
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
@@ -144,7 +144,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 <!-- Kumagai collab paper -->
 <!-- Lavan LiNiO2 -->
 <!-- Sykes Magnetic oxide polarons -->
-<!-- Joe CuI preprint soon -->
 <!-- Kat YTOS -->
 <!-- Squires (and mention benchmark test against AIRSS? See Slack message) -->
 
