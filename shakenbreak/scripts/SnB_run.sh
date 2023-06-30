@@ -88,6 +88,7 @@ SnB_run_loop() {
             builtin cd .. || return
             continue
           fi
+        fi
 
         # if electronic convergence is not being reached, change ALGO to All
         if grep -q "aborting loop EDIFF was not reached" OUTCAR && ! grep -q "aborting loop because EDIFF is reached" OUTCAR; then
