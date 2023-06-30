@@ -71,21 +71,23 @@ SnB_run_loop() {
           fi
         fi
 
-        init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
-        fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
-        energy_diff=$(echo "$init_energy - $fin_energy" | bc)
         num_energies=$(grep -c entropy= OUTCAR)
-        # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the initial energy
-        # then calculation is essentially converged, don't rerun
-        if ((num_energies > 50)) && (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
-          if [ "$verbose" = true ]; then
-            echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
+        if ((num_energies > 50)); then
+          init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
+          fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
+          energy_diff=$(echo "$init_energy - $fin_energy" | bc)
+
+          # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the
+          # initial energy then calculation is essentially converged, don't rerun
+          if (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
+            if [ "$verbose" = true ]; then
+              echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
+            fi
+            echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
+            # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
+            builtin cd .. || return
+            continue
           fi
-          echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
-          # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
-          builtin cd .. || return
-          continue
-        fi
 
         # if electronic convergence is not being reached, change ALGO to All
         if grep -q "aborting loop EDIFF was not reached" OUTCAR && ! grep -q "aborting loop because EDIFF is reached" OUTCAR; then
