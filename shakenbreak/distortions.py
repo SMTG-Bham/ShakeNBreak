@@ -238,13 +238,16 @@ def rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
-    sorted_distances = np.sort(structure.distance_matrix.flatten())
+    if active_atoms is not None:
+        # select only the distances involving active_atoms
+        distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
+    else:
+        distance_matrix = structure.distance_matrix
+
+    sorted_distances = np.sort(distance_matrix[distance_matrix>0.5].flatten())
 
     if stdev is None:
-        stdev = (
-            0.1 * sorted_distances[len(structure) + 40]
-        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
-        # in the distance matrix)
+        stdev = 0.1 * sorted_distances[0]
         if stdev > 0.4 or stdev < 0.02:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
@@ -255,10 +258,7 @@ def rattle(
             stdev = 0.25
 
     if d_min is None:
-        d_min = (
-            0.8 * sorted_distances[len(structure) + 40]
-        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
-        # in the distance matrix)
+        d_min = 0.8 * sorted_distances[0]
         if d_min < 1.0:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of "
@@ -284,7 +284,7 @@ def rattle(
 
     except Exception as ex:
         if "attempts" in str(ex):
-            reduced_d_min = sorted_distances[len(structure)] + (1 * stdev)
+            reduced_d_min = sorted_distances[0] + stdev
             rattled_ase_struct = generate_mc_rattled_structures(
                 ase_struct,
                 n_configs=1,
@@ -593,7 +593,13 @@ def local_mc_rattle(
     """
     aaa = AseAtomsAdaptor()
     ase_struct = aaa.get_atoms(structure)
-    sorted_distances = np.sort(structure.distance_matrix.flatten())
+    if active_atoms is not None:
+        # select only the distances involving active_atoms
+        distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
+    else:
+        distance_matrix = structure.distance_matrix
+
+    sorted_distances = np.sort(distance_matrix[distance_matrix>0.5].flatten())
 
     if isinstance(site_index, int):
         atom_number = site_index - 1  # Align atom number with python 0-indexing
@@ -608,10 +614,7 @@ def local_mc_rattle(
         )
 
     if stdev is None:
-        stdev = (
-            0.1 * sorted_distances[len(structure) + 40]
-        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
-        # in the distance matrix)
+        stdev = 0.1 * sorted_distances[0]
         if stdev > 0.4 or stdev < 0.02:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
@@ -622,10 +625,8 @@ def local_mc_rattle(
             stdev = 0.25
 
     if d_min is None:
-        d_min = (
-            0.8 * sorted_distances[len(structure) + 40]
-        )  # ignoring distorted atoms by ignoring the first 20 non-zero bond lengths (double counted
-        # in the distance matrix)
+        d_min = 0.8 * sorted_distances[0]
+
         if d_min < 1.0:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of "
@@ -652,7 +653,7 @@ def local_mc_rattle(
 
     except Exception as ex:
         if "attempts" in str(ex):
-            reduced_d_min = sorted_distances[len(structure)] + (1 * stdev)
+            reduced_d_min = sorted_distances[0] + stdev
             local_rattled_ase_struct = _generate_local_mc_rattled_structures(
                 ase_struct,
                 site_index=atom_number,
