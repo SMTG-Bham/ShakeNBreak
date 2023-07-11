@@ -1528,8 +1528,7 @@ def _apply_rattle_bond_distortions(
         ]  # Note this is VASP indexing here
         distorted_atom_indices = [
             i - 1 for i in distorted_atom_indices if i is not None
-        ]  # remove
-        # 'None' if defect is vacancy, and convert to python indexing
+        ]  # remove 'None' if defect is vacancy, and convert to python indexing
         rattling_atom_indices = np.arange(0, len(defect_structure))
         idx = np.in1d(
             rattling_atom_indices, distorted_atom_indices
