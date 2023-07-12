@@ -221,6 +221,11 @@ To submit a single defect, we can simply run the command :code:`snb-run` within 
 
     $ snb-run
 
+``snb-run`` can be used to submit the initial geometry optimisation calculations, as well as automatically continuing
+and resubmitting calculations that have not yet converged (and handle calculations which have failed) as discussed in
+the note below, however it has no knowledge of which jobs are currently in the HPC scheduler queue, so you should avoid
+running ``snb-run`` in directories for which you have already submitted jobs, to avoid job duplication.
+
 .. NOTE::
     The ``snb-run`` command has some calculation auto-handling functions built into it. Some of these
     are described in more detail on the `Tips & Tricks <https://shakenbreak.readthedocs
