@@ -255,3 +255,7 @@ running ``snb-run`` in directories for which you have already submitted jobs, to
         - If positive energies are encountered after the 5th ionic step, or errors associated with
           extreme forces (``EDDDAV``, ``ZHEGV``, ``CNORMN``, ``ZPOTRF``, ``ZTRTRI``, ``FEXC``) are
           detected, then ``snb-run`` will rename this folder to ``X_High_Energy`` and skip it.
+
+        - If the calculation has not made more than 1 ionic step, and this is detected to be the case for
+          multiple previous ``OUTCAR`` files (e.g. ``OUTCAR_12_10_01on21_06_23``), then ``snb-run`` will
+          print a warning, advising the user to manually check the origin of poor convergence in this case.
