@@ -244,7 +244,7 @@ def rattle(
     else:
         distance_matrix = structure.distance_matrix
 
-    sorted_distances = np.sort(distance_matrix[distance_matrix>0.8].flatten())
+    sorted_distances = np.sort(distance_matrix[distance_matrix > 0.8].flatten())
 
     if stdev is None:
         stdev = 0.1 * sorted_distances[0]
@@ -285,7 +285,7 @@ def rattle(
     except Exception as ex:
         if "attempts" in str(ex):
             for i in range(1, 10):  # reduce d_min in 10% increments
-                reduced_d_min = d_min * float(1 - (i/10))
+                reduced_d_min = d_min * float(1 - (i / 10))
                 try:
                     rattled_ase_struct = generate_mc_rattled_structures(
                         ase_struct,
@@ -607,7 +607,7 @@ def local_mc_rattle(
     else:
         distance_matrix = structure.distance_matrix
 
-    sorted_distances = np.sort(distance_matrix[distance_matrix>0.5].flatten())
+    sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
 
     if isinstance(site_index, int):
         atom_number = site_index - 1  # Align atom number with python 0-indexing
