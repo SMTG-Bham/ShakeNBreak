@@ -284,20 +284,28 @@ def rattle(
 
     except Exception as ex:
         if "attempts" in str(ex):
-            reduced_d_min = min(structure.distance_matrix[structure.distance_matrix>0.8]) + stdev
-            rattled_ase_struct = generate_mc_rattled_structures(
-                ase_struct,
-                n_configs=1,
-                rattle_std=stdev,
-                d_min=reduced_d_min,
-                n_iter=n_iter,
-                active_atoms=active_atoms,
-                nbr_cutoff=nbr_cutoff,
-                width=width,
-                max_attempts=7000,  # default is 5000
-                max_disp=max_disp,
-                seed=seed,
-            )[0]
+            for i in range(1, 10):  # reduce d_min in 10% increments
+                reduced_d_min = d_min * float(1 - (i/10))
+                try:
+                    rattled_ase_struct = generate_mc_rattled_structures(
+                        ase_struct,
+                        n_configs=1,
+                        rattle_std=stdev,
+                        d_min=reduced_d_min,
+                        n_iter=n_iter,
+                        active_atoms=active_atoms,
+                        nbr_cutoff=nbr_cutoff,
+                        width=width,
+                        max_attempts=7000,  # default is 5000
+                        max_disp=max_disp,
+                        seed=seed,
+                    )[0]
+                    break
+                except Exception as ex:
+                    if "attempts" in str(ex):
+                        continue
+                    else:
+                        raise ex
 
             if verbose:
                 warnings.warn(
