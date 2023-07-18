@@ -131,7 +131,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="23.06.23",
+    version="2.0.0",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -192,7 +192,7 @@ setup(
         "shakenbreak": ["shakenbreak/*"] + input_files + fonts,
     },
     include_package_data=True,
-    # Specify the custom install class
+    # Specify the custom installation class
     zip_safe=False,
     entry_points={
         "console_scripts": [
