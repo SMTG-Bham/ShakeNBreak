@@ -259,3 +259,10 @@ structure of defects in your material), `py-sc-fermi <https://py-sc-fermi.readth
     defects in CdTe:
     `ACS Energy Lett. 2021, 6, 4, 1392–1398 <https://doi.org/10.1021/acsenergylett.1c00380>`_ and
     `Faraday Discuss. 2022, 239, 339-356 <https://doi.org/10.1039/D2FD00043A>`_.
+
+In particular, symmetry-breaking as a result of structural reconstruction from the initial
+(``Unperturbed``) high-symmetry structure can result in an increase in configurational degeneracy for
+the defect, which should be accounted for when later computing concentrations and Fermi level position.
+These considerations, as well as the importance of metastability and temperature effects for the free
+energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review
+paper: `Imperfections are not 0 K: free energy of point defects in crystals, 10.48550/arXiv.2307.10451 <https://doi.org/10.48550/arXiv.2307.10451>`_.
