@@ -37,6 +37,34 @@ if [ ! -f "$job_filepath" ]; then
   job_in_cwd=false
 fi
 
+check_multiple_single_step_outcars() {
+    # Counter for files matching the condition
+    counter=0
+
+    # Iterate over all OUTCAR*on* files in the current directory
+    for file in OUTCAR*on*
+    do
+        # Check if file is a regular file
+        if [[ -f $file ]]; then
+            # Count 'entropy=' occurrences
+            count=$(grep -c 'entropy=' "$file")
+
+            # Check if count is less than or equal to 1
+            if [[ $count -le 1 ]]; then
+                ((counter++))  # increment counter
+            fi
+        fi
+    done
+
+    # Return 0 if multiple files matching the condition exist, else return 1
+    if [[ $counter -gt 1 ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 SnB_run_loop() {
   for i in ?(*Distortion*|*Unperturbed*|*attled*)/; do # for each distortion
     if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]; then
@@ -71,20 +99,23 @@ SnB_run_loop() {
           fi
         fi
 
-        init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
-        fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
-        energy_diff=$(echo "$init_energy - $fin_energy" | bc)
         num_energies=$(grep -c entropy= OUTCAR)
-        # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the initial energy
-        # then calculation is essentially converged, don't rerun
-        if ((num_energies > 50)) && (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
-          if [ "$verbose" = true ]; then
-            echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
+        if ((num_energies > 50)); then
+          init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
+          fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
+          energy_diff=$(echo "$init_energy - $fin_energy" | bc)
+
+          # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the
+          # initial energy then calculation is essentially converged, don't rerun
+          if (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
+            if [ "$verbose" = true ]; then
+              echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
+            fi
+            echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
+            # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
+            builtin cd .. || return
+            continue
           fi
-          echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
-          # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
-          builtin cd .. || return
-          continue
         fi
 
         # if electronic convergence is not being reached, change ALGO to All
@@ -95,9 +126,17 @@ SnB_run_loop() {
           fi
           sed -i 's/ALGO.*/ALGO = All/g' INCAR
         fi
+
+        # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR
+        if check_multiple_single_step_outcars && { [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] || [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null || [[ ! -f "CONTCAR" ]]; }; then
+            echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic "
+            echo "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
+        fi
+
         echo "${i%?} not (fully) relaxed, saving files and rerunning"
         bash "${DIR}"/save_vasp_files.sh
-        if [ -s CONTCAR ]; then # CONTCAR not empty (i.e. at least one ionic step made), cp to POSCAR
+
+        if [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -ge 9 ]]; then # CONTCAR exists and greater than 9 lines
           "cp" CONTCAR POSCAR
         fi
 

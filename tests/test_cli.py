@@ -1979,6 +1979,85 @@ Chosen VASP error message: {error_string}
         shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
         if_present_rm("Unperturbed/job_file")
 
+        # test warning with multiple single-step OUTCARs, and <=1 ionic step in previous calc
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        shutil.copyfile("Unperturbed/CONTCAR", "Unperturbed/POSCAR")
+        single_energy_outcar_string = """
+        energy  without entropy=     -1156.08478433  energy(sigma->0) =     -1156.08478433
+        """
+        shutil.move("Unperturbed/OUTCAR", "Unperturbed/OUTCAR_backup")
+        for i in range(3):
+            with open(f"Unperturbed/OUTCAR_on_{i}", "w") as fp:
+                fp.write(single_energy_outcar_string)
+        with open("Unperturbed/OUTCAR", "w") as fp:
+            fp.write(single_energy_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertNotIn("Unperturbed fully relaxed", out)
+        self.assertIn(
+            "Previous run for Unperturbed did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic",
+            out
+        )
+        self.assertIn(
+            "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!",
+            out
+        )
+        self.assertIn("Running job for Unperturbed", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn(
+            "Positive energies or forces error encountered for Unperturbed.", out
+        )
+        self.assertTrue(os.path.exists("Unperturbed"))  # not renamed
+        shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
+        if_present_rm("Unperturbed/job_file")
+        if_present_rm("Unperturbed/POSCAR")
+        for i in os.listdir("Unperturbed"):
+            if "OUTCAR_on_" in i:
+                os.remove(f"Unperturbed/{i}")
+
+        # test no warning with multiple single-step OUTCARs **but CONTCAR different from POSCAR**
+        os.chdir(self.VASP_TIO2_DATA_DIR)
+        with open("job_file", "w") as fp:
+            fp.write("Test pop")
+        shutil.copyfile("Bond_Distortion_-40.0%/CONTCAR", "Unperturbed/POSCAR")
+        single_energy_outcar_string = """
+        energy  without entropy=     -1156.08478433  energy(sigma->0) =     -1156.08478433
+        """
+        shutil.move("Unperturbed/OUTCAR", "Unperturbed/OUTCAR_backup")
+        for i in range(3):
+            with open(f"Unperturbed/OUTCAR_on_{i}", "w") as fp:
+                fp.write(single_energy_outcar_string)
+        with open("Unperturbed/OUTCAR", "w") as fp:
+            fp.write(single_energy_outcar_string)
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
+        self.assertNotIn("Unperturbed fully relaxed", out)
+        self.assertNotIn("Previous run for", out)
+        self.assertIn("Running job for Unperturbed", out)
+        self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
+        self.assertNotIn(
+            "Positive energies or forces error encountered for Unperturbed.", out
+        )
+        self.assertTrue(os.path.exists("Unperturbed"))  # not renamed
+        shutil.move("Unperturbed/OUTCAR_backup", "Unperturbed/OUTCAR")
+        if_present_rm("Unperturbed/job_file")
+        if_present_rm("Unperturbed/POSCAR")
+        for i in os.listdir("Unperturbed"):
+            if "on" in i:
+                os.remove(f"Unperturbed/{i}")
+
         # test changing ALGO to All with poor electronic convergence
         poor_electronic_convergence_outcar_string = """
                 energy  without entropy=     1156.08478433  energy(sigma->0) =     1156.08478433
@@ -2064,7 +2143,7 @@ Chosen VASP error message: {error_string}
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # ISPIN not changed in INCAR
         self.assertEqual(
-            len(os.listdir(f"Unperturbed")), 4
+            len(os.listdir("Unperturbed")), 4
         )  # no new files (Unperturbed also has OUTCAR_orig)
 
         # now trick snb-run into thinking calc not converged, so we test the rerun behaviour:

@@ -235,3 +235,34 @@ This command will generate a ``Groundstate`` directory within each defect folder
 .. TIP::
     See ``snb-groundstate -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
     for details on the options available for this command.
+
+Further Defect Analysis
+-------------------------
+Once the ground state (and metastable) defect structures have been identified, we will want to compute
+their formation energies using our final fully-converged calculation parameters (i.e. plane-wave cutoff
+and k-point sampling). This can be done using `doped <https://github.com/SMTG-UCL/doped>`_, manually (not
+recommended) or using the other defect codes listed on the
+`Code Compatibility <https://shakenbreak.readthedocs.io/en/latest/Code_Compatibility.html>`_ page.
+
+As shown in the `doped <https://github.com/SMTG-UCL/doped>`_ examples and docs, you may want to further
+analyse the behaviour and impact on material properties of your defects using advanced defect analysis
+codes such as `easyunfold <https://smtg-ucl.github.io/easyunfold/>`_ (to analyse the electronic
+structure of defects in your material), `py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_
+(to analyse defect concentrations, doping and Fermi level tuning), or
+`nonrad <https://nonrad.readthedocs.io/en/latest/>`_/`CarrierCapture.jl <https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
+(to analyse non-radiative electron-hole recombination at defects).
+
+.. NOTE::
+    Metastable structures can also be important to defect behaviour! This is particularly the case for
+    defect/ion migration, electron-hole recombination at defects and non-equilibrium situations such as
+    under illumination or ion bombardment. For example, see these papers on the impact of metastable
+    defects in CdTe:
+    `ACS Energy Lett. 2021, 6, 4, 1392–1398 <https://doi.org/10.1021/acsenergylett.1c00380>`_ and
+    `Faraday Discuss. 2022, 239, 339-356 <https://doi.org/10.1039/D2FD00043A>`_.
+
+In particular, symmetry-breaking as a result of structural reconstruction from the initial
+(``Unperturbed``) high-symmetry structure can result in an increase in configurational degeneracy for
+the defect, which should be accounted for when later computing concentrations and Fermi level position.
+These considerations, as well as the importance of metastability and temperature effects for the free
+energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review
+paper: `Imperfections are not 0 K: free energy of point defects in crystals, 10.48550/arXiv.2307.10451 <https://doi.org/10.48550/arXiv.2307.10451>`_.

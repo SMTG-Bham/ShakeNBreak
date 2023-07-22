@@ -16,9 +16,3 @@ click
 shakenbreak
 doped
 importlib-metadata
-
-# Optional requirements
-easyunfold
-py-sc-fermi
-nonrad
-CarrierCapture.jl

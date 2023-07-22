@@ -808,6 +808,9 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     Loop through distortion subfolders for a defect, when run within a defect folder, or for all
     defect folders in the current (top-level) directory if the --all (-a) flag is set, and submit
     jobs to the HPC scheduler.
+    As well as submitting the initial geometry optimisations, can automatically continue and
+    resubmit calculations that have not yet converged (and handle those which have failed),
+    see: https://shakenbreak.readthedocs.io/en/latest/Generation.html#submitting-the-geometry-optimisations
     """
     optional_flags = "-"
     if all:
