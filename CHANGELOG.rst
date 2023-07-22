@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-v2.0.0
+v3.0.0
 ----------
 - Switch to semantic versioning
 - Update rattling functions to handle primitive bulk materials as well as supercells.
