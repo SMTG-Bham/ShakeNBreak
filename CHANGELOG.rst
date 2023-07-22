@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+v2.0.0
+----------
+- Switch to semantic versioning
+- Update rattling functions to handle primitive bulk materials as well as supercells.
+- Add check to `snb-run` if there are multiple `OUTCAR`s present with one or less ionic steps, and if
+  this is also the case for the current run -> warn the user.
+- Small fixes, formatting and docs updates.
+
 v23.06.23
 ----------
 - Add `snb-mag` function, and automatically check the magnetisation from `ISPIN = 2` `OUTCAR` files when continuing

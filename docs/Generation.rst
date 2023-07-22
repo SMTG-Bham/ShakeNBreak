@@ -221,6 +221,11 @@ To submit a single defect, we can simply run the command :code:`snb-run` within 
 
     $ snb-run
 
+``snb-run`` can be used to submit the initial geometry optimisation calculations, as well as automatically continuing
+and resubmitting calculations that have not yet converged (and handle calculations which have failed) as discussed in
+the note below, however it has no knowledge of which jobs are currently in the HPC scheduler queue, so you should avoid
+running ``snb-run`` in directories for which you have already submitted jobs, to avoid job duplication.
+
 .. NOTE::
     The ``snb-run`` command has some calculation auto-handling functions built into it. Some of these
     are described in more detail on the `Tips & Tricks <https://shakenbreak.readthedocs
@@ -250,3 +255,7 @@ To submit a single defect, we can simply run the command :code:`snb-run` within 
         - If positive energies are encountered after the 5th ionic step, or errors associated with
           extreme forces (``EDDDAV``, ``ZHEGV``, ``CNORMN``, ``ZPOTRF``, ``ZTRTRI``, ``FEXC``) are
           detected, then ``snb-run`` will rename this folder to ``X_High_Energy`` and skip it.
+
+        - If the calculation has not made more than 1 ionic step, and this is detected to be the case for
+          multiple previous ``OUTCAR`` files (e.g. ``OUTCAR_12_10_01on21_06_23``), then ``snb-run`` will
+          print a warning, advising the user to manually check the origin of poor convergence in this case.
