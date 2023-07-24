@@ -218,7 +218,6 @@ def _format_defect_name(
     recognised_post_interstitial_strings = sorted(
         [
             "_i",  # but not '_I' as could be iodine
-            "i",  # but not 'I' as could be iodine
             "_int",
             "_Int",
             "int",
@@ -496,12 +495,21 @@ def _format_defect_name(
                 if dummy_h.is_valid_symbol(character)
             ]
             if len(possible_one_character_elements) > 0:
+                # in this case, we don't know the order of the 1-character vs 2-character elements in
+                # the name, so we try both orderings:
                 defect_name = _defect_name_from_matching_elements(
-                    possible_one_character_elements + possible_two_character_elements,
+                    possible_two_character_elements + possible_one_character_elements,
                     pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
                     # pre_charge_name for matching defect format
                     include_site_num_in_name,
                 )
+                if defect_name is None:
+                    defect_name = _defect_name_from_matching_elements(
+                        possible_one_character_elements + possible_two_character_elements,
+                        pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
+                        # pre_charge_name for matching defect format
+                        include_site_num_in_name,
+                    )
 
     if defect_name is None:
         # try single-character element match
