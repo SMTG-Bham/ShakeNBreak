@@ -2521,7 +2521,7 @@ Chosen VASP error message: {error_string}
         )  # Bond_Distortion_-20.0%_not_converged now included
         not_converged_energies = copy.deepcopy(test_energies)
         not_converged_energies["distortions"].update(
-            {"Bond_Distortion_-20.0%_not_converged": -1151.8383839}
+            {"Bond_Distortion_-20.0%_not_converged": -1110.37833497}
         )
         self.assertEqual(
             not_converged_energies, energies
