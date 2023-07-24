@@ -505,7 +505,8 @@ def _format_defect_name(
                 )
                 if defect_name is None:
                     defect_name = _defect_name_from_matching_elements(
-                        possible_one_character_elements + possible_two_character_elements,
+                        possible_one_character_elements
+                        + possible_two_character_elements,
                         pre_charge_name,  # trimmed_pre_charge_name name for finding elements,
                         # pre_charge_name for matching defect format
                         include_site_num_in_name,
@@ -721,7 +722,9 @@ def _remove_high_energy_points(
             > max_energy_above_unperturbed
         ):
             energies_dict["distortions"].pop(key)
-            if disp_dict and key in disp_dict:  # only exists if user selected `add_colorbar=True`
+            if (
+                disp_dict and key in disp_dict
+            ):  # only exists if user selected `add_colorbar=True`
                 disp_dict.pop(key)
     return energies_dict, disp_dict
 
@@ -1811,7 +1814,11 @@ def plot_colorbar(
                         edgecolors="k",
                         ls="-",
                         s=50,
-                        marker=["s", "v", "<", ">", "^", "p", "X"][j],
+                        marker=(
+                                ["s", "v", "<", ">", "^", "p", "X"] * 3
+                        )[  # repeat markers in case many imported charge states
+                            j
+                        ],  # different markers for different charge states
                         zorder=10,  # make sure it's on top of the other points
                         cmap=colormap,
                         norm=norm,
@@ -2140,7 +2147,9 @@ def plot_datasets(
                         ls="-",
                         s=50,
                         zorder=10,  # make sure it's on top of the other lines
-                        marker=["s", "v", "<", ">", "^", "p", "X"][
+                        marker=(
+                            ["s", "v", "<", ">", "^", "p", "X"] * 3
+                        )[  # repeat markers in case many imported charge states
                             j
                         ],  # different markers for different charge states
                         alpha=1,
