@@ -1794,7 +1794,7 @@ def plot_colorbar(
             # Datapoints from other charge states
             if imported_indices:
                 other_charges = len(
-                    set(
+                    list(
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
                         for i in imported_indices.keys()
                     )
