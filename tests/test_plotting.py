@@ -87,6 +87,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             if file.endswith(".svg") or file.endswith(".png"):
                 os.remove(f"{self.VASP_CDTE_DATA_DIR}/{file}")
         if_present_rm("Int_Se_1_6.png")
+        if_present_rm("as_2_O_on_I_1.png")
         if_present_rm("vac_1_Cd_0.png")
 
     def test_verify_data_directories_exist(self):
@@ -908,6 +909,48 @@ class PlottingDefectsTestCase(unittest.TestCase):
             save_plot=True,
         )
         self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "Int_Se_1_6.png")))
+        return fig
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="as_2_O_onI_1.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_with_multiple_imported_distortions_from_same_charge_state(self):
+        """Test plot_datasets() where there are multiple imported distortions from the same charge state"""
+        energies_dict = {
+            "Unperturbed": -623.27865201,
+            "distortions": {
+                -0.5: -623.32030465,
+                -0.4: -623.57455267,
+                -0.3: -623.57592574,
+                -0.2: -623.57884127,
+                -0.1: -623.32750209,
+                0.0: -623.31491063,
+                0.1: -623.29844552,
+                0.2: -623.3624884,
+                0.3: -623.30635978,
+                0.4: -623.33427719,
+                0.5: -623.33924517,
+                0.6: -621.33173607,
+                "-10.0%_from_2": -623.54367663,
+                "-20.0%_from_2": -623.59064927,
+                "-30.0%_from_0": -623.49069487,
+                "-30.0%_from_2": -623.64233181,
+                "10.0%_from_2": -624.66110949,
+                "20.0%_from_2": -624.65991904,
+                "30.0%_from_2": -624.66113207,
+            },
+        }
+
+        fig = plotting.plot_datasets(
+            datasets=[energies_dict],
+            defect_species="as_2_O_on_I_1",
+            save_format="png",
+            save_plot=True,
+        )
+        self.assertTrue(os.path.exists(os.path.join(os.getcwd(), "as_2_O_on_I_1.png")))
         return fig
 
     @pytest.mark.mpl_image_compare(
