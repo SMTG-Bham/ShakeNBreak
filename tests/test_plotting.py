@@ -913,7 +913,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
-        filename="as_2_O_onI_1.png",
+        filename="as_2_O_on_I_1.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
     )
