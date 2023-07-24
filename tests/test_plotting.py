@@ -469,6 +469,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
             "Te_Cd_s32c_2": "Te$_{Cd}^{+2}$",
             "Cd_Te_s0_2": "Cd$_{Te}^{+2}$",
             "Cd_Te_s0a_2": "Cd$_{Te}^{+2}$",
+            "as_2_Bi_on_O_-2": "Bi$_{O}^{-2}$",
+            "S_Se_0": "S$_{Se}^{0}$",
+            "Se_S_0": "Se$_{S}^{0}$",
+            "Si_S_0": "Si$_{S}^{0}$",
+            "S_Si_0": "S$_{Si}^{0}$",
         }
 
         for defect_species, expected_name in defect_species_name_dict.items():
