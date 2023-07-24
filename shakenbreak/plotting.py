@@ -713,7 +713,7 @@ def _remove_high_energy_points(
             > max_energy_above_unperturbed
         ):
             energies_dict["distortions"].pop(key)
-            if disp_dict:  # only exists if user selected `add_colorbar=True`
+            if disp_dict and key in disp_dict:  # only exists if user selected `add_colorbar=True`
                 disp_dict.pop(key)
     return energies_dict, disp_dict
 
