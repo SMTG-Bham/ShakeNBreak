@@ -1346,7 +1346,7 @@ def plot_all_defects(
                         FileNotFoundError
                     ):  # distortion_metadata.json not found in this folder
                         pass
-                if distortion_metadata and type(distortion_metadata) == dict:
+                if distortion_metadata and isinstance(distortion_metadata, dict):
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
                     )
@@ -1815,7 +1815,7 @@ def plot_colorbar(
                         ls="-",
                         s=50,
                         marker=(
-                                ["s", "v", "<", ">", "^", "p", "X"] * 3
+                            ["s", "v", "<", ">", "^", "p", "X"] * 3
                         )[  # repeat markers in case many imported charge states
                             j
                         ],  # different markers for different charge states

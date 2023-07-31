@@ -112,7 +112,9 @@ def parse_energies(
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
         if outcar:  # regrep faster than using Outcar/vasprun class
             try:
-                energy = _match(outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)")[0][0][
+                energy = _match(
+                    outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
+                )[0][0][
                     0
                 ]  # Energy of first match
                 converged = _match(
