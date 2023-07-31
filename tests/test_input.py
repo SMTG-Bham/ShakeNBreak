@@ -12,7 +12,7 @@ from ase.calculators.aims import Aims
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
-from pymatgen.core.periodic_table import Species, DummySpecies
+from pymatgen.core.periodic_table import DummySpecies, Species
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
