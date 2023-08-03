@@ -167,7 +167,7 @@ setup(
         "ase",
         "pandas>=1.1.0",
         "seaborn",
-        "hiphive",
+        "hiphive>=1.0",  # nbr_cutoff not defined in previous versions of mc_rattle
         "monty",
         "click>8.0",
         "importlib_metadata",
