@@ -1511,19 +1511,19 @@ def mag(outcar, threshold, verbose):
         outcar_obj = Outcar(outcar)
         abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
 
+        if (
+            max(abs_mag_values) < threshold  # no one atomic moment greater than threshold
+            and sum(abs_mag_values) < threshold * 10  # total moment less than 10x threshold
+        ):
+            if verbose:
+                print(f"Magnetisation is below threshold (<{threshold} μB/atom)")
+            sys.exit(0)
+        else:
+            if verbose:
+                print(f"Magnetisation is above threshold (>{threshold} μB/atom)")
+            sys.exit(1)
+
     except Exception:
         if verbose:
             print(f"Could not read magnetisation from OUTCAR file at {outcar}")
-        sys.exit(1)
-
-    if (
-        max(abs_mag_values) < threshold  # no one atomic moment greater than threshold
-        and sum(abs_mag_values) < threshold * 10  # total moment less than 10x threshold
-    ):
-        if verbose:
-            print(f"Magnetisation is below threshold (<{threshold} μB/atom)")
-        sys.exit(0)
-    else:
-        if verbose:
-            print(f"Magnetisation is above threshold (>{threshold} μB/atom)")
         sys.exit(1)
