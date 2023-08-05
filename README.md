@@ -126,6 +126,7 @@ Automatic testing is run on the master and develop branches using Github Actions
 
 ## Studies using `ShakeNBreak`
 We'll add papers that use `ShakeNBreak` to this list as they come out!
+- J. Willis, K. B. Spooner, D. O. Scanlon. [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb) 2023
 - A. T. J. Nicolson et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA02429F) 2023
 - X. Wang et al. [_arXiv_](https://arxiv.org/abs/2302.04901) 2023
 - J. Cen et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA00532A) 2023
