@@ -1203,12 +1203,14 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         # Check structure in the input file
-        atoms = ase.io.espresso.read_espresso_in(
+        with open(
             os.path.join(
                 self.ESPRESSO_DATA_DIR,
                 "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/espresso.pwi",
-            )
-        )
+            ),
+            "r",
+        ) as f:
+            atoms = ase.io.espresso.read_espresso_in(f)
         aaa = AseAtomsAdaptor()
         struct = aaa.get_structure(atoms)
         self.assertTrue(
