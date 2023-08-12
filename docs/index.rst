@@ -12,7 +12,7 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg
+.. image:: https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda
  :target: https://anaconda.org/conda-forge/shakenbreak
 
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
