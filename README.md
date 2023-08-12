@@ -2,7 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://shakenbreak.readthedocs.io/en/latest/)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
-[![Conda Version](https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg)](https://anaconda.org/conda-forge/shakenbreak)
+[![Conda](https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda)](https://anaconda.org/conda-forge/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 [![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
