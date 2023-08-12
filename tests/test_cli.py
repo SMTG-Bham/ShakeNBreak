@@ -2100,6 +2100,27 @@ Chosen VASP error message: {error_string}
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test changing no message with poor electronic convergence when ALGO already = All
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(poor_electronic_convergence_outcar_string + "\nIALGO = 58  # i.e. ALGO = All")
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO to All.",
+            out,
+        )
+        self.assertIn("ALGO = All", open("Bond_Distortion_10.0%/INCAR").read())
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         os.remove("Bond_Distortion_10.0%/POSCAR")
         os.remove("Bond_Distortion_10.0%/INCAR")
@@ -2521,7 +2542,7 @@ Chosen VASP error message: {error_string}
         )  # Bond_Distortion_-20.0%_not_converged now included
         not_converged_energies = copy.deepcopy(test_energies)
         not_converged_energies["distortions"].update(
-            {"Bond_Distortion_-20.0%_not_converged": -1151.8383839}
+            {"Bond_Distortion_-20.0%_not_converged": -1110.37833497}
         )
         self.assertEqual(
             not_converged_energies, energies

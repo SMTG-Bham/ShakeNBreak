@@ -270,7 +270,7 @@ def rattle(
     try:
         rattled_ase_struct = generate_mc_rattled_structures(
             ase_struct,
-            n_configs=1,
+            1,  # n_configs in hiphive <= 1.1, n_structures in hiphive >= 1.2
             rattle_std=stdev,
             d_min=d_min,
             n_iter=n_iter,
@@ -289,7 +289,7 @@ def rattle(
                 try:
                     rattled_ase_struct = generate_mc_rattled_structures(
                         ase_struct,
-                        n_configs=1,
+                        1,  # n_configs in hiphive <= 1.1, n_structures in hiphive >= 1.2
                         rattle_std=stdev,
                         d_min=reduced_d_min,
                         n_iter=n_iter,

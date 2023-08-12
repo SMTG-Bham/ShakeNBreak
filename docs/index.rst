@@ -213,6 +213,7 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
+- J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
 - X\. Wang et al. `arXiv`_ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
@@ -230,7 +231,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Kumagai collab paper
 .. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
-.. Joe CuI preprint out soon
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
@@ -268,7 +268,7 @@ You may also find this Preview paper useful, which discusses the general problem
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
