@@ -131,7 +131,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.0.0",
+    version="3.1.0",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -153,21 +153,22 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
         "Topic :: Scientific/Engineering :: Chemistry",
         "Topic :: Scientific/Engineering :: Physics",
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.8, <3.11",
+    python_requires=">=3.8",
     install_requires=[
-        "numpy<1.24,>=1.21.2",
+        "numpy", #>=1.21.2" needed for numpy.typing.NDArray?
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
         "ase",
         "pandas>=1.1.0",
         "seaborn",
-        "hiphive",
+        "hiphive>=1.0",  # nbr_cutoff not defined in previous versions of mc_rattle
         "monty",
         "click>8.0",
         "importlib_metadata",

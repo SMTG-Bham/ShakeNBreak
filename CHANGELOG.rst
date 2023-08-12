@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v3.1.0
+----------
+- Update dependencies, as `hiphive=1.2` has been released, making `ShakeNBreak` compatible with
+  `python=3.11`🎉
+
 v3.0.0
 ----------
 - Switch to semantic versioning
