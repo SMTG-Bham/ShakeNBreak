@@ -161,7 +161,7 @@ You may also find this Preview paper useful, which discusses the general problem
 `BibTeX` entries for these papers are provided in the [`CITATIONS.md`](CITATIONS.md) file.
 
 ## Requirements
-`ShakeNBreak` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
+`ShakeNBreak` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
 * [Pymatgen](https://pymatgen.org/)
 * [Ase](https://wiki.fysik.dtu.dk/ase/)
 * [Hiphive](https://hiphive.materialsmodeling.org/)

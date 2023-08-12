@@ -268,7 +268,7 @@ You may also find this Preview paper useful, which discusses the general problem
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
