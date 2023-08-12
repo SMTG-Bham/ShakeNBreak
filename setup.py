@@ -160,7 +160,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.8, <3.11",
     install_requires=[
-        "numpy<1.24,>=1.21.2",
+        "numpy>=1.21.2,<1.26",
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",
