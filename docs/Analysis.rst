@@ -265,4 +265,4 @@ In particular, symmetry-breaking as a result of structural reconstruction from t
 the defect, which should be accounted for when later computing concentrations and Fermi level position.
 These considerations, as well as the importance of metastability and temperature effects for the free
 energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review
-paper: `Imperfections are not 0 K: free energy of point defects in crystals, 10.48550/arXiv.2307.10451 <https://doi.org/10.48550/arXiv.2307.10451>`_.
+paper: `Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`_.
