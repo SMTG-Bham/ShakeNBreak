@@ -1,24 +1,25 @@
 '# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM': ''
 '# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''
 '# KPAR': '# No KPAR, only one kpoint'
-ALGO: Normal
+ALGO: "Normal  # Change to All if ZHEGV, FEXCP/F or ZBRENT errors encountered (done automatically by snb-run)"
 EDIFFG: -0.01
 ENCUT: 300
-HFSCREEN: 0.2
-IBRION: '2 # While often slower than ''1'' (RMM-DIIS), this is more stable and reliable,
-    and vasp_gam relaxations are typically cheap enough to justify it'
+HFSCREEN: 0.208  # correct HSE screening parameter; see https://aip.scitation.org/doi/10.1063/1.2404663
+# Note this 👆 differs from the Materials Project MPHSERelaxSet default of 0.2! (Will cause systematic
+# energy shifts in HSE supercell calculations.)
+IBRION: '2  # Typically more stable / reliable than "1" (RMM-DIIS), but change if ionic convergence is poor (done automatically by snb-run)'
 ISIF: 2
 ISMEAR: 0
-ISPIN: '2 # Spin polarisation likely for defects'
-ISYM: '0 # Symmetry breaking extremely likely for defects'
+ISPIN: '2  # Spin polarisation likely for defects'
+ISYM: '0  # Symmetry breaking extremely likely for defects'
 LASPH: true
 LCHARG: false
 LHFCALC: true
-LORBIT: 14
+LORBIT: 11  # lm-decomposed orbital projections; useful for DOS analysis (e.g. sumo-dosplot)
 LREAL: Auto
 LWAVE: false
-NCORE: 12
-NEDOS: 2000
+NCORE: 16
+NEDOS: 2000  # dense energy mesh output in OUTCAR; useful for DOS analysis (e.g. sumo-dosplot)
 NELM: 40
 NSW: 300
 PREC: Accurate
