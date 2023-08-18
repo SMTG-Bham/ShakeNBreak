@@ -695,7 +695,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
-        mock_print.assert_called_once_with(f"Plot saved to ./vac_1_Cd_0.svg")
+        mock_print.assert_called_once_with("Plot saved to ./vac_1_Cd_0.svg")
         if_present_rm(f"./{defect_name}.svg")
 
         # Saving to defect_dir subfolder in output_path where output_path is cwd
@@ -732,7 +732,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )  # in case delay between writing and testing plot generation
 
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
-        mock_print.assert_any_call(f"Plot saved to ./vac_1_Cd_0.png")
+        mock_print.assert_any_call("Plot saved to ./vac_1_Cd_0.png")
         self.assertTrue(
             os.path.exists(f"./{defect_name}_{current_datetime}.png")
             or os.path.exists(f"./{defect_name}_{current_datetime_minus1min}.png")
@@ -745,10 +745,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
             f"old plot to {defect_name}_{current_datetime_minus1min}.png."
             in mock_print.call_args_list[0][0][0]
         )
-        if_present_rm(f"./{defect_name}.png")
-        if_present_rm(f"./{defect_name}_{current_datetime}.png")
-        if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.png")
-
+        self._remove_current_and_saved_plots(
+            defect_name, current_datetime, current_datetime_minus1min
+        )
         # test no print statements with verbose = False
         plotting._save_plot(
             fig=fig, defect_name=defect_name, output_path=".", save_format="png"
@@ -764,6 +763,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         mock_print.assert_not_called()
+        self._remove_current_and_saved_plots(
+            defect_name, current_datetime, current_datetime_minus1min
+        )
+
+    def _remove_current_and_saved_plots(self, defect_name, current_datetime, current_datetime_minus1min):
         if_present_rm(f"./{defect_name}.png")
         if_present_rm(f"./{defect_name}_{current_datetime}.png")
         if_present_rm(f"./{defect_name}_{current_datetime_minus1min}.png")
@@ -776,14 +780,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_colorbar_max_distance(self):
         """Test plot_colorbar() function with metric=max_dist (default)"""
-        fig = plotting.plot_colorbar(
+        return plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
             defect_species="vac_1_Cd_0",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -793,14 +796,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_colorbar_fake_defect_name(self):
         """Test plot_colorbar() function with wrong defect name"""
-        fig = plotting.plot_colorbar(
+        return plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
             defect_species="sub_1_In_on_Cd_1",
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -810,7 +812,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_colorbar_displacement(self):
         """Test plot_colorbar() function with metric=disp and num_nearest_neighbours=None"""
-        fig = plotting.plot_colorbar(
+        return plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
             defect_species="vac_1_Cd_0",
@@ -818,7 +820,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             neighbour_atom="Te",
             metric="disp",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -829,7 +830,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def test_plot_colorbar_SnB_naming_w_site_num(self):
         """Test plot_colorbar() function with SnB defect naming and
         `include_site_num_in_name=True`"""
-        fig = plotting.plot_colorbar(
+        return plotting.plot_colorbar(
             energies_dict=self.V_Cd_energies_dict,
             disp_dict=self.V_Cd_displacement_dict,
             defect_species="Cd_Te_s32c_2",
@@ -838,7 +839,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             neighbour_atom="Te",
             metric="disp",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1015,7 +1015,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_datasets_not_enough_markers(self):
         """Test plot_datasets() function when user does not provide enough markers and linestyles"""
-        fig = plotting.plot_datasets(
+        return plotting.plot_datasets(
             datasets=[self.V_O_energies_dict_fm, self.V_O_energies_dict_afm],
             dataset_labels=["FM", "AFM"],
             defect_species="vac_1_Cd_0",
@@ -1027,7 +1027,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 ":",
             ],
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1038,7 +1037,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def test_plot_datasets_from_other_charge_states(self):
         """Test plot_datasets() function when energy lowering distortions from other
         charge states have been tried"""
-        fig = plotting.plot_datasets(
+        return plotting.plot_datasets(
             datasets=[
                 self.V_Cd_energies_dict_from_other_charge_states,
             ],
@@ -1047,7 +1046,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1057,14 +1055,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_datasets_only_rattled(self):
         """Test plot_datasets() function when the only distortion is 'Rattled'"""
-        fig = plotting.plot_datasets(
+        return plotting.plot_datasets(
             datasets=[
                 self.V_Cd_m2_energies_dict,
             ],
             dataset_labels=["SnB: 2 Te"],
             defect_species="vac_1_Cd_0",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1075,14 +1072,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
     def test_plot_datasets_rattled_and_dist_from_other_chargestates(self):
         """Test plot_datasets() function when the distortion is "Rattled"
         and distortions from other charge states have been tried"""
-        fig = plotting.plot_datasets(
+        return plotting.plot_datasets(
             datasets=[
                 self.V_Cd_m2_energies_dict_from_other_charge_states,
             ],
             dataset_labels=["SnB: 2 Te"],
             defect_species="vac_1_Cd_0",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1099,12 +1095,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
         ]
         datasets[0]["distortions"].pop("-52.5%_from_0")
         datasets[0]["distortions"].update({"Rattled_from_0": -205.92311458})
-        fig = plotting.plot_datasets(
+        return plotting.plot_datasets(
             datasets=datasets,
             dataset_labels=["SnB: 2 Te"],
             defect_species="vac_1_Cd_0",
         )
-        return fig
 
     def test_plot_datasets_value_error(self):
         """Test plot_datasets() function when user provides non-matching `datasets` and
@@ -1158,7 +1153,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_defect_add_colorbar(self):
         """Test plot_defect() function when add_colorbar = True"""
-        fig = plotting.plot_defect(
+        return plotting.plot_defect(
             output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
@@ -1166,7 +1161,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1176,7 +1170,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_defect_without_colorbar(self):
         """Test plot_defect() function when add_colorbar = False"""
-        fig = plotting.plot_defect(
+        return plotting.plot_defect(
             output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
@@ -1184,7 +1178,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1208,12 +1201,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         self.assertTrue(
             any(
-                [
-                    f"Cannot add colorbar to plot for vac_1_Cd_no_charge as"
-                    f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_no_charge cannot be found."
-                    in str(warning.message)
-                    for warning in w
-                ]
+                f"Cannot add colorbar to plot for vac_1_Cd_no_charge as"
+                f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_no_charge cannot be found."
+                in str(warning.message)
+                for warning in w
             )
         )
         return fig
@@ -1226,7 +1217,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_defect_include_site_num_in_name(self):
         """Test plot_defect() function when include_site_number_in_name = True"""
-        fig = plotting.plot_defect(
+        return plotting.plot_defect(
             output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
@@ -1236,7 +1227,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             include_site_num_in_name=True,
             save_plot=False,
         )
-        return fig
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
@@ -1246,7 +1236,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     )
     def test_plot_defect_without_title_units_in_meV(self):
         """Test plot_defect() function when add_title = False and units = 'meV'"""
-        fig = plotting.plot_defect(
+        return plotting.plot_defect(
             output_path=self.VASP_CDTE_DATA_DIR,
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
@@ -1256,7 +1246,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
             add_title=False,
             units="meV",
         )
-        return fig
 
     # Most keywords of `plot_all_defects` have already been tested by tests of
     # `plot_defect`, `plot_datasets` and `plot_colorbar`. Now we test:
