@@ -1921,7 +1921,19 @@ class Distortions:
                             "Structures using `Distortions.from_structures()`"
                         )
 
-                self.defects_dict = defects  # {"defect name": [DefectEntry, ...]}
+                self.defects_dict = (
+                    defect_entries  # {"defect name": [DefectEntry, ...]}
+                )
+
+        elif isinstance(defect_entries, DefectsGenerator):
+            self.defects_dict = {
+                name.rsplit("_", 1)[0]: [  # name without charge
+                    defect_entry
+                    for defect_entry in defect_entries.defect_entries.values()
+                    if defect_entry.name.rsplit("_", 1)[0] == name.rsplit("_", 1)[0]
+                ]
+                for name in defect_entries
+            }
 
         else:
             raise TypeError(
