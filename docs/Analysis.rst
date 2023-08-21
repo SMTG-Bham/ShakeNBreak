@@ -18,7 +18,7 @@ Alternatively, we can run from a different directory and specify the defect to p
 
 .. code:: bash
 
-    $ snb-parse --defect v_Cd_s0_0 --path defects_folder --code FHI-aims
+    $ snb-parse --defect v_Cd_0 --path defects_folder --code FHI-aims
 
 Where ``defects_folder`` is the path to the top level directory containing the defect folder, and is only required if
 different from the current directory.
@@ -32,7 +32,7 @@ in a given/current directory using the ``-a``/``--all`` flag:
 
 This generates a ``yaml`` file for each defect, mapping each distortion to the
 final energy of the relaxed structures (in eV). These files are saved to the
-corresponding defect directory (e.g. ``defects_folder/v_Cd_s0_0/v_Cd_s0_0.yaml``).
+corresponding defect directory (e.g. ``defects_folder/v_Cd_0/v_Cd_0.yaml``).
 
 .. code:: yaml
 
@@ -61,7 +61,7 @@ was used (if not :code:`VASP`) and which reference structure to use (default = `
 
 .. code:: bash
 
-    $ snb-analyse --defect v_Cd_s0_0 --code FHI-aims --path defects_folder --ref_struct -0.4 --verbose
+    $ snb-analyse --defect v_Cd_0 --code FHI-aims --path defects_folder --ref_struct -0.4 --verbose
 
 Again if we want to analyse the results for **all** defects present in a given/current directory, we can use the
 ``-a``/``--all`` flag:
@@ -90,7 +90,7 @@ the defect directory:
 
 which will generate a figure like the one below:
 
-.. image:: ./v_Cd_s0_0.svg
+.. image:: ./v_Cd_0.svg
     :width: 400px
 
 ..
@@ -103,7 +103,7 @@ structures, using the ``-cb``/``--colorbar`` flag:
 
     $ snb-plot -cb
 
-.. image:: ./v_Cd_s0_0_colorbar.svg
+.. image:: ./v_Cd_0_colorbar.svg
     :width: 450px
 
 ..
@@ -114,7 +114,7 @@ was used (if not :code:`VASP`) and other options (what ``metric`` to use for col
 
 .. code:: bash
 
-    $ snb-plot --defect v_Cd_s0_0 --code FHI-aims --path defects_folder --colorbar -0.4 --metric disp --units meV --verbose
+    $ snb-plot --defect v_Cd_0 --code FHI-aims --path defects_folder --colorbar -0.4 --metric disp --units meV --verbose
 
 Again if we want to plot the results for **all** defects present in a given/current directory, we can use the
 ``-a``/``--all`` flag:
@@ -143,7 +143,7 @@ For example, if we have the following directory structure
 .. code:: bash
 
     ./
-    |--- v_Cd_s0_0/ <-- Neutral Cd vacancy
+    |--- v_Cd_0/ <-- Neutral Cd vacancy
     |       |--- Unperturbed
     |       |
     |       |--- Bond_Distortion_-30.0% <-- Favourable distortion
@@ -151,7 +151,7 @@ For example, if we have the following directory structure
     |       |--- Bond_Distortion_30.0%
     |       | ...
     |
-    |--- v_Cd_s0_-1/ <-- Negatively charged Cd vacancy
+    |--- v_Cd_-1/ <-- Negatively charged Cd vacancy
             |--- Unperturbed
             | ...
             |--- Bond_Distortion_50% <-- Favourable distortion
@@ -171,7 +171,7 @@ for the code specified with the flag ``--code`` (default = :code:`VASP`).
 .. code:: bash
 
     ./
-    |--- v_Cd_s0_0/
+    |--- v_Cd_0/
     |       |--- Unperturbed
     |       |
     |       |--- Bond_Distortion_-30.0% <-- Favourable distortion
@@ -180,7 +180,7 @@ for the code specified with the flag ``--code`` (default = :code:`VASP`).
     |       | ...
     |       |--- Bond_Distortion_50.0%_from_-1 <-- Distortion from the -1 charge state
     |
-    |--- v_Cd_s0_-1/
+    |--- v_Cd_-1/
             |--- Unperturbed
             | ...
             |--- Bond_Distortion_50% <-- Favourable distortion
@@ -214,7 +214,7 @@ This command will generate a ``Groundstate`` directory within each defect folder
 .. code:: bash
 
     ./
-    |--- v_Cd_s0_0/
+    |--- v_Cd_0/
     |       |--- Unperturbed
     |       |
     |       |--- Bond_Distortion_-30.0%
@@ -224,7 +224,7 @@ This command will generate a ``Groundstate`` directory within each defect folder
     |       |--- Groundstate
     |               |--- POSCAR <-- Ground state structure
     |
-    |--- v_Cd_s0_-1/
+    |--- v_Cd_-1/
             |--- Unperturbed
             | ...
             |--- Bond_Distortion_50%
@@ -240,16 +240,17 @@ Further Defect Analysis
 -------------------------
 Once the ground state (and metastable) defect structures have been identified, we will want to compute
 their formation energies using our final fully-converged calculation parameters (i.e. plane-wave cutoff
-and k-point sampling). This can be done using `doped <https://github.com/SMTG-UCL/doped>`_, manually (not
-recommended) or using the other defect codes listed on the
+and k-point sampling). This can be done using `doped <https://doped.readthedocs.io/en/latest/index.html>`_,
+manually (not recommended) or using the other defect codes listed on the
 `Code Compatibility <https://shakenbreak.readthedocs.io/en/latest/Code_Compatibility.html>`_ page.
 
-As shown in the `doped <https://github.com/SMTG-UCL/doped>`_ examples and docs, you may want to further
-analyse the behaviour and impact on material properties of your defects using advanced defect analysis
-codes such as `easyunfold <https://smtg-ucl.github.io/easyunfold/>`_ (to analyse the electronic
-structure of defects in your material), `py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_
-(to analyse defect concentrations, doping and Fermi level tuning), or
-`nonrad <https://nonrad.readthedocs.io/en/latest/>`_/`CarrierCapture.jl <https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
+As shown in the `doped <https://doped.readthedocs.io/en/latest/index.html>`_ tutorials and docs, you may
+want to further analyse the behaviour and impact on material properties of your defects using advanced
+defect analysis codes such as `easyunfold <https://smtg-ucl.github.io/easyunfold/>`_ (to analyse the
+electronic structure of defects in your material),
+`py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_ (to analyse defect concentrations, doping
+and Fermi level tuning), or `nonrad <https://nonrad.readthedocs.io/en/latest/>`_ /
+`CarrierCapture.jl<https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
 (to analyse non-radiative electron-hole recombination at defects).
 
 .. NOTE::

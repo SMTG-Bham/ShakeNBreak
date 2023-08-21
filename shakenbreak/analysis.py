@@ -147,29 +147,29 @@ def _format_distortion_names(
     Returns:
         distortion (:obj:`float` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
-            "Unperturbed"/"Rattled"/"-60.0%_from_2"/"Rattled_from_-1")
+            "Unperturbed"/"Rattled"/"-60.0%_from_+2"/"Rattled_from_-1")
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
         "Unperturbed" in distortion_label or "Rattled" in distortion_label
     ) and "from" not in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
         "%"
     ):
-        distortion = (
-            float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
+        return (
+            float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0])
+            / 100
         )
     elif distortion_label.startswith("Bond_Distortion") and (
         "_from_" in distortion_label
     ):
         # distortions from other charge state of the defect
-        distortion = distortion_label.split("Bond_Distortion_")[-1]
+        return distortion_label.split("Bond_Distortion_")[-1]
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     else:
-        distortion = "Label_not_recognized"
-    return distortion
+        return "Label_not_recognized"
 
 
 def get_gs_distortion(defect_energies_dict: dict) -> tuple:
@@ -200,10 +200,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
                 defect_energies_dict["distortions"]["Rattled"]
                 - defect_energies_dict["Unperturbed"]
             )
-            if energy_diff < 0:
-                gs_distortion = "Rattled"  # just rattle (no bond distortion)
-            else:
-                gs_distortion = "Unperturbed"
+            gs_distortion = "Rattled" if energy_diff < 0 else "Unperturbed"
         else:
             energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
             if (
@@ -360,15 +357,13 @@ def analyse_defect_site(
         )
         if _isipython():
             display(pd.DataFrame(coord_list))  # display in Jupyter notebook
-    # Bond Lengths:
-    bond_lengths = []
-    for i in crystalNN.get_nn_info(struct, isite):
-        bond_lengths.append(
-            {
-                "Element": i["site"].specie.as_dict()["element"],
-                "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
-            }
-        )
+    bond_lengths = [
+        {
+            "Element": i["site"].specie.as_dict()["element"],
+            "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
+        }
+        for i in crystalNN.get_nn_info(struct, isite)
+    ]
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
     if _isipython():
@@ -696,11 +691,12 @@ def calculate_struct_comparison(
             comparison metric (disp or max_dist).
     """
     # Check reference structure
-    if isinstance(ref_structure, str) or isinstance(ref_structure, float):
-        if isinstance(ref_structure, str):
-            ref_name = ref_structure
-        else:
-            ref_name = f"{ref_structure:.1%} bond distorted structure"
+    if isinstance(ref_structure, (str, float)):
+        ref_name = (
+            ref_structure
+            if isinstance(ref_structure, str)
+            else f"{ref_structure:.1%} bond distorted structure"
+        )
         try:
             ref_structure = defect_structures_dict[ref_structure]
         except KeyError as e:
