@@ -1,5 +1,6 @@
 """ShakeNBreak command-line-interface (CLI)"""
 
+import contextlib
 import fnmatch
 import os
 import sys
@@ -8,15 +9,13 @@ from copy import deepcopy
 from subprocess import call
 
 import click
+from doped.generation import get_defect_name_from_entry
 
-import contextlib
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
 from pymatgen.io.vasp.outputs import Outcar
-
-from doped.generation import get_defect_name_from_entry
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
@@ -589,9 +588,7 @@ def generate_all(
                 defect_index = defect_settings.get(defect_name).get("defect_index")
                 if defect_index:
                     return int(defect_index), None
-                defect_coords = defect_settings.get(defect_name).get(
-                    "defect_coords"
-                )
+                defect_coords = defect_settings.get(defect_name).get("defect_coords")
                 return None, defect_coords
         return None, None
 
@@ -661,13 +658,17 @@ def generate_all(
             )
 
         # Update charges if specified in config file
-        charges = parse_defect_charges(defect_name or defect_object.name, defect_settings)
+        charges = parse_defect_charges(
+            defect_name or defect_object.name, defect_settings
+        )
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
         # If charges were not specified by use, set them using padding
         for charge in defect_object.get_charge_states(padding=padding):
-            defect_entries.append(input._get_defect_entry_from_defect(defect_object, charge))
+            defect_entries.append(
+                input._get_defect_entry_from_defect(defect_object, charge)
+            )
 
     defects_dict = input._get_defects_dict_from_defects_entries(defect_entries)
     # if user_charges not set for all defects, print info about how charge states will be
@@ -1506,8 +1507,10 @@ def mag(outcar, threshold, verbose):
         abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
 
         if (
-            max(abs_mag_values) < threshold  # no one atomic moment greater than threshold
-            and sum(abs_mag_values) < threshold * 10  # total moment less than 10x threshold
+            max(abs_mag_values)
+            < threshold  # no one atomic moment greater than threshold
+            and sum(abs_mag_values)
+            < threshold * 10  # total moment less than 10x threshold
         ):
             if verbose:
                 print(f"Magnetisation is below threshold (<{threshold} μB/atom)")

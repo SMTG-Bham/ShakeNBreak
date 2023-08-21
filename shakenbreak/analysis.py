@@ -157,10 +157,7 @@ def _format_distortion_names(
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
         "%"
     ):
-        return (
-            float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0])
-            / 100
-        )
+        return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
     elif distortion_label.startswith("Bond_Distortion") and (
         "_from_" in distortion_label
     ):
