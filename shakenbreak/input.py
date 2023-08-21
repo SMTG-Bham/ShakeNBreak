@@ -3,6 +3,8 @@ Module containing functions to generate rattled and bond-distorted structures,
 as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 `Quantum-Espresso`, `FHI-aims` and `CASTEP`.
 """
+
+import contextlib
 import copy
 import datetime
 import itertools
@@ -33,6 +35,7 @@ from pymatgen.util.coord import pbc_diff
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
+from doped.generation import DefectsGenerator, get_defect_name_from_entry, name_defect_entries
 
 from shakenbreak import analysis, distortions, io, vasp
 
@@ -147,7 +150,7 @@ def _write_distortion_metadata(
                             else:  # different number of neighbours distorted in new run
                                 warnings.warn(
                                     f"Previous and new metadata show different number of "
-                                    f"distorted neighbours for {defect} in charge {charge}. "
+                                    f"distorted neighbours for {defect} in charge {'+' if charge > 0 else ''}{charge}. "
                                     f"File {filepath} will only show the new number of distorted "
                                     f"neighbours."
                                 )
@@ -202,6 +205,8 @@ def _create_vasp_input(
     defect_name_wout_charge, charge = defect_name.rsplit(
         "_", 1
     )  # `defect_name` includes charge
+    charge = int(charge)
+    print(defect_name_wout_charge, charge)
     test_letters = [
         "h",
         "g",
@@ -219,19 +224,20 @@ def _create_vasp_input(
             dir
             for letter in test_letters
             for dir in os.listdir(output_path)
-            if dir == f"{defect_name_wout_charge}{letter}_{charge}"
+            if dir == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             and os.path.isdir(
-                f"{output_path}/{defect_name_wout_charge}{letter}_{charge}"
+                f"{output_path}/{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             )
         ]
     except Exception:
-        matching_dirs = []
+       matching_dirs = []
 
-    if len(matching_dirs) > 0:  # defect species with same name already present
+    if matching_dirs:  # defect species with same name already present
         # check if Unperturbed structures match
         match_found = False
         for dir in matching_dirs:
-            try:
+            with contextlib.suppress(Exception):  # if Unperturbed structure could not be parsed /
+                # compared to distorted_defect_dict, then pass
                 prev_unperturbed_struc = Structure.from_file(
                     f"{output_path}/{dir}/Unperturbed/POSCAR"
                 )
@@ -252,21 +258,17 @@ def _create_vasp_input(
                     match_found = True
                     break
 
-            except Exception:  # Unperturbed structure could not be parsed / compared to
-                # distorted_defect_dict
-                pass
-
         if not match_found:  # no matching structure found, assume inequivalent defects
             last_letter = [
                 letter
                 for letter in test_letters
                 for dir in matching_dirs
-                if dir == f"{defect_name_wout_charge}{letter}_{charge}"
+                if dir == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             ][0]
-            prev_dir_name = f"{defect_name_wout_charge}{last_letter}_{charge}"
+            prev_dir_name = f"{defect_name_wout_charge}{last_letter}_{'+' if charge > 0 else ''}{charge}"
             if last_letter == "":  # rename prev defect folder
-                new_prev_dir_name = f"{defect_name_wout_charge}a_{charge}"
-                new_current_dir_name = f"{defect_name_wout_charge}b_{charge}"
+                new_prev_dir_name = f"{defect_name_wout_charge}a_{'+' if charge > 0 else ''}{charge}"
+                new_current_dir_name = f"{defect_name_wout_charge}b_{'+' if charge > 0 else ''}{charge}"
                 warnings.warn(
                     f"A previously-generated defect folder {prev_dir_name} exists in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
@@ -281,12 +283,10 @@ def _create_vasp_input(
                     f"{output_path}/{prev_dir_name}",
                     f"{output_path}/{new_prev_dir_name}",
                 )
-                defect_name = new_current_dir_name
-
             else:  # don't rename prev defect folder just rename current folder
                 next_letter = test_letters[test_letters.index(last_letter) - 1]
                 new_current_dir_name = (
-                    f"{defect_name_wout_charge}{next_letter}_{charge}"
+                    f"{defect_name_wout_charge}{next_letter}_{'+' if charge > 0 else ''}{charge}"
                 )
                 warnings.warn(
                     f"Previously-generated defect folders ({prev_dir_name}...) exist in "
@@ -296,7 +296,7 @@ def _create_vasp_input(
                     f"inequivalent defects, so ShakeNBreak files for the current defect "
                     f"will be saved to {new_current_dir_name} to prevent overwriting."
                 )
-                defect_name = new_current_dir_name
+            defect_name = new_current_dir_name
 
     _create_folder(os.path.join(output_path, defect_name))
     for (
@@ -324,7 +324,7 @@ def _get_bulk_comp(defect_object) -> Composition:
 
     Args:
         defect_object (:obj:`Defect`):
-           pymatgen.analysis.defects.core.Defect() object.
+           doped.core.Defect object.
 
     Returns:
         Pymatgen Composition object for the bulk structure of the defect.
@@ -342,25 +342,22 @@ def _get_bulk_defect_site(
     """
     defect_object = defect_entry.defect
     defect_type = defect_object.defect_type.name.lower()
-    if defect_type in ["antisite", "substitution"]:
-        # get bulk_site
-        sub_site_in_bulk = defect_object.defect_site  # bulk site of substitution
-        sub_site_in_bulk_species = sub_site_in_bulk.species
-        unique_site = PeriodicSite(
-            species=sub_site_in_bulk_species,
-            coords=defect_entry.sc_defect_frac_coords,
-            coords_are_cartesian=False,
-            lattice=defect_entry.sc_entry.structure.lattice,
-        )
-
-    else:
-        unique_site = PeriodicSite(
+    if defect_type not in ["antisite", "substitution"]:
+        return PeriodicSite(
             species=defect_object.site.species,
             coords=defect_entry.sc_defect_frac_coords,
             coords_are_cartesian=False,
             lattice=defect_entry.sc_entry.structure.lattice,
         )
-    return unique_site
+    # get bulk_site
+    sub_site_in_bulk = defect_object.defect_site  # bulk site of substitution
+    sub_site_in_bulk_species = sub_site_in_bulk.species
+    return PeriodicSite(
+        species=sub_site_in_bulk_species,
+        coords=defect_entry.sc_defect_frac_coords,
+        coords_are_cartesian=False,
+        lattice=defect_entry.sc_entry.structure.lattice,
+    )
 
 
 def _get_defect_site(
@@ -381,14 +378,12 @@ def _get_defect_site(
 
     defect_species = defect_entry.defect.site.species
 
-    defect_site = PeriodicSite(
+    return PeriodicSite(
         species=defect_species,
         coords=defect_frac_coords,
         coords_are_cartesian=False,
         lattice=defect_entry.sc_entry.structure.lattice,
     )
-
-    return defect_site
 
 
 def _get_defect_entry_from_defect(
@@ -471,7 +466,7 @@ def _calc_number_electrons(
 
     Args:
         defect_object (:obj:`DefectEntry`):
-            pymatgen.analysis.defects.thermo.DefectEntry object.
+            doped.core.DefectEntry object.
         defect_name (:obj:`str`):
             Name of the defect species.
         oxidation_states (:obj:`dict`):
@@ -885,7 +880,7 @@ def identify_defect(
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
     the supercell, and generate a pymatgen defect object
-    (pymatgen.analysis.defects.core.Defect) from this.
+    (doped.core.Defect) from this.
 
     Args:
         defect_structure (:obj:`Structure`):
@@ -1171,7 +1166,7 @@ def identify_defect(
                 )
 
     for_monty_defect = {
-        "@module": "pymatgen.analysis.defects.core",
+        "@module": "doped.core",
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
         "site": defect_site,
@@ -1213,7 +1208,7 @@ def generate_defect_object(
         single_defect_dict (:obj:`dict`):
             doped/PyCDT defect dictionary.
         bulk_dict (:obj:`dict`):
-            doped/PyCDT entry for bulk in the defects dictionary,
+            doped/PyCDT entry for bulk in the defect_entries dictionary,
             (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
         charges (:obj:`list`):
             List of charge states for the defect.
@@ -1234,7 +1229,7 @@ def generate_defect_object(
     # Get defect site
     defect_site = single_defect_dict["bulk_supercell_site"]
     for_monty_defect = {
-        "@module": "pymatgen.analysis.defects.core",
+        "@module": "doped.core",
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
         "site": defect_site,
@@ -1264,113 +1259,54 @@ def generate_defect_object(
     # Specify defect charge states
     if isinstance(charges, list):  # Priority to charges argument
         defect.user_charges = charges
-    elif "charges" in single_defect_dict.keys():
+    elif "charges" in single_defect_dict:
         defect.user_charges = single_defect_dict["charges"]
 
     return defect
 
 
-def _get_defect_name_from_obj(defect):
-    """Get the SnB defect name from defect object"""
-    defect_type = defect.defect_type.name.lower()
-    if defect_type != "interstitial":
-        defect_name = f"{defect.name}_s{defect.defect_site_index}"
-    else:  # interstitial
-        defect_name = (
-            f"{defect.name}_"
-            f"m{_get_voronoi_multiplicity(defect.site, defect.structure)}"
-        )
-
-    return defect_name
 
 
-def _update_defect_dict(defect_entry, defect_name, defect_dict):
-    """Update `defect_dict` with {defect_name: [DefectEntry, ]}.
-    If defect_name is already in defect_dict, rename it to "{defect_name}a",
-    and iterate until a unique name is found for `defect`.
+def _get_defects_dict_from_defects_entries(defect_entries):
     """
-    defect_site = defect_entry.defect.site
-
-    # Different sym ineq site
-    if (
-        defect_name in defect_dict
-        and defect_site != defect_dict[defect_name][0].defect.site
-    ):  # if name already exists, rename entry in
-        # dict to {defect_name}a, and rename this entry to {defect_name}b
-        prev_defect_entry = defect_dict.pop(defect_name)
-        defect_dict[f"{defect_name}a"] = prev_defect_entry
-        defect_name = f"{defect_name}b"
-        defect_dict[defect_name] = [
-            defect_entry,
+    Return a dictionary in the SnB format:
+    {"defect_name_wout_charge": [DefectEntry, ...]} for the given defect_entries list.
+    """
+    # defect_entries is a list of DefectEntry objects which likely has duplicate DefectEntry's of the
+    # same type but different charge state. So get list of included charge states for each
+    # DefectEntry.defect base name:
+    charge_state_dict = {
+        defect_entry.defect.name : [
+            entry.charge_state for entry in defect_entries if entry.defect.name == defect_entry.defect.name
         ]
+        for defect_entry in defect_entries
+    }
 
-    # Same sym ineq site (but different charge state)
-    elif (
-        defect_name in defect_dict
-        and defect_site == defect_dict[defect_name][0].defect.site
-    ):
-        # if name already exists and site is the same, add to list
-        # (e.g. just different charge states/DefectEntries of the same defect)
-        defect_dict[defect_name].append(defect_entry)
+    # subselect defect_entries to those with a unique defect.defect_structure to avoid duplicates:
+    sm = StructureMatcher()
+    defect_entry_list = []
+    for defect_entry in defect_entries:
+        if not any(sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure) for entry in defect_entry_list):
+            # ensure sc_defect_frac_coords defined:
+            _find_sc_defect_coords(defect_entry)
+            defect_entry_list.append(defect_entry)
 
-    # Different sym ineq site (compared to two or more other defects already present in dict)
-    elif (
-        defect_name in [name[:-1] for name in defect_dict.keys()]
-        and defect_site
-        not in [
-            list_defect_entries[0].defect.site
-            for list_defect_entries in defect_dict.values()
-            if list_defect_entries[0].defect.name == defect_entry.defect.name
-        ]  # check defect sites are different to ensure they are sym. ineq. defects
-        # rather than different charge states of the same defect
-    ):
-        # Defect in different symmetry equivalent site (compared to the other defects
-        # with same name), so  rename to {defect_name}{iterated letter}
-        last_letters = [
-            name[-1] for name in defect_dict.keys() if name[:-1] == defect_name
-        ]
-        last_letters.sort()
-        last_letter = last_letters[-1]
-        new_letter = chr(ord(last_letter) + 1)
-        defect_name = f"{defect_name}{new_letter}"
-        defect_dict[defect_name] = [
-            defect_entry,
-        ]
+    defect_entries_dict = name_defect_entries(defect_entry_list)  # DefectsGenerator.defect_entries
+    # format: {"defect_species": DefectEntry} -> convert:
+    snb_defects_dict = {defect_entry_name_wout_charge: [] for defect_entry_name_wout_charge in defect_entries_dict}
 
-    # Same defect compared to two or more other defects already present in dict
-    elif (
-        defect_name in [name[:-1] for name in defect_dict.keys()]
-        and defect_site
-        in [
-            list_defect_entries[0].defect.site
-            for list_defect_entries in defect_dict.values()
-            if list_defect_entries[0].defect.name == defect_entry.defect.name
-        ]  # check defect sites are equal to ensure they are the same defect
-        # (e.g. different charge states)
-    ):
-        # Find the defect name that corresponds to the same defect site
-        for other_defect_name, list_defect_entries in defect_dict.items():
-            if (
-                list_defect_entries[0].defect.name
-                == defect_entry.defect.name  # same name
-                and list_defect_entries[0].defect.site == defect_site  # same site
-            ):
-                defect_dict[other_defect_name].append(defect_entry)
+    for name_wout_charge, defect_entry in defect_entries_dict.items():
+        for charge in charge_state_dict[defect_entry.defect.name]:
+            charged_defect_entry = copy.deepcopy(defect_entry)
+            charged_defect_entry.charge_state = charge
+            snb_defects_dict[name_wout_charge].append(charged_defect_entry)
 
-    # New defect
-    elif defect_name not in defect_dict:
-        defect_dict[defect_name] = [
-            defect_entry,
-        ]
-
-    else:
-        raise ValueError("Problem updating defect_dict")
-
-    return defect_name  # return defect_name in case it was updated
+    return snb_defects_dict
 
 
 def _find_sc_defect_coords(defect_entry):
-    """Find defect fractioncal coordinates in defect supercell.
+    """
+    Find defect fractional coordinates in defect supercell.
     Targets cases where user generated DefectEntry manually and
     didn't set the `sc_defect_frac_coords` attribute
 
@@ -1734,13 +1670,13 @@ def apply_snb_distortions(
 
 class Distortions:
     """
-    Class to apply rattle and bond distortion to all defects in `defects`
-    (each defect as a pymatgen.analysis.defects.thermo.DefectEntry() object).
+    Class to apply rattle and bond distortion to all defects in `defect_entries`
+    (each defect as a `doped` or `pymatgen` DefectEntry object).
     """
 
     def __init__(
         self,
-        defects: Union[list, dict, DefectEntry],
+        defect_entries: Union[DefectsGenerator, list, dict, DefectEntry],
         oxidation_states: Optional[dict] = None,
         dict_number_electrons_user: Optional[dict] = None,
         distortion_increment: float = 0.1,
@@ -1751,26 +1687,23 @@ class Distortions:
     ):
         """
         Args:
-            defects (Union[list, dict, DefectEntry]):
-                List or dictionary of, or single, pymatgen DefectEntry() objects.
-                E.g.: [DefectEntry(), DefectEntry(), ...], or single DefectEntry().
-                In this case, generated defect folders will be named in the format:
-                "{DefectEntry.defect.name}_m{DefectEntry.defect.multiplicity}" for interstitials
-                and "{DefectEntry.defect.name}_s{DefectEntry.defect.defect_site_index}" for
-                vacancies and substitutions.
-                The labels "a", "b", "c"... will be appended for defects with multiple
-                inequivalent sites.
-
-                Alternatively, if specific defect folder names are desired, `defects` can
-                be input as a dictionary in the format {"defect name": DefectEntry()}.
-                E.g.: {"vac_name": DefectEntry(), "vac_2_name": DefectEntry(), ...,
-                "int_name": DefectEntry(), "sub_name": DefectEntry(), ...}.
+            defect_entries (Union[DefectsGenerator, list, dict, DefectEntry]):
+                Either a `DefectsGenerator` object from `doped`, or a list/dictionary
+                of, or single, DefectEntry object(s).
+                E.g.: [DefectEntry(), DefectEntry(), ...], or single DefectEntry.
+                If a `DefectsGenerator` object or a dictionary (->
+                {defect_species: DefectEntry}), the defect folder names will be
+                set equal to `defect_species` (with charge states included). If
+                a list or single `DefectEntry` object is provided, the defect
+                folder names will be set equal to `DefectEntry.name` if the `name`
+                attribute is set, otherwise generated according to the `doped` convention
+                (see: https://doped.readthedocs.io/en/latest/dope_workflow_example.html).
 
                 Defect charge states (from which bond distortions are determined) are
                 taken from the `DefectEntry.charge_state` property.
 
                 Alternatively, a defects dict generated by `ChargedDefectStructures`
-                from `doped`/`PyCDT` can also be used as input, and the defect names
+                from `PyCDT`/`doped<2.0` can also be used as input, and the defect names
                 and charge states generated by these codes will be used
                 E.g.: {"bulk": {..}, "vacancies": [{...}, {...},], ...}
             oxidation_states (:obj:`dict`):
@@ -1843,60 +1776,54 @@ class Distortions:
         self.dict_number_electrons_user = dict_number_electrons_user
         self.local_rattle = local_rattle
 
-        # To allow user to specify defect names (with CLI), `defects` can be either
+        # To allow user to specify defect names (with CLI), `defect_entries` can be either
         # a dict or list of DefectEntry's, or a single DefectEntry
-        if isinstance(defects, DefectEntry):
-            defects = [
-                defects,
+        if isinstance(defect_entries, DefectEntry):
+            defect_entries = [
+                defect_entries,
             ]
         # To account for this, here we refactor the list into a dict
-        if isinstance(defects, list):
-            self.defects_dict = {}
-            if not all([isinstance(defect, DefectEntry) for defect in defects]):
+        if isinstance(defect_entries, list):
+            if not all(isinstance(defect, DefectEntry) for defect in defect_entries):
                 raise TypeError(
-                    "Some entries in `defects` list are not DefectEntry objects (required "
+                    "Some entries in `defect_entries` list are not DefectEntry objects (required "
                     "format, see docstring). Distortions can also be initialised from "
                     "pymatgen Structures using `Distortions.from_structures()`"
                 )
 
-            # Refactor list of DefectEntries into a dict matching defect name
-            # to list of defect entries (i.e. grouping all the charged defects/DefectEntries
-            # of a single defect together in a list)
-            for defect_entry in defects:
-                defect_name = _get_defect_name_from_obj(defect_entry.defect)
-                defect_name = _update_defect_dict(
-                    defect_entry, defect_name, self.defects_dict
-                )
+            # Refactor list of DefectEntries into a dict matching defect name to list of defect entries
+            # (i.e. grouping all the charged defects/DefectEntries of a single defect together in a list)
+            self.defects_dict = _get_defects_dict_from_defects_entries(defect_entries)
 
-        elif isinstance(defects, dict):
+        elif isinstance(defect_entries, dict):
             # check if it's a doped/PyCDT defect_dict:
             if any(
-                [
-                    key in defects
-                    for key in [
-                        "vacancies",
-                        "antisites",
-                        "substitutions",
-                        "interstitials",
-                    ]
+                key in defect_entries
+                for key in [
+                    "vacancies",
+                    "antisites",
+                    "substitutions",
+                    "interstitials",
                 ]
             ):  # doped/PyCDT defect dict
                 # Check bulk entry in doped/PyCDT defect_dict
-                if "bulk" not in defects:  # No bulk entry - ask user to provide it
+                if (
+                    "bulk" not in defect_entries
+                ):  # No bulk entry - ask user to provide it
                     raise ValueError(
-                        "Input `defects` dict matches `doped`/`PyCDT` format, but no 'bulk' "
-                        "entry present. Please try again providing a `bulk` entry in `defects`."
+                        "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' "
+                        "entry present. Please try again providing a `bulk` entry in `defect_entries`."
                     )
 
                 # Transform doped/PyCDT defect_dict to dictionary of {name: [DefectEntry(), ...]}
                 self.defects_dict = {}
-                for key, defect_dict_list in defects.items():
+                for key, defect_dict_list in defect_entries.items():
                     if key != "bulk":  # loop for vacancies, antisites and interstitials
                         for defect_dict in defect_dict_list:  # loop for each defect
                             # transform defect_dict to Defect object
                             defect = generate_defect_object(
                                 single_defect_dict=defect_dict,
-                                bulk_dict=defects["bulk"],
+                                bulk_dict=defect_entries["bulk"],
                             )
                             # Generate a DefectEntry for each charge state
                             self.defects_dict[defect_dict["name"]] = [
@@ -1907,15 +1834,13 @@ class Distortions:
                             ]
 
             else:
-                for defect_entry_list in defects.values():
+                for defect_entry_list in defect_entries.values():
                     if not all(
-                        [
-                            isinstance(defect_entry, DefectEntry)
-                            for defect_entry in defect_entry_list
-                        ]
+                        isinstance(defect_entry, DefectEntry)
+                        for defect_entry in defect_entry_list
                     ):
                         raise TypeError(
-                            "Some entries in `defects` dict are not DefectEntries "
+                            "Some entries in `defect_entries` dict are not DefectEntries "
                             "objects (required format, see docstring). "
                             "Distortions can also be initialised from pymatgen "
                             "Structures using `Distortions.from_structures()`"
@@ -1937,23 +1862,10 @@ class Distortions:
 
         else:
             raise TypeError(
-                f"`defect` must be a list or dict of DefectEntries, but got type "
-                f"{type(defects)} instead. From `Distortions()` docstring:\n"
-                "`defects`: List or dictionary of "
-                "pymatgen.analysis.defects.thermo.DefectEntry() objects.\n"
-                "E.g.: [DefectEntry(), DefectEntry(), ...]\n"
-                "In this case, generated defect folders will be named in the format:"
-                "'{DefectEntry.defect.name}_s{DefectEntry.defect.defect_site_index}"
-                "_m{DefectEntry.defect.multiplicity}'\n\n"
-                "Alternatively, if specific defect folder names are desired, "
-                "`defects` can be input as a dictionary in the format "
-                "{'defect name': [DefectEntry(), ]}\n\n"
-                "Alternatively, a defects dict generated by `ChargedDefectStructures` "
-                "from `doped`/`PyCDT` can also be used as input, and the defect names "
-                "generated by these codes will be used.\n"
-                "E.g.: {'bulk': {..}, 'vacancies': [{...}, {...},], ...}\n\n"
-                "Distortions can also be initialised from pymatgen Structures using "
-                "`Distortions.from_structures()`"
+                f"`defect_entries` must be a either `DefectsGenerator` object from `doped`, "
+                f"or a list/dictionary of, or single, DefectEntry object(s). E.g.: [DefectEntry(), "
+                f"DefectEntry(), ...], or single DefectEntry, but got type {type(defect_entries)} "
+                f"instead. See `Distortions()` docstring!"
             )
 
         list_of_defect_entries = list(self.defects_dict.values())[0]
@@ -1983,9 +1895,10 @@ class Distortions:
                 )
                 self.stdev = 0.25
 
-        if len(list(self.defects_dict.values())) == 0:
+        if not list(self.defects_dict.values()):
             raise IndexError(
-                "Problem parsing input defects; no input defects found. Please check `defects`."
+                "Problem parsing input defect_entries; no input defect_entries found. Please check "
+                "`defect_entries`."
             )
 
         # Check if all expected oxidation states are provided
@@ -2015,9 +1928,9 @@ class Distortions:
 
         if self.oxidation_states is None:
             print(
-                f"Oxidation states were not explicitly set, thus have been "
-                f"guessed as {guessed_oxidation_states}. If this is unreasonable "
-                f"you should manually set oxidation_states"
+                f"Oxidation states were not explicitly set, thus have been guessed as"
+                f" {guessed_oxidation_states}. If this is unreasonable you should manually set "
+                f"oxidation_states"
             )
             self.oxidation_states = guessed_oxidation_states
 
@@ -2029,9 +1942,9 @@ class Distortions:
                 if k in (guessed_oxidation_states.keys() - self.oxidation_states.keys())
             }  # missing oxidation states in sorted dict for clean printing
             print(
-                f"Oxidation states for {[k for k in missing_oxidation_states.keys()]} were not "
-                f"explicitly set, thus have been guessed as {missing_oxidation_states}. "
-                f"If this is unreasonable you should manually set oxidation_states"
+                f"Oxidation states for {list(missing_oxidation_states.keys())} were not explicitly set, "
+                f"thus have been guessed as {missing_oxidation_states}. If this is unreasonable you "
+                f"should manually set oxidation_states"
             )
             self.oxidation_states.update(missing_oxidation_states)
 
@@ -2144,9 +2057,9 @@ class Distortions:
                 as a dictionary with format {'defect_name': charge_change}
                 where charge_change is the negative of the number of
                 extra/missing electrons.
-            defect (:obj:`DefectEntry`):
-                DefectEntry entry in dictionary of defects. Must be a
-                pymatgen.analysis.defects.thermo.DefectEntry() object.
+            defect_entry (:obj:`DefectEntry`):
+                DefectEntry in dictionary of defect_entries. Must be a
+                `doped` or `pymatgen` DefectEntry object.
 
         Returns:
             :obj:`int`:
@@ -2166,7 +2079,7 @@ class Distortions:
                 "Number of extra electrons in neutral state: "
                 + f"{abs(number_electrons)}"
             )
-        elif number_electrons >= 0:
+        else:
             _bold_print(
                 f"Number of missing electrons in neutral state: {number_electrons}"
             )
@@ -2281,7 +2194,7 @@ class Distortions:
         `DefectEntry`.
 
         Args:
-            defect_entry (:obj:`pymatgen.analysis.defects.thermo.DefectEntry()`):
+            defect_entry (:obj:`doped.core.DefectEntry`):
                 DefectEntry object to generate `distorted_defect_dict` from.
 
         Returns:
@@ -2359,7 +2272,7 @@ class Distortions:
         verbose: bool = False,
     ) -> Tuple[dict, dict]:
         """
-        Applies rattle and bond distortion to all defects in `defects`.
+        Applies rattle and bond distortion to all defects in `defect_entries`.
         Returns a dictionary with the distorted (and undistorted) structures
         for each charge state of each defect.
         If file generation is desired, instead use the methods `write_<code>_files()`.
@@ -2592,7 +2505,7 @@ class Distortions:
                     )  # Add charge state to transformation dict
 
                 _create_vasp_input(
-                    defect_name=f"{defect_name}_{charge}",
+                    defect_name=f"{defect_name}_{'+' if charge > 0 else ''}{charge}",
                     distorted_defect_dict=charged_defect,
                     incar_settings=incar_settings,
                     potcar_settings=potcar_settings,
@@ -2692,7 +2605,7 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
 
                     if not pseudopotentials or write_structures_only:
                         # only write structures
@@ -2702,7 +2615,7 @@ class Distortions:
                         )
                         ase.io.write(
                             filename=f"{output_path}/"
-                            + f"{defect_name}_{charge}/{dist}/espresso.pwi",
+                            + f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/espresso.pwi",
                             images=atoms,
                             format="espresso-in",
                         )
@@ -2723,7 +2636,7 @@ class Distortions:
                         os.replace(
                             "./espresso.pwi",
                             f"{output_path}/"
-                            + f"{defect_name}_{charge}/{dist}/espresso.pwi",
+                            + f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/espresso.pwi",
                         )
         return distorted_defects_dict, self.distortion_metadata
 
@@ -2801,16 +2714,16 @@ class Distortions:
                         ].values()
                     ),
                 ):
-                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
                     struct.to(
                         fmt="cif",
-                        filename=f"{output_path}/{defect_name}_{charge}/"
+                        filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
                         + f"{dist}/structure.cif",
                     )
                     if not write_structures_only and cp2k_input:
                         cp2k_input.write_file(
                             input_filename="cp2k_input.inp",
-                            output_dir=f"{output_path}/{defect_name}_{charge}/"
+                            output_dir=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
                             + f"{dist}",
                         )
 
@@ -2880,11 +2793,11 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
 
                     if write_structures_only:
                         ase.io.write(
-                            filename=f"{output_path}/{defect_name}_{charge}/"
+                            filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
                             + f"{dist}/castep.cell",
                             images=atoms,
                             format="castep-cell",
@@ -2893,7 +2806,7 @@ class Distortions:
                         try:
                             calc = Castep(
                                 directory=f"{output_path}/"
-                                + f"{defect_name}_{charge}/{dist}"
+                                + f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}"
                             )
                             calc.set_kpts({"size": (1, 1, 1), "gamma": True})
                             calc.merge_param(input_file)
@@ -2907,7 +2820,7 @@ class Distortions:
                                 "as `castep.cell` files."
                             )
                             ase.io.write(
-                                filename=f"{output_path}/{defect_name}_{charge}/"
+                                filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
                                 + f"{dist}/castep.cell",
                                 images=atoms,
                                 format="castep-cell",
@@ -3012,10 +2925,10 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{charge}/{dist}")
+                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
 
                     ase.io.write(
-                        filename=f"{output_path}/{defect_name}_{charge}"
+                        filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}"
                         + f"/{dist}/geometry.in",
                         images=atoms,
                         format="aims",
@@ -3024,7 +2937,7 @@ class Distortions:
 
                     if isinstance(ase_calculator, Aims) and not write_structures_only:
                         ase_calculator.write_control(
-                            filename=f"{output_path}/{defect_name}_{charge}"
+                            filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}"
                             + f"/{dist}/control.in",
                             atoms=atoms,
                         )  # write parameters file
@@ -3132,13 +3045,13 @@ class Distortions:
 
         """
         # Transform structure to defect object
-        pymatgen_defects_dict = {}
+        defect_entries = []
         if isinstance(defects, Structure):  # single defect, convert to list
             defects = [defects]
 
         if not isinstance(defects, list):
             raise TypeError(
-                f"Wrong format for `defects`. Should be a list of pymatgen Structure objects, but "
+                f"Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects, but "
                 f"got {type(defects)} instead."
             )
         if not padding:
@@ -3162,16 +3075,12 @@ class Distortions:
                     bulk_structure=bulk,
                 )
                 if defect:
-                    defect_name = _get_defect_name_from_obj(defect)
                     # Generate a defect entry for each charge state
                     defect.user_charges = defect.get_charge_states(padding=padding)
                     for charge in defect.user_charges:
-                        defect_entry = _get_defect_entry_from_defect(
+                        defect_entries.append(_get_defect_entry_from_defect(
                             defect=defect, charge_state=charge
-                        )
-                        defect_name = _update_defect_dict(
-                            defect_entry, defect_name, pymatgen_defects_dict
-                        )
+                        ))
 
             # Check if user gives dict with structure and defect_coords/defect_index
             elif isinstance(defect_structure, tuple) or isinstance(
@@ -3179,7 +3088,7 @@ class Distortions:
             ):
                 if len(defect_structure) != 2:
                     raise ValueError(
-                        "If an entry in `defects` is a tuple/list, it must be in the "
+                        "If an entry in `defect_entries` is a tuple/list, it must be in the "
                         "format: (defect Structure, frac_coords/index)"
                     )
                 elif isinstance(defect_structure[1], int) or isinstance(
@@ -3203,7 +3112,7 @@ class Distortions:
                 else:
                     warnings.warn(
                         f"Unrecognised format for defect frac_coords/index: {defect_structure[1]} "
-                        f"in `defects`. If specifying frac_coords, it should be a list or numpy "
+                        f"in `defect_entries`. If specifying frac_coords, it should be a list or numpy "
                         f"array, or if specifying defect index, should be an integer. Got type"
                         f" {type(defect_structure[1])} instead. "
                         f"Will proceed with auto-site matching."
@@ -3214,41 +3123,37 @@ class Distortions:
 
                 if defect:
                     defect.user_charges = defect.get_charge_states(padding=padding)
-                    defect_name = _get_defect_name_from_obj(defect)
-                    # Generate a defect entry for each charge state
+                    # Generate a defect entry for each charge state:
                     for charge in defect.user_charges:
-                        defect_entry = _get_defect_entry_from_defect(
+                        defect_entries.append(_get_defect_entry_from_defect(
                             defect=defect, charge_state=charge
-                        )
-                        defect_name = _update_defect_dict(
-                            defect_entry, defect_name, pymatgen_defects_dict
-                        )
+                        ))
 
                 else:
                     warnings.warn(
                         "Failed to identify defect from input structures. Please check bulk and "
                         "defect structures correspond to the same supercell and/or specify defect "
-                        "site(s) by inputting `defects = [(defect Structure, frac_coords/index), "
+                        "site(s) by inputting `defect_entries = [(defect Structure, frac_coords/index), "
                         "...]` instead."
                     )
 
             else:
                 raise TypeError(
-                    "Wrong format for `defects`. Should be a list of pymatgen Structure objects, "
+                    "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects, "
                     f"but got a list of {[type(entry) for entry in defects]} instead."
                 )
 
-        # Check pymatgen_defects_dict not empty
-        if len(pymatgen_defects_dict) == 0:
+        # Check defect_entries not empty
+        if not defect_entries:
             raise ValueError(
                 "Failed parsing defects from structures. Please check bulk and defect structures "
                 "correspond to the same supercell and/or specify defect site(s) by inputting "
-                "`defects = [(defect Structure, frac_coords/index), ...]` instead."
+                "`defect_entries = [(defect Structure, frac_coords/index), ...]` instead."
             )
         # Check entries in defect dict
 
         return cls(
-            defects=pymatgen_defects_dict,
+            defect_entries=_get_defects_dict_from_defects_entries(defect_entries),
             oxidation_states=oxidation_states,
             dict_number_electrons_user=dict_number_electrons_user,
             distortion_increment=distortion_increment,

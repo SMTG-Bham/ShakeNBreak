@@ -1,4 +1,5 @@
 """ShakeNBreak command-line-interface (CLI)"""
+
 import fnmatch
 import os
 import sys
@@ -8,11 +9,14 @@ from subprocess import call
 
 import click
 
+import contextlib
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
 from pymatgen.io.vasp.outputs import Outcar
+
+from doped.generation import get_defect_name_from_entry
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
@@ -192,11 +196,7 @@ def generate(
     Generate the trial distortions and input files for structure-searching
     for a given defect.
     """
-    if config is not None:
-        user_settings = loadfn(config)
-    else:
-        user_settings = {}
-
+    user_settings = loadfn(config) if config is not None else {}
     func_args = list(locals().keys())
     pseudopotentials = None
     if user_settings:
@@ -297,14 +297,15 @@ def generate(
         else:
             defect_object.user_charges = charges  # Update charge states
 
-    if name is None:
-        name = input._get_defect_name_from_obj(defect_object)
-
     # Refactor Defect into list of DefectEntry objects
     defect_entries = [
         input._get_defect_entry_from_defect(defect_object, c)
         for c in defect_object.get_charge_states(padding)
     ]
+
+    if name is None:
+        name = get_defect_name_from_entry(defect_entries[0])
+
     # if user_charges not set for all defects, print info about how charge states will be
     # determined
     if not defect_object.user_charges:
@@ -313,7 +314,7 @@ def generate(
             f"with a `padding = {padding}` on either side of this range."
         )
     Dist = input.Distortions(
-        defects={
+        defect_entries={
             name: defect_entries,  # So that user can specify defect name.
         },
         **user_settings,
@@ -562,12 +563,10 @@ def generate_all(
                     defect, include_site_num_in_name=False
                 )
             except Exception:
-                try:
+                with contextlib.suppress(Exception):
                     defect_name = plotting._format_defect_name(
                         f"{defect}_0", include_site_num_in_name=False
                     )
-                except Exception:
-                    pass
             if defect_name:
                 defect_name = defect
 
@@ -590,14 +589,13 @@ def generate_all(
                 defect_index = defect_settings.get(defect_name).get("defect_index")
                 if defect_index:
                     return int(defect_index), None
-                else:
-                    defect_coords = defect_settings.get(defect_name).get(
-                        "defect_coords"
-                    )
-                    return None, defect_coords
+                defect_coords = defect_settings.get(defect_name).get(
+                    "defect_coords"
+                )
+                return None, defect_coords
         return None, None
 
-    defects_dict = {}
+    defect_entries = []
     for defect in defects_dirs:  # file or directory
         if os.path.isfile(f"{defects}/{defect}"):
             try:  # try to parse structure from it
@@ -662,20 +660,16 @@ def generate_all(
                 f"with site {site_info}"
             )
 
-        if defect_name is None:  # name based on defect object
-            defect_name = input._get_defect_name_from_obj(defect_object)
-
         # Update charges if specified in config file
-        charges = parse_defect_charges(defect_name, defect_settings)
+        charges = parse_defect_charges(defect_name or defect_object.name, defect_settings)
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
         # If charges were not specified by use, set them using padding
         for charge in defect_object.get_charge_states(padding=padding):
-            defect_entry = input._get_defect_entry_from_defect(defect_object, charge)
-            defect_name = input._update_defect_dict(
-                defect_entry, defect_name, defects_dict
-            )
+            defect_entries.append(input._get_defect_entry_from_defect(defect_object, charge))
+
+    defects_dict = input._get_defects_dict_from_defects_entries(defect_entries)
     # if user_charges not set for all defects, print info about how charge states will be
     # determined
     if all(

@@ -45,7 +45,9 @@ If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudo
 ```bash
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
-   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the [`doped README`](https://github.com/SMTG-UCL/doped/tree/master#installation) instructions if you have difficulty with this.
+   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` 
+   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have 
+   difficulty with this.
 
 The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)) will be installed with the package, and will be used by default for plotting.
 
@@ -98,9 +100,9 @@ pip install --upgrade pymatgen shakenbreak
 ```
 
 `ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures),
-**_but also_** can take in `pymatgen` `Structure` objects, `doped` defect dictionaries or structure files
+**_but also_** can take in `pymatgen` `Structure` objects, `doped` defects or structure files
 (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code
-(such as [`doped`](https://github.com/SMTG-UCL/doped), [`pydefect`](https://github.com/kumagai-group/pydefect),
+(such as [`doped`](https://doped.readthedocs.io/en/latest/index.html), [`pydefect`](https://github.com/kumagai-group/pydefect),
 [`PyCDT`](https://github.com/mbkumar/pycdt), [`PyLada`](https://github.com/pylada/pylada-defects),
 [`DASP`](http://hzwtech.com/files/software/DASP/htmlEnglish/index.html), [`Spinney`](https://gitlab.com/Marrigoni/spinney/-/tree/master),
 [`DefAP`](https://github.com/DefAP/defap), [`PyDEF`](https://github.com/PyDEF2/PyDEF-2.0)...) that generates these files.

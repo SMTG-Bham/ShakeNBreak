@@ -32,23 +32,22 @@ def _format_distortion_directory_name(
         and "Bond_Distortion_" not in distorted_distortion
     ):
         # if a string but not Unperturbed or Rattled, add "Bond_Distortion_" to the start
-        distorted_distortion = "Bond_Distortion_" + distorted_distortion
+        distorted_distortion = f"Bond_Distortion_{distorted_distortion}"
+
+    formatted_distorted_charge = (
+        f"{'+' if distorted_charge > 0 else ''}{distorted_charge}"
+    )
 
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
-        distorted_dir = (
-            f"{output_path}/{defect_species}/{distorted_distortion}_from"
-            f"_{distorted_charge}"
-        )
+        return f"{output_path}/{defect_species}/{distorted_distortion}_from_{formatted_distorted_charge}"
         # don't add "Bond_Distortion_" for "Unperturbed" or "Rattled"
-    elif isinstance(distorted_distortion, str) and "_from_" in distorted_distortion:
-        distorted_dir = f"{output_path}/{defect_species}/{distorted_distortion}"
+    elif isinstance(distorted_distortion, str):
+        return f"{output_path}/{defect_species}/{distorted_distortion}"
     else:
-        distorted_dir = (
+        return (
             f"{output_path}/{defect_species}/Bond_Distortion_"
-            f"{round(distorted_distortion * 100, 1)+0}%_from_"
-            f"{distorted_charge}"
+            f"{round(distorted_distortion * 100, 1) + 0}%_from_{formatted_distorted_charge}"
         )
-    return distorted_dir
 
 
 def read_defects_directories(output_path: str = "./") -> dict:
@@ -277,7 +276,7 @@ def _prune_dict_across_charges(
                     continue
 
                 # charges in defect_pruning_dict that aren't already in this distortion entry
-                defect_species = f"{defect}_{charge}"
+                defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
                 comparison_results = compare_struct_to_distortions(
                     distortion_dict["structures"][0],
                     defect_species,
@@ -424,7 +423,7 @@ def get_energy_lowering_distortions(
         defect_pruning_dict[defect] = []
         for charge in defect_charges_dict[defect]:
             defect_pruning_dict[defect].append(charge)
-            defect_species = f"{defect}_{charge}"
+            defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
             if verbose:
                 print(f"Parsing {defect_species}...")
 
@@ -871,7 +870,7 @@ def write_retest_inputs(
             for charge in distortion_dict[
                 "excluded_charges"
             ]:  # charges for which this distortion wasn't found
-                defect_species = f"{defect}_{charge}"
+                defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
                 distorted_charge = distortion_dict["charges"][
                     0
                 ]  # first charge state for which this distortion was found
@@ -1324,7 +1323,7 @@ def write_groundstate_structure(
             for charge in charges:
                 _write_single_groundstate(
                     output_path=output_path,
-                    defect_species=f"{defect}_{charge}",
+                    defect_species=f"{defect}_{'+' if charge > 0 else ''}{charge}",
                     groundstate_folder=groundstate_folder,
                     groundstate_filename=groundstate_filename,
                     structure_filename=structure_filename,

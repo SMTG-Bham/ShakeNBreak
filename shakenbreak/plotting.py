@@ -2,6 +2,8 @@
 Module containing functions to plot distorted defect relaxation outputs and identify
 energy-lowering distortions.
 """
+
+import contextlib
 import datetime
 import os
 import re
@@ -1274,10 +1276,11 @@ def plot_all_defects(
     except FileNotFoundError:
         # check if any defect_species folders have distortion_metadata.json files
         defect_species_list = [
-            f"{defect}_{charge}"
+            f"{defect}_{format_charge}"
             for defect in defects_dict
             for charge in defects_dict[defect]
-        ]
+            for format_charge in [charge, f"+{charge}"]
+        ]  # allow for defect species names with "+" sign (in SnB > 3.1)
         if any(
             os.path.isfile(
                 os.path.join(output_path, defect_species, "distortion_metadata.json")
@@ -1299,9 +1302,9 @@ def plot_all_defects(
             neighbour_atom = None
 
     figures = {}
-    for defect in defects_dict:
-        for charge in defects_dict[defect]:
-            defect_species = f"{defect}_{charge}"
+    for defect, value in defects_dict.items():
+        for charge in value:
+            defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
             # Parse energies
             if not os.path.isdir(f"{output_path}/{defect_species}"):
                 warnings.warn(
@@ -1322,7 +1325,7 @@ def plot_all_defects(
 
             if not energy_diff:  # if Unperturbed calc is not converged, warn user
                 warnings.warn(
-                    f"Unperturbed calculation for {defect}_{charge} not converged! "
+                    f"Unperturbed calculation for {defect}_{'+' if charge > 0 else ''}{charge} not converged! "
                     f"Skipping plot."
                 )
                 continue
@@ -1332,20 +1335,16 @@ def plot_all_defects(
                 if verbose:
                     print(
                         f"Energy lowering distortion found for {defect} with "
-                        f"charge {charge}. Generating distortion plot..."
+                        f"charge {'+' if charge > 0 else ''}{charge}. Generating distortion plot..."
                     )
                 if distortion_metadata == "in_defect_species_folders":
-                    try:
+                    with contextlib.suppress(FileNotFoundError):
                         (
                             num_nearest_neighbours,
                             neighbour_atom,
                         ) = analysis._read_distortion_metadata(
                             output_path=f"{output_path}/{defect_species}"
                         )
-                    except (
-                        FileNotFoundError
-                    ):  # distortion_metadata.json not found in this folder
-                        pass
                 if distortion_metadata and isinstance(distortion_metadata, dict):
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
