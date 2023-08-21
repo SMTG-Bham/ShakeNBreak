@@ -161,7 +161,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.8",
     install_requires=[
-        "numpy", #>=1.21.2" needed for numpy.typing.NDArray?
+        "numpy",  # >=1.21.2" needed for numpy.typing.NDArray?
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
         "matplotlib",

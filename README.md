@@ -7,7 +7,7 @@
 [![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
 # `ShakeNBreak` (`SnB`)
-<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to 
+<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to
 locate ground-state and metastable structures of point defects in solid materials. [Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
 
 Main features include:
@@ -45,8 +45,8 @@ If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudo
 ```bash
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
-   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` 
-   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have 
+   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE`
+   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
    difficulty with this.
 
 The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)) will be installed with the package, and will be used by default for plotting.

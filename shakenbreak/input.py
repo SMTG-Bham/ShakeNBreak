@@ -19,6 +19,11 @@ import numpy as np
 from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
+from doped.generation import (
+    DefectsGenerator,
+    get_defect_name_from_entry,
+    name_defect_entries,
+)
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
@@ -35,7 +40,6 @@ from pymatgen.util.coord import pbc_diff
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
-from doped.generation import DefectsGenerator, get_defect_name_from_entry, name_defect_entries
 
 from shakenbreak import analysis, distortions, io, vasp
 
@@ -149,10 +153,10 @@ def _write_distortion_metadata(
                                 }
                             else:  # different number of neighbours distorted in new run
                                 warnings.warn(
-                                    f"Previous and new metadata show different number of "
-                                    f"distorted neighbours for {defect} in charge {'+' if charge > 0 else ''}{charge}. "
-                                    f"File {filepath} will only show the new number of distorted "
-                                    f"neighbours."
+                                    f"Previous and new metadata show different number of distorted "
+                                    f"neighbours for {defect} in charge {'+' if charge > 0 else ''}"
+                                    f"{charge}. File {filepath} will only show the new number of "
+                                    f"distorted neighbours."
                                 )
                                 continue
                         else:  # if charge state only in old metadata, add it to file
@@ -206,7 +210,6 @@ def _create_vasp_input(
         "_", 1
     )  # `defect_name` includes charge
     charge = int(charge)
-    print(defect_name_wout_charge, charge)
     test_letters = [
         "h",
         "g",
@@ -224,19 +227,22 @@ def _create_vasp_input(
             dir
             for letter in test_letters
             for dir in os.listdir(output_path)
-            if dir == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
+            if dir
+            == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             and os.path.isdir(
                 f"{output_path}/{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             )
         ]
     except Exception:
-       matching_dirs = []
+        matching_dirs = []
 
     if matching_dirs:  # defect species with same name already present
         # check if Unperturbed structures match
         match_found = False
         for dir in matching_dirs:
-            with contextlib.suppress(Exception):  # if Unperturbed structure could not be parsed /
+            with contextlib.suppress(
+                Exception
+            ):  # if Unperturbed structure could not be parsed /
                 # compared to distorted_defect_dict, then pass
                 prev_unperturbed_struc = Structure.from_file(
                     f"{output_path}/{dir}/Unperturbed/POSCAR"
@@ -263,12 +269,17 @@ def _create_vasp_input(
                 letter
                 for letter in test_letters
                 for dir in matching_dirs
-                if dir == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
+                if dir
+                == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
             ][0]
             prev_dir_name = f"{defect_name_wout_charge}{last_letter}_{'+' if charge > 0 else ''}{charge}"
             if last_letter == "":  # rename prev defect folder
-                new_prev_dir_name = f"{defect_name_wout_charge}a_{'+' if charge > 0 else ''}{charge}"
-                new_current_dir_name = f"{defect_name_wout_charge}b_{'+' if charge > 0 else ''}{charge}"
+                new_prev_dir_name = (
+                    f"{defect_name_wout_charge}a_{'+' if charge > 0 else ''}{charge}"
+                )
+                new_current_dir_name = (
+                    f"{defect_name_wout_charge}b_{'+' if charge > 0 else ''}{charge}"
+                )
                 warnings.warn(
                     f"A previously-generated defect folder {prev_dir_name} exists in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
@@ -286,7 +297,8 @@ def _create_vasp_input(
             else:  # don't rename prev defect folder just rename current folder
                 next_letter = test_letters[test_letters.index(last_letter) - 1]
                 new_current_dir_name = (
-                    f"{defect_name_wout_charge}{next_letter}_{'+' if charge > 0 else ''}{charge}"
+                    f"{defect_name_wout_charge}{next_letter}"
+                    f"_{'+' if charge > 0 else ''}{charge}"
                 )
                 warnings.warn(
                     f"Previously-generated defect folders ({prev_dir_name}...) exist in "
@@ -1265,8 +1277,6 @@ def generate_defect_object(
     return defect
 
 
-
-
 def _get_defects_dict_from_defects_entries(defect_entries):
     """
     Return a dictionary in the SnB format:
@@ -1276,8 +1286,10 @@ def _get_defects_dict_from_defects_entries(defect_entries):
     # same type but different charge state. So get list of included charge states for each
     # DefectEntry.defect base name:
     charge_state_dict = {
-        defect_entry.defect.name : [
-            entry.charge_state for entry in defect_entries if entry.defect.name == defect_entry.defect.name
+        defect_entry.defect.name: [
+            entry.charge_state
+            for entry in defect_entries
+            if entry.defect.name == defect_entry.defect.name
         ]
         for defect_entry in defect_entries
     }
@@ -1286,14 +1298,22 @@ def _get_defects_dict_from_defects_entries(defect_entries):
     sm = StructureMatcher()
     defect_entry_list = []
     for defect_entry in defect_entries:
-        if not any(sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure) for entry in defect_entry_list):
+        if not any(
+            sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure)
+            for entry in defect_entry_list
+        ):
             # ensure sc_defect_frac_coords defined:
             _find_sc_defect_coords(defect_entry)
             defect_entry_list.append(defect_entry)
 
-    defect_entries_dict = name_defect_entries(defect_entry_list)  # DefectsGenerator.defect_entries
+    defect_entries_dict = name_defect_entries(
+        defect_entry_list
+    )  # DefectsGenerator.defect_entries
     # format: {"defect_species": DefectEntry} -> convert:
-    snb_defects_dict = {defect_entry_name_wout_charge: [] for defect_entry_name_wout_charge in defect_entries_dict}
+    snb_defects_dict = {
+        defect_entry_name_wout_charge: []
+        for defect_entry_name_wout_charge in defect_entries_dict
+    }
 
     for name_wout_charge, defect_entry in defect_entries_dict.items():
         for charge in charge_state_dict[defect_entry.defect.name]:
@@ -1834,21 +1854,37 @@ class Distortions:
                             ]
 
             else:
-                for defect_entry_list in defect_entries.values():
-                    if not all(
-                        isinstance(defect_entry, DefectEntry)
-                        for defect_entry in defect_entry_list
-                    ):
-                        raise TypeError(
-                            "Some entries in `defect_entries` dict are not DefectEntries "
-                            "objects (required format, see docstring). "
-                            "Distortions can also be initialised from pymatgen "
-                            "Structures using `Distortions.from_structures()`"
-                        )
+                # check if {defect_species: DefectEntry} dict:
+                if all(
+                    isinstance(defect, DefectEntry)
+                    for defect in defect_entries.values()
+                ):
+                    self.defects_dict = {
+                        name.rsplit("_", 1)[0]: [  # name without charge
+                            defect_entry
+                            for defect_entry in defect_entries.values()
+                            if defect_entry.name.rsplit("_", 1)[0]
+                            == name.rsplit("_", 1)[0]
+                        ]
+                        for name in defect_entries
+                    }
 
-                self.defects_dict = (
-                    defect_entries  # {"defect name": [DefectEntry, ...]}
-                )
+                else:
+                    for defect_entry_list in defect_entries.values():
+                        if not all(
+                            isinstance(defect_entry, DefectEntry)
+                            for defect_entry in defect_entry_list
+                        ):
+                            raise TypeError(
+                                "Some entries in `defect_entries` dict are not DefectEntries "
+                                "objects (required format, see docstring). "
+                                "Distortions can also be initialised from pymatgen "
+                                "Structures using `Distortions.from_structures()`"
+                            )
+
+                    self.defects_dict = (
+                        defect_entries  # {"defect name": [DefectEntry, ...]}
+                    )
 
         elif isinstance(defect_entries, DefectsGenerator):
             self.defects_dict = {
@@ -2605,7 +2641,9 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
+                    _create_folder(
+                        f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}"
+                    )
 
                     if not pseudopotentials or write_structures_only:
                         # only write structures
@@ -2714,7 +2752,9 @@ class Distortions:
                         ].values()
                     ),
                 ):
-                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
+                    _create_folder(
+                        f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}"
+                    )
                     struct.to(
                         fmt="cif",
                         filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
@@ -2793,7 +2833,9 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
+                    _create_folder(
+                        f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}"
+                    )
 
                     if write_structures_only:
                         ase.io.write(
@@ -2820,8 +2862,10 @@ class Distortions:
                                 "as `castep.cell` files."
                             )
                             ase.io.write(
-                                filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
-                                + f"{dist}/castep.cell",
+                                filename=(
+                                    f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/"
+                                    f"{dist}/castep.cell"
+                                ),
                                 images=atoms,
                                 format="castep-cell",
                             )
@@ -2925,7 +2969,9 @@ class Distortions:
                     ),
                 ):
                     atoms = aaa.get_atoms(struct)
-                    _create_folder(f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}")
+                    _create_folder(
+                        f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}"
+                    )
 
                     ase.io.write(
                         filename=f"{output_path}/{defect_name}_{'+' if charge > 0 else ''}{charge}"
@@ -3078,9 +3124,11 @@ class Distortions:
                     # Generate a defect entry for each charge state
                     defect.user_charges = defect.get_charge_states(padding=padding)
                     for charge in defect.user_charges:
-                        defect_entries.append(_get_defect_entry_from_defect(
-                            defect=defect, charge_state=charge
-                        ))
+                        defect_entries.append(
+                            _get_defect_entry_from_defect(
+                                defect=defect, charge_state=charge
+                            )
+                        )
 
             # Check if user gives dict with structure and defect_coords/defect_index
             elif isinstance(defect_structure, tuple) or isinstance(
@@ -3125,9 +3173,11 @@ class Distortions:
                     defect.user_charges = defect.get_charge_states(padding=padding)
                     # Generate a defect entry for each charge state:
                     for charge in defect.user_charges:
-                        defect_entries.append(_get_defect_entry_from_defect(
-                            defect=defect, charge_state=charge
-                        ))
+                        defect_entries.append(
+                            _get_defect_entry_from_defect(
+                                defect=defect, charge_state=charge
+                            )
+                        )
 
                 else:
                     warnings.warn(
