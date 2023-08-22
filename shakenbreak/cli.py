@@ -10,6 +10,7 @@ from subprocess import call
 
 import click
 from doped.generation import get_defect_name_from_entry
+from doped.plotting import _format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
@@ -145,8 +146,7 @@ def snb():
     "--name",
     "-n",
     help="Defect name for folder and metadata generation. Defaults to "
-    "'{Defect.name}_m{Defect.multiplicity}' for interstitials and "
-    "'{Defect.name}_s{Defect.defect_site_index}' for vacancies and substitutions.",
+    "doped scheme (see tutorials).",
     default=None,
     type=str,
 )
@@ -558,13 +558,13 @@ def generate_all(
             # if user didn't specify defect names in config file,
             # check if defect filename is recognised
             try:
-                defect_name = plotting._format_defect_name(
-                    defect, include_site_num_in_name=False
+                defect_name = _format_defect_name(
+                    defect, include_site_info_in_name=False
                 )
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = plotting._format_defect_name(
-                        f"{defect}_0", include_site_num_in_name=False
+                    defect_name = _format_defect_name(
+                        f"{defect}_0", include_site_info_in_name=False
                     )
             if defect_name:
                 defect_name = defect
@@ -1416,13 +1416,11 @@ def groundstate(
         for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
             defect_name = None
             try:
-                defect_name = plotting._format_defect_name(
-                    dir, include_site_num_in_name=False
-                )
+                defect_name = _format_defect_name(dir, include_site_info_in_name=False)
             except Exception:
                 try:
-                    defect_name = plotting._format_defect_name(
-                        f"{dir}_0", include_site_num_in_name=False
+                    defect_name = _format_defect_name(
+                        f"{dir}_0", include_site_info_in_name=False
                     )
                 except Exception:
                     pass
