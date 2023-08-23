@@ -140,18 +140,18 @@ class CLITestCase(unittest.TestCase):
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         if_present_rm(
             os.path.join(
@@ -236,7 +236,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -335,7 +335,6 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        defect_name = "v_Cd_s4"
         result = runner.invoke(
             snb,
             [
@@ -466,7 +465,7 @@ class CLITestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
-        defect_name = "Cd_i_m128"
+        defect_name = "Cd_i_C3v_Cd2.71"
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
@@ -621,7 +620,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -733,7 +732,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "Te_Cd_s0"
+        defect_name = "Te_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 4", result.output)
         self.assertIn(
@@ -769,7 +768,7 @@ class CLITestCase(unittest.TestCase):
         #     "state}, with a `padding = 1` on either side of this range.",
         #     result.output,
         # )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -852,7 +851,7 @@ local_rattle: False"""
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         V_Cd_kwarged_POSCAR = Poscar.from_file(
             f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
@@ -890,7 +889,7 @@ oxidation_states:
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
@@ -1073,7 +1072,7 @@ local_rattle: False
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Defect {defect_name} in charge state: -7. Number of distorted neighbours: 3",
@@ -1193,7 +1192,7 @@ nonsense_key: nonsense_value"""
         defects_dir = "pesky_defects"
         os.mkdir(defects_dir)
         runner = CliRunner()
-        defect_name = "vac_1_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1278,7 +1277,7 @@ seed: 42"""  # previous default
             1,
         ] + list(range(-1, 2)):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-                self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
+                self.assertTrue(os.path.exists(f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/POSCAR"))
         for dist in ["Unperturbed", "Rattled"]:
             # -2 has 0 electron change -> only Unperturbed & rattled folders
             self.assertTrue(os.path.exists(f"{defect_name}_-2/{dist}/POSCAR"))
@@ -1289,12 +1288,12 @@ seed: 42"""  # previous default
         )
         if_present_rm(defects_dir)
         for charge in range(-2, 3):
-            if_present_rm(f"{defect_name}_{charge}")
+            if_present_rm(f"{defect_name}_{'+' if charge > 0 else ''}{charge}")
         self.tearDown()
 
         # Test defects not organised in folders
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1363,7 +1362,7 @@ seed: 42"""  # previous default
 
         # Test defects with new pymatgen naming
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Va_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")
         shutil.copyfile(
@@ -1435,7 +1434,7 @@ seed: 42"""  # previous default
         # CONFIG file
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -1547,12 +1546,12 @@ seed: 42"""  # previous default
             result.output,  # test auto-determined stdev and bond length
         )
         self.assertIn(
-            f"Defect v_Cd_s0 in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect v_Cd in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         # Not only neutral charge state because auto-determined defect name doesn't match config
         self.assertIn(
-            f"Defect v_Cd_s0 in charge state: -2. Number of distorted neighbours: 0",
+            f"Defect v_Cd in charge state: -2. Number of distorted neighbours: 0",
             result.output,
         )
         self.assertIn("--Distortion 30.0%", result.output)
@@ -1563,13 +1562,13 @@ seed: 42"""  # previous default
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-            self.assertTrue(os.path.exists(f"v_Cd_s0_0/{dist}/POSCAR"))
-            self.assertTrue(os.path.exists(f"v_Cd_s0_-1/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_0/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_-1/{dist}/POSCAR"))
         # The input_file option is tested in local test, as INCAR
         # not written in Github Actions
 
         # test padding
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -2617,7 +2616,7 @@ Chosen VASP error message: {error_string}
         )
 
         # test warning when all parsed distortions are >0.1 eV higher energy than unperturbed
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -2653,7 +2652,7 @@ Chosen VASP error message: {error_string}
         )  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
@@ -2678,7 +2677,7 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
         # test warning when all parsed distortions are <-0.1 eV lower energy than unperturbed
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -2712,7 +2711,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             len([i for i in w if i.category == UserWarning]) == 0
@@ -2748,7 +2747,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             any(
@@ -2768,7 +2767,7 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
         # test warning when all distortions have been renamed to "*High_Energy*"
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -3203,7 +3202,7 @@ Chosen VASP error message: {error_string}
         defect_name = "v_Ti"
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd_s0": {
+                "v_Cd": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -3251,12 +3250,12 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
             )
         )
         self.assertTrue(
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png")
             )
         )
         if w:
@@ -3454,12 +3453,12 @@ Chosen VASP error message: {error_string}
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
             )
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
             os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_s0_-1.png")
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_-1.png")
             )
         )
         [
@@ -3482,7 +3481,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        defect = "v_Cd_s0"  # in example results
+        defect = "v_Cd"  # in example results
         self.assertEqual(
             len([warning for warning in w if warning.category == UserWarning]), 0
         )
@@ -3759,11 +3758,11 @@ Chosen VASP error message: {error_string}
         defect = "vac_1_Cd_0"  # in self.VASP_CDTE_DATA_DIR
         if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             )
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-60.0%"),
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
                 os.path.join(
                     self.VASP_CDTE_DATA_DIR,
                     f"{defect}/Bond_Distortion_-48.0%_High_Energy",

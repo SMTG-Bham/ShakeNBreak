@@ -321,9 +321,9 @@ def write_vasp_gam_files(
         ) in (
             incar_settings.keys()
         ):  # check INCAR flags and warn if they don't exist (typos)
-            if (
-                k not in incar_params.keys()
-            ):  # this code is taken from pymatgen.io.vasp.inputs
+            if k not in incar_params.keys() and not k.startswith(
+                "#"
+            ):  # comment tag  # this code is taken from pymatgen.io.vasp.inputs
                 warnings.warn(  # but only checking keys, not values so we can add comments etc
                     f"Cannot find {k} from your incar_settings in the list of "
                     "INCAR flags",
@@ -343,5 +343,5 @@ def write_vasp_gam_files(
         vaspgamposcar.comment = poscar_comment
     vaspgamposcar.write_file(vaspgaminputdir + "POSCAR")
     with zopen(vaspgaminputdir + "INCAR", "wt") as incar_file:
-        incar_file.write(vaspgamincar.get_string())
+        incar_file.write(vaspgamincar.get_str())
     vaspgamkpts.write_file(vaspgaminputdir + "KPOINTS")

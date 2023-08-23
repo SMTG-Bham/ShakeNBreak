@@ -535,7 +535,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         # distorted neighbours and their identities
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd_s0": {
+                "v_Cd": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -577,13 +577,13 @@ class DistortionLocalTestCase(unittest.TestCase):
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
         )
         self.assertTrue(
-            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png"))
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
         )
         compare_images(
-            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png"),
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"),
             f"{_DATA_DIR}/local_baseline_plots/vac_1_Cd_0_cli_default.png",
             tol=2.0,
         )  # only locally (on Github Actions, saved image has a different size)
@@ -595,19 +595,19 @@ class DistortionLocalTestCase(unittest.TestCase):
 
         # generate docs example plots:
         shutil.copytree(
-            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0"
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0", f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0"
         )
         for i in range(1,7):
             shutil.copyfile(
-                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Unperturbed/CONTCAR",
-                f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_{i}0.0%/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Unperturbed/CONTCAR",
+                f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_{i}0.0%/CONTCAR",
             )
-        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
+        energies_dict = loadfn(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
         energies_dict["distortions"][-0.5] = energies_dict["distortions"][-0.6]
-        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.yaml")
+        dumpfn(energies_dict, f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.yaml")
         shutil.copyfile(
-            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-60.0%/CONTCAR",
-            f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/Bond_Distortion_-50.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-60.0%/CONTCAR",
+            f"{self.EXAMPLE_RESULTS}/v_Cd_0/Bond_Distortion_-50.0%/CONTCAR",
         )
 
         result = runner.invoke(
@@ -615,7 +615,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             [
                 "plot",
                 "-d",
-                "v_Cd_s0_0",
+                "v_Cd_0",
                 "-cb",
                 "-p",
                 self.EXAMPLE_RESULTS,
@@ -623,24 +623,24 @@ class DistortionLocalTestCase(unittest.TestCase):
                 "svg",
             ],
         )
-        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg",
-                        "../docs/v_Cd_s0_0_colorbar.svg")
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg",
+                        "../docs/v_Cd_0_colorbar.svg")
         result = runner.invoke(
             snb,
             [
                 "plot",
                 "-d",
-                "v_Cd_s0_0",
+                "v_Cd_0",
                 "-p",
                 self.EXAMPLE_RESULTS,
                 "-f",
                 "svg",
             ],
         )
-        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0/v_Cd_s0_0.svg", "../docs/v_Cd_s0_0.svg")
-        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0")
+        shutil.copyfile(f"{self.EXAMPLE_RESULTS}/v_Cd_0/v_Cd_0.svg", "../docs/v_Cd_0.svg")
+        shutil.rmtree(f"{self.EXAMPLE_RESULTS}/v_Cd_0")
         shutil.move(
-            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_s0_0", f"{self.EXAMPLE_RESULTS}/v_Cd_s0_0"
+            f"{self.EXAMPLE_RESULTS}/orig_v_Cd_0", f"{self.EXAMPLE_RESULTS}/v_Cd_0"
         )
         os.remove(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json")
         self.tearDown()
@@ -889,7 +889,7 @@ POTCAR:
 """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        defect_name = "v_Cd_s0"  # SnB default name
+        defect_name = "v_Cd"  # SnB default name
         runner = CliRunner()
         result = runner.invoke(
             snb,
@@ -989,9 +989,9 @@ POTCAR:
         )
         self.assertTrue(  # here we get this warning because no Unperturbed structures were
             # written so couldn't be compared
-            any(f"The previously-generated defect folder v_Cd_s0_0 in "
+            any(f"The previously-generated defect folder v_Cd_0 in "
             f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect structure "
-            f"as the current defect species: v_Cd_s0_0. ShakeNBreak files in v_Cd_s0_0 will be "
+            f"as the current defect species: v_Cd_0. ShakeNBreak files in v_Cd_0 will be "
             f"overwritten." in str(warning.message) for warning in user_warnings)
         )
         for file in ["KPOINTS", "POTCAR", "POSCAR"]:

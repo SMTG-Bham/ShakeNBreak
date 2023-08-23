@@ -71,8 +71,8 @@ their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
                                     Options: 'VASP', 'CP2K', 'espresso',
                                     'CASTEP', 'FHI-aims'. Defaults to 'VASP'
     -n, --name TEXT                 Defect name for folder and metadata
-                                    generation. Defaults to pymatgen standard:
-                                    '{Defect Type}_mult{Supercell Multiplicity}'
+                                    generation. Defaults to doped scheme
+                                    (see tutorials)
     --config FILE                   Config file for advanced distortion
                                     settings. See example
                                     in/input_files/example_generate_config.yaml
