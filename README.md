@@ -22,7 +22,7 @@ Main features include:
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
-![](docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
+![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
 - Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
@@ -76,7 +76,7 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 
 ### Command line interface
 Alternatively, the code can be used via the command line:
-![ShakeNBreak CLI](docs/SnB_CLI.gif)
+![ShakeNBreak CLI](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_CLI.gif)
 
 The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
