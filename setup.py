@@ -117,8 +117,7 @@ def package_files(directory):
     """Include package data."""
     paths = []
     for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            paths.append(os.path.join("..", path, filename))
+        paths.extend(os.path.join("..", path, filename) for filename in filenames)
     return paths
 
 
@@ -131,7 +130,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.1.0",
+    version="3.2.0",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
