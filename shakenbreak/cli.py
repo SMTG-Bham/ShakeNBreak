@@ -263,9 +263,8 @@ def generate(
             f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
         )
         click.echo(
-            f"Auto site-matching identified {defect} to be "
-            f"type {defect_object.as_dict()['@class']} "
-            f"with site {site_info}"
+            f"Auto site-matching identified {defect} to be type {defect_object.as_dict()['@class']} with "
+            f"site {site_info}"
         )
 
     if charge is not None:
@@ -652,8 +651,7 @@ def generate_all(
                 f" {site._frac_coords[1]:.3f}, {site._frac_coords[2]:.3f}]"
             )
             click.echo(
-                f"Auto site-matching identified {defect} to be "
-                f"type {defect_object.as_dict()['@class']} "
+                f"Auto site-matching identified {defect} to be type {defect_object.as_dict()['@class']} "
                 f"with site {site_info}"
             )
 
@@ -1163,7 +1161,7 @@ def plot(
             defect_wout_charge: [] for defect_wout_charge in defects_wout_charge
         }
         for defect in defect_dirs:
-            defects_dict[defect.rsplit("_", 1)[0]].append(defect.rsplit("_", 1)[1])
+            defects_dict[defect.rsplit("_", 1)[0]].append(int(defect.rsplit("_", 1)[1]))
         return plotting.plot_all_defects(
             defects_dict=defects_dict,
             output_path=path,
