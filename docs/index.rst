@@ -282,11 +282,20 @@ Requirements
 
 .. toctree::
    :hidden:
+   :caption: Usage
    :maxdepth: 4
 
    Installation
    Python API <modules>
    Tutorials
    Tips
+
+.. toctree::
+   :hidden:
+   :caption: Information
+   :maxdepth: 1
+
    Code_Compatibility
    Contributing
+   changelog_link
+   ShakeNBreak on GitHub <https://github.com/SMTG-UCL/ShakeNBreak>
