@@ -398,7 +398,7 @@ def _get_defect_site(
     )
 
 
-def _get_defect_entry_from_defect(
+def _get_defect_entry_from_defect(  # from a PyCDT / old-doped defect object!
     defect: Defect,
     charge_state: int = 0,
 ):
