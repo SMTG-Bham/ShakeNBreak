@@ -236,7 +236,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -335,7 +335,6 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        defect_name = "v_Cd_s4"
         result = runner.invoke(
             snb,
             [
@@ -466,7 +465,7 @@ class CLITestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
-        defect_name = "Cd_i_C3v"
+        defect_name = "Cd_i_C3v_Cd2.71"
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
@@ -621,7 +620,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -733,7 +732,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "Te_Cd_s0"
+        defect_name = "Te_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 4", result.output)
         self.assertIn(
@@ -769,7 +768,7 @@ class CLITestCase(unittest.TestCase):
         #     "state}, with a `padding = 1` on either side of this range.",
         #     result.output,
         # )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -852,7 +851,7 @@ local_rattle: False"""
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         V_Cd_kwarged_POSCAR = Poscar.from_file(
             f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
@@ -890,7 +889,7 @@ oxidation_states:
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
@@ -1073,7 +1072,7 @@ local_rattle: False
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Defect {defect_name} in charge state: -7. Number of distorted neighbours: 3",
@@ -1193,7 +1192,7 @@ nonsense_key: nonsense_value"""
         defects_dir = "pesky_defects"
         os.mkdir(defects_dir)
         runner = CliRunner()
-        defect_name = "vac_1_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1294,7 +1293,7 @@ seed: 42"""  # previous default
 
         # Test defects not organised in folders
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1363,7 +1362,7 @@ seed: 42"""  # previous default
 
         # Test defects with new pymatgen naming
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Va_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")
         shutil.copyfile(
@@ -1435,7 +1434,7 @@ seed: 42"""  # previous default
         # CONFIG file
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -1569,7 +1568,7 @@ seed: 42"""  # previous default
         # not written in Github Actions
 
         # test padding
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -2653,7 +2652,7 @@ Chosen VASP error message: {error_string}
         )  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
@@ -2712,7 +2711,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             len([i for i in w if i.category == UserWarning]) == 0
@@ -2748,7 +2747,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             any(
@@ -3482,7 +3481,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        defect = "v_Cd_s0"  # in example results
+        defect = "v_Cd"  # in example results
         self.assertEqual(
             len([warning for warning in w if warning.category == UserWarning]), 0
         )
