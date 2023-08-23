@@ -12,7 +12,7 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg
+.. image:: https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda
  :target: https://anaconda.org/conda-forge/shakenbreak
 
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
@@ -94,8 +94,8 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
 which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
-`doped README <https://github.com/SMTG-UCL/doped/tree/master#installation>`_ instructions if you have difficulty with
-this.
+`doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+difficulty with this.
 
 Developer installation
 ------------------------
@@ -171,7 +171,7 @@ Code Compatibility
 :code:`ShakeNBreak` can take :code:`pymatgen` :code:`Defect` objects as input (to then generate the trial distorted
 structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects, :code:`doped` defect dictionaries or
 structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
-(such as `doped <https://github.com/SMTG-UCL/doped>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
+(such as `doped <https://doped.readthedocs.io/en/latest/index.html>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
 `PyCDT <https://github.com/mbkumar/pycdt>`_, `PyLada <https://github.com/pylada/pylada-defects>`_,
 `DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
 `DefAP <https://github.com/DefAP/defap>`_, `PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
@@ -282,11 +282,20 @@ Requirements
 
 .. toctree::
    :hidden:
+   :caption: Usage
    :maxdepth: 4
 
    Installation
    Python API <modules>
    Tutorials
    Tips
+
+.. toctree::
+   :hidden:
+   :caption: Information
+   :maxdepth: 1
+
    Code_Compatibility
    Contributing
+   changelog_link
+   ShakeNBreak on GitHub <https://github.com/SMTG-UCL/ShakeNBreak>

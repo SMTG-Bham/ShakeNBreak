@@ -97,8 +97,8 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             0.3, analysis._format_distortion_names("Bond_Distortion_30.0%")
         )
         self.assertEqual(
-            "-20.0%_from_3",
-            analysis._format_distortion_names("Bond_Distortion_-20.0%_from_3"),
+            "-20.0%_from_+3",
+            analysis._format_distortion_names("Bond_Distortion_-20.0%_from_+3"),
         )
         self.assertEqual(
             "Rattled_from_-1", analysis._format_distortion_names("Rattled_from_-1")
@@ -526,7 +526,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """Test calculate_struct_comparison() function."""
         # V_Cd_0 with defaults (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         defect_structures_dict = analysis.get_structures(
-            defect_species="v_Cd_s0_0", output_path=self.EXAMPLE_RESULTS
+            defect_species="v_Cd_0", output_path=self.EXAMPLE_RESULTS
         )
         with patch("builtins.print") as mock_print:
             max_dist_dict = analysis.calculate_struct_comparison(

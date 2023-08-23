@@ -2,12 +2,12 @@
 [![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://shakenbreak.readthedocs.io/en/latest/)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
-[![Conda Version](https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg)](https://anaconda.org/conda-forge/shakenbreak)
+[![Conda](https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda)](https://anaconda.org/conda-forge/shakenbreak)
 [![Downloads](https://img.shields.io/pypi/dm/shakenbreak)](https://shakenbreak.readthedocs.io/en/latest/)
 [![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
 # `ShakeNBreak` (`SnB`)
-<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to 
+<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to
 locate ground-state and metastable structures of point defects in solid materials. [Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
 
 Main features include:
@@ -22,7 +22,7 @@ Main features include:
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
-![](docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
+![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
 - Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
@@ -45,7 +45,9 @@ If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudo
 ```bash
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
-   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE` which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the [`doped README`](https://github.com/SMTG-UCL/doped/tree/master#installation) instructions if you have difficulty with this.
+   Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE`
+   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+   difficulty with this.
 
 The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)) will be installed with the package, and will be used by default for plotting.
 
@@ -74,7 +76,7 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 
 ### Command line interface
 Alternatively, the code can be used via the command line:
-![ShakeNBreak CLI](docs/SnB_CLI.gif)
+![ShakeNBreak CLI](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_CLI.gif)
 
 The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
@@ -98,9 +100,9 @@ pip install --upgrade pymatgen shakenbreak
 ```
 
 `ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures),
-**_but also_** can take in `pymatgen` `Structure` objects, `doped` defect dictionaries or structure files
+**_but also_** can take in `pymatgen` `Structure` objects, `doped` defects or structure files
 (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code
-(such as [`doped`](https://github.com/SMTG-UCL/doped), [`pydefect`](https://github.com/kumagai-group/pydefect),
+(such as [`doped`](https://doped.readthedocs.io/en/latest/index.html), [`pydefect`](https://github.com/kumagai-group/pydefect),
 [`PyCDT`](https://github.com/mbkumar/pycdt), [`PyLada`](https://github.com/pylada/pylada-defects),
 [`DASP`](http://hzwtech.com/files/software/DASP/htmlEnglish/index.html), [`Spinney`](https://gitlab.com/Marrigoni/spinney/-/tree/master),
 [`DefAP`](https://github.com/DefAP/defap), [`PyDEF`](https://github.com/PyDEF2/PyDEF-2.0)...) that generates these files.
