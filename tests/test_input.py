@@ -1218,10 +1218,13 @@ class InputTestCase(unittest.TestCase):
 
         # test Distortions() initialised fine with a single Defect
         dist = input.Distortions(self.V_Cd_entries)
-        assert np.isclose(dist.defects_dict["v_Cd"][0].sc_defect_frac_coords,
-                         self.cdte_defects["vac_1_Cd"][0].sc_defect_frac_coords).all()
-        self.assertEqual(dist.defects_dict["v_Cd"][0].defect,
-                         self.cdte_defects["vac_1_Cd"][0].defect)
+        assert np.isclose(
+            dist.defects_dict["v_Cd"][0].sc_defect_frac_coords,
+            self.cdte_defects["vac_1_Cd"][0].sc_defect_frac_coords,
+        ).all()
+        self.assertEqual(
+            dist.defects_dict["v_Cd"][0].defect, self.cdte_defects["vac_1_Cd"][0].defect
+        )
 
     def test_Distortions_single_atom_primitive(self):
         # test initialising Distortions with a single atom primitive cell
@@ -1724,16 +1727,15 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertTrue(
             any(
-                    f"There is a previous version of distortion_metadata.json. Will rename old "
-                    f"metadata to distortion_metadata_{current_datetime}.json"
-                    in call[0][0]
-                    for call in mock_Int_Cd_2_print.call_args_list
+                f"There is a previous version of distortion_metadata.json. Will rename old "
+                f"metadata to distortion_metadata_{current_datetime}.json" in call[0][0]
+                for call in mock_Int_Cd_2_print.call_args_list
             )
             or any(
-                    f"There is a previous version of distortion_metadata.json. Will rename old "
-                    f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
-                    in call[0][0]
-                    for call in mock_Int_Cd_2_print.call_args_list
+                f"There is a previous version of distortion_metadata.json. Will rename old "
+                f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
+                in call[0][0]
+                for call in mock_Int_Cd_2_print.call_args_list
             )
         )
 
@@ -1789,7 +1791,25 @@ class InputTestCase(unittest.TestCase):
             "vac_1_Cd": self.cdte_defects["vac_1_Cd"],
             "vac_2_Te": self.cdte_defects["vac_2_Te"],  # same original names
         }
-        self.assertDictEqual(dist.defects_dict, pmg_defects)
+        self.assertEqual(list(dist.defects_dict.keys()), list(pmg_defects.keys()))
+        for defect_entry_key in dist.defects_dict.keys():
+            assert all(
+                dist.defects_dict[defect_entry_key][i].sc_entry
+                == pmg_defects[defect_entry_key][i].sc_entry
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
+            assert all(
+                dist.defects_dict[defect_entry_key][i].defect
+                == pmg_defects[defect_entry_key][i].defect
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
+            assert all(
+                np.isclose(
+                    dist.defects_dict[defect_entry_key][i].sc_defect_frac_coords,
+                    pmg_defects[defect_entry_key][i].sc_defect_frac_coords,
+                ).all()
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
 
         # Test distortion generation
         for defect_dict in vacancies["vacancies"]:
@@ -1939,20 +1959,16 @@ class InputTestCase(unittest.TestCase):
         )
         # test correct distorted neighbours based on oxidation states:
         mock_print.assert_any_call(
-            "\nDefect v_Te in charge state: -2. Number of distorted "
-            "neighbours: 4"
+            "\nDefect v_Te in charge state: -2. Number of distorted " "neighbours: 4"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_Te in charge state: -2. Number of "
-            "distorted neighbours: 2"
+            "\nDefect Cd_Te in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_Cd in charge state: -2. Number of "
-            "distorted neighbours: 2"
+            "\nDefect Te_Cd in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_i_C3v in charge state: 0. Number of distorted "
-            "neighbours: 2"
+            "\nDefect Cd_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
         )
         mock_print.assert_any_call(
             "\nDefect Cd_i_Td_Cd2.83 in charge state: 0. Number of distorted "
@@ -1963,8 +1979,7 @@ class InputTestCase(unittest.TestCase):
             "neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_i_C3v in charge state: 0. Number of distorted "
-            "neighbours: 2"
+            "\nDefect Te_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
         )
         mock_print.assert_any_call(
             "\nDefect Te_i_Td_Cd2.83 in charge state: 0. Number of distorted "
