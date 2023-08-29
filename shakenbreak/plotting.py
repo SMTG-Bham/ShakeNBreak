@@ -72,6 +72,23 @@ def _install_custom_font():
             warnings.warn(warning_msg)
 
 
+def _get_backend(save_format: str) -> str:
+    """Try use pycairo as backend if installed, and save_format is pdf."""
+    backend = None
+    if "pdf" in save_format:
+        try:
+            import cairo
+
+            backend = "cairo"
+        except ImportError:
+            warnings.warn(
+                "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
+                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
+                "`pip install pycairo` if you want ShakeNBreak's default font."
+            )
+    return backend
+
+
 # Helper functions for formatting plots
 def _verify_data_directories_exist(
     output_path: str,
@@ -501,18 +518,7 @@ def _save_plot(
             )
 
     # use pycairo as backend if installed and save_format is pdf:
-    backend = None
-    if "pdf" in save_format:
-        try:
-            import cairo
-
-            backend = "cairo"
-        except ImportError:
-            warnings.warn(
-                "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
-                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
-                "`pip install pycairo` if you want ShakeNBreak's default font."
-            )
+    backend = _get_backend(save_format)
 
     fig.savefig(
         plot_filepath,
