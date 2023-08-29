@@ -5,8 +5,8 @@ ALGO: "Normal  # Change to All if ZHEGV, FEXCP/F or ZBRENT errors encountered (d
 EDIFFG: -0.01
 ENCUT: 300
 HFSCREEN: 0.208  # correct HSE screening parameter; see https://aip.scitation.org/doi/10.1063/1.2404663
-# Note this 👆 differs from the Materials Project MPHSERelaxSet default of 0.2! (Will cause systematic
-# energy shifts in HSE supercell calculations.)
+# Note this HFSCREEN value differs from the Materials Project MPHSERelaxSet default of 0.2! This should
+# be consistent between all your defect/bulk/competing-phase calculations.
 IBRION: '2  # Typically more stable / reliable than "1" (RMM-DIIS), but change if ionic convergence is poor (done automatically by snb-run)'
 ISIF: 2
 ISMEAR: 0
