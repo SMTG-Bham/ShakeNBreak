@@ -22,14 +22,11 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools setuptools_scm wheel
-          pip install numpy
-          pip install -e .
           pip install -e .[tests]
 
       - name: Test
         run:  |
-          pytest --mpl tests/test_*.py  # test output plots
+          pytest --mpl tests # test everything
 
       - name: Build packages
         run: |
