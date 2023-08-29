@@ -529,7 +529,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
+        output = distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
@@ -539,9 +539,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
             output["distorted_structure"],
             d_min=d_min,
@@ -581,7 +579,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=40,  # distortion_factor * 100, default
         )
-        output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
+        output = distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -596,9 +594,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Cd indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             output["distorted_structure"],
             d_min=d_min,
             active_atoms=rattling_atom_indices,
@@ -945,19 +941,19 @@ class InputTestCase(unittest.TestCase):
 
         # test with kwargs:
         kwarg_incar_settings = {
-            "NELECT": 3,
             "IBRION": 42,
             "LVHAR": True,
             "LWAVE": True,
             "LCHARG": True,
+            "AEXX": 0.35,
         }
-        kwarged_incar_settings = vasp.default_incar_settings.copy()
-        kwarged_incar_settings.update(kwarg_incar_settings)
         with warnings.catch_warnings(record=True) as w:
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                user_incar_settings=kwarged_incar_settings,
+                user_incar_settings=kwarg_incar_settings,
+                user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
+                potcars=_potcars_available(),  # to allow testing on GH Actions
             )
         self._check_V_Cd_folder_renaming(
             w,
@@ -1374,8 +1370,55 @@ class InputTestCase(unittest.TestCase):
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
-        # Use customised names for defects
+        # test input file kwargs: # TODO: Move to bottom after this works!
+        reduced_Int_Cd_2 = copy.deepcopy(self.Int_Cd_2)
+        reduced_Int_Cd_2.user_charges = [
+            1,
+        ]
+        reduced_Int_Cd_2_entries = [
+            input._get_defect_entry_from_defect(reduced_Int_Cd_2, c)
+            for c in reduced_Int_Cd_2.user_charges
+        ]
+        dist = input.Distortions(
+            {"Int_Cd_2": reduced_Int_Cd_2_entries},
+            oxidation_states=oxidation_states,
+            distortion_increment=0.25,
+            distorted_elements={"Int_Cd_2": ["Cd"]},
+            dict_number_electrons_user={"Int_Cd_2": 3},
+            local_rattle=False,
+            stdev=0.25,  # old default
+            seed=42,  # old default
+        )
+        _, distortion_metadata = dist.write_vasp_files(
+            verbose=True,
+            user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
+            user_potcar_functional="PBE_52",
+            potcars=_potcars_available(),  # to allow testing on GH Actions
+        )
+        self.assertTrue(os.path.exists("Int_Cd_2_+1/Unperturbed"))
+        _int_Cd_2_POSCAR = Poscar.from_file(
+            "Int_Cd_2_+1/Unperturbed/POSCAR"
+        )  # test POSCAR loaded fine
+        kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                "Int_Cd_2_+1/Unperturbed/INCAR", self.V_Cd_INCAR_file
+            )
+            int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
+            v_Cd_INCAR = self.V_Cd_INCAR.copy()
+            v_Cd_INCAR.pop("NELECT")  # NELECT and NUPDOWN differs for the two defects
+            v_Cd_INCAR.pop("NUPDOWN")
+            int_Cd_2_INCAR.pop("NELECT")
+            int_Cd_2_INCAR.pop("NUPDOWN")
+            assert v_Cd_INCAR == int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file("Int_Cd_2_+1/Unperturbed/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
+
+        # Use customised names for defects
         dist = input.Distortions(
             self.cdte_defects,
             oxidation_states=oxidation_states,
@@ -1388,6 +1431,7 @@ class InputTestCase(unittest.TestCase):
             _, distortion_metadata = dist.write_vasp_files(
                 user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
                 verbose=False,
+                potcars=_potcars_available(),  # to allow testing on GH Actions
             )
 
         # check if expected folders were created:
@@ -1451,8 +1495,28 @@ class InputTestCase(unittest.TestCase):
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            assert kwarged_INCAR == Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
@@ -1464,8 +1528,46 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            assert kwarged_INCAR == Incar.from_file(
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR.pop("NELECT")
+            assert kwarged_INCAR == Int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         # Test `Rattled` folder not generated for non-fully-ionised defects,
         # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
