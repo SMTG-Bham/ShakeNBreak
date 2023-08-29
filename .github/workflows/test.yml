@@ -32,7 +32,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install numpy
           pip install -e .[tests]
 
       - name: Check package versions
@@ -43,9 +42,9 @@ jobs:
 
       - name: Test
         run:  |
-          pytest tests  # test everything
-          pytest --mpl tests/test_plotting.py  # plotting tests
-          pytest --mpl tests/test_shakenbreak.py  # plotting tests
+          pytest tests -vv  # test everything
+          pytest --mpl tests/test_plotting.py -vv  # plotting tests
+          pytest --mpl tests/test_shakenbreak.py -vv  # plotting tests
           
           # To generate the test plots:
           # pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # generate output plots
