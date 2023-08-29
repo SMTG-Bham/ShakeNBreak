@@ -196,8 +196,12 @@ def generate(
     for a given defect.
     """
     user_settings = loadfn(config) if config is not None else {}
+    # Parse POTCARs/pseudopotentials from config file, if specified
+    user_potcar_functional = user_settings.pop("POTCAR_FUNCTIONAL", "PBE")
+    user_potcar_settings = user_settings.pop("POTCAR", None)
+    pseudopotentials = user_settings.pop("pseudopotentials", None)
+
     func_args = list(locals().keys())
-    pseudopotentials = None
     if user_settings:
         valid_args = [
             "defect",
@@ -233,13 +237,7 @@ def generate(
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
-        # Parse pseudopotentials from config file, if specified
-        if "POTCAR" in user_settings.keys():
-            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
-            user_settings.pop("POTCAR", None)
-        if "pseudopotentials" in user_settings.keys():
-            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
-            user_settings.pop("pseudopotentials", None)
+
         for key in list(user_settings.keys()):
             # remove non-sense keys from user_settings
             if key not in valid_args:
@@ -331,7 +329,7 @@ def generate(
             user_incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
             verbose=verbose,
-            user_potcar_settings=pseudopotentials,
+            user_potcar_settings=user_potcar_settings,
             user_incar_settings=user_incar_settings,
         )
     elif code.lower() == "cp2k":
@@ -487,9 +485,13 @@ def generate_all(
     else:
         defect_settings, user_settings = {}, {}
 
+    # Parse POTCARs/pseudopotentials from config file, if specified
+    user_potcar_functional = user_settings.pop("POTCAR_FUNCTIONAL", "PBE")
+    user_potcar_settings = user_settings.pop("POTCAR", None)
+    pseudopotentials = user_settings.pop("pseudopotentials", None)
+
     func_args = list(locals().keys())
     # Specified options take precedence over the ones in the config file
-    pseudopotentials = None
     if user_settings:
         valid_args = [
             "defects",
@@ -521,13 +523,7 @@ def generate_all(
         for key in func_args:
             if key in user_settings:
                 user_settings.pop(key, None)
-        # Parse pseudopotentials from config file, if specified
-        if "POTCAR" in user_settings.keys():
-            pseudopotentials = {"POTCAR": deepcopy(user_settings["POTCAR"])}
-            user_settings.pop("POTCAR", None)
-        if "pseudopotentials" in user_settings.keys():
-            pseudopotentials = deepcopy(user_settings["pseudopotentials"])
-            user_settings.pop("pseudopotentials", None)
+
         for key in list(user_settings.keys()):
             # remove non-sense keys from user_settings
             if key not in valid_args:
@@ -695,7 +691,7 @@ def generate_all(
             user_incar_settings = None
         distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
             verbose=verbose,
-            user_potcar_settings=pseudopotentials,
+            user_potcar_settings=user_potcar_settings,
             user_incar_settings=user_incar_settings,
         )
     elif code.lower() == "cp2k":
