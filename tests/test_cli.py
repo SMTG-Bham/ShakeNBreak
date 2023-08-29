@@ -20,14 +20,25 @@ from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Kpoints, Potcar, Incar
 
+from doped.vasp import _test_potcar_functional_choice
+
 from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
 from shakenbreak.input import generate_defect_object
 
-from tests.test_input import _potcars_available
-
 file_path = os.path.dirname(__file__)
 
+def _potcars_available() -> bool:
+    """
+    Check if the POTCARs are available for the tests (i.e. testing locally).
+
+    If not (testing on GitHub Actions), POTCAR testing will be skipped.
+    """
+    try:
+        _test_potcar_functional_choice("PBE")
+        return True
+    except ValueError:
+        return False
 
 def if_present_rm(path):
     if os.path.exists(path):
