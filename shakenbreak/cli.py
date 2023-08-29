@@ -29,10 +29,8 @@ def _parse_defect_dirs(path) -> list:
         for dir in os.listdir(path)
         if os.path.isdir(f"{path}/{dir}")
         and any(
-            [
-                fnmatch.filter(os.listdir(f"{path}/{dir}"), f"{dist}*")
-                for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
-            ]
+            fnmatch.filter(os.listdir(f"{path}/{dir}"), f"{dist}*")
+            for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
         )  # only parse defect directories that contain distortion folders
     ]
 
