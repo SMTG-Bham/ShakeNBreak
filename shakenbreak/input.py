@@ -185,9 +185,10 @@ def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
     user_incar_settings: Optional[dict] = None,
-    user_potcar_functional: Optional[UserPotcarFunctional] = "PBE_54",
+    user_potcar_functional: Optional[UserPotcarFunctional] = "PBE",
     user_potcar_settings: Optional[dict] = None,
     output_path: str = ".",
+    **kwargs,
 ) -> None:
     """
     Creates folders for storing VASP ShakeNBreak files.
@@ -213,6 +214,10 @@ def _create_vasp_input(
             Path to directory in which to write distorted defect structures and
             calculation inputs.
             (Default is current directory = "./")
+        **kwargs:
+            Keyword arguments to pass to `DefectDictSet.write_input()` (e.g.
+            `potcar_spec`). If `potcars` in `kwargs`, then this is passed to
+            `DefectDictSet()`. Mainly for POTCAR testing on GH Actions.
 
     Returns:
         None
@@ -352,6 +357,7 @@ def _create_vasp_input(
         user_potcar_functional=user_potcar_functional,
         user_potcar_settings=potcar_settings,
         poscar_comment=None,
+        potcars=kwargs.pop("potcars", None),
     )
 
     for (
@@ -362,7 +368,7 @@ def _create_vasp_input(
     ):  # for each distortion, create sub-subfolder folder
         dds._structure = single_defect_dict["Defect Structure"]
         dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
-        dds.write_input(f"{output_path}/{defect_name}/{distortion}")
+        dds.write_input(f"{output_path}/{defect_name}/{distortion}", **kwargs)
         # TODO: Should be able to add tests with potcar_spec? By adding kwargs here?
         # TODO: Edit output warning when user POTCARs not set up (and check this)
         # warnings.warn(
@@ -1683,9 +1689,7 @@ def apply_snb_distortions(
                     "defect_site_index"
                 ] = bond_distorted_defect["defect_site_index"]
 
-    elif (
-        num_nearest_neighbours == 0
-    ):  # when no extra/missing electrons, just rattle the structure.
+    else:  # when no extra/missing electrons, just rattle the structure
         # Likely to be a shallow defect.
         if defect_type == "vacancy":
             defect_site_index = None
@@ -2250,7 +2254,7 @@ class Distortions:
         approx_coords = (
             f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
         )
-        poscar_comment = (
+        return (
             str(
                 key_distortion.split("_")[-1]
             )  # Get distortion factor (-60.%) or 'Rattled'
@@ -2262,7 +2266,6 @@ class Distortions:
             )
             + f" {approx_coords}"
         )
-        return poscar_comment
 
     def _setup_distorted_defect_dict(
         self,
@@ -2489,10 +2492,11 @@ class Distortions:
     def write_vasp_files(
         self,
         user_incar_settings: Optional[dict] = None,
-        user_potcar_functional: Optional[UserPotcarFunctional] = "PBE_54",
+        user_potcar_functional: Optional[UserPotcarFunctional] = "PBE",
         user_potcar_settings: Optional[dict] = None,
         output_path: str = ".",
         verbose: bool = False,
+        **kwargs,
     ) -> Tuple[dict, dict]:
         """
         Generates the input files for `vasp_gam` relaxations of all output
@@ -2524,8 +2528,10 @@ class Distortions:
                 (Default is current directory = ".")
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and
-                distances).
-                (Default: False)
+                distances). (Default: False)
+            kwargs:
+                Additional keyword arguments to pass to `_create_vasp_input()`
+                (Mainly for testing purposes).
 
         Returns:
             :obj:`tuple`:
@@ -2581,6 +2587,7 @@ class Distortions:
                     user_potcar_functional=user_potcar_functional,
                     user_potcar_settings=user_potcar_settings,
                     output_path=output_path,
+                    **kwargs,
                 )
 
         self.write_distortion_metadata(output_path=output_path)
