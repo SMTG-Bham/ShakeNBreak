@@ -193,6 +193,9 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/INCAR")
 
+        for i in ["castep", "cp2k", "fhi_aims", "quantum_espresso"]:
+            if_present_rm(f"{self.DATA_DIR}/{i}/vac_1_Cd_0/default_INCAR")
+
     def copy_v_Ti_OUTCARs(self):
         """
         Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
@@ -3531,8 +3534,9 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         defect = "v_Cd"  # in example results
+        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
         )
 
         self.assertIn(
@@ -3614,9 +3618,18 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
+        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
         )
+        assert any(
+            f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2, so just writing distorted POSCAR file to "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory."
+            in str(warning.message)
+            for warning in w
+        )
+
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
@@ -3628,12 +3641,6 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             f"Writing low-energy distorted structure to"
             f" {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
-            result.output,
-        )
-        self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/{defect}_-2,"
-            f" so just writing distorted POSCAR file to "
-            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)

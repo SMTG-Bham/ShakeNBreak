@@ -999,7 +999,6 @@ class InputTestCase(unittest.TestCase):
                 "Te_GW",
             }  # Cd_sv_GW POTCAR has Cd_sv symbol, checked
         else:  # test POTCAR warning
-            print([warning.message for warning in w])
             assert any(
                 str(warning.message)
                 == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
