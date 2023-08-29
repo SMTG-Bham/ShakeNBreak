@@ -19,6 +19,7 @@ import numpy as np
 from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
+from doped import _ignore_pmg_warnings
 from doped.generation import (
     DefectsGenerator,
     get_defect_name_from_entry,
@@ -52,10 +53,7 @@ default_incar_settings = loadfn(
 )
 
 
-warnings.filterwarnings(
-    "ignore", category=UnknownPotcarWarning
-)  # Ignore pymatgen POTCAR warnings
-warnings.filterwarnings("ignore", message=".*Ignoring unknown variable type.*")
+_ignore_pmg_warnings()  # Ignore pymatgen POTCAR warnings
 
 
 def _warning_on_one_line(
@@ -216,8 +214,7 @@ def _create_vasp_input(
             (Default is current directory = "./")
         **kwargs:
             Keyword arguments to pass to `DefectDictSet.write_input()` (e.g.
-            `potcar_spec`). If `potcars` in `kwargs`, then this is passed to
-            `DefectDictSet()`. Mainly for POTCAR testing on GH Actions.
+            `potcar_spec`).
 
     Returns:
         None
@@ -357,7 +354,6 @@ def _create_vasp_input(
         user_potcar_functional=user_potcar_functional,
         user_potcar_settings=potcar_settings,
         poscar_comment=None,
-        potcars=kwargs.pop("potcars", None),
     )
 
     for (
@@ -368,14 +364,26 @@ def _create_vasp_input(
     ):  # for each distortion, create sub-subfolder folder
         dds._structure = single_defect_dict["Defect Structure"]
         dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
-        dds.write_input(f"{output_path}/{defect_name}/{distortion}", **kwargs)
-        # TODO: Should be able to add tests with potcar_spec? By adding kwargs here?
-        # TODO: Edit output warning when user POTCARs not set up (and check this)
-        # warnings.warn(
-        #             "POTCAR directory not set up with pymatgen, so only POSCAR files "
-        #             "will be generated (POTCARs also needed to determine appropriate "
-        #             "NELECT setting in INCAR files)"
-        #         )
+
+        try:
+            dds._check_user_potcars(unperturbed_poscar=False)
+            dds.write_input(f"{output_path}/{defect_name}/{distortion}", **kwargs)
+
+        except ValueError:
+            # POTCARs not set up, warn and write other files
+            warnings.warn(
+                "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\n"
+                "No `POTCAR` files will be written, and `NELECT` and `NUPDOWN` will not be set in "
+                "`INCAR`s. Beware!"
+            )
+
+            os.makedirs(f"{output_path}/{defect_name}/{distortion}", exist_ok=True)
+            dds.incar.write_file(f"{output_path}/{defect_name}/{distortion}/INCAR")
+            dds.poscar.write_file(f"{output_path}/{defect_name}/{distortion}/POSCAR")
+            dds.kpoints.write_file(f"{output_path}/{defect_name}/{distortion}/KPOINTS")
 
 
 def _get_bulk_comp(defect_object) -> Composition:
