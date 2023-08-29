@@ -44,9 +44,7 @@ jobs:
       - name: Test
         run:  |
           for test in tests/test_*py  # test everything
-            do 
-              pytest --mpl $test
-            fi
+            do pytest --mpl $test
           done
           
           # To generate the test plots:
