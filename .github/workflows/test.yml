@@ -42,9 +42,7 @@ jobs:
 
       - name: Test
         run:  |
-          pytest tests -vv  # test everything
-          pytest --mpl tests/test_plotting.py -vv  # plotting tests
-          pytest --mpl tests/test_shakenbreak.py -vv  # plotting tests
+          pytest --mpl tests -vv  # test everything
           
           # To generate the test plots:
           # pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # generate output plots
