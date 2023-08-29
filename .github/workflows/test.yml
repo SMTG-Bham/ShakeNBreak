@@ -42,6 +42,7 @@ jobs:
 
       - name: Test
         run:  |
+          pytest --mpl tests/test_cli.py -vv -k "generate"  # test generate first to find issue
           pytest --mpl tests -vv  # test everything
           
           # To generate the test plots:

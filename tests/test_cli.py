@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import inspect
 import unittest
 import warnings
 
@@ -225,7 +226,9 @@ class CLITestCase(unittest.TestCase):
         """Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
         """
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         runner = CliRunner()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         result = runner.invoke(
             snb,
             [
@@ -241,6 +244,7 @@ class CLITestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Auto site-matching identified {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
@@ -294,18 +298,23 @@ class CLITestCase(unittest.TestCase):
             self.V_Cd_minus0pt5_struc_rattled,
         )
 
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         if _potcars_available():
+            print(f"Hre: Line: {inspect.currentframe().f_lineno}")  # print current line number
             assert filecmp.cmp(f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file)
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te"}
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         result = runner.invoke(
             snb,
             [
@@ -319,6 +328,7 @@ class CLITestCase(unittest.TestCase):
             ],
             catch_exceptions=False,
         )  # non-verbose this time
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn(
             "Auto site-matching identified"
@@ -365,7 +375,9 @@ class CLITestCase(unittest.TestCase):
         )
 
         # test defect_index option:
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.tearDown()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         result = runner.invoke(
             snb,
             [
@@ -381,6 +393,7 @@ class CLITestCase(unittest.TestCase):
                 "-v",
             ],
         )
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn("Auto site-matching", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
@@ -454,11 +467,14 @@ class CLITestCase(unittest.TestCase):
         with open("distortion_metadata.json", "r") as metadata_file:
             metadata = json.load(metadata_file)
         np.testing.assert_equal(metadata, wrong_site_V_Cd_dict)
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
 
         # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
         # using Int_Cd because V_Cd is at (0,0,0) so fractional and Cartesian coordinates the same
         self.tearDown()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         with warnings.catch_warnings(record=True) as w:
+            print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
             result = runner.invoke(
                 snb,
                 [
@@ -477,6 +493,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.assertEqual(result.exit_code, 0)
         warning_message = (
             "Coordinates (0.0, 0.0, 0.0) were specified for (auto-determined) interstitial "
@@ -503,7 +520,9 @@ class CLITestCase(unittest.TestCase):
         )
 
         # test defect_coords working even when slightly off correct site
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.tearDown()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(
                 snb,
@@ -522,8 +541,11 @@ class CLITestCase(unittest.TestCase):
                     "-v",
                 ],
             )
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         self.assertEqual(result.exit_code, 0)
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         if w:
+            print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
             # Check no problems in identifying the defect site
             self.assertFalse(
                 any(str(warning.message) == warning_message for warning in w)
@@ -544,10 +566,12 @@ class CLITestCase(unittest.TestCase):
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
         )
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
 
         # test defect_coords working even when significantly off (~2.2 Å) correct site,
         # with rattled bulk
         self.tearDown()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         with warnings.catch_warnings(record=True) as w:
             rattled_bulk = rattle(
                 self.CdTe_bulk_struc, stdev=0.25, d_min=2.25
@@ -594,6 +618,7 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         with warnings.catch_warnings(record=True) as w:
             rattled_bulk = rattle(
                 self.CdTe_bulk_struc, stdev=0.25, d_min=2.25
@@ -731,6 +756,7 @@ class CLITestCase(unittest.TestCase):
         np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
 
         # test defect ID with tricky DX centre defect
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         result = runner.invoke(
             snb,
             [
@@ -782,6 +808,7 @@ class CLITestCase(unittest.TestCase):
 
         # test padding functionality:
         # default padding = 1
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
         result = runner.invoke(
             snb,
             [
@@ -849,6 +876,7 @@ class CLITestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(f"{defect_name}_-6"))
         self.assertFalse(os.path.exists(f"{defect_name}_+5"))
         self.assertFalse(os.path.exists(f"{defect_name}_-7"))
+        print(f"Line: {inspect.currentframe().f_lineno}")  # print current line number
 
     def test_snb_generate_config(self):
         # test config file:
