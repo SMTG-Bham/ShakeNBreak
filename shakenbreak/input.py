@@ -24,6 +24,7 @@ from doped.generation import (
     get_defect_name_from_entry,
     name_defect_entries,
 )
+from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
@@ -34,16 +35,21 @@ from pymatgen.core.structure import Composition, Element, PeriodicSite, Structur
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
-from pymatgen.io.vasp.inputs import UnknownPotcarWarning
-from pymatgen.io.vasp.sets import BadInputSetWarning
+from pymatgen.io.vasp.inputs import Kpoints, UnknownPotcarWarning
+from pymatgen.io.vasp.sets import BadInputSetWarning, UserPotcarFunctional
 from pymatgen.util.coord import pbc_diff
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
 
-from shakenbreak import analysis, distortions, io, vasp
+from shakenbreak import analysis, distortions, io
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
+# Load default INCAR settings for the ShakeNBreak geometry relaxations
+default_incar_settings = loadfn(
+    os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml")
+)
 
 
 warnings.filterwarnings(
@@ -178,8 +184,9 @@ def _write_distortion_metadata(
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
-    incar_settings: dict,
-    potcar_settings: Optional[dict] = None,
+    user_incar_settings: Optional[dict] = None,
+    user_potcar_functional: Optional[UserPotcarFunctional] = "PBE_54",
+    user_potcar_settings: Optional[dict] = None,
     output_path: str = ".",
 ) -> None:
     """
@@ -190,13 +197,18 @@ def _create_vasp_input(
             Folder name
         distorted_defect_dict (:obj:`dict`):
             Dictionary with the distorted structures of charged defect
-        incar_settings (:obj:`dict`):
+        user_incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the
             `doped` defaults.
-        potcar_settings (:obj:`dict`):
-            Dictionary of user VASP POTCAR settings, to overwrite/update the
-            `doped` defaults. Using `pymatgen` syntax (e.g. {'POTCAR':
-            {'Fe': 'Fe_pv', 'O': 'O'}}).
+        user_potcar_functional (str):
+                POTCAR functional to use. Default is "PBE" and if this fails,
+                tries "PBE_52", then "PBE_54".
+        user_potcar_settings (:obj:`dict`):
+            Dictionary of user VASP POTCAR settings, to overwrite/update
+            the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
+            recommended to look at output `POTCAR`s, or `shakenbreak`
+            `SnB_input_files/default_POTCARs.yaml`, to see what the default
+            `POTCAR` settings are. (Default: None)
         output_path (:obj:`str`):
             Path to directory in which to write distorted defect structures and
             calculation inputs.
@@ -206,10 +218,10 @@ def _create_vasp_input(
         None
     """
     # create folder for defect
-    defect_name_wout_charge, charge = defect_name.rsplit(
+    defect_name_wout_charge, charge_state = defect_name.rsplit(
         "_", 1
     )  # `defect_name` includes charge
-    charge = int(charge)
+    charge_state = int(charge_state)
     test_letters = [
         "h",
         "g",
@@ -228,9 +240,10 @@ def _create_vasp_input(
             for letter in test_letters
             for dir in os.listdir(output_path)
             if dir
-            == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
+            == f"{defect_name_wout_charge}{letter}_{'+' if charge_state > 0 else ''}{charge_state}"
             and os.path.isdir(
-                f"{output_path}/{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
+                f"{output_path}/{defect_name_wout_charge}{letter}_{'+' if charge_state > 0 else ''}"
+                f"{charge_state}"
             )
         ]
     except Exception:
@@ -270,15 +283,20 @@ def _create_vasp_input(
                 for letter in test_letters
                 for dir in matching_dirs
                 if dir
-                == f"{defect_name_wout_charge}{letter}_{'+' if charge > 0 else ''}{charge}"
+                == f"{defect_name_wout_charge}{letter}_{'+' if charge_state > 0 else ''}{charge_state}"
             ][0]
-            prev_dir_name = f"{defect_name_wout_charge}{last_letter}_{'+' if charge > 0 else ''}{charge}"
+            prev_dir_name = (
+                f"{defect_name_wout_charge}{last_letter}_{'+' if charge_state > 0 else ''}"
+                f"{charge_state}"
+            )
             if last_letter == "":  # rename prev defect folder
                 new_prev_dir_name = (
-                    f"{defect_name_wout_charge}a_{'+' if charge > 0 else ''}{charge}"
+                    f"{defect_name_wout_charge}a_{'+' if charge_state > 0 else ''}"
+                    f"{charge_state}"
                 )
                 new_current_dir_name = (
-                    f"{defect_name_wout_charge}b_{'+' if charge > 0 else ''}{charge}"
+                    f"{defect_name_wout_charge}b_{'+' if charge_state > 0 else ''}"
+                    f"{charge_state}"
                 )
                 warnings.warn(
                     f"A previously-generated defect folder {prev_dir_name} exists in "
@@ -298,7 +316,7 @@ def _create_vasp_input(
                 next_letter = test_letters[test_letters.index(last_letter) - 1]
                 new_current_dir_name = (
                     f"{defect_name_wout_charge}{next_letter}"
-                    f"_{'+' if charge > 0 else ''}{charge}"
+                    f"_{'+' if charge_state > 0 else ''}{charge_state}"
                 )
                 warnings.warn(
                     f"Previously-generated defect folders ({prev_dir_name}...) exist in "
@@ -311,22 +329,47 @@ def _create_vasp_input(
             defect_name = new_current_dir_name
 
     _create_folder(os.path.join(output_path, defect_name))
+
+    potcar_settings = copy.deepcopy(default_potcar_dict)["POTCAR"]
+    potcar_settings.update(user_potcar_settings or {})
+    incar_settings = copy.deepcopy(default_incar_settings)
+    incar_settings.update(user_incar_settings or {})
+    single_defect_dict = list(distorted_defect_dict.values())[0]
+
+    num_elements = len(single_defect_dict["Defect Structure"].composition.elements)
+    incar_settings.update({"ROPT": ("1e-3 " * num_elements).rstrip()})
+
+    dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
+        single_defect_dict["Defect Structure"],
+        charge_state=single_defect_dict["Charge State"],
+        user_incar_settings=incar_settings,
+        user_kpoints_settings=Kpoints().from_dict(
+            {
+                "comment": "Γ-only KPOINTS from ShakeNBreak",
+                "generation_style": "Gamma",
+            }
+        ),
+        user_potcar_functional=user_potcar_functional,
+        user_potcar_settings=potcar_settings,
+        poscar_comment=None,
+    )
+
     for (
         distortion,
         single_defect_dict,
     ) in (
         distorted_defect_dict.items()
     ):  # for each distortion, create sub-subfolder folder
-        potcar_settings_copy = copy.deepcopy(
-            potcar_settings
-        )  # files empties `potcar_settings dict` (via pop()), so make a
-        # deepcopy each time
-        vasp.write_vasp_gam_files(
-            single_defect_dict=single_defect_dict,
-            input_dir=f"{output_path}/{defect_name}/{distortion}",
-            incar_settings=incar_settings,
-            potcar_settings=potcar_settings_copy,
-        )
+        dds._structure = single_defect_dict["Defect Structure"]
+        dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
+        dds.write_input(f"{output_path}/{defect_name}/{distortion}")
+        # TODO: Should be able to add tests with potcar_spec? By adding kwargs here?
+        # TODO: Edit output warning when user POTCARs not set up (and check this)
+        # warnings.warn(
+        #             "POTCAR directory not set up with pymatgen, so only POSCAR files "
+        #             "will be generated (POTCARs also needed to determine appropriate "
+        #             "NELECT setting in INCAR files)"
+        #         )
 
 
 def _get_bulk_comp(defect_object) -> Composition:
@@ -2326,7 +2369,7 @@ class Distortions:
                 for each charge state of each defect, in the format:
                 {'defect_name': {
                     'charges': {
-                        'charge_state': {
+                        {charge_state}: {
                             'structures': {...},
                         },
                     },
@@ -2404,8 +2447,8 @@ class Distortions:
                 ):
                     sorted_distances = np.sort(struct.distance_matrix.flatten())
                     shortest_interatomic_distance = sorted_distances[len(struct)]
-                    if shortest_interatomic_distance < 1.0 and not any(
-                        [el.symbol == "H" for el in struct.composition.elements]
+                    if shortest_interatomic_distance < 1.0 and all(
+                        el.symbol != "H" for el in struct.composition.elements
                     ):
                         if verbose:
                             warnings.warn(
@@ -2421,12 +2464,9 @@ class Distortions:
                     "Unperturbed": defect_distorted_structures[
                         "Unperturbed"
                     ].sc_entry.structure,
-                    "distortions": {
-                        dist: struct
-                        for dist, struct in defect_distorted_structures[
-                            "distortions"
-                        ].items()
-                    },
+                    "distortions": dict(
+                        defect_distorted_structures["distortions"].items()
+                    ),
                 }
 
                 # Store distortion parameters/info in self.distortion_metadata
@@ -2448,8 +2488,9 @@ class Distortions:
 
     def write_vasp_files(
         self,
-        incar_settings: Optional[dict] = None,
-        potcar_settings: Optional[dict] = None,
+        user_incar_settings: Optional[dict] = None,
+        user_potcar_functional: Optional[UserPotcarFunctional] = "PBE_54",
+        user_potcar_settings: Optional[dict] = None,
         output_path: str = ".",
         verbose: bool = False,
     ) -> Tuple[dict, dict]:
@@ -2458,23 +2499,23 @@ class Distortions:
         structures.
 
         Args:
-            incar_settings (:obj:`dict`):
+            user_incar_settings (:obj:`dict`):
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
                 for those tags. Highly recommended to look at output `INCAR`s,
                 or `SnB_input_files/incar.yaml` to see what the default `INCAR`
                 settings are. Note that any flags that aren't numbers or
                 True/False need to be input as strings with quotation marks
-                (e.g. `{"ALGO": "All"}`).
-                (Default: None)
-            potcar_settings (:obj:`dict`):
+                (e.g. `{"ALGO": "All"}`). (Default: None)
+            user_potcar_functional (str):
+                POTCAR functional to use. Default is "PBE" and if this fails,
+                tries "PBE_52", then "PBE_54".
+            user_potcar_settings (:obj:`dict`):
                 Dictionary of user VASP POTCAR settings, to overwrite/update
-                the `doped` defaults. Using `pymatgen` syntax
-                (e.g. {'POTCAR': {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
+                the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
                 recommended to look at output `POTCAR`s, or `shakenbreak`
                 `SnB_input_files/default_POTCARs.yaml`, to see what the default
-                `POTCAR` settings are.
-                (Default: None)
+                `POTCAR` settings are. (Default: None)
             write_files (:obj:`bool`):
                 Whether to write output files (Default: True)
             output_path (:obj:`str`):
@@ -2501,50 +2542,44 @@ class Distortions:
 
         # loop for each defect in dict
         for defect_name, defect_dict in distorted_defects_dict.items():
-            dict_transf = {
-                k: v for k, v in defect_dict.items() if k != "charges"
-            }  # Single defect dict
-
             # loop for each charge state of defect
-            for charge in defect_dict["charges"]:
-                charged_defect = {}
+            for charge_state in defect_dict["charges"]:
+                charged_defect_dict = {}
 
                 for key_distortion, struct in zip(
                     [
                         "Unperturbed",
                     ]
                     + list(
-                        defect_dict["charges"][charge]["structures"][
+                        defect_dict["charges"][charge_state]["structures"][
                             "distortions"
                         ].keys()
                     ),
-                    [defect_dict["charges"][charge]["structures"]["Unperturbed"]]
+                    [defect_dict["charges"][charge_state]["structures"]["Unperturbed"]]
                     + list(
-                        defect_dict["charges"][charge]["structures"][
+                        defect_dict["charges"][charge_state]["structures"][
                             "distortions"
                         ].values()
                     ),
                 ):
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
-                        charge=charge,
+                        charge=charge_state,
                         key_distortion=key_distortion,
                     )
 
-                    charged_defect[key_distortion] = {
+                    charged_defect_dict[key_distortion] = {
                         "Defect Structure": struct,
                         "POSCAR Comment": poscar_comment,
-                        "Transformation Dict": copy.deepcopy(dict_transf),
+                        "Charge State": charge_state,
                     }
-                    charged_defect[key_distortion]["Transformation Dict"].update(
-                        {"charge": charge}
-                    )  # Add charge state to transformation dict
 
                 _create_vasp_input(
-                    defect_name=f"{defect_name}_{'+' if charge > 0 else ''}{charge}",
-                    distorted_defect_dict=charged_defect,
-                    incar_settings=incar_settings,
-                    potcar_settings=potcar_settings,
+                    defect_name=f"{defect_name}_{'+' if charge_state > 0 else ''}{charge_state}",
+                    distorted_defect_dict=charged_defect_dict,
+                    user_incar_settings=user_incar_settings,
+                    user_potcar_functional=user_potcar_functional,
+                    user_potcar_settings=user_potcar_settings,
                     output_path=output_path,
                 )
 
@@ -2657,7 +2692,7 @@ class Distortions:
                             images=atoms,
                             format="espresso-in",
                         )
-                    elif pseudopotentials and not write_structures_only:
+                    else:
                         # write complete input file
                         default_input_parameters["SYSTEM"][
                             "tot_charge"

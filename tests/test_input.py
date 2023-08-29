@@ -874,30 +874,20 @@ class InputTestCase(unittest.TestCase):
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
+
         # Create doped/PyCDT-style defect dict:
         supercell = self.V_Cd_dict["supercell"]
-        V_Cd_defect_relax_set = vasp.DefectRelaxSet(supercell["structure"], charge=0)
-        poscar = V_Cd_defect_relax_set.poscar
-        struct = V_Cd_defect_relax_set.structure
-        dict_transf = {
-            "defect_type": self.V_Cd_dict["name"],
-            "defect_site": self.V_Cd_dict["unique_site"],
-            "defect_supercell_site": self.V_Cd_dict["bulk_supercell_site"],
-            "defect_multiplicity": self.V_Cd_dict["site_multiplicity"],
-            "charge": 0,
-            "supercell": supercell["size"],
-        }
-        poscar.comment = (
+        poscar_comment = (
             self.V_Cd_dict["name"]
-            + str(dict_transf["defect_supercell_site"].frac_coords)
+            + str(self.V_Cd_dict["bulk_supercell_site"].frac_coords)
             + "_-dNELECT="  # change in NELECT from bulk supercell
             + str(0)
         )
         vasp_defect_inputs = {
             "vac_1_Cd_0": {
-                "Defect Structure": struct,
-                "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf,
+                "Defect Structure": supercell,
+                "POSCAR Comment": poscar_comment,
+                "Charge State": 0,
             }
         }
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
@@ -912,13 +902,11 @@ class InputTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=vasp.default_incar_settings,
+            user_incar_settings=vasp.default_incar_settings,
         )
-        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%"
+        )
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
@@ -937,27 +925,15 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings=kwarged_incar_settings,
+                user_incar_settings=kwarged_incar_settings,
             )
-        self.assertTrue(
-            any(  # here we get this warning because no Unperturbed structures were
-                # written so couldn't be compared
-                f"A previously-generated defect folder vac_1_Cd_0 exists in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structure "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are assumed "
-                f"to be inequivalent defects, so the previous vac_1_Cd_0 will be renamed to "
-                f"vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
-                f"vac_1_Cdb_0, to prevent overwriting." in str(warning.message)
-                for warning in w
-            )
+        self._check_V_Cd_folder_renaming(
+            w,
+            'A previously-generated defect folder vac_1_Cd_0 exists in ',
+            ', and the Unperturbed defect structure could not be matched to the current defect species: vac_1_Cd_0. These are assumed to be inequivalent defects, so the previous vac_1_Cd_0 will be renamed to vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to vac_1_Cdb_0, to prevent overwriting.',
         )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
         V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(V_Cd_kwarg_folder)
         # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
         # but tested locally
 
@@ -965,15 +941,12 @@ class InputTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=kwarged_incar_settings,
+            user_incar_settings=kwarged_incar_settings,
             output_path="test_path",
         )
-        V_Cd_kwarg_folder = "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
+        )
         # Test correct handling of cases where defect folders with the same name have previously
         # been written:
         # 1. If the Unperturbed defect structure cannot be matched to the current defect species,
@@ -997,20 +970,13 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
             )
-        self.assertTrue(
-            any(
-                f"The previously-generated defect folder vac_1_Cdb_0 in "
-                f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect "
-                f"structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in "
-                f"vac_1_Cdb_0 will be overwritten." in str(warning.message)
-                for warning in w
-            )
+        self._check_V_Cd_folder_renaming(
+            w,
+            'The previously-generated defect folder vac_1_Cdb_0 in ',
+            ' has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be overwritten.',
         )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
         self.assertFalse(os.path.exists("vac_1_Cdc_0"))
         V_Cd_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Unperturbed, Overwritten")
@@ -1027,22 +993,13 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
             )
-        self.assertTrue(
-            any(
-                f"Previously-generated defect folders (vac_1_Cdb_0...) exist in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structures "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are "
-                f"assumed to be inequivalent defects, so ShakeNBreak files for the current defect "
-                f"will be saved to vac_1_Cdc_0 to prevent overwriting."
-                in str(warning.message)
-                for warning in w
-            )
+        self._check_V_Cd_folder_renaming(
+            w,
+            'Previously-generated defect folders (vac_1_Cdb_0...) exist in ',
+            ', and the Unperturbed defect structures could not be matched to the current defect species: vac_1_Cd_0. These are assumed to be inequivalent defects, so ShakeNBreak files for the current defect will be saved to vac_1_Cdc_0 to prevent overwriting.',
         )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
         self.assertTrue(os.path.exists("vac_1_Cdc_0"))
         self.assertFalse(os.path.exists("vac_1_Cdd_0"))
         V_Cd_prev_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
@@ -1050,6 +1007,24 @@ class InputTestCase(unittest.TestCase):
         V_Cd_new_POSCAR = Poscar.from_file("vac_1_Cdc_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+    def _check_V_Cd_rattled_poscar(self, defect_dir):
+        result = Poscar.from_file(f"{defect_dir}/POSCAR")
+        self.assertEqual(result.comment, "V_Cd Rattled")
+        self.assertEqual(result.structure, self.V_Cd_minus0pt5_struc_rattled)
+        return result
+
+    def _check_V_Cd_folder_renaming(self, w, top_dir, defect_dir):
+        self.assertTrue(
+            any(
+                f"{top_dir}{os.path.basename(os.path.abspath('.'))}{defect_dir}"
+                in str(warning.message)
+                for warning in w
+            )
+        )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        self.assertTrue(os.path.exists("vac_1_Cda_0"))
+        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
 
     def test_generate_defect_object(self):
         """Test generate_defect_object"""
@@ -1326,7 +1301,7 @@ class InputTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_print:
             _, distortion_metadata = dist.write_vasp_files(
-                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
                 verbose=False,
             )
 

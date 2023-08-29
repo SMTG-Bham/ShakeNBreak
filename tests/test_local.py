@@ -292,7 +292,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=vasp.default_incar_settings,
+            user_incar_settings=vasp.default_incar_settings,
         )
         V_Cd_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_minus50_folder))
@@ -327,7 +327,7 @@ class DistortionLocalTestCase(unittest.TestCase):
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=kwarged_incar_settings,
+            user_incar_settings=kwarged_incar_settings,
         )
         V_Cd_kwarg_minus50_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_kwarg_minus50_folder))
@@ -361,7 +361,7 @@ class DistortionLocalTestCase(unittest.TestCase):
             local_rattle=False,
         )
         distorted_defect_dict, _ = dist.write_vasp_files(
-            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+            user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
 
