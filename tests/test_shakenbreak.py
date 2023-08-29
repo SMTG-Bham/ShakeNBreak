@@ -105,7 +105,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
-            incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+            user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
         shutil.rmtree("vac_1_Cd_0")
