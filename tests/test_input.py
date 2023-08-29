@@ -1084,10 +1084,10 @@ class InputTestCase(unittest.TestCase):
             assert any(
                 str(warning.message)
                 == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                   "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                   "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                   "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                   "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
                 for warning in w
             )
 
@@ -1503,17 +1503,14 @@ class InputTestCase(unittest.TestCase):
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
             }
         else:  # test POTCAR warning
-            assert (
-                len(w) == 2
-            )  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
-            assert issubclass(w[0].category, UserWarning)
-            assert (
-                str(w[0].message)
+            assert any(
+                str(warning.message)
                 == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
                 "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
                 "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
                 "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
                 "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
             )
 
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
@@ -1640,21 +1637,22 @@ class InputTestCase(unittest.TestCase):
         ]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            dist = input.Distortions(
-                {"Int_Cd_2": reduced_Int_Cd_2_entries},
-                oxidation_states=oxidation_states,
-                distortion_increment=0.25,
-                distorted_elements={"Int_Cd_2": ["Cd"]},
-                dict_number_electrons_user={"Int_Cd_2": 3},
-                local_rattle=False,
-                stdev=0.25,  # old default
-                seed=42,  # old default
-            )
-            _, distortion_metadata = dist.write_vasp_files(
-                verbose=True,
-                user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
-                user_potcar_functional="PBE_52",
-            )
+            with warnings.catch_warnings(record=True) as w:
+                dist = input.Distortions(
+                    {"Int_Cd_2": reduced_Int_Cd_2_entries},
+                    oxidation_states=oxidation_states,
+                    distortion_increment=0.25,
+                    distorted_elements={"Int_Cd_2": ["Cd"]},
+                    dict_number_electrons_user={"Int_Cd_2": 3},
+                    local_rattle=False,
+                    stdev=0.25,  # old default
+                    seed=42,  # old default
+                )
+                _, distortion_metadata = dist.write_vasp_files(
+                    verbose=True,
+                    user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
+                    user_potcar_functional="PBE_52",
+                )
 
         kwarged_Int_Cd_2_dict = {
             "distortion_parameters": {
@@ -1848,6 +1846,16 @@ class InputTestCase(unittest.TestCase):
             # check if POTCARs have been written:
             potcar = Potcar.from_file("Int_Cd_2_+1/Unperturbed/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
 
         # check correct output for "extra" electrons and positive charge state:
         with patch("builtins.print") as mock_Int_Cd_2_print:
