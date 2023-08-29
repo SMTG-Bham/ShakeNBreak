@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v3.2.1
+----------
+- Update CLI config handling.
+- Remove `shakenbreak.vasp` module and use `doped` VASP file writing functions directly.
+- Add INCAR/KPOINTS/POTCAR file writing tests. `test_local.py` now deleted as these tests are now
+  automatically run in `test_input.py`/`test_cli.py` if `POTCAR`s available.
+
 v3.2.0
 ----------
 - Following the major release of `doped` `v2.0`, now compatible with the new `pymatgen`
