@@ -43,9 +43,9 @@ jobs:
 
       - name: Test
         run:  |
-          for test in tests/test_*py  # test everything
-            do pytest --mpl $test
-          done
+          pytest tests  # test everything
+          pytest --mpl tests/test_plotting.py  # plotting tests
+          pytest --mpl tests/test_shakenbreak.py  # plotting tests
           
           # To generate the test plots:
           # pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # generate output plots
