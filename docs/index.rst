@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg
+.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/test.yml/badge.svg
  :target: https://github.com/SMTG-UCL/ShakeNBreak/actions
 
 .. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat

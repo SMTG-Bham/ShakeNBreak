@@ -1,10 +1,12 @@
 import copy
 import datetime
+import filecmp
 import json
 import os
 import re
 import shutil
 import subprocess
+import inspect
 import unittest
 import warnings
 
@@ -17,7 +19,9 @@ from monty.serialization import loadfn
 
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
+from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Kpoints, Potcar, Incar
+
+from doped.vasp import _test_potcar_functional_choice
 
 from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
@@ -25,6 +29,17 @@ from shakenbreak.input import generate_defect_object
 
 file_path = os.path.dirname(__file__)
 
+def _potcars_available() -> bool:
+    """
+    Check if the POTCARs are available for the tests (i.e. testing locally).
+
+    If not (testing on GitHub Actions), POTCAR testing will be skipped.
+    """
+    try:
+        _test_potcar_functional_choice("PBE")
+        return True
+    except ValueError:
+        return False
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -87,6 +102,12 @@ class CLITestCase(unittest.TestCase):
         )
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
+
+        # get example INCAR:
+        self.V_Cd_INCAR_file = os.path.join(
+            self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
+        )
+        self.V_Cd_INCAR = Incar.from_file(self.V_Cd_INCAR_file)
 
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
@@ -184,6 +205,9 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/INCAR")
 
+        for i in ["castep", "cp2k", "fhi_aims", "quantum_espresso"]:
+            if_present_rm(f"{self.DATA_DIR}/{i}/vac_1_Cd_0/default_INCAR")
+
     def copy_v_Ti_OUTCARs(self):
         """
         Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
@@ -261,17 +285,25 @@ class CLITestCase(unittest.TestCase):
         # check if correct files were created:
         V_Cd_Bond_Distortion_folder = f"{defect_name}_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(
-            V_Cd_Bond_Distortion_folder + "/POSCAR"
-        )
+        V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            f"-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
             self.V_Cd_minus0pt5_struc_rattled,
         )
+
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert filecmp.cmp(f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file)
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te"}
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
@@ -833,7 +865,10 @@ width: 0.3
 max_attempts: 10000
 max_disp: 1.0
 seed: 20
-local_rattle: False"""
+local_rattle: False
+POTCAR_FUNCTIONAL: PBE_52
+POTCAR:
+  Te: Te_GW"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         runner = CliRunner()
@@ -859,6 +894,16 @@ local_rattle: False"""
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
+        kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert filecmp.cmp(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file)
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te_GW"}
+
 
         test_yml = """
 oxidation_states:
@@ -1202,7 +1247,9 @@ nonsense_key: nonsense_value"""
         test_yml = """bond_distortions: [0.3,]
 local_rattle: True
 stdev: 0.25
-seed: 42"""  # previous default
+seed: 42
+POTCAR:
+  Cd: Cd_sv_GW"""  # previous default rattle settings
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
@@ -1286,6 +1333,23 @@ seed: 42"""  # previous default
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
             self.V_Cd_0pt3_local_rattled,
         )
+        kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file)
+            # NELECT has changed due to POTCARs
+
+            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
+            v_Cd_INCAR.pop("NELECT")
+            test_INCAR = self.V_Cd_INCAR.copy()
+            test_INCAR.pop("NELECT")
+            assert v_Cd_INCAR == test_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te"}
+
         if_present_rm(defects_dir)
         for charge in range(-2, 3):
             if_present_rm(f"{defect_name}_{'+' if charge > 0 else ''}{charge}")
@@ -3482,8 +3546,9 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         defect = "v_Cd"  # in example results
+        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
         )
 
         self.assertIn(
@@ -3565,9 +3630,18 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
+        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
         )
+        assert any(
+            f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2, so just writing distorted POSCAR file to "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory."
+            in str(warning.message)
+            for warning in w
+        )
+
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
@@ -3579,12 +3653,6 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             f"Writing low-energy distorted structure to"
             f" {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
-            result.output,
-        )
-        self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/{defect}_-2,"
-            f" so just writing distorted POSCAR file to "
-            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)

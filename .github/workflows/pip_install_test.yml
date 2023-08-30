@@ -6,11 +6,14 @@ on:
     branches: [main]
     types:
       - completed  # only test when new release has been deployed to PyPI
+  workflow_dispatch:
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
+    # only run when tests have passed (or manually triggered)
+
     strategy:
       max-parallel: 5
 
@@ -30,17 +33,23 @@ jobs:
         run: |
           sleep 10m  # wait 10 minutes for PyPI to update with the new release
           python -m pip install --upgrade pip
-          pip install shakenbreak  # install only from PyPI
-          pip install shakenbreak[tests]
+          pip install shakenbreak[tests]  # install only from PyPI
 
       - name: Test
         run:  |
-          for test in tests/test_*py
-            do if [[ "$test" != *"test_local"* ]]
-              then pytest $test
-            fi
-          done  # Ignore local tests file, which tests INCAR and POTCAR file writing but not possible on GitHub Actions
-          pytest --mpl tests/test_shakenbreak.py  # test output plots
-          pytest --mpl tests/test_plotting.py  # test output plots
-          # pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py  # generate output plots
-          # pytest --mpl-generate-path=tests/remote_baseline tests/test_shakenbreak.py  # generate output plots
+          pytest --mpl -vv tests  # test everything
+          
+      - name: Generate GH Actions test plots
+        if: always()  # always generate the plots, even if the tests fail
+        run:  |
+          # Generate the test plots in case there were any failures:
+          pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py
+          pytest --mpl-generate-path=tests/remote_baseline tests/test_shakenbreak.py
+
+      # Upload test plots
+      - name: Archive test plots
+        if: always()  # always upload the plots, even if the tests fail
+        uses: actions/upload-artifact@v3
+        with:
+          name: output-plots
+          path: tests/remote_baseline

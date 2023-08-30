@@ -1,5 +1,6 @@
 import copy
 import datetime
+import filecmp
 import os
 import shutil
 import unittest
@@ -9,6 +10,8 @@ from unittest.mock import patch
 import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
+from doped import _ignore_pmg_warnings
+from doped.vasp import _test_potcar_functional_choice
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
@@ -16,15 +19,28 @@ from pymatgen.core.periodic_table import DummySpecies, Species
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
+from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints, Potcar
 
-from shakenbreak import distortions, input, vasp
-from shakenbreak.distortions import rattle
+from shakenbreak import input
+from shakenbreak.distortions import rattle, distort
 
 
 def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
+
+
+def _potcars_available() -> bool:
+    """
+    Check if the POTCARs are available for the tests (i.e. testing locally).
+
+    If not (testing on GitHub Actions), POTCAR testing will be skipped.
+    """
+    try:
+        _test_potcar_functional_choice("PBE")
+        return True
+    except ValueError:
+        return False
 
 
 def _update_struct_defect_dict(
@@ -199,6 +215,12 @@ class InputTestCase(unittest.TestCase):
                 self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
             )
         )
+
+        # get example INCAR:
+        self.V_Cd_INCAR_file = os.path.join(
+            self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
+        )
+        self.V_Cd_INCAR = Incar.from_file(self.V_Cd_INCAR_file)
 
         # Setup distortion parameters
         self.V_Cd_distortion_parameters = {
@@ -508,7 +530,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
+        output = distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
@@ -518,9 +540,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
             output["distorted_structure"],
             d_min=d_min,
@@ -560,7 +580,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=40,  # distortion_factor * 100, default
         )
-        output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
+        output = distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -575,9 +595,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Cd indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             output["distorted_structure"],
             d_min=d_min,
             active_atoms=rattling_atom_indices,
@@ -874,30 +892,20 @@ class InputTestCase(unittest.TestCase):
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
+
         # Create doped/PyCDT-style defect dict:
         supercell = self.V_Cd_dict["supercell"]
-        V_Cd_defect_relax_set = vasp.DefectRelaxSet(supercell["structure"], charge=0)
-        poscar = V_Cd_defect_relax_set.poscar
-        struct = V_Cd_defect_relax_set.structure
-        dict_transf = {
-            "defect_type": self.V_Cd_dict["name"],
-            "defect_site": self.V_Cd_dict["unique_site"],
-            "defect_supercell_site": self.V_Cd_dict["bulk_supercell_site"],
-            "defect_multiplicity": self.V_Cd_dict["site_multiplicity"],
-            "charge": 0,
-            "supercell": supercell["size"],
-        }
-        poscar.comment = (
+        poscar_comment = (
             self.V_Cd_dict["name"]
-            + str(dict_transf["defect_supercell_site"].frac_coords)
+            + str(self.V_Cd_dict["bulk_supercell_site"].frac_coords)
             + "_-dNELECT="  # change in NELECT from bulk supercell
             + str(0)
         )
         vasp_defect_inputs = {
             "vac_1_Cd_0": {
-                "Defect Structure": struct,
-                "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf,
+                "Defect Structure": supercell,
+                "POSCAR Comment": poscar_comment,
+                "Charge State": 0,
             }
         }
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
@@ -909,70 +917,135 @@ class InputTestCase(unittest.TestCase):
             "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        input._create_vasp_input(
-            "vac_1_Cd_0",
-            distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=vasp.default_incar_settings,
+        with warnings.catch_warnings(record=True) as w:
+            _ignore_pmg_warnings()
+            input._create_vasp_input(
+                "vac_1_Cd_0",
+                distorted_defect_dict=V_Cd_charged_defect_dict,
+            )
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%"
         )
-        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
-        # test with kwargs: (except POTCAR settings because we can't have this on the GitHub test
-        # server)
+        if _potcars_available():
+            assert filecmp.cmp(
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert (
+                len(w) == 2
+            )  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
+
+        # test with kwargs:
         kwarg_incar_settings = {
-            "NELECT": 3,
             "IBRION": 42,
             "LVHAR": True,
             "LWAVE": True,
             "LCHARG": True,
+            "AEXX": 0.35,
         }
-        kwarged_incar_settings = vasp.default_incar_settings.copy()
-        kwarged_incar_settings.update(kwarg_incar_settings)
         with warnings.catch_warnings(record=True) as w:
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings=kwarged_incar_settings,
+                user_incar_settings=kwarg_incar_settings,
+                user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
             )
-        self.assertTrue(
-            any(  # here we get this warning because no Unperturbed structures were
-                # written so couldn't be compared
-                f"A previously-generated defect folder vac_1_Cd_0 exists in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structure "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are assumed "
-                f"to be inequivalent defects, so the previous vac_1_Cd_0 will be renamed to "
-                f"vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
-                f"vac_1_Cdb_0, to prevent overwriting." in str(warning.message)
+        self._check_V_Cd_folder_renaming(
+            w,
+            "A previously-generated defect folder vac_1_Cd_0 exists in ",
+            ", and the Unperturbed defect structure could not be matched to the current defect species: "
+            "vac_1_Cd_0. These are assumed to be inequivalent defects, so the previous vac_1_Cd_0 will "
+            "be renamed to vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
+            "vac_1_Cdb_0, to prevent overwriting.",
+        )
+        V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(V_Cd_kwarg_folder)
+        kpoints = Kpoints.from_file(f"{V_Cd_kwarg_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_kwarg_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update(kwarg_incar_settings)
+            kwarged_INCAR["NELECT"] = 812.0  # changed POTCARs
+            assert kwarged_INCAR == Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_kwarg_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                "Cd_sv",
+                "Te_GW",
+            }  # Cd_sv_GW POTCAR has Cd_sv symbol, checked
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
                 for warning in w
             )
-        )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
-        V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
 
         # test output_path option
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=kwarged_incar_settings,
+            user_incar_settings=kwarg_incar_settings,
             output_path="test_path",
         )
-        V_Cd_kwarg_folder = "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
+        )
+        kpoints = Kpoints.from_file(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS"
+        )
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR",
+                self.V_Cd_INCAR_file,
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update(kwarg_incar_settings)
+            assert kwarged_INCAR == Incar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POTCAR"
+            )
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         # Test correct handling of cases where defect folders with the same name have previously
         # been written:
@@ -997,20 +1070,26 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
+                user_potcar_functional="PBE_54",  # check setting POTCAR functional to one that isn't
+                # present locally
             )
-        self.assertTrue(
-            any(
-                f"The previously-generated defect folder vac_1_Cdb_0 in "
-                f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect "
-                f"structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in "
-                f"vac_1_Cdb_0 will be overwritten." in str(warning.message)
+        self._check_V_Cd_folder_renaming(
+            w,
+            "The previously-generated defect folder vac_1_Cdb_0 in ",
+            " has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be overwritten.",
+        )
+        if not _potcars_available():  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
                 for warning in w
             )
-        )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
+
         self.assertFalse(os.path.exists("vac_1_Cdc_0"))
         V_Cd_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Unperturbed, Overwritten")
@@ -1027,22 +1106,13 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
             )
-        self.assertTrue(
-            any(
-                f"Previously-generated defect folders (vac_1_Cdb_0...) exist in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structures "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are "
-                f"assumed to be inequivalent defects, so ShakeNBreak files for the current defect "
-                f"will be saved to vac_1_Cdc_0 to prevent overwriting."
-                in str(warning.message)
-                for warning in w
-            )
+        self._check_V_Cd_folder_renaming(
+            w,
+            "Previously-generated defect folders (vac_1_Cdb_0...) exist in ",
+            ", and the Unperturbed defect structures could not be matched to the current defect species: vac_1_Cd_0. These are assumed to be inequivalent defects, so ShakeNBreak files for the current defect will be saved to vac_1_Cdc_0 to prevent overwriting.",
         )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
         self.assertTrue(os.path.exists("vac_1_Cdc_0"))
         self.assertFalse(os.path.exists("vac_1_Cdd_0"))
         V_Cd_prev_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
@@ -1050,6 +1120,24 @@ class InputTestCase(unittest.TestCase):
         V_Cd_new_POSCAR = Poscar.from_file("vac_1_Cdc_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+    def _check_V_Cd_rattled_poscar(self, defect_dir):
+        result = Poscar.from_file(f"{defect_dir}/POSCAR")
+        self.assertEqual(result.comment, "V_Cd Rattled")
+        self.assertEqual(result.structure, self.V_Cd_minus0pt5_struc_rattled)
+        return result
+
+    def _check_V_Cd_folder_renaming(self, w, top_dir, defect_dir):
+        self.assertTrue(
+            any(
+                f"{top_dir}{os.path.basename(os.path.abspath('.'))}{defect_dir}"
+                in str(warning.message)
+                for warning in w
+            )
+        )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        self.assertTrue(os.path.exists("vac_1_Cda_0"))
+        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
 
     def test_generate_defect_object(self):
         """Test generate_defect_object"""
@@ -1315,7 +1403,6 @@ class InputTestCase(unittest.TestCase):
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
         # Use customised names for defects
-
         dist = input.Distortions(
             self.cdte_defects,
             oxidation_states=oxidation_states,
@@ -1325,10 +1412,11 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         with patch("builtins.print") as mock_print:
-            _, distortion_metadata = dist.write_vasp_files(
-                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-                verbose=False,
-            )
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                    verbose=False,
+                )
 
         # check if expected folders were created:
         self.assertTrue(
@@ -1391,8 +1479,38 @@ class InputTestCase(unittest.TestCase):
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            assert kwarged_INCAR == Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
 
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
@@ -1404,8 +1522,26 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR.pop("NELECT")
+            assert kwarged_INCAR == Int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         # Test `Rattled` folder not generated for non-fully-ionised defects,
         # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
@@ -1500,19 +1636,22 @@ class InputTestCase(unittest.TestCase):
         ]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            dist = input.Distortions(
-                {"Int_Cd_2": reduced_Int_Cd_2_entries},
-                oxidation_states=oxidation_states,
-                distortion_increment=0.25,
-                distorted_elements={"Int_Cd_2": ["Cd"]},
-                dict_number_electrons_user={"Int_Cd_2": 3},
-                local_rattle=False,
-                stdev=0.25,  # old default
-                seed=42,  # old default
-            )
-            _, distortion_metadata = dist.write_vasp_files(
-                verbose=True,
-            )
+            with warnings.catch_warnings(record=True) as w:
+                dist = input.Distortions(
+                    {"Int_Cd_2": reduced_Int_Cd_2_entries},
+                    oxidation_states=oxidation_states,
+                    distortion_increment=0.25,
+                    distorted_elements={"Int_Cd_2": ["Cd"]},
+                    dict_number_electrons_user={"Int_Cd_2": 3},
+                    local_rattle=False,
+                    stdev=0.25,  # old default
+                    seed=42,  # old default
+                )
+                _, distortion_metadata = dist.write_vasp_files(
+                    verbose=True,
+                    user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
+                    user_potcar_functional="PBE_52",
+                )
 
         kwarged_Int_Cd_2_dict = {
             "distortion_parameters": {
@@ -1685,6 +1824,37 @@ class InputTestCase(unittest.TestCase):
         )  # Defect added at index 0, so atom indexing + 1 wrt original structure
         # check correct folder was created:
         self.assertTrue(os.path.exists("Int_Cd_2_+1/Unperturbed"))
+        _int_Cd_2_POSCAR = Poscar.from_file(
+            "Int_Cd_2_+1/Unperturbed/POSCAR"
+        )  # test POSCAR loaded fine
+        kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                "Int_Cd_2_+1/Unperturbed/INCAR", self.V_Cd_INCAR_file
+            )
+            int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
+            v_Cd_INCAR = self.V_Cd_INCAR.copy()
+            v_Cd_INCAR.pop("NELECT")  # NELECT and NUPDOWN differs for the two defects
+            v_Cd_INCAR.pop("NUPDOWN")
+            int_Cd_2_INCAR.pop("NELECT")
+            int_Cd_2_INCAR.pop("NUPDOWN")
+            assert v_Cd_INCAR == int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file("Int_Cd_2_+1/Unperturbed/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
 
         # check correct output for "extra" electrons and positive charge state:
         with patch("builtins.print") as mock_Int_Cd_2_print:
@@ -1988,7 +2158,7 @@ class InputTestCase(unittest.TestCase):
         mock_print.assert_any_call(
             "\nDefect Te_i_Td_Te2.83 in charge state: 0. Number of distorted "
             "neighbours: 2"
-        )  # TODO: this is not created
+        )
 
         # check if correct files were created:
         V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
