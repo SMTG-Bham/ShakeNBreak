@@ -42,8 +42,7 @@ jobs:
 
       - name: Test
         run:  |
-          pytest --mpl tests/test_cli.py -vv -k "generate"  # test generate first to find issue
-          pytest --mpl tests -vv  # test everything
+          pytest --mpl -vv tests  # test everything
           
           # Generate the test plots in case there were any failures:
           pytest --mpl-generate-path=tests/remote_baseline tests/test_plotting.py
@@ -51,6 +50,7 @@ jobs:
 
       # Upload test plots
       - name: Archive test plots
+        if: always()  # always upload the plots, even if the tests fail
         uses: actions/upload-artifact@v3
         with:
           name: output-plots
