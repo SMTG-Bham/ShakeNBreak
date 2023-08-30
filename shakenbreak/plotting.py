@@ -72,7 +72,7 @@ def _install_custom_font():
             warnings.warn(warning_msg)
 
 
-def _get_backend(save_format: str) -> str:
+def _get_backend(save_format: str) -> Optional[str]:
     """Try use pycairo as backend if installed, and save_format is pdf."""
     backend = None
     if "pdf" in save_format:
