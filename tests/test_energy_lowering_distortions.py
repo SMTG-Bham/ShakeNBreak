@@ -950,7 +950,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
             ),
-            os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_+1/CONTCAR"),
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "vac_1_Cd_-1/Rattled_from_+1/CONTCAR"
+            ),
         )
         shutil.copy(
             os.path.join(
@@ -1010,27 +1012,18 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         with patch("builtins.print") as mock_print:
-            energy_lowering_distortions.write_retest_inputs(
-                low_energy_defects=low_energy_defects_dict,
-                output_path=self.VASP_CDTE_DATA_DIR,
-            )
+            with warnings.catch_warnings(record=True) as w:
+                energy_lowering_distortions.write_retest_inputs(
+                    low_energy_defects=low_energy_defects_dict,
+                    output_path=self.VASP_CDTE_DATA_DIR,
+                )
             mock_print.assert_any_call(
                 "Writing low-energy distorted structure to"
                 f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0"
             )
             mock_print.assert_any_call(
-                f"No subfolders with VASP input files found in {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1, "
-                "so just writing distorted POSCAR file to "
-                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0 directory."
-            )  # No VASP input files in distortion directories
-            mock_print.assert_any_call(
                 "Writing low-energy distorted structure to"
                 f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0"
-            )
-            mock_print.assert_any_call(
-                f"No subfolders with VASP input files found in {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2, "
-                "so just writing distorted POSCAR file to "
-                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0 directory."
             )
             self.assertEqual(
                 self.V_Cd_minus_0pt55_structure,
@@ -1038,6 +1031,21 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/POSCAR"
                 ),
             )
+
+        assert any(
+            f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1, so just writing distorted POSCAR file to "
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0 directory."
+            in str(warning.message)
+            for warning in w
+        )
+        assert any(
+            f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2, so just writing distorted POSCAR file to "
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0 directory."
+            in str(warning.message)
+            for warning in w
+        )
 
         # Test for copying over VASP input files (INCAR, KPOINTS and (empty)
         # POTCAR files)

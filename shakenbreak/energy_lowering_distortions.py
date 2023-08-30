@@ -958,31 +958,39 @@ def _copy_vasp_files(
     """
     distorted_structure.to(fmt="poscar", filename=f"{distorted_dir}/POSCAR")
 
-    if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/INCAR"):
-        for i in ["INCAR", "KPOINTS", "POTCAR"]:
+    for i in ["INCAR", "KPOINTS", "POTCAR"]:
+        if os.path.exists(f"{output_path}/{defect_species}/Unperturbed/{i}"):
             shutil.copyfile(
                 f"{output_path}/{defect_species}/Unperturbed/{i}",
                 f"{distorted_dir}/{i}",
             )  # copy input files from Unperturbed directory
-    else:
-        subfolders_with_input_files = []
+
+    file_dict = {
+        filename: os.path.exists(f"{distorted_dir}/{filename}")
+        for filename in ["INCAR", "KPOINTS", "POTCAR"]
+    }
+    if not all(file_dict.values()):
+        # try other distortion directories
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-            if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/INCAR"):
-                subfolders_with_input_files.append(subfolder)
-        if len(subfolders_with_input_files) > 0:
-            for i in ["INCAR", "KPOINTS", "POTCAR"]:
-                shutil.copyfile(
-                    f"{output_path}/{defect_species}/"
-                    f"{subfolders_with_input_files[0]}/"
-                    f"{i}",
-                    f"{distorted_dir}/{i}",
-                )
-        else:
-            print(
-                f"No subfolders with VASP input files found in "
-                f"{output_path}/{defect_species}, so just writing distorted "
-                f"POSCAR file to {distorted_dir} directory."
-            )
+            for filename in ["INCAR", "KPOINTS", "POTCAR"]:
+                if (
+                    os.path.exists(
+                        f"{output_path}/{defect_species}/{subfolder}/{filename}"
+                    )
+                    and not file_dict[filename]
+                ):
+                    shutil.copyfile(
+                        f"{output_path}/{defect_species}/{subfolder}/{filename}",
+                        f"{distorted_dir}/{filename}",
+                    )
+
+    if not all(file_dict.values()):
+        warnings.warn(
+            f"Subfolders with VASP input files ({[k for k,v in file_dict.items() if not v]} not found in "
+            f"{output_path}/{defect_species}, so just writing distorted POSCAR file"
+            f"{f' and {[k for k,v in file_dict.items() if v]}' if any(file_dict.values()) else ''} to "
+            f"{distorted_dir} directory."
+        )
 
 
 def _copy_espresso_files(
