@@ -77,7 +77,7 @@ def _get_backend(save_format: str) -> Optional[str]:
     backend = None
     if "pdf" in save_format:
         try:
-            import cairo
+            import cairo  # noqa: F401
 
             backend = "cairo"
         except ImportError:
