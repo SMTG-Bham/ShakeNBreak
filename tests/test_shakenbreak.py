@@ -94,14 +94,14 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         oxidation_states = {"Cd": +2, "Te": -2}
         reduced_V_Cd = copy.copy(self.V_Cd)
         reduced_V_Cd.user_charges = [-2, -1, 0]
-        reduced_V_Cd_enties = [
+        reduced_V_Cd_entries = [
             input._get_defect_entry_from_defect(reduced_V_Cd, charge)
             for charge in reduced_V_Cd.user_charges
         ]
 
         # Generate input files
         dist = input.Distortions(
-            {"vac_1_Cd": reduced_V_Cd_enties},
+            {"vac_1_Cd": reduced_V_Cd_entries},
             oxidation_states=oxidation_states,
         )
         distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
