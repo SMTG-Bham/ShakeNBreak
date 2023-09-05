@@ -386,7 +386,19 @@ def _create_vasp_input(
             os.makedirs(f"{output_path}/{defect_name}/{distortion}", exist_ok=True)
             dds.incar.write_file(f"{output_path}/{defect_name}/{distortion}/INCAR")
             dds.poscar.write_file(f"{output_path}/{defect_name}/{distortion}/POSCAR")
-            dds.kpoints.write_file(f"{output_path}/{defect_name}/{distortion}/KPOINTS")
+            try:
+                dds.kpoints.write_file(
+                    f"{output_path}/{defect_name}/{distortion}/KPOINTS"
+                )
+            except UnicodeEncodeError:
+                kpoints_settings = dds.kpoints.as_dict()
+                kpoints_settings["comment"] = (
+                    kpoints_settings["comment"]
+                    .replace("Å⁻³", "Angstrom^(" "-3)")
+                    .replace("Γ", "Gamma")
+                )
+                kpoints = Kpoints.from_dict(kpoints_settings)
+                kpoints.write_file(f"{output_path}/{defect_name}/{distortion}/KPOINTS")
 
 
 def _get_bulk_comp(defect_object) -> Composition:

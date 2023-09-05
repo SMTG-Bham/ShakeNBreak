@@ -2,6 +2,8 @@
 Module to parse input and output files for VASP, Quantum Espresso,
 FHI-aims, CASTEP and CP2K.
 """
+
+import contextlib
 import datetime
 import os
 import warnings
@@ -471,7 +473,7 @@ def read_espresso_structure(
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
-        with open(filename, "r") as f:
+        with open(filename, "r", encoding="utf-8") as f:
             file_content = f.read()
     else:
         warnings.warn(
@@ -731,7 +733,7 @@ def parse_qe_input(path: str) -> dict:
         "ATOMIC_FORCES",
         "SOLVENTS",
     ]
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
     for line in lines:
@@ -786,7 +788,7 @@ def parse_fhi_aims_input(path: str) -> dict:
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {path} does not exist!")
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
     for line in lines:
@@ -799,15 +801,13 @@ def parse_fhi_aims_input(path: str) -> dict:
                 # Convent numeric values to float
                 # (necessary when feeding into the ASE calculator)
                 for i in range(len(values)):
-                    try:
+                    with contextlib.suppress(
+                        Exception
+                    ):  # Convent numeric values to float
                         values[i] = float(values[i])
-                    except Exception:
-                        pass
             else:
                 key, values = line.split()[0], line.split()[1]
-                try:  # Convent numeric values to float
+                with contextlib.suppress(Exception):
                     values = float(values)
-                except Exception:
-                    pass
             params[key.strip()] = values
     return params
