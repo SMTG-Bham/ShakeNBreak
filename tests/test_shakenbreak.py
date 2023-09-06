@@ -77,6 +77,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             energy_lowering_distortions.read_defects_directories()
         )
         self.defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        self.defect_charges_dict.pop("v_O_s1", None)  # Used for magnetization tests
 
     def tearDown(self):
         for i in os.listdir():
@@ -115,6 +116,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        defect_charges_dict.pop("v_O_s1", None)  # Used for magnetization tests
 
         low_energy_defects = (
             energy_lowering_distortions.get_energy_lowering_distortions(
@@ -316,6 +318,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        defect_charges_dict.pop("v_O_s1", None)  # Used for magnetization tests
 
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_-2"]
@@ -360,6 +363,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        defect_charges_dict.pop("v_O_s1", None)  # Used for magnetization tests
 
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_-1"]
@@ -406,6 +410,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
+        defect_charges_dict.pop("v_O_s1", None)  # Used for magnetization tests
 
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_0"]
