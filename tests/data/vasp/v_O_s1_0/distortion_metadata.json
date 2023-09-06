@@ -1,0 +1,70 @@
+{
+    "distortion_parameters": {
+        "distortion_increment": 0.1,
+        "bond_distortions": [
+            -0.6,
+            -0.5,
+            -0.4,
+            -0.3,
+            -0.2,
+            -0.1,
+            0.0,
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6
+        ],
+        "local_rattle": false,
+        "mc_rattle_parameters": {
+            "stdev": 0.23234075942890434
+        }
+    },
+    "defects": {
+        "v_O_s1": {
+            "unique_site": [
+                0.375,
+                0.375,
+                0.375
+            ],
+            "charges": {
+                "0": {
+                    "num_nearest_neighbours": 2,
+                    "distorted_atoms": [
+                        [
+                            9,
+                            "Ce"
+                        ],
+                        [
+                            17,
+                            "Ce"
+                        ]
+                    ],
+                    "distortion_parameters": {
+                        "distortion_increment": 0.1,
+                        "bond_distortions": [
+                            -0.6,
+                            -0.5,
+                            -0.4,
+                            -0.3,
+                            -0.2,
+                            -0.1,
+                            0.0,
+                            0.1,
+                            0.2,
+                            0.3,
+                            0.4,
+                            0.5,
+                            0.6
+                        ],
+                        "local_rattle": false,
+                        "mc_rattle_parameters": {
+                            "stdev": 0.23234075942890434
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
