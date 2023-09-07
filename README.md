@@ -46,7 +46,7 @@ If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudo
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE`
-   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+   which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the [`doped` Installation docs](https://doped.readthedocs.io/en/latest/Installation.html) if you have
    difficulty with this.
 
 The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/page.php?site_id=nrsi&id=OFL)) will be installed with the package, and will be used by default for plotting.
