@@ -113,7 +113,7 @@ def parse_energies(
         if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
         if outcar:  # regrep faster than using Outcar/vasprun class
-            try:
+            with contextlib.suppress(IndexError):
                 energy = _match(
                     outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
                 )[0][0][
@@ -122,8 +122,6 @@ def parse_energies(
                 converged = _match(
                     outcar, "required accuracy"
                 )  # check if ionic relaxation converged
-            except IndexError:  # no energy match found in OUTCAR, not converged
-                pass
             if not converged:
                 converged = _match(outcar, "considering this converged")
         return converged, energy, outcar
@@ -168,9 +166,7 @@ def parse_energies(
         output_files = [
             file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file
         ]
-        if len(output_files) >= 1 and os.path.exists(
-            f"{defect_dir}/{dist}/{output_files[0]}"
-        ):
+        if output_files and os.path.exists(f"{defect_dir}/{dist}/{output_files[0]}"):
             castep_out = f"{defect_dir}/{dist}/{output_files[0]}"
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
             castep_out = os.path.join(defect_dir, dist, filename)
@@ -229,16 +225,16 @@ def parse_energies(
             dir
             for dir in os.listdir(defect_dir)
             if os.path.isdir(os.path.join(defect_dir, dir))
-            and (
-                any(
-                    [
-                        substring in dir
-                        for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
-                    ]
-                )
-                and "High_Energy" not in dir
+            and any(
+                substring in dir
+                for substring in [
+                    "Bond_Distortion",
+                    "Rattled",
+                    "Unperturbed",
+                ]  # distortion directories
             )
-        ]  # parse distortion directories
+            and "High_Energy" not in dir
+        ]
 
         # load previously-parsed energies file if present
         energies_file = f"{path}/{defect}/{defect}.yaml"
@@ -314,10 +310,8 @@ def parse_energies(
         # only write energy file if energies have been parsed
         if energies["distortions"]:
             if "Unperturbed" in energies and all(
-                [
-                    value - energies["Unperturbed"] > 0.1
-                    for value in energies["distortions"].values()
-                ]
+                value - energies["Unperturbed"] > 0.1
+                for value in energies["distortions"].values()
             ):
                 warnings.warn(
                     f"All distortions parsed for {defect} are >0.1 eV higher energy than "
@@ -335,10 +329,8 @@ def parse_energies(
             elif (
                 "Unperturbed" in energies
                 and all(
-                    [
-                        value - energies["Unperturbed"] < -0.1
-                        for value in energies["distortions"].values()
-                    ]
+                    value - energies["Unperturbed"] < -0.1
+                    for value in energies["distortions"].values()
                 )
                 and len(energies["distortions"]) > 2
             ):
@@ -378,19 +370,15 @@ def parse_energies(
                     dir
                     for dir in os.listdir(defect_dir)
                     if os.path.isdir(os.path.join(defect_dir, dir))
-                    and (
-                        any(
-                            [
-                                substring in dir
-                                for substring in [
-                                    "Bond_Distortion",
-                                    "Rattled",
-                                    "Unperturbed",
-                                ]
-                            ]
-                        )
-                        and "High_Energy" in dir
+                    and any(
+                        substring in dir
+                        for substring in [
+                            "Bond_Distortion",
+                            "Rattled",
+                            "Unperturbed",
+                        ]
                     )
+                    and "High_Energy" in dir
                 ]
             except FileNotFoundError:  # no "*High_Energy*" distortion folders
                 high_energy_dist_dirs = []
