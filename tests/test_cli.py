@@ -2505,14 +2505,9 @@ Chosen VASP error message: {error_string}
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
-                [
                     str(warning.message)
-                    == "Energies could not be parsed for defect 'defect' in '.'. If these "
-                    "directories are correct, check calculations have converged, and that "
-                    "distortion subfolders match ShakeNBreak naming (e.g. "
-                    "Bond_Distortion_xxx, Rattled, Unperturbed)"
+                    == "Defect folder 'defect' not found in '.'. Please check these folders and paths."
                     for warning in w
-                ]
             )
         )
         self.assertFalse(
