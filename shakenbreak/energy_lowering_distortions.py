@@ -178,11 +178,13 @@ def _compare_distortion(
         if charge not in low_energy_defects[defect][index]["charges"]:
             # only print message if charge state not already stored (this can happen when using
             # the --metastable option with small noise in the energies)
+            formatted_charges = [
+                f"{'+' if charge > 0 else ''}{charge}"
+                for charge in low_energy_defects[defect][index]["charges"]
+            ]
             print(
-                f"Low-energy distorted structure for {defect_species} "
-                f"already found with charge states "
-                f"{low_energy_defects[defect][index]['charges']}, "
-                f"storing together."
+                f"Low-energy distorted structure for {defect_species} already found with charge states "
+                f"{formatted_charges}, storing together."
             )
         # Store together the info of all distortions leading to the same structure
         for property, value in zip(
@@ -195,9 +197,8 @@ def _compare_distortion(
         # structure was not previously found, then add it to the list of distortions for this
         # defect
         print(
-            f"New (according to structure matching) low-energy "
-            f"distorted structure found for {defect_species}, "
-            f"adding to low_energy_defects['{defect}'] list."
+            f"New (according to structure matching) low-energy distorted structure found for"
+            f" {defect_species}, adding to low_energy_defects['{defect}'] list."
         )
         low_energy_defects[defect].append(
             {
@@ -275,26 +276,34 @@ def _prune_dict_across_charges(
                     continue
 
                 # charges in defect_pruning_dict that aren't already in this distortion entry
-                defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
-                comparison_results = compare_struct_to_distortions(
-                    distortion_dict["structures"][0],
-                    defect_species,
-                    output_path,
-                    code=code,
-                    structure_filename=structure_filename,
-                    stol=stol,
-                    min_dist=min_dist,
-                    verbose=verbose,
+                defect_species_snb_name = (
+                    f"{defect}_{'+' if charge > 0 else ''}{charge}"
                 )
+                for i in ["+", "", "+"]:  # back to SnB name with "+" if all fail
+                    defect_species = defect_species_snb_name.replace(
+                        "+", i
+                    )  # try with and without '+'
+                    comparison_results = compare_struct_to_distortions(
+                        distortion_dict["structures"][0],
+                        defect_species,
+                        output_path,
+                        code=code,
+                        structure_filename=structure_filename,
+                        stol=stol,
+                        min_dist=min_dist,
+                        verbose=verbose,
+                    )
+                    if comparison_results[0] is not None:
+                        break
+
                 if comparison_results[0]:
                     # structure found in distortion tests for this charge state.
                     # Add it to the list to avoid redundant work
                     print(
                         f"Ground-state structure found for {defect} with charges "
-                        f"{distortion_dict['charges']} has also been found for "
-                        f"charge state {'+' if charge > 0 else ''}{charge} (according to "
-                        f"structure matching). Adding this charge to the corresponding entry in "
-                        f"low_energy_defects[{defect}]."
+                        f"{distortion_dict['charges']} has also been found for charge state "
+                        f"{'+' if charge > 0 else ''}{charge} (according to structure matching). Adding "
+                        f"this charge to the corresponding entry in low_energy_defects[{defect}]."
                     )
                     for property, value in zip(
                         ["charges", "structures", "energy_diffs", "bond_distortions"],
@@ -310,10 +319,9 @@ def _prune_dict_across_charges(
                     distortion_dict["excluded_charges"].add(charge)
                 elif comparison_results[0] is None:
                     print(
-                        f"Problem parsing structures for {defect_species}. "
-                        f"This species will be skipped and will not be included "
-                        f"in low_energy_defects (check relaxation "
-                        f"folders with CONTCARs are present)."
+                        f"Problem parsing structures for {defect_species}. This species will be skipped "
+                        f"and will not be included in low_energy_defects (check relaxation folders with "
+                        f"CONTCARs are present)."
                     )
     return low_energy_defects
 
@@ -468,11 +476,11 @@ def get_energy_lowering_distortions(
                         # problem parsing structure, user will have received appropriate
                         # warning from io.read_vasp_structure()
                         print(
-                            f"Problem parsing final, low-energy structure for {gs_distortion} "
-                            f"bond distortion of {defect_species} at {output_path}"
-                            f"/{defect_species}/{bond_distortion}/{structure_filename}. This "
-                            f"species will be skipped and will not be included in "
-                            f"low_energy_defects (check relaxation calculation and folder)."
+                            f"Problem parsing final, low-energy structure for {gs_distortion} bond "
+                            f"distortion of {defect_species} at {output_path}/{defect_species}"
+                            f"/{bond_distortion}/{structure_filename}. This species will be skipped and "
+                            f"will not be included in low_energy_defects (check relaxation calculation "
+                            f"and folder)."
                         )
                         defect_pruning_dict[defect].remove(charge)
                         continue
@@ -540,12 +548,11 @@ def get_energy_lowering_distortions(
                             # problem parsing structure, user will have received appropriate
                             # warning from io.read_vasp_structure()
                             print(
-                                f"Problem parsing final, low-energy structure for "
-                                f"{gs_distortion} bond distortion of {defect_species} "
-                                f"at {output_path}/{defect_species}/{bond_distortion}/"
-                                f"{structure_filename}. This species will be skipped and "
-                                f"will not be included in low_energy_defects (check"
-                                f"relaxation calculation and folder)."
+                                f"Problem parsing final, low-energy structure for {gs_distortion} bond "
+                                f"distortion of {defect_species} at {output_path}/{defect_species}"
+                                f"/{bond_distortion}/{structure_filename}. This species will be skipped "
+                                f"and will not be included in low_energy_defects (check relaxation "
+                                f"calculation and folder)."
                             )
                             defect_pruning_dict[defect].remove(charge)
                             continue
@@ -590,30 +597,27 @@ def get_energy_lowering_distortions(
                 for value in energies_dict["distortions"].values()
             ):
                 warnings.warn(
-                    f"All distortions for {defect} with charge {'+' if charge > 0 else ''}"
-                    f"{charge} are >0.1 eV higher energy than unperturbed, indicating problems "
-                    f"with the relaxations. You should first check if the calculations finished "
-                    f"ok for this defect species and if this defect charge state is reasonable ("
-                    f"often this is the result of an unreasonable charge state). If both checks "
-                    f"pass, you likely need to adjust the `stdev` rattling parameter (can occur "
-                    f"for hard/ionic/magnetic materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
-                    f"– This often indicates a complex PES with multiple minima, "
-                    f"thus energy-lowering distortions particularly likely, so important to "
-                    f"test with reduced `stdev`!"
+                    f"All distortions for {defect} with charge {'+' if charge > 0 else ''}{charge} are "
+                    f">0.1 eV higher energy than unperturbed, indicating problems with the relaxations. "
+                    f"You should first check if the calculations finished ok for this defect species and "
+                    f"if this defect charge state is reasonable (often this is the result of an "
+                    f"unreasonable charge state). If both checks pass, you likely need to adjust the "
+                    f"`stdev` rattling parameter (can occur for hard/ionic/magnetic materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials "
+                    f"– This often indicates a complex PES with multiple minima, thus energy-lowering "
+                    f"distortions particularly likely, so important to test with reduced `stdev`!"
                 )
 
             else:
                 print(
-                    f"No energy lowering distortion with energy difference greater than "
-                    f"min_e_diff = {min_e_diff:.2f} eV found for {defect} with charge "
+                    f"No energy lowering distortion with energy difference greater than min_e_diff = "
+                    f"{min_e_diff:.2f} eV found for {defect} with charge "
                     f"{'+' if charge > 0 else ''}{charge}."
                 )
 
-    # Screen through defects to check if any lower-energy distorted structures
-    # were already found with/without bond distortions for other charge states
-    # (i.e. found but higher energy, found but also with unperturbed, found
-    # but with energy lowering less than min_e_diff etc)
+    # Screen through defects to check if any lower-energy distorted structures were already found
+    # with/without bond distortions for other charge states (i.e. found but higher energy, found but
+    # also with unperturbed, found but with energy lowering less than min_e_diff etc)
     if low_energy_defects:
         print("\nComparing and pruning defect structures across charge states...")
         low_energy_defects = _prune_dict_across_charges(
@@ -866,6 +870,11 @@ def write_retest_inputs(
                 "excluded_charges"
             ]:  # charges for which this distortion wasn't found
                 defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
+                if not os.path.isdir(  # change to old naming if this folder exists
+                    f"{output_path}/{defect_species}"
+                ) and os.path.isdir(f"{output_path}/{defect_species.replace('+', '')}"):
+                    defect_species = defect_species.replace("+", "")
+
                 distorted_charge = distortion_dict["charges"][
                     0
                 ]  # first charge state for which this distortion was found
@@ -885,8 +894,8 @@ def write_retest_inputs(
 
                 if os.path.exists(distorted_dir):
                     print(
-                        f"As {distorted_dir} already exists, it's assumed this "
-                        f"structure has already been tested. Skipping..."
+                        f"As {distorted_dir} already exists, it's assumed this structure has already "
+                        f"been tested. Skipping..."
                     )
                     continue
 
@@ -894,8 +903,7 @@ def write_retest_inputs(
 
                 if not os.path.exists(f"{output_path}/{defect_species}"):
                     print(
-                        f"Directory {output_path}/{defect_species} not found, "
-                        f"creating..."
+                        f"Directory {output_path}/{defect_species} not found, creating..."
                     )
                     os.mkdir(f"{output_path}/{defect_species}")
                 os.mkdir(distorted_dir)
@@ -1150,10 +1158,9 @@ def _copy_castep_files(
 
         else:  # only write input structure
             print(
-                f"No subfolders with CASTEP input file (`{input_filename}`) "
-                f"found in {output_path}/{defect_species}, so just writing "
-                f"distorted structure file to {distorted_dir} directory (in "
-                f"CASTEP `.cell` format)."
+                f"No subfolders with CASTEP input file (`{input_filename}`) found in {output_path}"
+                f"/{defect_species}, so just writing distorted structure file to {distorted_dir} "
+                f"directory (in CASTEP `.cell` format)."
             )
 
 
