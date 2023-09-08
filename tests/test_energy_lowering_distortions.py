@@ -691,8 +691,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
             self.assertTrue(
                 any(
-                        str(warning.message) == warning_message
-                        for warning in user_warnings
+                    str(warning.message) == warning_message for warning in user_warnings
                 )
             )
 
