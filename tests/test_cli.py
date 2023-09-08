@@ -156,6 +156,7 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/test_groundstate_all")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
@@ -3907,6 +3908,33 @@ Chosen VASP error message: {error_string}
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # test with a positive charge defect but old naming format
+        os.chdir(f"{self.EXAMPLE_RESULTS}")
+        os.mkdir("test_groundstate_all")
+        os.chdir("test_groundstate_all")
+        defect = "v_Ti_1"
+        shutil.copytree("../v_Ti_0", defect)
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(
+            os.path.exists(f"{defect}/Groundstate/POSCAR")
+        )
+        self.assertIn(
+            f"{defect}: Ground state structure (found with -0.4 distortion) saved to "
+            f"./{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(f"{defect}/Groundstate/POSCAR")
+        V_Ti_minus0pt4_structure = Structure.from_file(f"{defect}/Bond_Distortion_-40.0%/CONTCAR")
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
+        if_present_rm(f"{defect}/Groundstate")
+        self.tearDown()  # return to test file directory
 
     def test_mag(self):
         """Test the snb-mag command"""

@@ -310,9 +310,9 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f.write(outcar)
 
         # Parse final energies from OUTCAR files and write them to yaml files
-        io.parse_energies(defect=defect_dir, path="./")
-        self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))
-        energies = loadfn(f"{defect_dir}/{defect_dir}.yaml")
+        energies_file = io.parse_energies(defect=defect_dir, path="./")
+        self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))  # energies_file
+        energies = loadfn(energies_file)
         self.assertTrue(-0.35 in energies["distortions"])
         self.assertFalse(-0.77 in energies["distortions"])
 
@@ -358,8 +358,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f.write(outcar)
 
         # Parse final energies from OUTCAR files and write them to yaml files
-        io.parse_energies(defect=defect_dir, path="./")
-        self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))
+        energies_file = io.parse_energies(defect=defect_dir, path="./")
+        self.assertTrue(os.path.exists(energies_file))
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
@@ -405,7 +405,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f.write(outcar)
 
         # Parse final energies from OUTCAR files and write them to yaml files
-        io.parse_energies(defect=defect_dir, path="./")
+        _energies_file = io.parse_energies(defect=defect_dir, path="./")
         self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
