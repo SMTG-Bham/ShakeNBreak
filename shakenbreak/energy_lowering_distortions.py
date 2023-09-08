@@ -65,9 +65,9 @@ def read_defects_directories(output_path: str = "./") -> dict:
         :obj:`dict`:
             Dictionary mapping defect names to a list of its charge states.
     """
-    list_subdirectories = [  # Get only subdirectories in the current directory
-        i for i in next(os.walk(output_path))[1]
-    ]
+    list_subdirectories = list(
+        next(os.walk(output_path))[1]
+    )  # Only subdirectories in current directory
     for i in list(
         list_subdirectories
     ):  # need to make copy of list when iterating over and
@@ -173,7 +173,7 @@ def _compare_distortion(
         if struct_comparison_dict["Ground State"] == 0
     }
 
-    if len(matching_distortion_dict) > 0:  # if it matches _any_ other distortion
+    if matching_distortion_dict:  # if it matches _any_ other distortion
         index = list(matching_distortion_dict.keys())[0]  # should only be one
         if charge not in low_energy_defects[defect][index]["charges"]:
             # only print message if charge state not already stored (this can happen when using
@@ -427,13 +427,17 @@ def get_energy_lowering_distortions(
                 print(f"Parsing {defect_species}...")
 
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
-            with warnings.catch_warnings():  # ignore warnings in case energies already parsed
-                # and output files deleted
-                if os.path.exists(
-                    energies_file
-                ):  # ignore parsing warnings _only_ if energies file already exists
+            with warnings.catch_warnings():
+                if os.path.exists(energies_file) or os.path.exists(
+                    energies_file.replace("+", "")
+                ):
+                    # ignore parsing warnings in case energies already parsed and output files deleted,
+                    # _only_ if energies file already exists
                     warnings.simplefilter("ignore", category=UserWarning)
-                io.parse_energies(defect_species, output_path, code)
+                energies_file = io.parse_energies(defect_species, output_path, code)
+                defect_species = energies_file.rsplit("/", 1)[-1].replace(
+                    ".yaml", ""
+                )  # in case '+' removed
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
                 energies_file, verbose=verbose, min_e_diff=min_e_diff
@@ -441,16 +445,13 @@ def get_energy_lowering_distortions(
             # Defect without data
             if energies_dict is None:
                 print(
-                    f"No data parsed for {defect_species}. This species will be "
-                    f"skipped and will not be included in the low_energy_defects "
-                    f"charge state lists (and so energy lowering distortions "
-                    f"found for other charge states will not be applied for "
-                    f"this species)."
+                    f"No data parsed for {defect_species}. This species will be skipped and will not be "
+                    f"included in the low_energy_defects charge state lists (and so energy lowering "
+                    f"distortions found for other charge states will not be applied for this species)."
                 )
                 defect_pruning_dict[defect].remove(charge)
 
-            # Parse only ground state distortion for each charge state
-            elif (
+            elif (  # Parse only ground state distortion for each charge state
                 energy_diff and float(energy_diff) < -min_e_diff and not metastable
             ):  # if a significant energy drop occurred, then store this distorted defect
                 bond_distortion = analysis._get_distortion_filename(gs_distortion)
@@ -494,12 +495,10 @@ def get_energy_lowering_distortions(
                         verbose=verbose,
                     )
 
-                elif defect not in low_energy_defects:
-                    # if defect not in dict, add it
+                else:  # if defect not in dict, add it
                     print(
                         f"Energy lowering distortion found for {defect} with charge "
-                        f"{'+' if charge > 0 else ''}{charge}. Adding to low_energy_defects "
-                        f"dictionary."
+                        f"{'+' if charge > 0 else ''}{charge}. Adding to low_energy_defects dictionary."
                     )
                     low_energy_defects[defect] = [
                         {
@@ -511,7 +510,7 @@ def get_energy_lowering_distortions(
                         }
                     ]
 
-            # Parse all energy-lowering distortions (ground-state and metastable)
+            # Parse all energy-lowering distortions (ground-state and metastable):
             elif metastable and energy_diff and float(energy_diff) < -min_e_diff:
                 fav_energies_dict = {  # favourable distortions
                     "distortions": {
@@ -569,12 +568,11 @@ def get_energy_lowering_distortions(
                                 verbose=verbose,
                             )
 
-                        elif defect not in low_energy_defects:
-                            # if defect not in dict, add it
+                        else:  # if defect not in dict, add it
                             print(
                                 f"Energy lowering distortion found for {defect} with charge "
-                                f"{'+' if charge > 0 else ''}{charge}. Adding to "
-                                f"low_energy_defects dictionary."
+                                f"{'+' if charge > 0 else ''}{charge}. Adding to low_energy_defects "
+                                f"dictionary."
                             )
                             low_energy_defects[defect] = [
                                 {
@@ -588,10 +586,8 @@ def get_energy_lowering_distortions(
 
             # warning if all rattled distortions are higher energy than unperturbed
             elif gs_distortion == "Unperturbed" and all(
-                [
-                    value - energies_dict["Unperturbed"] > 0.1
-                    for value in energies_dict["distortions"].values()
-                ]
+                value - energies_dict["Unperturbed"] > 0.1
+                for value in energies_dict["distortions"].values()
             ):
                 warnings.warn(
                     f"All distortions for {defect} with charge {'+' if charge > 0 else ''}"
@@ -1264,24 +1260,29 @@ def write_groundstate_structure(
             print(f"Parsing {defect_species}...")
 
         energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
-        with warnings.catch_warnings():  # ignore warnings in case energies already parsed
-            # and output files deleted
-            if os.path.exists(
-                energies_file
-            ):  # ignore parsing warnings _only_ if energies file already exists
+        with warnings.catch_warnings():
+            if os.path.exists(energies_file) or os.path.exists(
+                energies_file.replace("+", "")
+            ):
+                # ignore parsing warnings in case energies already parsed and output files deleted,
+                # _only_ if energies file already exists
                 warnings.simplefilter("ignore", category=UserWarning)
-            io.parse_energies(defect_species, output_path)
+            energies_file = io.parse_energies(defect_species, output_path)
+            defect_species = energies_file.rsplit("/", 1)[-1].replace(
+                ".yaml", ""
+            )  # in case '+' removed
+
+        if energies_file is None:
+            warnings.warn(
+                f"Energies file {energies_file} could not be parsed for {defect_species}, skipping this "
+                f"defect species"
+            )
+            return
 
         # Get ground state distortion
         _, _, gs_distortion = analysis._sort_data(
             energies_file=energies_file, verbose=False
         )
-        if gs_distortion is None:
-            warnings.warn(
-                f"Energies file {energies_file} could not be parsed for {defect_species}, "
-                f"skipping this defect species"
-            )
-            return
 
         bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
@@ -1291,8 +1292,8 @@ def write_groundstate_structure(
         )
         if not os.path.exists(origin_path):
             raise FileNotFoundError(
-                f"The structure file {structure_filename} is not present"
-                f" in the directory {output_path}/{defect_species}/{bond_distortion}"
+                f"The structure file {structure_filename} is not present in the directory "
+                f"{output_path}/{defect_species}/{bond_distortion}"
             )
 
         # Destination path
@@ -1307,8 +1308,8 @@ def write_groundstate_structure(
             )
             if verbose:
                 print(
-                    f"{defect_species}: Ground state structure (found with "
-                    f"{gs_distortion} distortion) saved to {destination_path}"
+                    f"{defect_species}: Ground state structure (found with {gs_distortion} distortion) "
+                    f"saved to {destination_path}"
                 )
         else:
             destination_path = f"{output_path}/{defect_species}/{groundstate_filename}"
