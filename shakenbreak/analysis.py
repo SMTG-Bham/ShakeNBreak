@@ -108,7 +108,7 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, float) or isinstance(distortion, int):
+    if isinstance(distortion, (float, int)):
         if distortion != 0:
             distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
             # as percentage with 1 decimal place (e.g. 50.0%)
@@ -118,10 +118,11 @@ def _get_distortion_filename(distortion) -> str:
         if "_from_" in distortion and "Rattled" not in distortion:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        elif "Rattled_from_" in distortion:
+        elif "Rattled_from_" in distortion or distortion in [
+            "Unperturbed",
+            "Rattled",
+        ]:
             distortion_label = distortion
-        elif distortion == "Unperturbed" or distortion == "Rattled":
-            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
         else:
             try:  # try converting to float, in case user entered '0.5'
                 distortion = float(distortion)
@@ -281,15 +282,13 @@ def _sort_data(
     if verbose:
         if energy_diff and float(energy_diff) < -min_e_diff:
             print(
-                f"{defect_name}: Energy difference between minimum, found with "
-                f"{gs_distortion} bond distortion, and unperturbed: "
-                f"{energy_diff:+.2f} eV."
+                f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
+                f"distortion, and unperturbed: {energy_diff:+.2f} eV."
             )
         elif energy_diff is None:
             print(
-                f"{defect_name}: Unperturbed energy not found in {energies_file}. "
-                f"Lowest energy structure found with {gs_distortion} bond "
-                f"distortion."
+                f"{defect_name}: Unperturbed energy not found in {energies_file}. Lowest energy "
+                f"structure found with {gs_distortion} bond distortion."
             )
     return defect_energies_dict, energy_diff, gs_distortion
 
