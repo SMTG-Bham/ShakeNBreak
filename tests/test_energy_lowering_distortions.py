@@ -189,7 +189,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "vasp")
         )
         defect_charges_dict = {**defect_charges_dict_cdte, **defect_charges_dict_tio2}
-        self.assertDictEqual(defect_charges_dict, {"vac_1_Ti": [0], "vac_1_Cd": [0]})
+        self.assertDictEqual(
+            defect_charges_dict, {"v_O_s1": [0], "vac_1_Ti": [0], "vac_1_Cd": [0]}
+        )
 
         for i in self.defect_folders_list:
             os.mkdir(os.path.join(self.VASP_CDTE_DATA_DIR, i))
@@ -204,6 +206,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "sub_1_In_on_Cd": [1],
             "vac_1_Cd": [0],
             "vac_1_Ti": [0],
+            "v_O_s1": [0],
         }
         self.assertEqual(
             defect_charges_dict.keys(),
@@ -467,9 +470,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )  # same call as before
             mock_print.assert_any_call(
-                "Low-energy distorted structure for vac_1_Cd_-2 "
-                "already found with charge states "
-                "[-1], "
+                "Low-energy distorted structure for vac_1_Cd_-2 already found with charge states ['-1'], "
                 "storing together."
             )
             self.assertEqual(len(low_energy_defects_dict["vac_1_Cd"]), 2)
@@ -679,22 +680,18 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
 
             warning_message = (
                 f"All distortions for vac_1_Cd with charge -1 are >0.1 eV higher energy than "
-                f"unperturbed, indicating problems with the relaxations. You should first check "
-                f"if the calculations finished ok for this defect species and if this defect "
-                f"charge state is reasonable (often this is the result of an unreasonable charge "
-                f"state). If both checks pass, you likely need to adjust the `stdev` rattling "
-                f"parameter (can occur for hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
-                f"– This often indicates a complex PES with multiple minima, "
-                f"thus energy-lowering distortions particularly likely, so important to "
-                f"test with reduced `stdev`!"
+                f"unperturbed, indicating problems with the relaxations. You should first check if the "
+                f"calculations finished ok for this defect species and if this defect charge state is "
+                f"reasonable (often this is the result of an unreasonable charge state). If both checks "
+                f"pass, you likely need to adjust the `stdev` rattling parameter (can occur for "
+                f"hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials"
+                f"\nThis often indicates a complex PES with multiple minima, thus energy-lowering "
+                f"distortions particularly likely, so important to test with reduced `stdev`!"
             )
             self.assertTrue(
                 any(
-                    [
-                        str(warning.message) == warning_message
-                        for warning in user_warnings
-                    ]
+                    str(warning.message) == warning_message for warning in user_warnings
                 )
             )
 

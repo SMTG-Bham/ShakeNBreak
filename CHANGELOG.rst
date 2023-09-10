@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v3.2.2
+----------
+- Consolidate ``SnB``/``doped`` ``INCAR`` defaults and remove redundant settings.
+- Ensure backwards compatiblity in defect folder name handling.
+- Fix bug in ``get_site_magnetizations``.
+
 v3.2.1
 ----------
 - Update CLI config handling.

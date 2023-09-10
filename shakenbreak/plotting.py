@@ -847,13 +847,10 @@ def plot_all_defects(
             if verbose:
                 warnings.warn(
                     f"Path {output_path}/distortion_metadata.json does not exist, "
-                    f"and distortion_metadata.json files not found in defect folders. "
-                    "Will not parse its contents (to specify which neighbour atoms were distorted "
-                    "in plot text)."
+                    f"and distortion_metadata.json files not found in defect folders. Will not parse its "
+                    f"contents (to specify which neighbour atoms were distorted in plot text)."
                 )
             distortion_metadata = None
-            num_nearest_neighbours = None
-            neighbour_atom = None
 
     figures = {}
     for defect, value in defects_dict.items():
@@ -861,16 +858,18 @@ def plot_all_defects(
             defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
             # Parse energies
             if not os.path.isdir(f"{output_path}/{defect_species}"):
-                warnings.warn(
-                    f"Path {output_path}/{defect_species} does not exist! "
-                    f"Skipping {defect_species}."
-                )  # if defect directory doesn't exist, skip defect
-                continue
+                if os.path.isdir(f"{output_path}/{defect_species.replace('+', '')}"):
+                    defect_species = defect_species.replace("+", "")
+                else:
+                    warnings.warn(
+                        f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
+                    )  # if defect directory doesn't exist, skip defect
+                    continue
+
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             if not os.path.exists(energies_file):
                 warnings.warn(
-                    f"Path {energies_file} does not exist. "
-                    f"Skipping {defect_species}."
+                    f"Path {energies_file} does not exist. Skipping {defect_species}."
                 )  # skip defect
                 continue
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
@@ -903,7 +902,7 @@ def plot_all_defects(
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
                     )
-                else:
+                elif distortion_metadata is None:
                     num_nearest_neighbours = None
                     neighbour_atom = None
 
