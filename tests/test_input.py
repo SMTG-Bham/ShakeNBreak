@@ -1,6 +1,8 @@
+import contextlib
 import copy
 import datetime
 import filecmp
+import locale
 import os
 import shutil
 import unittest
@@ -399,7 +401,13 @@ class InputTestCase(unittest.TestCase):
             "v_Te_+2",
         ]
 
+        # Get the current locale setting
+        self.original_locale = locale.getlocale(locale.LC_CTYPE)  # should be UTF-8
+
     def tearDown(self) -> None:
+        # reset locale:
+        locale.setlocale(locale.LC_CTYPE, self.original_locale)  # should be UTF-8
+
         # remove test-generated defect folders if present
         for i in self.cdte_defect_folders_old_names + self.cdte_defect_folders:
             if_present_rm(i)
@@ -1120,6 +1128,13 @@ class InputTestCase(unittest.TestCase):
         V_Cd_new_POSCAR = Poscar.from_file("vac_1_Cdc_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+
+    def test_with_non_UTF_8_encoding(self):
+        # Temporarily set the locale to ASCII/latin encoding (doesn't support emojis or "Γ"):
+        with contextlib.suppress(locale.Error):  # not supported on GH Actions
+            locale.setlocale(locale.LC_CTYPE, "en_US.US-ASCII")
+            self.test_create_vasp_input()
+
 
     def _check_V_Cd_rattled_poscar(self, defect_dir):
         result = Poscar.from_file(f"{defect_dir}/POSCAR")

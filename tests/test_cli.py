@@ -29,6 +29,7 @@ from shakenbreak.input import generate_defect_object
 
 file_path = os.path.dirname(__file__)
 
+
 def _potcars_available() -> bool:
     """
     Check if the POTCARs are available for the tests (i.e. testing locally).
@@ -40,6 +41,7 @@ def _potcars_available() -> bool:
         return True
     except ValueError:
         return False
+
 
 def if_present_rm(path):
     if os.path.exists(path):
@@ -156,6 +158,7 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/test_groundstate_all")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
@@ -285,7 +288,9 @@ class CLITestCase(unittest.TestCase):
         # check if correct files were created:
         V_Cd_Bond_Distortion_folder = f"{defect_name}_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
+        V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(
+            f"{V_Cd_Bond_Distortion_folder}/POSCAR"
+        )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
@@ -299,7 +304,9 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert filecmp.cmp(f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file)
+            assert filecmp.cmp(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
@@ -898,12 +905,13 @@ POTCAR:
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert filecmp.cmp(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file)
+            assert filecmp.cmp(
+                f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file
+            )
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te_GW"}
-
 
         test_yml = """
 oxidation_states:
@@ -1324,7 +1332,11 @@ POTCAR:
             1,
         ] + list(range(-1, 2)):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-                self.assertTrue(os.path.exists(f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/POSCAR"))
+                self.assertTrue(
+                    os.path.exists(
+                        f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/POSCAR"
+                    )
+                )
         for dist in ["Unperturbed", "Rattled"]:
             # -2 has 0 electron change -> only Unperturbed & rattled folders
             self.assertTrue(os.path.exists(f"{defect_name}_-2/{dist}/POSCAR"))
@@ -1337,7 +1349,9 @@ POTCAR:
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file)
+            assert not filecmp.cmp(
+                f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file
+            )
             # NELECT has changed due to POTCARs
 
             v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
@@ -2066,11 +2080,11 @@ Chosen VASP error message: {error_string}
         self.assertNotIn("Unperturbed fully relaxed", out)
         self.assertIn(
             "Previous run for Unperturbed did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic",
-            out
+            out,
         )
         self.assertIn(
             "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!",
-            out
+            out,
         )
         self.assertIn("Running job for Unperturbed", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
@@ -2167,7 +2181,10 @@ Chosen VASP error message: {error_string}
 
         # test changing no message with poor electronic convergence when ALGO already = All
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
-            fp.write(poor_electronic_convergence_outcar_string + "\nIALGO = 58  # i.e. ALGO = All")
+            fp.write(
+                poor_electronic_convergence_outcar_string
+                + "\nIALGO = 58  # i.e. ALGO = All"
+            )
 
         proc = subprocess.Popen(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
@@ -2504,14 +2521,9 @@ Chosen VASP error message: {error_string}
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
-                [
-                    str(warning.message)
-                    == "Energies could not be parsed for defect 'defect' in '.'. If these "
-                    "directories are correct, check calculations have converged, and that "
-                    "distortion subfolders match ShakeNBreak naming (e.g. "
-                    "Bond_Distortion_xxx, Rattled, Unperturbed)"
-                    for warning in w
-                ]
+                str(warning.message)
+                == "Defect folder 'defect' not found in '.'. Please check these folders and paths."
+                for warning in w
             )
         )
         self.assertFalse(
@@ -3313,14 +3325,10 @@ Chosen VASP error message: {error_string}
             )
         )
         self.assertTrue(
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
         )
         self.assertTrue(
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
         )
         if w:
             [
@@ -3516,14 +3524,10 @@ Chosen VASP error message: {error_string}
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_-1.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_-1.png"))
         )
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
@@ -3546,9 +3550,18 @@ Chosen VASP error message: {error_string}
                 catch_exceptions=False,
             )
         defect = "v_Cd"  # in example results
-        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
+        non_ignored_warnings = [
+            warning for warning in w if "Subfolders with" not in str(warning.message)
+        ]
         self.assertEqual(
-            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
+            len(
+                [
+                    warning
+                    for warning in non_ignored_warnings
+                    if warning.category == UserWarning
+                ]
+            ),
+            0,
         )
 
         self.assertIn(
@@ -3630,9 +3643,18 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
+        non_ignored_warnings = [
+            warning for warning in w if "Subfolders with" not in str(warning.message)
+        ]
         self.assertEqual(
-            len([warning for warning in non_ignored_warnings if warning.category == UserWarning]), 0
+            len(
+                [
+                    warning
+                    for warning in non_ignored_warnings
+                    if warning.category == UserWarning
+                ]
+            ),
+            0,
         )
         assert any(
             f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
@@ -3907,6 +3929,33 @@ Chosen VASP error message: {error_string}
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # test with a positive charge defect but old naming format
+        os.chdir(f"{self.EXAMPLE_RESULTS}")
+        os.mkdir("test_groundstate_all")
+        os.chdir("test_groundstate_all")
+        defect = "v_Ti_1"
+        shutil.copytree("../v_Ti_0", defect)
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{defect}/Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Ground state structure (found with -0.4 distortion) saved to "
+            f"./{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(f"{defect}/Groundstate/POSCAR")
+        V_Ti_minus0pt4_structure = Structure.from_file(
+            f"{defect}/Bond_Distortion_-40.0%/CONTCAR"
+        )
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
+        if_present_rm(f"{defect}/Groundstate")
+        self.tearDown()  # return to test file directory
 
     def test_mag(self):
         """Test the snb-mag command"""
