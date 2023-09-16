@@ -163,7 +163,7 @@ setup(
         "numpy",  # >=1.21.2" needed for numpy.typing.NDArray?
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
-        "matplotlib",
+        "matplotlib>=3.6",
         "ase",
         "pandas>=1.1.0",
         "seaborn",
