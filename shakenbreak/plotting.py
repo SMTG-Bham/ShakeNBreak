@@ -1436,7 +1436,9 @@ def plot_colorbar(
             handles = [(im, line_handle)] + handles
             labels = [line_label] + labels
 
-        plt.legend(handles, labels, scatteryoffsets=[0.5], frameon=True).set_zorder(
+        plt.legend(
+            handles, labels, scatteryoffsets=[0.5], frameon=True, framealpha=0.3
+        ).set_zorder(
             100
         )  # make sure it's on top of the other points
 
@@ -1544,16 +1546,15 @@ def plot_datasets(
             as a mpl.figure.Figure object
     """
     # Validate input
-    if dataset_labels is not None:
-        if len(datasets) != len(dataset_labels):
-            raise ValueError(
-                f"Number of datasets and labels must match! "
-                f"You gave me {len(datasets)} datasets and"
-                f" {len(dataset_labels)} labels."
-            )
-    else:
+    if dataset_labels is None:
         dataset_labels = ["Distortions"] * len(datasets)
 
+    elif len(datasets) != len(dataset_labels):
+        raise ValueError(
+            f"Number of datasets and labels must match! "
+            f"You gave me {len(datasets)} datasets and"
+            f" {len(dataset_labels)} labels."
+        )
     _install_custom_font()
     # Set up figure
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
@@ -1654,10 +1655,9 @@ def plot_datasets(
                     label="Rattled",
                 )
 
-            if (
-                len(sorted_distortions) > 0
-                and len([key for key in dataset["distortions"] if key != "Rattled"]) > 0
-            ):  # more than just Rattled
+            if len(sorted_distortions) > 0 and [
+                key for key in dataset["distortions"] if key != "Rattled"
+            ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
                         i
@@ -1682,11 +1682,11 @@ def plot_datasets(
 
             if imported_indices:
                 other_charges = len(
-                    list(
+                    [
                         list(dataset["distortions"].keys())[i].split("_")[-1]
                         for i in imported_indices
-                    )
-                )  # number of other charge states whose distortions have been imported
+                    ]  # number of other charge states whose distortions have been imported
+                )
                 for i, j in zip(imported_indices, range(other_charges)):
                     other_charge_state = int(
                         list(dataset["distortions"].keys())[i].split("_")[-1]
@@ -1766,17 +1766,17 @@ def plot_datasets(
     # If several datasets, check min & max energy are included
     if len(datasets) > 1:
         min_energy = min(
-            [min(list(dataset["distortions"].values())) for dataset in datasets]
+            min(list(dataset["distortions"].values())) for dataset in datasets
         )
         max_energy = max(
-            [max(list(dataset["distortions"].values())) for dataset in datasets]
+            max(list(dataset["distortions"].values())) for dataset in datasets
         )
         ax.set_ylim(
             min_energy - 0.1 * (max_energy - min_energy),
             max_energy + 0.1 * (max_energy - min_energy),
         )
 
-    ax.legend(frameon=True).set_zorder(
+    ax.legend(frameon=True, framealpha=0.3).set_zorder(
         100
     )  # show legend on top of all other datapoints
 
