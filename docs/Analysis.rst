@@ -246,7 +246,7 @@ manually (not recommended) or using the other defect codes listed on the
 
 As shown in the `doped <https://doped.readthedocs.io/en/latest/index.html>`_ tutorials and docs, you may
 want to further analyse the behaviour and impact on material properties of your defects using advanced
-defect analysis codes such as `easyunfold <https://smtg-ucl.github.io/easyunfold/>`_ (to analyse the
+defect analysis codes such as `easyunfold <https://smtg-bham.github.io/easyunfold/>`_ (to analyse the
 electronic structure of defects in your material),
 `py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_ (to analyse defect concentrations, doping
 and Fermi level tuning), or `nonrad <https://nonrad.readthedocs.io/en/latest/>`_ /
