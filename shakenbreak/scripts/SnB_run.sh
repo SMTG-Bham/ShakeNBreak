@@ -121,10 +121,13 @@ SnB_run_loop() {
         # if electronic convergence is not being reached, change ALGO to All
         if grep -q "aborting loop EDIFF was not reached" OUTCAR && ! grep -q "aborting loop because EDIFF is reached" OUTCAR; then
           # unconverged electronic loops and no converged electronic loops
-          if [ "$verbose" = true ]; then
-            echo "${i%?} is showing poor electronic convergence, changing ALGO to All."
+          ialgo=$(grep IALGO  OUTCAR | awk '{print $3}')
+          if [ "$ialgo" != "58" ]; then
+            if [ "$verbose" = true ]; then
+              echo "${i%?} is showing poor electronic convergence, changing ALGO to All."
+            fi
+            sed -i 's/ALGO.*/ALGO = All/g' INCAR
           fi
-          sed -i 's/ALGO.*/ALGO = All/g' INCAR
         fi
 
         # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR

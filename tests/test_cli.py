@@ -1,10 +1,12 @@
 import copy
 import datetime
+import filecmp
 import json
 import os
 import re
 import shutil
 import subprocess
+import inspect
 import unittest
 import warnings
 
@@ -17,13 +19,28 @@ from monty.serialization import loadfn
 
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
+from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Kpoints, Potcar, Incar
+
+from doped.vasp import _test_potcar_functional_choice
 
 from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
 from shakenbreak.input import generate_defect_object
 
 file_path = os.path.dirname(__file__)
+
+
+def _potcars_available() -> bool:
+    """
+    Check if the POTCARs are available for the tests (i.e. testing locally).
+
+    If not (testing on GitHub Actions), POTCAR testing will be skipped.
+    """
+    try:
+        _test_potcar_functional_choice("PBE")
+        return True
+    except ValueError:
+        return False
 
 
 def if_present_rm(path):
@@ -88,6 +105,12 @@ class CLITestCase(unittest.TestCase):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
 
+        # get example INCAR:
+        self.V_Cd_INCAR_file = os.path.join(
+            self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
+        )
+        self.V_Cd_INCAR = Incar.from_file(self.V_Cd_INCAR_file)
+
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
         for i in [
@@ -135,23 +158,24 @@ class CLITestCase(unittest.TestCase):
         if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
+        if_present_rm(f"{self.EXAMPLE_RESULTS}/test_groundstate_all")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
         for charge in [-1, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         folder = "Bond_Distortion_20.0%_from_-1"
         for charge in [0, -2]:
             if os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
             ):
                 shutil.rmtree(
-                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_{charge}", folder)
+                    os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_{charge}", folder)
                 )
         if_present_rm(
             os.path.join(
@@ -183,6 +207,9 @@ class CLITestCase(unittest.TestCase):
 
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/INCAR")
+
+        for i in ["castep", "cp2k", "fhi_aims", "quantum_espresso"]:
+            if_present_rm(f"{self.DATA_DIR}/{i}/vac_1_Cd_0/default_INCAR")
 
     def copy_v_Ti_OUTCARs(self):
         """
@@ -236,7 +263,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -262,16 +289,28 @@ class CLITestCase(unittest.TestCase):
         V_Cd_Bond_Distortion_folder = f"{defect_name}_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_minus0pt5_rattled_POSCAR = Poscar.from_file(
-            V_Cd_Bond_Distortion_folder + "/POSCAR"
+            f"{V_Cd_Bond_Distortion_folder}/POSCAR"
         )
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.comment,
-            f"-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(
             V_Cd_minus0pt5_rattled_POSCAR.structure,
             self.V_Cd_minus0pt5_struc_rattled,
         )
+
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert filecmp.cmp(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te"}
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
@@ -335,7 +374,6 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        defect_name = "v_Cd_s4"
         result = runner.invoke(
             snb,
             [
@@ -466,7 +504,7 @@ class CLITestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
             result.output,
         )
-        defect_name = "Cd_i_m128"
+        defect_name = "Cd_i_C3v_Cd2.71"
         self.assertEqual(
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_-60.0%/POSCAR"),
             self.Int_Cd_2_minus0pt6_struc_rattled,
@@ -621,7 +659,7 @@ class CLITestCase(unittest.TestCase):
                 ],
                 catch_exceptions=False,
             )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -733,7 +771,7 @@ class CLITestCase(unittest.TestCase):
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "Te_Cd_s0"
+        defect_name = "Te_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 4", result.output)
         self.assertIn(
@@ -769,7 +807,7 @@ class CLITestCase(unittest.TestCase):
         #     "state}, with a `padding = 1` on either side of this range.",
         #     result.output,
         # )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
         self.assertIn(
@@ -834,7 +872,10 @@ width: 0.3
 max_attempts: 10000
 max_disp: 1.0
 seed: 20
-local_rattle: False"""
+local_rattle: False
+POTCAR_FUNCTIONAL: PBE_52
+POTCAR:
+  Te: Te_GW"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
         runner = CliRunner()
@@ -852,7 +893,7 @@ local_rattle: False"""
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         V_Cd_kwarged_POSCAR = Poscar.from_file(
             f"{defect_name}_0/Bond_Distortion_-50.0%/POSCAR"
@@ -860,6 +901,17 @@ local_rattle: False"""
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
+        kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert filecmp.cmp(
+                f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te_GW"}
 
         test_yml = """
 oxidation_states:
@@ -890,7 +942,7 @@ oxidation_states:
             "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 3", result.output)
         self.assertIn(
@@ -1073,7 +1125,7 @@ local_rattle: False
                 "test_config.yml",
             ],
         )
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Defect {defect_name} in charge state: -7. Number of distorted neighbours: 3",
@@ -1193,7 +1245,7 @@ nonsense_key: nonsense_value"""
         defects_dir = "pesky_defects"
         os.mkdir(defects_dir)
         runner = CliRunner()
-        defect_name = "vac_1_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1203,7 +1255,9 @@ nonsense_key: nonsense_value"""
         test_yml = """bond_distortions: [0.3,]
 local_rattle: True
 stdev: 0.25
-seed: 42"""  # previous default
+seed: 42
+POTCAR:
+  Cd: Cd_sv_GW"""  # previous default rattle settings
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
@@ -1278,7 +1332,11 @@ seed: 42"""  # previous default
             1,
         ] + list(range(-1, 2)):
             for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-                self.assertTrue(os.path.exists(f"{defect_name}_{charge}/{dist}/POSCAR"))
+                self.assertTrue(
+                    os.path.exists(
+                        f"{defect_name}_{'+' if charge > 0 else ''}{charge}/{dist}/POSCAR"
+                    )
+                )
         for dist in ["Unperturbed", "Rattled"]:
             # -2 has 0 electron change -> only Unperturbed & rattled folders
             self.assertTrue(os.path.exists(f"{defect_name}_-2/{dist}/POSCAR"))
@@ -1287,14 +1345,33 @@ seed: 42"""  # previous default
             Structure.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POSCAR"),
             self.V_Cd_0pt3_local_rattled,
         )
+        kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(
+                f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file
+            )
+            # NELECT has changed due to POTCARs
+
+            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
+            v_Cd_INCAR.pop("NELECT")
+            test_INCAR = self.V_Cd_INCAR.copy()
+            test_INCAR.pop("NELECT")
+            assert v_Cd_INCAR == test_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te"}
+
         if_present_rm(defects_dir)
         for charge in range(-2, 3):
-            if_present_rm(f"{defect_name}_{charge}")
+            if_present_rm(f"{defect_name}_{'+' if charge > 0 else ''}{charge}")
         self.tearDown()
 
         # Test defects not organised in folders
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1363,7 +1440,7 @@ seed: 42"""  # previous default
 
         # Test defects with new pymatgen naming
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "Va_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")
         shutil.copyfile(
@@ -1435,7 +1512,7 @@ seed: 42"""  # previous default
         # CONFIG file
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -1547,12 +1624,12 @@ seed: 42"""  # previous default
             result.output,  # test auto-determined stdev and bond length
         )
         self.assertIn(
-            f"Defect v_Cd_s0 in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect v_Cd in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         # Not only neutral charge state because auto-determined defect name doesn't match config
         self.assertIn(
-            f"Defect v_Cd_s0 in charge state: -2. Number of distorted neighbours: 0",
+            f"Defect v_Cd in charge state: -2. Number of distorted neighbours: 0",
             result.output,
         )
         self.assertIn("--Distortion 30.0%", result.output)
@@ -1563,13 +1640,13 @@ seed: 42"""  # previous default
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-            self.assertTrue(os.path.exists(f"v_Cd_s0_0/{dist}/POSCAR"))
-            self.assertTrue(os.path.exists(f"v_Cd_s0_-1/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_0/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_-1/{dist}/POSCAR"))
         # The input_file option is tested in local test, as INCAR
         # not written in Github Actions
 
         # test padding
-        defect_name = "Vac_Cd"
+        defect_name = "v_Cd"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -2003,11 +2080,11 @@ Chosen VASP error message: {error_string}
         self.assertNotIn("Unperturbed fully relaxed", out)
         self.assertIn(
             "Previous run for Unperturbed did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic",
-            out
+            out,
         )
         self.assertIn(
             "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!",
-            out
+            out,
         )
         self.assertIn("Running job for Unperturbed", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
@@ -2098,6 +2175,30 @@ Chosen VASP error message: {error_string}
         self.assertEqual(len([i for i in saved_files if "INCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        for i in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
+        if_present_rm("Bond_Distortion_10.0%/job_file")
+
+        # test changing no message with poor electronic convergence when ALGO already = All
+        with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
+            fp.write(
+                poor_electronic_convergence_outcar_string
+                + "\nIALGO = 58  # i.e. ALGO = All"
+            )
+
+        proc = subprocess.Popen(
+            ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )  # setting 'job command' to 'echo' to
+        out = str(proc.communicate()[0])
+        self.assertNotIn(
+            "Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO to All.",
+            out,
+        )
+        self.assertIn("ALGO = All", open("Bond_Distortion_10.0%/INCAR").read())
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
@@ -2420,14 +2521,9 @@ Chosen VASP error message: {error_string}
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
-                [
-                    str(warning.message)
-                    == "Energies could not be parsed for defect 'defect' in '.'. If these "
-                    "directories are correct, check calculations have converged, and that "
-                    "distortion subfolders match ShakeNBreak naming (e.g. "
-                    "Bond_Distortion_xxx, Rattled, Unperturbed)"
-                    for warning in w
-                ]
+                str(warning.message)
+                == "Defect folder 'defect' not found in '.'. Please check these folders and paths."
+                for warning in w
             )
         )
         self.assertFalse(
@@ -2521,7 +2617,7 @@ Chosen VASP error message: {error_string}
         )  # Bond_Distortion_-20.0%_not_converged now included
         not_converged_energies = copy.deepcopy(test_energies)
         not_converged_energies["distortions"].update(
-            {"Bond_Distortion_-20.0%_not_converged": -1151.8383839}
+            {"Bond_Distortion_-20.0%_not_converged": -1110.37833497}
         )
         self.assertEqual(
             not_converged_energies, energies
@@ -2596,7 +2692,7 @@ Chosen VASP error message: {error_string}
         )
 
         # test warning when all parsed distortions are >0.1 eV higher energy than unperturbed
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -2632,7 +2728,7 @@ Chosen VASP error message: {error_string}
         )  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
@@ -2657,7 +2753,7 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
         # test warning when all parsed distortions are <-0.1 eV lower energy than unperturbed
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -2691,7 +2787,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             len([i for i in w if i.category == UserWarning]) == 0
@@ -2727,7 +2823,7 @@ Chosen VASP error message: {error_string}
         self.assertEqual(low_energies_dict, energies)  # energies still parsed
         # test print statement about not being fully relaxed
         self.assertIn(
-            "Bond_Distortion_-40.0% for v_Ti_3 is not fully relaxed", result.output
+            "Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output
         )
         self.assertTrue(
             any(
@@ -2747,7 +2843,7 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}")
 
         # test warning when all distortions have been renamed to "*High_Energy*"
-        defect = "v_Ti_3"
+        defect = "v_Ti_+3"
         shutil.copytree(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/{defect}",
@@ -3182,7 +3278,7 @@ Chosen VASP error message: {error_string}
         defect_name = "v_Ti"
         fake_distortion_metadata = {
             "defects": {
-                "v_Cd_s0": {
+                "v_Cd": {
                     "charges": {
                         "0": {
                             "num_nearest_neighbours": 2,
@@ -3229,14 +3325,10 @@ Chosen VASP error message: {error_string}
             )
         )
         self.assertTrue(
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
         )
         self.assertTrue(
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_-1/v_Cd_s0_-1.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-1/v_Cd_-1.png"))
         )
         if w:
             [
@@ -3432,14 +3524,10 @@ Chosen VASP error message: {error_string}
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect}/{defect}.png"))
         )
         self.assertFalse(  # energy diff of 0.75 eV less than min_energy
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_s0_0/v_Cd_s0_0.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/v_Cd_0.png"))
         )
         self.assertFalse(  # energy diff of 0.9 eV less than min_energy
-            os.path.exists(
-                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_s0_-1.png")
-            )
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, "v_Cd_-s0_1/v_Cd_-1.png"))
         )
         [
             os.remove(os.path.join(self.EXAMPLE_RESULTS, defect, file))
@@ -3461,9 +3549,19 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        defect = "v_Cd_s0"  # in example results
+        defect = "v_Cd"  # in example results
+        non_ignored_warnings = [
+            warning for warning in w if "Subfolders with" not in str(warning.message)
+        ]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len(
+                [
+                    warning
+                    for warning in non_ignored_warnings
+                    if warning.category == UserWarning
+                ]
+            ),
+            0,
         )
 
         self.assertIn(
@@ -3545,9 +3643,27 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
+        non_ignored_warnings = [
+            warning for warning in w if "Subfolders with" not in str(warning.message)
+        ]
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len(
+                [
+                    warning
+                    for warning in non_ignored_warnings
+                    if warning.category == UserWarning
+                ]
+            ),
+            0,
         )
+        assert any(
+            f"Subfolders with VASP input files (['INCAR', 'KPOINTS', 'POTCAR'] not found in "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2, so just writing distorted POSCAR file to "
+            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory."
+            in str(warning.message)
+            for warning in w
+        )
+
         self.assertIn(
             "Comparing structures to specified ref_structure (Cd31 Te32)...",
             result.output,
@@ -3559,12 +3675,6 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             f"Writing low-energy distorted structure to"
             f" {self.EXAMPLE_RESULTS}/{defect}_0/Bond_Distortion_20.0%_from_-1\n",
-            result.output,
-        )
-        self.assertIn(
-            f"No subfolders with VASP input files found in {self.EXAMPLE_RESULTS}/{defect}_-2,"
-            f" so just writing distorted POSCAR file to "
-            f"{self.EXAMPLE_RESULTS}/{defect}_-2/Bond_Distortion_-60.0%_from_0 directory.\n",
             result.output,
         )
         self.assertFalse("High_Energy" in result.output)
@@ -3738,11 +3848,11 @@ Chosen VASP error message: {error_string}
         defect = "vac_1_Cd_0"  # in self.VASP_CDTE_DATA_DIR
         if not os.path.exists(
             os.path.join(
-                self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-48.0%_High_Energy"
+                self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy"
             )
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_s0_0/Bond_Distortion_-60.0%"),
+                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
                 os.path.join(
                     self.VASP_CDTE_DATA_DIR,
                     f"{defect}/Bond_Distortion_-48.0%_High_Energy",
@@ -3819,6 +3929,33 @@ Chosen VASP error message: {error_string}
         )
         self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
+
+        # test with a positive charge defect but old naming format
+        os.chdir(f"{self.EXAMPLE_RESULTS}")
+        os.mkdir("test_groundstate_all")
+        os.chdir("test_groundstate_all")
+        defect = "v_Ti_1"
+        shutil.copytree("../v_Ti_0", defect)
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"{defect}/Groundstate/POSCAR"))
+        self.assertIn(
+            f"{defect}: Ground state structure (found with -0.4 distortion) saved to "
+            f"./{defect}/Groundstate/POSCAR",
+            result.output,
+        )
+        gs_structure = Structure.from_file(f"{defect}/Groundstate/POSCAR")
+        V_Ti_minus0pt4_structure = Structure.from_file(
+            f"{defect}/Bond_Distortion_-40.0%/CONTCAR"
+        )
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
+        if_present_rm(f"{defect}/Groundstate")
+        self.tearDown()  # return to test file directory
 
     def test_mag(self):
         """Test the snb-mag command"""
