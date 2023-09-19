@@ -23,8 +23,8 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
 which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
-`doped README <https://github.com/SMTG-UCL/doped/tree/master#installation>`_ instructions if you have difficulty with
-this.
+`doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+difficulty with this.
 
 .. NOTE::
    The font `Montserrat <https://fonts.google.com/specimen/Montserrat/about>`_

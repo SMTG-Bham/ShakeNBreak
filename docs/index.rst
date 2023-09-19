@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg
+.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/test.yml/badge.svg
  :target: https://github.com/SMTG-UCL/ShakeNBreak/actions
 
 .. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat
@@ -12,7 +12,7 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg
+.. image:: https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda
  :target: https://anaconda.org/conda-forge/shakenbreak
 
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
@@ -94,8 +94,8 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
 which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
-`doped README <https://github.com/SMTG-UCL/doped/tree/master#installation>`_ instructions if you have difficulty with
-this.
+`doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+difficulty with this.
 
 Developer installation
 ------------------------
@@ -171,7 +171,7 @@ Code Compatibility
 :code:`ShakeNBreak` can take :code:`pymatgen` :code:`Defect` objects as input (to then generate the trial distorted
 structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects, :code:`doped` defect dictionaries or
 structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
-(such as `doped <https://github.com/SMTG-UCL/doped>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
+(such as `doped <https://doped.readthedocs.io/en/latest/index.html>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
 `PyCDT <https://github.com/mbkumar/pycdt>`_, `PyLada <https://github.com/pylada/pylada-defects>`_,
 `DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
 `DefAP <https://github.com/DefAP/defap>`_, `PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
@@ -213,6 +213,7 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
+- J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
 - X\. Wang et al. `arXiv`_ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
@@ -230,7 +231,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Kumagai collab paper
 .. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
-.. Joe CuI preprint out soon
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
@@ -268,7 +268,7 @@ You may also find this Preview paper useful, which discusses the general problem
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
@@ -282,11 +282,20 @@ Requirements
 
 .. toctree::
    :hidden:
+   :caption: Usage
    :maxdepth: 4
 
    Installation
    Python API <modules>
    Tutorials
    Tips
+
+.. toctree::
+   :hidden:
+   :caption: Information
+   :maxdepth: 1
+
    Code_Compatibility
    Contributing
+   changelog_link
+   ShakeNBreak on GitHub <https://github.com/SMTG-UCL/ShakeNBreak>

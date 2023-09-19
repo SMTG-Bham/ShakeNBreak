@@ -1,26 +1,26 @@
-name: pip install ShakeNBreak
+name: Tests
 
 on:
-  workflow_run:
-    workflows: ["Release and publish"]
-    branches: [main]
-    types:
-      - completed  # only test when new release has been deployed to PyPI
+  pull_request:
+    branches:
+       - main
+       - develop
+  push:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
-    # only run when tests have passed (or manually triggered)
-
     strategy:
       max-parallel: 5
 
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
 
-    name: Python ${{ matrix.python-version }} pip install
+    name: Python ${{ matrix.python-version }} Test Pop
 
     steps:
       - uses: actions/checkout@v2
@@ -31,9 +31,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sleep 10m  # wait 10 minutes for PyPI to update with the new release
           python -m pip install --upgrade pip
-          pip install shakenbreak[tests]  # install only from PyPI
+          pip install -e .[tests]
+
+      - name: Check package versions
+        run: |
+          pip show -V pymatgen-analysis-defects
+          pip show -V pymatgen
+          pip show -V pytest
 
       - name: Test
         run:  |
@@ -53,3 +58,8 @@ jobs:
         with:
           name: output-plots
           path: tests/remote_baseline
+
+      # - name: Download a single artifact
+      #   uses: actions/download-artifact@v3
+      #   with:
+      #     name: output-plots

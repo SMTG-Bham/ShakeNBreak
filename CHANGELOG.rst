@@ -1,6 +1,32 @@
 Change Log
 ==========
 
+v3.2.2
+----------
+- Consolidate ``SnB``/``doped`` ``INCAR`` defaults and remove redundant settings.
+- Ensure backwards compatiblity in defect folder name handling.
+- Fix bug in ``get_site_magnetizations``.
+
+v3.2.1
+----------
+- Update CLI config handling.
+- Remove `shakenbreak.vasp` module and use `doped` VASP file writing functions directly.
+- Add INCAR/KPOINTS/POTCAR file writing tests. `test_local.py` now deleted as these tests are now
+  automatically run in `test_input.py`/`test_cli.py` if `POTCAR`s available.
+
+v3.2.0
+----------
+- Following the major release of `doped` `v2.0`, now compatible with the new `pymatgen`
+  defects code (`pymatgen>2022.7.25`), this update:
+    - Allows input of `doped` `DefectsGenerator` object to `Distortions`
+    - Updates the tutorials to reflect the current recommended workflow of generating defects
+      with `doped` and then applying `ShakeNBreak`, no longer requiring separate virtual environments 🎉
+
+v3.1.0
+----------
+- Update dependencies, as `hiphive=1.2` has been released, making `ShakeNBreak` compatible with
+  `python=3.11`🎉
+
 v3.0.0
 ----------
 - Switch to semantic versioning
