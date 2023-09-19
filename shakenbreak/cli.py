@@ -116,7 +116,7 @@ def _parse_defect_dirs(path) -> list:
         and any(
             [
                 fnmatch.filter(os.listdir(f"{path}/{dir}"), f"{dist}*")
-                for dist in ["Rattled", "Unperturbed", "Bond_Distortion"]
+                for dist in ["Rattled", "Unperturbed", "Bond_Distortion", "Dimer"]
             ]
         )  # only parse defect directories that contain distortion folders
     ]
@@ -1498,7 +1498,7 @@ def groundstate(
             and any(
                 [
                     substring in dir
-                    for substring in ["Bond_Distortion", "Rattled", "Unperturbed"]
+                    for substring in ["Bond_Distortion", "Rattled", "Unperturbed", "Dimer"]
                 ]
             )
         ]
