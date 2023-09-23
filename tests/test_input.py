@@ -116,6 +116,9 @@ class InputTestCase(unittest.TestCase):
         self.cdte_doped_defect_dict = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
+        self.cdte_doped_reduced_defect_gen = loadfn(
+            os.path.join(self.VASP_CDTE_DATA_DIR, "reduced_CdTe_defect_gen.json")
+        )
         self.cdte_defects = {}
         # Refactor to dict of DefectEntrys objects, with doped/PyCDT names
         for defects_type, defect_dict_list in self.cdte_doped_defect_dict.items():
@@ -1135,7 +1138,6 @@ class InputTestCase(unittest.TestCase):
             locale.setlocale(locale.LC_CTYPE, "en_US.US-ASCII")
             self.test_create_vasp_input()
 
-
     def _check_V_Cd_rattled_poscar(self, defect_dir):
         result = Poscar.from_file(f"{defect_dir}/POSCAR")
         self.assertEqual(result.comment, "V_Cd Rattled")
@@ -1955,8 +1957,141 @@ class InputTestCase(unittest.TestCase):
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
 
+    def test_write_vasp_files_from_doped_defect_gen(self):
+        """Test Distortions() class with (new) doped DefectsGenerator input"""
+        dist = input.Distortions(
+            self.cdte_doped_reduced_defect_gen,
+            stdev=0.25,  # old default
+            seed=42,  # old default
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"IVDW": 12},
+                    verbose=False,
+                )
+
+        # check if expected folders were created:
+        for key in self.cdte_doped_reduced_defect_gen.keys():
+            self.assertTrue(os.path.exists(f"{key}"))
+            self.assertTrue(os.path.exists(f"{key}/Unperturbed"))
+            self.assertTrue(os.path.exists(f"{key}/Unperturbed/POSCAR"))
+            self.assertTrue(os.path.exists(f"{key}/Unperturbed/KPOINTS"))
+            if _potcars_available():
+                self.assertTrue(os.path.exists(f"{key}/Unperturbed/INCAR"))
+                self.assertTrue(os.path.exists(f"{key}/Unperturbed/POTCAR"))
+
+        # check expected info printing:
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6'].",
+            "Then, will rattle with a std dev of 0.25 Å \n",
+        )
+        mock_print.assert_any_call(
+            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
+        )  # bold print
+        mock_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        )
+        mock_print.assert_any_call(
+            "\nDefect v_Cd in charge state: -2. Number of distorted neighbours: 0"
+        )
+        mock_print.assert_any_call(
+            "\nDefect v_Cd in charge state: -1. Number of distorted neighbours: 1"
+        )
+        mock_print.assert_any_call(
+            "\nDefect v_Cd in charge state: 0. Number of distorted neighbours: 2"
+        )
+        # test correct distorted neighbours based on oxidation states:
+        mock_print.assert_any_call(
+            "\nDefect v_Te in charge state: -1. Number of distorted neighbours: 3"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Cd_Te in charge state: +4. Number of distorted neighbours: 0"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Te_Cd in charge state: +1. Number of distorted neighbours: 3"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Cd_i_C3v in charge state: 0. Number of distorted neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Te_i_Td_Te2.83 in charge state: -2. Number of distorted neighbours: 0"
+        )
+
+        # check if correct files were created:
+        V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
+        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
+        V_Cd_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
+        self.assertEqual(
+            V_Cd_POSCAR.comment,
+            "-50.0% N(Distort)=2 ~[0.5,0.5,0.5]",  # closest to middle
+        )  # default
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"IVDW": 12})
+            assert kwarged_INCAR == Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
+
+        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
+        self.assertEqual(
+            Int_Cd_2_POSCAR.comment,
+            "-60.0% N(Distort)=2 ~[0.3,0.4,0.4]",  # closest to middle
+        )
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"IVDW": 12})
+            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR.pop("NELECT")
+            assert kwarged_INCAR == Int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+
     def test_write_vasp_files_from_doped_dict(self):
-        """Test Distortion() class with doped dict input"""
+        """Test Distortions() class with doped dict input"""
         # Test normal behaviour
         vacancies = {
             "vacancies": [
