@@ -1,4 +1,4 @@
-[![Build status](https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/test.yml/badge.svg)](https://github.com/SMTG-UCL/ShakeNBreak/actions)
+[![Build status](https://github.com/SMTG-Bham/ShakeNBreak/actions/workflows/test.yml/badge.svg)](https://github.com/SMTG-Bham/ShakeNBreak/actions)
 [![Documentation Status](https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat)](https://shakenbreak.readthedocs.io/en/latest/)
 [![JOSS](https://joss.theoj.org/papers/10.21105/joss.04817/status.svg)](https://doi.org/10.21105/joss.04817)
 [![PyPI](https://img.shields.io/pypi/v/shakenbreak)](https://pypi.org/project/shakenbreak)
@@ -7,7 +7,7 @@
 [![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
 # `ShakeNBreak` (`SnB`)
-<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to
+<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to
 locate ground-state and metastable structures of point defects in solid materials. [Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
 
 Main features include:
@@ -22,7 +22,7 @@ Main features include:
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
-![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
+![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
 - Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
@@ -56,7 +56,7 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 
 1. Download `ShakeNBreak` source code using the command:
 ```bash
-  git clone https://github.com/SMTG-UCL/ShakeNBreak
+  git clone https://github.com/SMTG-Bham/ShakeNBreak
 ```
 2. Navigate to root directory:
 ```bash
@@ -76,7 +76,7 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 
 ### Command line interface
 Alternatively, the code can be used via the command line:
-![ShakeNBreak CLI](https://raw.githubusercontent.com/SMTG-UCL/ShakeNBreak/main/docs/SnB_CLI.gif)
+![ShakeNBreak CLI](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_CLI.gif)
 
 The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect
@@ -111,7 +111,7 @@ Please let us know if you have any issues with compatibility, or if you would li
 ## Contributing
 
 ### Bugs reports, feature requests and questions
-Please use the [Issue Tracker](https://github.com/SMTG-UCL/ShakeNBreak/issues) to report bugs or request new features.
+Please use the [Issue Tracker](https://github.com/SMTG-Bham/ShakeNBreak/issues) to report bugs or request new features.
 
 Contributions to extend this package are very welcome! Please use the
 ["Fork and Pull"](https://docs.github.com/en/get-started/quickstart/contributing-to-projects)

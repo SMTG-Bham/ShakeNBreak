@@ -203,8 +203,8 @@ def _create_vasp_input(
             Dictionary of user VASP INCAR settings, to overwrite/update the
             `doped` defaults.
         user_potcar_functional (str):
-                POTCAR functional to use. Default is "PBE" and if this fails,
-                tries "PBE_52", then "PBE_54".
+            POTCAR functional to use. Default is "PBE" and if this fails,
+            tries "PBE_52", then "PBE_54".
         user_potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update
             the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly

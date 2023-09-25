@@ -163,7 +163,7 @@ setup(
         "numpy",  # >=1.21.2" needed for numpy.typing.NDArray?
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
-        "matplotlib",
+        "matplotlib>=3.6",
         "ase",
         "pandas>=1.1.0",
         "seaborn",
@@ -228,7 +228,7 @@ setup(
         "Homepage": "https://shakenbreak.readthedocs.io/en/latest/index.html",
         "Documentation": "https://shakenbreak.readthedocs.io/en/latest/index.html",
         "Package": "https://pypi.org/project/shakenbreak/",
-        "Repository": "https://github.com/SMTG-UCL/shakenbreak",
+        "Repository": "https://github.com/SMTG-Bham/shakenbreak",
     },
 )
 

@@ -41,7 +41,7 @@ For development work, ``ShakeNBreak`` can also be installed from a copy of the s
 
    .. code:: bash
 
-      git clone https://github.com/SMTG-UCL/ShakeNBreak
+      git clone https://github.com/SMTG-Bham/ShakeNBreak
 
 2. Navigate to root directory:
 

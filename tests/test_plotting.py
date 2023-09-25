@@ -683,6 +683,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 "-20.0%_from_+2": -623.59064927,
                 "-30.0%_from_0": -623.49069487,
                 "-30.0%_from_+2": -623.64233181,
+                "-30.0%_from_+5": -624.65113207,
+                "0.0%_from_+4": -624.65313207,
+                "-15.0%_from_+7": -624.06113207,
+                "30.0%_from_+5": -624.65513207,
+                "25.0%_from_+7": -624.06513207,
                 "10.0%_from_+2": -624.66110949,
                 "20.0%_from_+2": -624.65991904,
                 "30.0%_from_+2": -624.66113207,
@@ -956,6 +961,24 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="Te_i_Td_Te2.83_+2.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_doped_v2(self):
+        """Test plot_defect() function using doped v2 naming"""
+        return plotting.plot_defect(
+            output_path=self.VASP_CDTE_DATA_DIR,
+            defect_species="Te_i_Td_Te2.83_+2",
+            energies_dict=self.V_Cd_energies_dict,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+            include_site_info_in_name=False,
+            save_plot=False,
+        )
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
         filename="vac_1_Cd_0_include_site_info_in_name.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
@@ -967,6 +990,24 @@ class PlottingDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0",
             energies_dict=self.V_Cd_energies_dict,
             add_colorbar=False,
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+            include_site_info_in_name=True,
+            save_plot=False,
+        )
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="Te_i_Td_Te2.83_+2_include_site_info_in_name.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_include_site_info_in_name_doped_v2(self):
+        """Test plot_defect() function when include_site_info_in_name = True, using doped v2 naming"""
+        return plotting.plot_defect(
+            output_path=self.VASP_CDTE_DATA_DIR,
+            defect_species="Te_i_Td_Te2.83_+2",
+            energies_dict=self.V_Cd_energies_dict,
             num_nearest_neighbours=2,
             neighbour_atom="Te",
             include_site_info_in_name=True,
