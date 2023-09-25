@@ -233,7 +233,14 @@ def apply_dimer_distortion(
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
     distorted_structure = aaa.get_structure(input_structure_ase)
-    return distorted_structure
+    # Create dictionary with distortion info & distorted structure
+    bond_distorted_defect = {
+        "distorted_structure": distorted_structure,
+        "num_distorted_neighbours": 2,
+        "distorted_atoms": [site_indexes[0], site_indexes[1]],
+        "undistorted_structure": structure,
+    }
+    return bond_distorted_defect
 
 
 def rattle(
