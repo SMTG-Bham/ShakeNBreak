@@ -1,26 +1,15 @@
-'# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM': ''
+# ShakeNBreak uses the default doped INCAR settings described here: https://doped.readthedocs.io/en/latest/doped.VASP_sets.html
+# as well as these modifications:
+# Changed from doped default:
+LCHARG: false  # reduce file sizes
+LREAL: Auto  # real-space force projection, runtime speedup with acceptable loss in force accuracy
+LWAVE: false  # reduce file sizes
+NELM: 40  # slightly reduced NELM to speedup with incomplete SCF convergence far from minimum
+NSW: 300  # increased NSW from doped default to allow relaxation from initially distorted structure
+
+# Same as doped but with added comment information in INCAR file:
+ALGO: "Normal  # Change to All if ZHEGV, FEXCP/F or ZBRENT errors encountered (done automatically by snb-run)"
+IBRION: '2  # Typically more stable / reliable than "1" (RMM-DIIS), but change if ionic convergence is poor (done automatically by snb-run)'
+
+# Comments:
 '# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''
-'# KPAR': '# No KPAR, only one kpoint'
-ALGO: Normal
-EDIFFG: -0.01
-ENCUT: 300
-HFSCREEN: 0.2
-IBRION: '2 # While often slower than ''1'' (RMM-DIIS), this is more stable and reliable,
-    and vasp_gam relaxations are typically cheap enough to justify it'
-ISIF: 2
-ISMEAR: 0
-ISPIN: '2 # Spin polarisation likely for defects'
-ISYM: '0 # Symmetry breaking extremely likely for defects'
-LASPH: true
-LCHARG: false
-LHFCALC: true
-LORBIT: 14
-LREAL: Auto
-LWAVE: false
-NCORE: 12
-NEDOS: 2000
-NELM: 100
-NSW: 300
-PREC: Accurate
-PRECFOCK: Fast
-SIGMA: 0.05

@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/build_and_test.yml/badge.svg
- :target: https://github.com/SMTG-UCL/ShakeNBreak/actions
+.. image:: https://github.com/SMTG-Bham/ShakeNBreak/actions/workflows/test.yml/badge.svg
+ :target: https://github.com/SMTG-Bham/ShakeNBreak/actions
 
 .. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat
  :target: https://shakenbreak.readthedocs.io/en/latest/
@@ -12,7 +12,7 @@
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak.svg
+.. image:: https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda
  :target: https://anaconda.org/conda-forge/shakenbreak
 
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
@@ -30,12 +30,7 @@ Welcome to ShakeNBreak!
 
 ``ShakeNBreak`` (``SnB``) is a defect structure-searching method employing
 chemically-guided bond distortions to locate ground-state and metastable
-structures of point defects in solid materials. |logo|
-
-.. |logo| image:: toc.png
-  :width: 300
-  :alt: ShakeNBreak logo
-  :class: with-shadow float-right
+structures of point defects in solid materials.
 
 Main features include:
 
@@ -61,15 +56,17 @@ Code contributions to support additional solid-state packages are welcome!
 Literature
 ------------------------
 
-- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
-- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_. *Journal of Open Source Software* 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_. *npj Comput Mater* 9, 25, **2023**
+- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
+- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
+- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_, *npj Comput Mater* 9, 25, **2023**
+- News & Views: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023** (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
 .. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
 .. _Identifying the Ground State Structures of Defects in Solids: https://www.nature.com/articles/s41524-023-00973-1
 .. _In Search of Hidden Defects: https://doi.org/10.1016/j.matt.2021.06.003
+.. _The Devil is in the Defects: https://doi.org/10.1038/s41567-023-02049-9
 
 Installation
 ========================
@@ -96,8 +93,9 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
-which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). More details given
-`here <https://pymatgen.org/installation.html#potcar-setup>`_.
+which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
+`doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+difficulty with this.
 
 Developer installation
 ------------------------
@@ -108,7 +106,7 @@ For development work, ``ShakeNBreak`` can also be installed from a copy of the s
 
    .. code:: bash
 
-      git clone https://github.com/SMTG-UCL/ShakeNBreak
+      git clone https://github.com/SMTG-Bham/ShakeNBreak
 
 2. Navigate to root directory:
 
@@ -173,7 +171,7 @@ Code Compatibility
 :code:`ShakeNBreak` can take :code:`pymatgen` :code:`Defect` objects as input (to then generate the trial distorted
 structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects, :code:`doped` defect dictionaries or
 structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
-(such as `doped <https://github.com/SMTG-UCL/doped>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
+(such as `doped <https://doped.readthedocs.io/en/latest/index.html>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
 `PyCDT <https://github.com/mbkumar/pycdt>`_, `PyLada <https://github.com/pylada/pylada-defects>`_,
 `DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
 `DefAP <https://github.com/DefAP/defap>`_, `PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
@@ -184,10 +182,8 @@ Acknowledgements
 
 ``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
 used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
-Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmiouane and
+Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and
 Chris Savory.
-Code to identify defect species from input supercell structures was written based on the implementation
-in `PyCDT <https://doi.org/10.1016/j.cpc.2018.01.004>`_ by Broberg *et al.*
 
 Contributing
 ========================
@@ -195,7 +191,7 @@ Contributing
 Bugs reports, feature requests and questions
 ----------------------------------------------
 
-Please use the `Issue Tracker <https://github.com/SMTG-UCL/ShakeNBreak/issues>`_
+Please use the `Issue Tracker <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_
 to report bugs or request new features.
 
 Contributions to extend this package are very welcome! Please use the
@@ -217,30 +213,35 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
-- X\. Wang, S. R. Kavanagh, D. O. Scanlon, A. Walsh `arXiv`_ 2023
-- J\. Cen, B. Zhu, S. R. Kavanagh, A. Squires, D. O. Scanlon `ChemRxiv`_ 2023
-- Q\. Zhou, J. Willis; Q. Zhou MSc Thesis, UCL Chemistry, 2022. Publication in preparation
-- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Comput Mater`_ 2023
+- J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
+- A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
+- X\. Wang et al. `arXiv`_ 2023
+- J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
+- J\. Willis & R. Claes et al. `ChemRxiv <https://doi.org/10.26434/chemrxiv-2023-lttnf>`__ 2023
+- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
-- S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+- S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
+- C\. J. Krajewska et al. `Chemical Science`_ 2021  (early version)
+- (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
+.. Oba book
 .. BiOI
 .. Kumagai collab paper
 .. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
-.. Joe CuI
 .. Kat YTOS
-.. Adair CuSiSe3
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 .. _arXiv: https://arxiv.org/abs/2302.04901
-.. _ChemRxiv: https://chemrxiv.org/engage/chemrxiv/article-details/63b41707a2da4b46d3197a3a
-.. _npj Comput Mater: https://www.nature.com/articles/s41524-023-00973-1
+.. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
+.. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
-.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
 .. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
+.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
+.. _Nature Physics: https://doi.org/10.1038/s41567-023-02049-9
+.. _Chemical Science: https://doi.org/10.1039/D1SC03775G
 
 License and Citation
 ========================
@@ -256,6 +257,8 @@ You may also find this Preview paper useful, which discusses the general problem
 
 - Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
 
+``BibTeX`` entries for these papers are provided in the repository `CITATIONS.md <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/CITATIONS.md>`_ file.
+
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
 .. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
 .. _Identifying the Ground State Structures of Defects in Solids: https://www.nature.com/articles/s41524-023-00973-1
@@ -265,7 +268,7 @@ You may also find this Preview paper useful, which discusses the general problem
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8, 3.9 & 3.10 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_
@@ -279,11 +282,20 @@ Requirements
 
 .. toctree::
    :hidden:
+   :caption: Usage
    :maxdepth: 4
 
    Installation
    Python API <modules>
    Tutorials
    Tips
+
+.. toctree::
+   :hidden:
+   :caption: Information
+   :maxdepth: 1
+
    Code_Compatibility
    Contributing
+   changelog_link
+   ShakeNBreak on GitHub <https://github.com/SMTG-Bham/ShakeNBreak>

@@ -25,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '23.02.08'
+release = '3.2.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -89,19 +89,17 @@ html_use_smartypants = True
 # html_show_sphinx = True
 
 html_theme_options = {
-    "repository_url": "https://github.com/SMTG-UCL/ShakeNBreak",
+    "repository_url": "https://github.com/SMTG-Bham/ShakeNBreak",
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_repository_button": True,
-    "use_issues_button": True,
-    "use_edit_page_button": True, # add button to suggest edits
     "home_page_in_toc": True,
 }
 
 # Adding “Edit Source” links on your Sphinx theme
 html_context = {
     "display_github": True, # Integrate GitHub
-    "github_user": "SMTG-UCL", # Username
+    "github_user": "SMTG-Bham", # Username
     "github_repo": "ShakeNBreak", # Repo name
     "github_version": "master", # Version
     "conf_py_path": "/docs/", # Path in the checkout to the docs root
@@ -111,7 +109,7 @@ html_context = {
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.6", None),
+    "python": ("https://docs.python.org/3.8", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
     "pymatgen": ("http://pymatgen.org/", None),
     "matplotlib": ("http://matplotlib.org", None),

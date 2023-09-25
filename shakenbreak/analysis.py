@@ -108,7 +108,7 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, float) or isinstance(distortion, int):
+    if isinstance(distortion, (float, int)):
         if distortion != 0:
             distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
             # as percentage with 1 decimal place (e.g. 50.0%)
@@ -118,10 +118,11 @@ def _get_distortion_filename(distortion) -> str:
         if "_from_" in distortion and "Rattled" not in distortion:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        elif "Rattled_from_" in distortion:
+        elif "Rattled_from_" in distortion or distortion in [
+            "Unperturbed",
+            "Rattled",
+        ]:
             distortion_label = distortion
-        elif distortion == "Unperturbed" or distortion == "Rattled":
-            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"
         else:
             try:  # try converting to float, in case user entered '0.5'
                 distortion = float(distortion)
@@ -147,29 +148,26 @@ def _format_distortion_names(
     Returns:
         distortion (:obj:`float` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
-            "Unperturbed"/"Rattled"/"-60.0%_from_2"/"Rattled_from_-1")
+            "Unperturbed"/"Rattled"/"-60.0%_from_+2"/"Rattled_from_-1")
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
         "Unperturbed" in distortion_label or "Rattled" in distortion_label
     ) and "from" not in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
         "%"
     ):
-        distortion = (
-            float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
-        )
+        return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
     elif distortion_label.startswith("Bond_Distortion") and (
         "_from_" in distortion_label
     ):
         # distortions from other charge state of the defect
-        distortion = distortion_label.split("Bond_Distortion_")[-1]
+        return distortion_label.split("Bond_Distortion_")[-1]
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     else:
-        distortion = "Label_not_recognized"
-    return distortion
+        return "Label_not_recognized"
 
 
 def get_gs_distortion(defect_energies_dict: dict) -> tuple:
@@ -200,10 +198,7 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
                 defect_energies_dict["distortions"]["Rattled"]
                 - defect_energies_dict["Unperturbed"]
             )
-            if energy_diff < 0:
-                gs_distortion = "Rattled"  # just rattle (no bond distortion)
-            else:
-                gs_distortion = "Unperturbed"
+            gs_distortion = "Rattled" if energy_diff < 0 else "Unperturbed"
         else:
             energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
             if (
@@ -227,7 +222,9 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     return energy_diff, gs_distortion
 
 
-def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.05) -> tuple:
+def _sort_data(
+    energies_file: str, verbose: bool = True, min_e_diff: float = 0.05
+) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
     of ground-state defect structure relative to `Unperturbed` structure
@@ -285,15 +282,13 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
     if verbose:
         if energy_diff and float(energy_diff) < -min_e_diff:
             print(
-                f"{defect_name}: Energy difference between minimum, found with "
-                f"{gs_distortion} bond distortion, and unperturbed: "
-                f"{energy_diff:+.2f} eV."
+                f"{defect_name}: Energy difference between minimum, found with {gs_distortion} bond "
+                f"distortion, and unperturbed: {energy_diff:+.2f} eV."
             )
         elif energy_diff is None:
             print(
-                f"{defect_name}: Unperturbed energy not found in {energies_file}. "
-                f"Lowest energy structure found with {gs_distortion} bond "
-                f"distortion."
+                f"{defect_name}: Unperturbed energy not found in {energies_file}. Lowest energy "
+                f"structure found with {gs_distortion} bond distortion."
             )
     return defect_energies_dict, energy_diff, gs_distortion
 
@@ -358,15 +353,13 @@ def analyse_defect_site(
         )
         if _isipython():
             display(pd.DataFrame(coord_list))  # display in Jupyter notebook
-    # Bond Lengths:
-    bond_lengths = []
-    for i in crystalNN.get_nn_info(struct, isite):
-        bond_lengths.append(
-            {
-                "Element": i["site"].specie.as_dict()["element"],
-                "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
-            }
-        )
+    bond_lengths = [
+        {
+            "Element": i["site"].specie.as_dict()["element"],
+            "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
+        }
+        for i in crystalNN.get_nn_info(struct, isite)
+    ]
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
     if _isipython():
@@ -671,9 +664,9 @@ def calculate_struct_comparison(
         ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
-             or a pymatgen Structure object (to compare with a specific external
-             structure).
+            `defect_structures_dict` (e.g. '-0.4' for "Bond_Distortion_-40.0%")
+            or a pymatgen Structure object (to compare with a specific external
+            structure).
             (Default: "Unperturbed")
         stol (:obj:`float`):
             Site tolerance used for structural comparison (via
@@ -694,11 +687,12 @@ def calculate_struct_comparison(
             comparison metric (disp or max_dist).
     """
     # Check reference structure
-    if isinstance(ref_structure, str) or isinstance(ref_structure, float):
-        if isinstance(ref_structure, str):
-            ref_name = ref_structure
-        else:
-            ref_name = f"{ref_structure:.1%} bond distorted structure"
+    if isinstance(ref_structure, (str, float)):
+        ref_name = (
+            ref_structure
+            if isinstance(ref_structure, str)
+            else f"{ref_structure:.1%} bond distorted structure"
+        )
         try:
             ref_structure = defect_structures_dict[ref_structure]
         except KeyError as e:
@@ -977,7 +971,7 @@ def get_homoionic_bonds(
         if site.species_string == element
     ]
     homoionic_bonds = {}
-    for (site_index, site) in sites:
+    for site_index, site in sites:
         neighbours = structure.get_neighbors(site, r=radius)
         if element in [site.species_string for site in neighbours]:
             site_neighbours = [
@@ -1127,7 +1121,10 @@ def get_site_magnetizations(
     if not os.path.exists(f"{output_path}/{defect_species}"):
         raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
 
-    if not defect_site:  # look for defect site, in order to include the distance
+    defect_site_coords = None
+    if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+        defect_site_coords = defect_site
+    elif not defect_site:  # look for defect site, in order to include the distance
         # between sites with significant magnetization and the defect
         if os.path.exists(f"{output_path}/distortion_metadata.json"):
             with open(f"{output_path}/distortion_metadata.json", "r") as f:
@@ -1135,7 +1132,7 @@ def get_site_magnetizations(
                     defect_species_without_charge = "_".join(
                         defect_species.split("_")[0:-1]
                     )  # remove charge state
-                    defect_site = json.load(f)["defects"][
+                    defect_site_coords = json.load(f)["defects"][
                         defect_species_without_charge
                     ]["unique_site"]
                 except KeyError:
@@ -1167,10 +1164,12 @@ def get_site_magnetizations(
                 "found. Skipping magnetisation analysis."
             )
             continue
-        if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+        if isinstance(defect_site_coords, list) or isinstance(
+            defect_site_coords, np.ndarray
+        ):
             # for vacancies, append fake atom
             structure.append(
-                species="V", coords=defect_site, coords_are_cartesian=False
+                species="V", coords=defect_site_coords, coords_are_cartesian=False
             )
             defect_site = -1  # index of the added fake atom
         if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
