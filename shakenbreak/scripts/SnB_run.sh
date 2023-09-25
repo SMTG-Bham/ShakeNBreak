@@ -66,8 +66,8 @@ check_multiple_single_step_outcars() {
 
 
 SnB_run_loop() {
-  for i in ?(*Distortion*|*Unperturbed*|*attled*)/; do # for each distortion
-    if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*)/" ]; then
+  for i in ?(*Distortion*|*Unperturbed*|*attled*|*imer*)/; do # for each distortion
+    if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*|*imer*)/" ]; then
       echo "No distortion folders found in current directory"
       break # exit if no distortion folders found
     fi
