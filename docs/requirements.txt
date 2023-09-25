@@ -14,5 +14,11 @@ hiphive
 monty
 click
 shakenbreak
-doped
+doped>=2.0.0
 importlib-metadata
+
+# Optional requirements
+easyunfold
+py-sc-fermi
+nonrad
+CarrierCapture.jl

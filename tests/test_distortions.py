@@ -4,8 +4,8 @@ import warnings
 from unittest.mock import patch
 
 import numpy as np
-from pymatgen.core.structure import Structure
 from monty.serialization import loadfn
+from pymatgen.core.structure import Structure
 
 from shakenbreak import distortions
 
@@ -69,6 +69,10 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(
             self.Int_Cd_2_struc,
             self.cdte_defect_dict["interstitials"][1]["supercell"]["structure"],
+        )
+
+        self.K4MnFe2F12_struc = Structure.from_file(
+            os.path.join(self.DATA_DIR, "vasp/K4MnFe2F12_POSCAR")
         )
 
         warnings.simplefilter("always")  # Cause all warnings to always be triggered.
@@ -355,6 +359,17 @@ class DistortionTestCase(unittest.TestCase):
         )
 
         self.assertEqual(V_Cd_kwarg_rattled, self.V_Cd_minus0pt5_struc_kwarged)
+
+
+    def test_rattle_bulk_K4MnFe2F12(self):
+        # failed with previous rattle code
+        # (which ignored first 20 non-zero distances, because assumed a supercell structure as input)
+        rattled_struc = distortions.rattle(self.K4MnFe2F12_struc)
+        rattled_distances = rattled_struc.distance_matrix[rattled_struc.distance_matrix > 0]
+
+        self.assertAlmostEqual(min(rattled_distances), 1.6166697059123376)
+        self.assertAlmostEqual(np.mean(rattled_distances), 3.4581277362842666)
+        self.assertAlmostEqual(np.sort(rattled_distances.flatten())[3], 1.7410986565232485)
 
 
 if __name__ == "__main__":

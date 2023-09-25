@@ -32,7 +32,7 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     To specify additional distortion parameters, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
     file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
     A detailed description of all the parameters is available in the Python API section
     (:ref:`shakenbreak.input.Distortions class <api_input>`).
@@ -122,7 +122,7 @@ the following directory structures will be parsed correctly:
 
 .. NOTE::
     To specify the charge state range for each defect, as well as other optional arguments, we can use a
-    `config.yaml <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
     like the one below. A detailed description of all the parameters is available in the
     Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
 
@@ -220,3 +220,42 @@ To submit a single defect, we can simply run the command :code:`snb-run` within 
 .. code:: bash
 
     $ snb-run
+
+``snb-run`` can be used to submit the initial geometry optimisation calculations, as well as automatically continuing
+and resubmitting calculations that have not yet converged (and handle calculations which have failed) as discussed in
+the note below, however it has no knowledge of which jobs are currently in the HPC scheduler queue, so you should avoid
+running ``snb-run`` in directories for which you have already submitted jobs, to avoid job duplication.
+
+.. NOTE::
+    The ``snb-run`` command has some calculation auto-handling functions built into it. Some of these
+    are described in more detail on the `Tips & Tricks <https://shakenbreak.readthedocs
+    .io/en/latest/Tips.html>`_ page, and the short summary is:
+
+    - If the calculation is converged (``reached required accuracy`` printed in the VASP ``stdout`` file
+      and ``OUTCAR``) or has previously been renamed to ``*High_Energy*``, then ``snb-run`` will
+      move on to the next distortion directory. If the calculation is not converged but has done >=50
+      ionic steps with the energy changing by less than <2 meV (usually due to very small residual
+      forces which are negligible for the ``SnB`` structure-searching step of the defect workflow), this is
+      considered converged, is skipped by ``snb-run`` and a note is added to the bottom line of the
+      ``OUTCAR`` file.
+
+    - If the calculation is not converged, then ``snb-run`` will automatically save relevant output
+      files by copying them and appending the time & date (e.g. ``OUTCAR_12_10_01on21_06_23``), and
+      resubmit the calculation to the HPC scheduler. ``snb-run`` will also perform some checks to see if
+      the calculation settings should be modified:
+
+        - If poor electronic convergence is observed (all electronic loops hitting the ``NELM`` limit,
+          ``ALGO`` will be set to ``All`` in the ``INCAR`` to counteract this.
+
+        - If the calculation is spin-polarised (``ISPIN = 2``), but the magnetisation of each atom is
+          <0.01 μB (and the summed absolute values of the magnetisation is <0.1 μB), then ``snb-run``
+          automatically sets ``ISPIN = 1`` (i.e. no spin-polarisation) in the ``INCAR`` for the followin
+          relaxation, to aid efficiency.
+
+        - If positive energies are encountered after the 5th ionic step, or errors associated with
+          extreme forces (``EDDDAV``, ``ZHEGV``, ``CNORMN``, ``ZPOTRF``, ``ZTRTRI``, ``FEXC``) are
+          detected, then ``snb-run`` will rename this folder to ``X_High_Energy`` and skip it.
+
+        - If the calculation has not made more than 1 ionic step, and this is detected to be the case for
+          multiple previous ``OUTCAR`` files (e.g. ``OUTCAR_12_10_01on21_06_23``), then ``snb-run`` will
+          print a warning, advising the user to manually check the origin of poor convergence in this case.
