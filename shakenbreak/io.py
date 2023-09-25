@@ -244,14 +244,10 @@ def parse_energies(
         and any(
             substring in dir
             for substring in [
-                            
                 "Bond_Distortion",
-                           
                 "Rattled",
-                           
                 "Unperturbed",
-                            "Dimer",
-                        ,
+                "Dimer",
             ]  # distortion directories
         )
         and "High_Energy" not in dir

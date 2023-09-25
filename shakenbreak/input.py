@@ -1517,7 +1517,7 @@ def apply_snb_distortions(
                         "defect_site_index"
                     ] = bond_distorted_defect["defect_site_index"]
             
-            elif isinstance(distortion, float) and distortion.lower() == "dimer":
+            elif isinstance(distortion, str) and distortion.lower() == "dimer":
                 # Apply dimer distortion, without rattling
                 if defect_type == "vacancy":
                     defect_site_index = None
@@ -1532,11 +1532,11 @@ def apply_snb_distortions(
                 distorted_defect_dict["distortions"]["Dimer"] = (
                     bond_distorted_defect["distorted_structure"]
                 )
-                distorted_defect_dict["distortion_parameters"] = {
+                distorted_defect_dict["distortion_parameters"].update({
                     "unique_site": bulk_supercell_site.frac_coords,
-                    "num_distorted_neighbours": 2,  # Dimer distortion only affects 2 atoms
-                    "distorted_atoms": bond_distorted_defect["distorted_atoms"],
-                }
+                    "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
+                    "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
+                })
                 if defect_site_index:  # only add site index if not vacancy
                     distorted_defect_dict["distortion_parameters"][
                         "defect_site_index"
@@ -1576,14 +1576,31 @@ def apply_snb_distortions(
                 **mc_rattle_kwargs,
             )
         distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
+        distorted_defect_dict["distortion_parameters"] = {
+            "unique_site": bulk_supercell_site.frac_coords,
+            "num_distorted_neighbours": num_nearest_neighbours,
+            "distorted_atoms": None,
+        }
+        if defect_site_index:  # only add site index if vacancy
+            distorted_defect_dict["distortion_parameters"][
+                "defect_site_index"
+            ] = defect_site_index
         
         if "Dimer" in bond_distortions:
             # Apply dimer distortion, without rattling
-            distorted_defect_dict["distortions"]["Dimer"] = distortions.apply_dimer_distortion(
+            bond_distorted_defect = distortions.apply_dimer_distortion(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
-            )["distorted_structure"]
+            )
+            distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect[
+                "distorted_structure"
+            ]
+            distorted_defect_dict["distortion_parameters"].update({
+                "unique_site": bulk_supercell_site.frac_coords,
+                "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
+                "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
+            })
     return distorted_defect_dict
 
 
@@ -1886,6 +1903,7 @@ class Distortions:
         # Setup distortion parameters
         if bond_distortions:
             self.distortion_increment = None  # user specified
+            self.bond_distortions = []
             #  bond_distortions, so no increment
             if "Dimer" in bond_distortions:
                 self.bond_distortions.append("Dimer")
@@ -2335,15 +2353,16 @@ class Distortions:
                 defect_site_index = defect_distorted_structures[
                     "distortion_parameters"
                 ].get("defect_site_index")
+                distorted_atoms = defect_distorted_structures[
+                    "distortion_parameters"
+                ].get("distorted_atoms", None)
                 self.distortion_metadata = self._update_distortion_metadata(
                     distortion_metadata=self.distortion_metadata,
                     defect_name=defect_name,
                     charge=charge,
                     defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
-                    distorted_atoms=defect_distorted_structures[
-                        "distortion_parameters"
-                    ]["distorted_atoms"],
+                    distorted_atoms=distorted_atoms,
                 )
 
         return distorted_defects_dict, self.distortion_metadata
