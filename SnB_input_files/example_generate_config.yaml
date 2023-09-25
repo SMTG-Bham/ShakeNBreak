@@ -34,3 +34,14 @@
 # code: VASP
 # name: Int_1_Sb  # (Default = None, automatically generated using pymatgen syntax)
 # verbose: False
+
+## Code specific section
+## For VASP, we can specify POTCARs like this:
+# POTCAR_FUNCTIONAL: PBE  # (Default = PBE)
+# POTCAR:
+#   Sn: Sn_d  # Element matching its POTCAR symbol
+#   Te: Te
+## For Quantum Espresso, we can specify the pseudopotentials like:
+# pseudopotentials:
+#   Cd: Cd_pbe_v1.uspp.F.UPF
+#   Te: Te.pbe-n-rrkjus_psl.1.0.0.UPF

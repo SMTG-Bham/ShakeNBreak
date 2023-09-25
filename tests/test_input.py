@@ -1,26 +1,48 @@
+import contextlib
 import copy
 import datetime
+import filecmp
+import locale
 import os
 import shutil
 import unittest
 import warnings
 from unittest.mock import patch
-from monty.serialization import loadfn, dumpfn
 
 import numpy as np
+from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
-from pymatgen.core.periodic_table import Species
-from pymatgen.analysis.defects.core import StructureMatcher
+from doped import _ignore_pmg_warnings
+from doped.vasp import _test_potcar_functional_choice
+from monty.serialization import dumpfn, loadfn
+from pymatgen.analysis.defects.generators import VacancyGenerator
+from pymatgen.analysis.defects.thermo import DefectEntry
+from pymatgen.core.periodic_table import DummySpecies, Species
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning
+from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints, Potcar
 
-from shakenbreak import distortions, input, vasp, cli
-from shakenbreak.distortions import rattle
+from shakenbreak import input
+from shakenbreak.distortions import rattle, distort
 
 
 def if_present_rm(path):
     if os.path.exists(path):
         shutil.rmtree(path)
+
+
+def _potcars_available() -> bool:
+    """
+    Check if the POTCARs are available for the tests (i.e. testing locally).
+
+    If not (testing on GitHub Actions), POTCAR testing will be skipped.
+    """
+    try:
+        _test_potcar_functional_choice("PBE")
+        return True
+    except ValueError:
+        return False
 
 
 def _update_struct_defect_dict(
@@ -43,6 +65,37 @@ def _update_struct_defect_dict(
     defect_dict_copy["Defect Structure"] = structure
     defect_dict_copy["POSCAR Comment"] = poscar_comment
     return defect_dict_copy
+
+
+def _get_defect_entry_from_defect(  # from example notebook
+    defect,
+    defect_supercell,
+    charge_state,
+    dummy_species=DummySpecies("X"),
+):
+    """Generate DefectEntry object from Defect object.
+    This is used to describe a Defect using a certain simulation cell.
+    """
+    # Dummy species (used to keep track of the defect coords in the supercell)
+    # Find its fractional coordinates & remove it from supercell
+    dummy_site = [
+        site
+        for site in defect_supercell
+        if site.species.elements[0].symbol == dummy_species.symbol
+    ][0]
+    sc_defect_frac_coords = dummy_site.frac_coords
+    defect_supercell.remove(dummy_site)
+
+    computed_structure_entry = ComputedStructureEntry(
+        structure=defect_supercell,
+        energy=0.0,  # needs to be set, so set to 0.0
+    )
+    return DefectEntry(
+        defect=defect,
+        charge_state=charge_state,
+        sc_entry=computed_structure_entry,
+        sc_defect_frac_coords=sc_defect_frac_coords,
+    )
 
 
 class InputTestCase(unittest.TestCase):
@@ -70,12 +123,13 @@ class InputTestCase(unittest.TestCase):
                 for defect_dict in defect_dict_list:
                     self.cdte_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
-                            defect=cli.generate_defect_object(
+                            defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=self.cdte_doped_defect_dict["bulk"],
                             ),
                             charge_state=charge,
-                        ) for charge in defect_dict["charges"]
+                        )
+                        for charge in defect_dict["charges"]
                     ]
 
         self.cdte_doped_extrinsic_defects_dict = loadfn(
@@ -83,28 +137,34 @@ class InputTestCase(unittest.TestCase):
         )
         # Refactor to dict of DefectEntrys objects, with doped/PyCDT names
         self.cdte_extrinsic_defects = {}
-        for defects_type, defect_dict_list in self.cdte_doped_extrinsic_defects_dict.items():
+        for (
+            defects_type,
+            defect_dict_list,
+        ) in self.cdte_doped_extrinsic_defects_dict.items():
             if "bulk" not in defects_type:
                 for defect_dict in defect_dict_list:
                     self.cdte_extrinsic_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
-                            defect=cli.generate_defect_object(
+                            defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
                                 bulk_dict=self.cdte_doped_defect_dict["bulk"],
                             ),
-                            charge_state=charge
-                        ) for charge in defect_dict["charges"]
+                            charge_state=charge,
+                        )
+                        for charge in defect_dict["charges"]
                     ]
 
         # Refactor doped defect dict to list of list of DefectEntrys() objects
         # (there's a DefectEntry for each charge state)
         self.cdte_defect_list = sum(list(self.cdte_defects.values()), [])
-        self.CdTe_extrinsic_defect_list = sum(list(self.cdte_extrinsic_defects.values()), [])
+        self.CdTe_extrinsic_defect_list = sum(
+            list(self.cdte_extrinsic_defects.values()), []
+        )
 
         self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
         self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = cli.generate_defect_object(
+        self.V_Cd = input.generate_defect_object(
             self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"]
         )
         self.V_Cd.user_charges = self.V_Cd_dict["charges"]
@@ -115,7 +175,7 @@ class InputTestCase(unittest.TestCase):
             input._get_defect_entry_from_defect(self.V_Cd, c)
             for c in self.V_Cd.user_charges
         ]
-        self.Int_Cd_2 = cli.generate_defect_object(
+        self.Int_Cd_2 = input.generate_defect_object(
             self.Int_Cd_2_dict, self.cdte_doped_defect_dict["bulk"]
         )
         self.Int_Cd_2.user_charges = self.Int_Cd_2.user_charges
@@ -158,6 +218,12 @@ class InputTestCase(unittest.TestCase):
             )
         )
 
+        # get example INCAR:
+        self.V_Cd_INCAR_file = os.path.join(
+            self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
+        )
+        self.V_Cd_INCAR = Incar.from_file(self.V_Cd_INCAR_file)
+
         # Setup distortion parameters
         self.V_Cd_distortion_parameters = {
             "unique_site": np.array([0.0, 0.0, 0.0]),
@@ -195,147 +261,153 @@ class InputTestCase(unittest.TestCase):
         # also testing that the package correctly ignores these and uses the bulk bond length of
         # 2.8333... for d_min in the structure rattling functions.
 
-        self.cdte_defect_folders_old_names = [
+        self.cdte_defect_folders_old_names = [  # but with "+" for positive charges
             "as_1_Cd_on_Te_-1",
             "as_1_Cd_on_Te_-2",
             "as_1_Cd_on_Te_0",
-            "as_1_Cd_on_Te_1",
-            "as_1_Cd_on_Te_2",
-            "as_1_Cd_on_Te_3",
-            "as_1_Cd_on_Te_4",
+            "as_1_Cd_on_Te_+1",
+            "as_1_Cd_on_Te_+2",
+            "as_1_Cd_on_Te_+3",
+            "as_1_Cd_on_Te_+4",
             "as_1_Te_on_Cd_-1",
             "as_1_Te_on_Cd_-2",
             "as_1_Te_on_Cd_0",
-            "as_1_Te_on_Cd_1",
-            "as_1_Te_on_Cd_2",
-            "as_1_Te_on_Cd_3",
-            "as_1_Te_on_Cd_4",
+            "as_1_Te_on_Cd_+1",
+            "as_1_Te_on_Cd_+2",
+            "as_1_Te_on_Cd_+3",
+            "as_1_Te_on_Cd_+4",
             "Int_Cd_1_0",
-            "Int_Cd_1_1",
-            "Int_Cd_1_2",
+            "Int_Cd_1_+1",
+            "Int_Cd_1_+2",
             "Int_Cd_2_0",
-            "Int_Cd_2_1",
-            "Int_Cd_2_2",
+            "Int_Cd_2_+1",
+            "Int_Cd_2_+2",
             "Int_Cd_3_0",
-            "Int_Cd_3_1",
-            "Int_Cd_3_2",
+            "Int_Cd_3_+1",
+            "Int_Cd_3_+2",
             "Int_Te_1_-1",
             "Int_Te_1_-2",
             "Int_Te_1_0",
-            "Int_Te_1_1",
-            "Int_Te_1_2",
-            "Int_Te_1_3",
-            "Int_Te_1_4",
-            "Int_Te_1_5",
-            "Int_Te_1_6",
+            "Int_Te_1_+1",
+            "Int_Te_1_+2",
+            "Int_Te_1_+3",
+            "Int_Te_1_+4",
+            "Int_Te_1_+5",
+            "Int_Te_1_+6",
             "Int_Te_2_-1",
             "Int_Te_2_-2",
             "Int_Te_2_0",
-            "Int_Te_2_1",
-            "Int_Te_2_2",
-            "Int_Te_2_3",
-            "Int_Te_2_4",
-            "Int_Te_2_5",
-            "Int_Te_2_6",
+            "Int_Te_2_+1",
+            "Int_Te_2_+2",
+            "Int_Te_2_+3",
+            "Int_Te_2_+4",
+            "Int_Te_2_+5",
+            "Int_Te_2_+6",
             "Int_Te_3_-1",
             "Int_Te_3_-2",
             "Int_Te_3_0",
-            "Int_Te_3_1",
-            "Int_Te_3_2",
-            "Int_Te_3_3",
-            "Int_Te_3_4",
-            "Int_Te_3_5",
-            "Int_Te_3_6",
+            "Int_Te_3_+1",
+            "Int_Te_3_+2",
+            "Int_Te_3_+3",
+            "Int_Te_3_+4",
+            "Int_Te_3_+5",
+            "Int_Te_3_+6",
             "vac_1_Cd_-1",
             "vac_1_Cd_-2",
             "vac_1_Cd_0",
-            "vac_1_Cd_1",
-            "vac_1_Cd_2",
+            "vac_1_Cd_+1",
+            "vac_1_Cd_+2",
             "vac_2_Te_-1",
             "vac_2_Te_-2",
             "vac_2_Te_0",
-            "vac_2_Te_1",
-            "vac_2_Te_2",
+            "vac_2_Te_+1",
+            "vac_2_Te_+2",
         ]
         self.new_names_old_names_CdTe = {
-            "v_Cd_s0": "vac_1_Cd",
-            "v_Te_s32": "vac_2_Te",
-            "Cd_Te_s32": "as_1_Cd_on_Te",
-            "Te_Cd_s0": "as_1_Te_on_Cd",
-            "Cd_i_m32a": "Int_Cd_1",
-            "Cd_i_m128": "Int_Cd_2",
-            "Cd_i_m32b": "Int_Cd_3",
-            "Te_i_m32a": "Int_Te_1",
-            "Te_i_m128": "Int_Te_2",
-            "Te_i_m32b": "Int_Te_3",
+            "v_Cd": "vac_1_Cd",
+            "v_Te": "vac_2_Te",
+            "Cd_Te": "as_1_Cd_on_Te",
+            "Te_Cd": "as_1_Te_on_Cd",
+            "Cd_i_Td_Cd2.83": "Int_Cd_1",
+            "Cd_i_C3v": "Int_Cd_2",
+            "Cd_i_Td_Te2.83": "Int_Cd_3",
+            "Te_i_Td_Cd2.83": "Int_Te_1",
+            "Te_i_C3v": "Int_Te_2",
+            "Te_i_Td_Te2.83": "Int_Te_3",
         }
         self.cdte_defect_folders = [  # different charge states!
-            "Cd_Te_s32_-2",
-            "Cd_Te_s32_-1",
-            "Cd_Te_s32_0",
-            "Cd_Te_s32_1",
-            "Cd_Te_s32_2",
-            "Cd_Te_s32_3",
-            "Cd_Te_s32_4",
-            "Te_Cd_s0_-2",
-            "Te_Cd_s0_-1",
-            "Te_Cd_s0_0",
-            "Te_Cd_s0_1",
-            "Te_Cd_s0_2",
-            "Te_Cd_s0_3",
-            "Te_Cd_s0_4",
-            "Cd_i_m32a_-1",
-            "Cd_i_m32a_0",
-            "Cd_i_m32a_1",
-            "Cd_i_m32a_2",
-            "Cd_i_m128_-1",
-            "Cd_i_m128_0",
-            "Cd_i_m128_1",
-            "Cd_i_m128_2",
-            "Cd_i_m32b_-1",
-            "Cd_i_m32b_0",
-            "Cd_i_m32b_1",
-            "Cd_i_m32b_2",
-            "Te_i_m32a_-2",
-            "Te_i_m32a_-1",
-            "Te_i_m32a_0",
-            "Te_i_m32a_1",
-            "Te_i_m32a_2",
-            "Te_i_m32a_3",
-            "Te_i_m32a_4",
-            "Te_i_m32a_5",
-            "Te_i_m32a_6",
-            "Te_i_m128_-2",
-            "Te_i_m128_-1",
-            "Te_i_m128_0",
-            "Te_i_m128_1",
-            "Te_i_m128_2",
-            "Te_i_m128_3",
-            "Te_i_m128_4",
-            "Te_i_m128_5",
-            "Te_i_m128_6",
-            "Te_i_m32b_-2",
-            "Te_i_m32b_-1",
-            "Te_i_m32b_0",
-            "Te_i_m32b_1",
-            "Te_i_m32b_2",
-            "Te_i_m32b_3",
-            "Te_i_m32b_4",
-            "Te_i_m32b_5",
-            "Te_i_m32b_6",
-            "v_Cd_s0_-2",
-            "v_Cd_s0_-1",
-            "v_Cd_s0_0",
-            "v_Cd_s0_1",
-            "v_Cd_s0_2",
-            "v_Te_s32_-2",
-            "v_Te_s32_-1",
-            "v_Te_s32_0",
-            "v_Te_s32_1",
-            "v_Te_s32_2",
+            "Cd_Te_-2",
+            "Cd_Te_-1",
+            "Cd_Te_0",
+            "Cd_Te_+1",
+            "Cd_Te_+2",
+            "Cd_Te_+3",
+            "Cd_Te_+4",
+            "Te_Cd_-2",
+            "Te_Cd_-1",
+            "Te_Cd_0",
+            "Te_Cd_+1",
+            "Te_Cd_+2",
+            "Te_Cd_+3",
+            "Te_Cd_+4",
+            "Cd_i_Td_Cd2.83_-1",
+            "Cd_i_Td_Cd2.83_0",
+            "Cd_i_Td_Cd2.83_+1",
+            "Cd_i_Td_Cd2.83_+2",
+            "Cd_i_C3v_-1",
+            "Cd_i_C3v_0",
+            "Cd_i_C3v_+1",
+            "Cd_i_C3v_+2",
+            "Cd_i_Td_Te2.83_-1",
+            "Cd_i_Td_Te2.83_0",
+            "Cd_i_Td_Te2.83_+1",
+            "Cd_i_Td_Te2.83_+2",
+            "Te_i_Td_Cd2.83_-2",
+            "Te_i_Td_Cd2.83_-1",
+            "Te_i_Td_Cd2.83_0",
+            "Te_i_Td_Cd2.83_+1",
+            "Te_i_Td_Cd2.83_+2",
+            "Te_i_Td_Cd2.83_+3",
+            "Te_i_Td_Cd2.83_+4",
+            "Te_i_Td_Cd2.83_+5",
+            "Te_i_Td_Cd2.83_+6",
+            "Te_i_C3v_-2",
+            "Te_i_C3v_-1",
+            "Te_i_C3v_0",
+            "Te_i_C3v_+1",
+            "Te_i_C3v_+2",
+            "Te_i_C3v_+3",
+            "Te_i_C3v_+4",
+            "Te_i_C3v_+5",
+            "Te_i_C3v_+6",
+            "Te_i_Td_Te2.83_-2",
+            "Te_i_Td_Te2.83_-1",
+            "Te_i_Td_Te2.83_0",
+            "Te_i_Td_Te2.83_+1",
+            "Te_i_Td_Te2.83_+2",
+            "Te_i_Td_Te2.83_+3",
+            "Te_i_Td_Te2.83_+4",
+            "Te_i_Td_Te2.83_+5",
+            "Te_i_Td_Te2.83_+6",
+            "v_Cd_-2",
+            "v_Cd_-1",
+            "v_Cd_0",
+            "v_Cd_+1",
+            "v_Cd_+2",
+            "v_Te_-2",
+            "v_Te_-1",
+            "v_Te_0",
+            "v_Te_+1",
+            "v_Te_+2",
         ]
 
+        # Get the current locale setting
+        self.original_locale = locale.getlocale(locale.LC_CTYPE)  # should be UTF-8
+
     def tearDown(self) -> None:
+        # reset locale:
+        locale.setlocale(locale.LC_CTYPE, self.original_locale)  # should be UTF-8
+
         # remove test-generated defect folders if present
         for i in self.cdte_defect_folders_old_names + self.cdte_defect_folders:
             if_present_rm(i)
@@ -375,6 +447,28 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(input._most_common_oxi("S"), -2)
         self.assertEqual(input._most_common_oxi("Se"), -2)
         self.assertEqual(input._most_common_oxi("N"), -3)
+        # no ICSD oxidation state in pymatgen for Au, At, so uses
+        # element_obj.common_oxidation_states[0]:
+        self.assertEqual(input._most_common_oxi("Au"), 3)
+        self.assertEqual(input._most_common_oxi("At"), -1)
+        self.assertEqual(input._most_common_oxi("Po"), -2)
+        self.assertEqual(input._most_common_oxi("Ac"), +3)
+        self.assertEqual(input._most_common_oxi("Fr"), +1)
+        self.assertEqual(input._most_common_oxi("Ra"), +2)
+
+    def test_get_sc_defect_coords(self):
+        defect_entry = copy.deepcopy(self.V_Cd_entry)
+        intput_frac_coords = defect_entry.sc_defect_frac_coords
+        defect_entry.sc_defect_frac_coords = None
+        defect_entry.charge_state = 0
+        Dist = input.Distortions(
+            defect_entries=[
+                defect_entry,
+            ]
+        )
+        defect_dict, _ = Dist.apply_distortions()
+        output_frac_coords = defect_dict["v_Cd"]["defect_supercell_site"].frac_coords
+        self.assertEqual(intput_frac_coords.tolist(), output_frac_coords.tolist())
 
     @patch("builtins.print")
     def test_calc_number_electrons(self, mock_print):
@@ -396,12 +490,11 @@ class InputTestCase(unittest.TestCase):
                 if defect_type != "bulk":
                     for i in defect_list:
                         if i["name"] == defect:
-                            defect_object = cli.generate_defect_object(
+                            defect_object = input.generate_defect_object(
                                 i, self.cdte_doped_defect_dict["bulk"]
                             )
                             defect_entry = input._get_defect_entry_from_defect(
-                                defect_object,
-                                defect_object.user_charges[0]
+                                defect_object, defect_object.user_charges[0]
                             )
                             self.assertEqual(
                                 input._calc_number_electrons(
@@ -438,10 +531,14 @@ class InputTestCase(unittest.TestCase):
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
-            self.V_Cd_entry, num_nearest_neighbours=2, distortion_factor=0.5, d_min=d_min
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            distortion_factor=0.5,
+            d_min=d_min,
+            verbose=True,
         )
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
+        output = distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
         np.testing.assert_raises(
             AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
         )  # Shouldn't match because rattling not done yet
@@ -451,21 +548,32 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
             output["distorted_structure"],
             d_min=d_min,
             active_atoms=rattling_atom_indices,
+            verbose=True,
         )
         # pymatgen-analysis-defects decorates the structure with oxidation states.
         V_Cd_distorted_dict["distorted_structure"].remove_oxidation_states()
         V_Cd_distorted_dict["undistorted_structure"].remove_oxidation_states()
         np.testing.assert_equal(V_Cd_distorted_dict, output)
-        self.assertEqual(
+        self.assertNotEqual(
             V_Cd_distorted_dict["distorted_structure"],
-            self.V_Cd_minus0pt5_struc_rattled,
+            self.V_Cd_minus0pt5_struc_rattled,  # this is with stdev=0.25
+        )
+        stdev_0pt25_V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            distortion_factor=0.5,
+            d_min=d_min,
+            stdev=0.25,
+            verbose=True,
+        )
+        self.assertEqual(
+            stdev_0pt25_V_Cd_distorted_dict["distorted_structure"],
+            self.V_Cd_minus0pt5_struc_rattled,  # this is with stdev=0.25
         )
 
     def test_apply_rattle_bond_distortions_Int_Cd_2(self):
@@ -480,7 +588,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=40,  # distortion_factor * 100, default
         )
-        output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
+        output = distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -495,9 +603,7 @@ class InputTestCase(unittest.TestCase):
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Cd indices
-        output[
-            "distorted_structure"
-        ] = distortions.rattle(  # overwrite with distorted and rattle
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             output["distorted_structure"],
             d_min=d_min,
             active_atoms=rattling_atom_indices,
@@ -611,7 +717,6 @@ class InputTestCase(unittest.TestCase):
         """Test apply_distortions function for V_Cd"""
         V_Cd_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
-            "V_Cd",
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
             stdev=0.25,
@@ -629,7 +734,6 @@ class InputTestCase(unittest.TestCase):
 
         V_Cd_0pt1_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
-            "V_Cd",
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
             stdev=0.1,
@@ -650,7 +754,6 @@ class InputTestCase(unittest.TestCase):
 
         V_Cd_3_neighbours_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
-            "V_Cd",
             num_nearest_neighbours=3,
             bond_distortions=[-0.5],
             stdev=0.25,  # old default
@@ -669,7 +772,6 @@ class InputTestCase(unittest.TestCase):
             distortion_range = np.arange(-0.6, 0.61, 0.1)
             V_Cd_distorted_dict = input.apply_snb_distortions(
                 self.V_Cd_entry,
-                "V_Cd",
                 num_nearest_neighbours=2,
                 bond_distortions=distortion_range,
                 verbose=True,
@@ -692,11 +794,9 @@ class InputTestCase(unittest.TestCase):
         self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
 
     def test_apply_snb_distortions_Int_Cd_2(self):
-
         """Test apply_distortions function for Int_Cd_2"""
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
             self.Int_Cd_2_entry,
-            "Int_Cd_2",
             num_nearest_neighbours=2,
             bond_distortions=[-0.6],
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
@@ -723,7 +823,6 @@ class InputTestCase(unittest.TestCase):
         # test distortion kwargs with Int_Cd_2
         Int_Cd_2_distorted_dict = input.apply_snb_distortions(
             copy.deepcopy(self.Int_Cd_2_entry),
-            "Int_Cd_2",
             num_nearest_neighbours=10,
             bond_distortions=[-0.6],
             distorted_element="Cd",
@@ -766,7 +865,6 @@ class InputTestCase(unittest.TestCase):
 
         V_Cd_kwarg_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
-            "V_Cd",
             num_nearest_neighbours=2,
             bond_distortions=[-0.5],
             stdev=0.15,
@@ -802,30 +900,20 @@ class InputTestCase(unittest.TestCase):
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
+
         # Create doped/PyCDT-style defect dict:
         supercell = self.V_Cd_dict["supercell"]
-        V_Cd_defect_relax_set = vasp.DefectRelaxSet(supercell["structure"], charge=0)
-        poscar = V_Cd_defect_relax_set.poscar
-        struct = V_Cd_defect_relax_set.structure
-        dict_transf = {
-            "defect_type": self.V_Cd_dict["name"],
-            "defect_site": self.V_Cd_dict["unique_site"],
-            "defect_supercell_site": self.V_Cd_dict["bulk_supercell_site"],
-            "defect_multiplicity": self.V_Cd_dict["site_multiplicity"],
-            "charge": 0,
-            "supercell": supercell["size"],
-        }
-        poscar.comment = (
+        poscar_comment = (
             self.V_Cd_dict["name"]
-            + str(dict_transf["defect_supercell_site"].frac_coords)
+            + str(self.V_Cd_dict["bulk_supercell_site"].frac_coords)
             + "_-dNELECT="  # change in NELECT from bulk supercell
             + str(0)
         )
         vasp_defect_inputs = {
             "vac_1_Cd_0": {
-                "Defect Structure": struct,
-                "POSCAR Comment": poscar.comment,
-                "Transformation Dict": dict_transf,
+                "Defect Structure": supercell,
+                "POSCAR Comment": poscar_comment,
+                "Charge State": 0,
             }
         }
         V_Cd_updated_charged_defect_dict = _update_struct_defect_dict(
@@ -837,70 +925,135 @@ class InputTestCase(unittest.TestCase):
             "Bond_Distortion_-50.0%": V_Cd_updated_charged_defect_dict
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        input._create_vasp_input(
-            "vac_1_Cd_0",
-            distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=vasp.default_incar_settings,
+        with warnings.catch_warnings(record=True) as w:
+            _ignore_pmg_warnings()
+            input._create_vasp_input(
+                "vac_1_Cd_0",
+                distorted_defect_dict=V_Cd_charged_defect_dict,
+            )
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "vac_1_Cd_0/Bond_Distortion_-50.0%"
         )
-        V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
-        # test with kwargs: (except POTCAR settings because we can't have this on the GitHub test
-        # server)
+        if _potcars_available():
+            assert filecmp.cmp(
+                "vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert (
+                len(w) == 2
+            )  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
+
+        # test with kwargs:
         kwarg_incar_settings = {
-            "NELECT": 3,
             "IBRION": 42,
             "LVHAR": True,
             "LWAVE": True,
             "LCHARG": True,
+            "AEXX": 0.35,
         }
-        kwarged_incar_settings = vasp.default_incar_settings.copy()
-        kwarged_incar_settings.update(kwarg_incar_settings)
         with warnings.catch_warnings(record=True) as w:
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings=kwarged_incar_settings,
+                user_incar_settings=kwarg_incar_settings,
+                user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
             )
-        self.assertTrue(
-            any(  # here we get this warning because no Unperturbed structures were
-                # written so couldn't be compared
-                f"A previously-generated defect folder vac_1_Cd_0 exists in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structure "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are assumed "
-                f"to be inequivalent defects, so the previous vac_1_Cd_0 will be renamed to "
-                f"vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
-                f"vac_1_Cdb_0, to prevent overwriting." in str(warning.message)
+        self._check_V_Cd_folder_renaming(
+            w,
+            "A previously-generated defect folder vac_1_Cd_0 exists in ",
+            ", and the Unperturbed defect structure could not be matched to the current defect species: "
+            "vac_1_Cd_0. These are assumed to be inequivalent defects, so the previous vac_1_Cd_0 will "
+            "be renamed to vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
+            "vac_1_Cdb_0, to prevent overwriting.",
+        )
+        V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(V_Cd_kwarg_folder)
+        kpoints = Kpoints.from_file(f"{V_Cd_kwarg_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_kwarg_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update(kwarg_incar_settings)
+            kwarged_INCAR["NELECT"] = 812.0  # changed POTCARs
+            assert kwarged_INCAR == Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_kwarg_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                "Cd_sv",
+                "Te_GW",
+            }  # Cd_sv_GW POTCAR has Cd_sv symbol, checked
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
                 for warning in w
             )
-        )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
-        V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
 
         # test output_path option
         input._create_vasp_input(
             "vac_1_Cd_0",
             distorted_defect_dict=V_Cd_charged_defect_dict,
-            incar_settings=kwarged_incar_settings,
+            user_incar_settings=kwarg_incar_settings,
             output_path="test_path",
         )
-        V_Cd_kwarg_folder = "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
-        self.assertTrue(os.path.exists(V_Cd_kwarg_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_kwarg_folder + "/POSCAR")
-        self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Rattled")
-        self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
+        V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%"
+        )
+        kpoints = Kpoints.from_file(
+            "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS"
+        )
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR",
+                self.V_Cd_INCAR_file,
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update(kwarg_incar_settings)
+            assert kwarged_INCAR == Incar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(
+                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POTCAR"
+            )
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         # Test correct handling of cases where defect folders with the same name have previously
         # been written:
@@ -925,20 +1078,26 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
+                user_potcar_functional="PBE_54",  # check setting POTCAR functional to one that isn't
+                # present locally
             )
-        self.assertTrue(
-            any(
-                f"The previously-generated defect folder vac_1_Cdb_0 in "
-                f"{os.path.basename(os.path.abspath('.'))} has the same Unperturbed defect "
-                f"structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in "
-                f"vac_1_Cdb_0 will be overwritten." in str(warning.message)
+        self._check_V_Cd_folder_renaming(
+            w,
+            "The previously-generated defect folder vac_1_Cdb_0 in ",
+            " has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be overwritten.",
+        )
+        if not _potcars_available():  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
                 for warning in w
             )
-        )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
+
         self.assertFalse(os.path.exists("vac_1_Cdc_0"))
         V_Cd_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Unperturbed, Overwritten")
@@ -955,22 +1114,13 @@ class InputTestCase(unittest.TestCase):
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
-                incar_settings={},
+                user_incar_settings={},
             )
-        self.assertTrue(
-            any(
-                f"Previously-generated defect folders (vac_1_Cdb_0...) exist in "
-                f"{os.path.basename(os.path.abspath('.'))}, and the Unperturbed defect structures "
-                f"could not be matched to the current defect species: vac_1_Cd_0. These are "
-                f"assumed to be inequivalent defects, so ShakeNBreak files for the current defect "
-                f"will be saved to vac_1_Cdc_0 to prevent overwriting."
-                in str(warning.message)
-                for warning in w
-            )
+        self._check_V_Cd_folder_renaming(
+            w,
+            "Previously-generated defect folders (vac_1_Cdb_0...) exist in ",
+            ", and the Unperturbed defect structures could not be matched to the current defect species: vac_1_Cd_0. These are assumed to be inequivalent defects, so ShakeNBreak files for the current defect will be saved to vac_1_Cdc_0 to prevent overwriting.",
         )
-        self.assertFalse(os.path.exists("vac_1_Cd_0"))
-        self.assertTrue(os.path.exists("vac_1_Cda_0"))
-        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
         self.assertTrue(os.path.exists("vac_1_Cdc_0"))
         self.assertFalse(os.path.exists("vac_1_Cdd_0"))
         V_Cd_prev_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
@@ -979,47 +1129,71 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
-    def test_update_defect_dict(self):
-        # basic usage of this function has been implicitly tested already, so just test extreme
-        # case of four identical defect names
-        fake_defect_dict = {
-            "Cd_i_m1a": [self.V_Cd_entry,],
-            "Cd_i_m1c": [self.V_Cd_entry,],
-            "Cd_i_m1b": [self.V_Cd_entry,],
-        }
-        v_cd_entry_copy = copy.deepcopy(self.V_Cd_entry)
-        # Change defect site so that code detects that is sym ineq defect
-        v_cd_entry_copy.defect.site = PeriodicSite(
-            Species("Cd"), [0.5, 0.5, 0.5], self.V_Cd_struc.lattice
-        )
-        new_defect_name = input._update_defect_dict(
-            defect_entry=v_cd_entry_copy,
-            defect_name="Cd_i_m1",
-            defect_dict=fake_defect_dict
-        )
-        self.assertEqual("Cd_i_m1d", new_defect_name)
-        self.assertEqual(
-            fake_defect_dict,
-            {
-                "Cd_i_m1a": [self.V_Cd_entry,],
-                "Cd_i_m1c": [self.V_Cd_entry,],
-                "Cd_i_m1b": [self.V_Cd_entry,],
-                new_defect_name: [v_cd_entry_copy],
-            },
-        )  # dict edited
-        # Test case with 3 sym ineq interstitials and several charge states
-        # for each of them
-        te_int_dict = {}
-        te_int_dict["Te_i_m32a"] = self.cdte_defects["Int_Te_1"]
-        te_int_dict["Te_i_m128"] = self.cdte_defects["Int_Te_2"]
-        # Only one charge state for "Int_Te_3"
-        te_int_dict["Te_i_m32b"] = [self.cdte_defects["Int_Te_3"][0],]
-        new_defect_name = input._update_defect_dict(
-            defect_entry=self.cdte_defects["Int_Te_3"][1],
-            defect_name="Te_i_m32",
-            defect_dict=te_int_dict
-        )
+    def test_with_non_UTF_8_encoding(self):
+        # Temporarily set the locale to ASCII/latin encoding (doesn't support emojis or "Γ"):
+        with contextlib.suppress(locale.Error):  # not supported on GH Actions
+            locale.setlocale(locale.LC_CTYPE, "en_US.US-ASCII")
+            self.test_create_vasp_input()
 
+
+    def _check_V_Cd_rattled_poscar(self, defect_dir):
+        result = Poscar.from_file(f"{defect_dir}/POSCAR")
+        self.assertEqual(result.comment, "V_Cd Rattled")
+        self.assertEqual(result.structure, self.V_Cd_minus0pt5_struc_rattled)
+        return result
+
+    def _check_V_Cd_folder_renaming(self, w, top_dir, defect_dir):
+        self.assertTrue(
+            any(
+                f"{top_dir}{os.path.basename(os.path.abspath('.'))}{defect_dir}"
+                in str(warning.message)
+                for warning in w
+            )
+        )
+        self.assertFalse(os.path.exists("vac_1_Cd_0"))
+        self.assertTrue(os.path.exists("vac_1_Cda_0"))
+        self.assertTrue(os.path.exists("vac_1_Cdb_0"))
+
+    def test_generate_defect_object(self):
+        """Test generate_defect_object"""
+        # Test interstitial
+        defect = input.generate_defect_object(
+            single_defect_dict=self.Int_Cd_2_dict,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, self.Int_Cd_2_dict["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords),
+            list(self.Int_Cd_2_dict["bulk_supercell_site"].frac_coords),
+        )
+        self.assertEqual(
+            str(defect.as_dict()["@class"].lower()), self.Int_Cd_2_dict["defect_type"]
+        )
+        # Test vacancy
+        vacancy = self.cdte_doped_defect_dict["vacancies"][0]
+        defect = input.generate_defect_object(
+            single_defect_dict=vacancy,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, vacancy["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords),
+            list(vacancy["bulk_supercell_site"].frac_coords),
+        )
+        self.assertEqual(
+            str(defect.as_dict()["@class"].lower()), vacancy["defect_type"]
+        )
+        # Test substitution
+        subs = self.cdte_doped_defect_dict["substitutions"][0]
+        defect = input.generate_defect_object(
+            single_defect_dict=subs,
+            bulk_dict=self.cdte_doped_defect_dict["bulk"],
+        )
+        self.assertEqual(defect.user_charges, subs["charges"])
+        self.assertEqual(
+            list(defect.site.frac_coords), list(subs["bulk_supercell_site"].frac_coords)
+        )
+        self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
@@ -1128,13 +1302,14 @@ class InputTestCase(unittest.TestCase):
         [
             fake_extrinsic_interstitial_list.append(
                 input._get_defect_entry_from_defect(
-                    defect=cli.generate_defect_object(
+                    defect=input.generate_defect_object(
                         fake_extrinsic_interstitial_subdict,
-                        self.cdte_doped_defect_dict["bulk"]
+                        self.cdte_doped_defect_dict["bulk"],
                     ),
                     charge_state=charge,
                 )
-            ) for charge in fake_extrinsic_interstitial_subdict["charges"]
+            )
+            for charge in fake_extrinsic_interstitial_subdict["charges"]
         ]
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(fake_extrinsic_interstitial_list)
@@ -1146,7 +1321,96 @@ class InputTestCase(unittest.TestCase):
 
         # test Distortions() initialised fine with a single Defect
         dist = input.Distortions(self.V_Cd_entries)
-        self.assertEqual(dist.defects_dict["v_Cd_s0"], self.cdte_defects["vac_1_Cd"])
+        assert np.isclose(
+            dist.defects_dict["v_Cd"][0].sc_defect_frac_coords,
+            self.cdte_defects["vac_1_Cd"][0].sc_defect_frac_coords,
+        ).all()
+        self.assertEqual(
+            dist.defects_dict["v_Cd"][0].defect, self.cdte_defects["vac_1_Cd"][0].defect
+        )
+
+    def test_Distortions_single_atom_primitive(self):
+        # test initialising Distortions with a single atom primitive cell
+        # also serves to test the DefectEntry generation workflow in the example notebook
+        Cu_primitive = Structure.from_file(f"{self.DATA_DIR}/vasp/Cu_prim_POSCAR")
+        vac_gen = VacancyGenerator()
+        vacancies = vac_gen.get_defects(Cu_primitive)
+        v_Cu = vacancies[0]
+
+        defect_supercell = v_Cu.get_supercell_structure(
+            min_length=10,  # in Angstrom
+            max_atoms=120,
+            min_atoms=20,
+            force_diagonal=False,
+            dummy_species="X",
+        )
+
+        defect_entry = _get_defect_entry_from_defect(
+            defect=v_Cu,
+            charge_state=0,
+            defect_supercell=defect_supercell,
+        )
+
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(
+                [
+                    defect_entry,
+                ]
+            )
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cu': 0}. If this is unreasonable you should manually set oxidation_states"
+            )
+
+        self.assertEqual(dist.oxidation_states, {"Cu": 0})
+        self.assertAlmostEqual(dist.stdev, 0.2529625487091717)
+        self.assertIn("v_Cu", dist.defects_dict)
+        self.assertEqual(len(dist.defects_dict["v_Cu"][0].sc_entry.structure), 107)
+
+    def test_Distortions_intermetallic(self):
+        # test initialising Distortions with an intermetallic
+        # (where pymatgen oxidation state guessing fails)
+        # also serves to test the DefectEntry generation workflow in the example notebook
+        atoms = bulk("Cu")
+        atoms = make_supercell(atoms, [[2, 0, 0], [0, 2, 0], [0, 0, 2]])
+        atoms.set_chemical_symbols(["Cu", "Ag"] * 4)
+
+        aaa = AseAtomsAdaptor()
+        cuag_structure = aaa.get_structure(atoms)
+        vac_gen = VacancyGenerator()
+        vacancies = vac_gen.get_defects(cuag_structure)
+
+        defect_entries = []
+        for vacancy in vacancies:
+            defect_supercell = vacancy.get_supercell_structure(
+                min_length=7,  # in Angstrom
+                max_atoms=120,
+                min_atoms=20,
+                force_diagonal=False,
+                dummy_species="X",
+            )
+
+            defect_entries.append(
+                _get_defect_entry_from_defect(
+                    defect=vacancy,
+                    charge_state=0,
+                    defect_supercell=defect_supercell,
+                )
+            )
+
+        with patch("builtins.print") as mock_print:
+            dist = input.Distortions(defect_entries)
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cu': 0, 'Ag': 0}. If this is unreasonable you should manually set oxidation_states"
+            )
+
+        self.assertEqual(dist.oxidation_states, {"Cu": 0, "Ag": 0})
+        self.assertAlmostEqual(dist.stdev, 0.2552655480083435)
+        self.assertIn("v_Cu", dist.defects_dict)
+        self.assertIn("v_Ag", dist.defects_dict)
+        self.assertEqual(len(dist.defects_dict["v_Cu"][0].sc_entry.structure), 31)
+        self.assertEqual(len(dist.defects_dict["v_Ag"][0].sc_entry.structure), 31)
 
     def test_write_vasp_files(self):
         """Test `write_vasp_files` method"""
@@ -1154,7 +1418,6 @@ class InputTestCase(unittest.TestCase):
         bond_distortions = list(np.arange(-0.6, 0.601, 0.05))
 
         # Use customised names for defects
-
         dist = input.Distortions(
             self.cdte_defects,
             oxidation_states=oxidation_states,
@@ -1164,10 +1427,11 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         with patch("builtins.print") as mock_print:
-            _, distortion_metadata = dist.write_vasp_files(
-                incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-                verbose=False,
-            )
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
+                    verbose=False,
+                )
 
         # check if expected folders were created:
         self.assertTrue(
@@ -1224,27 +1488,75 @@ class InputTestCase(unittest.TestCase):
         # check if correct files were created:
         V_Cd_Bond_Distortion_folder = "vac_1_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
-        V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
+        V_Cd_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2__vac_1_Cd",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            assert self.V_Cd_INCAR != Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            assert kwarged_INCAR == Incar.from_file(
+                f"{V_Cd_Bond_Distortion_folder}/INCAR"
+            )
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
 
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2__Int_Cd_2",
+            "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
         )
         self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
-        # only test POSCAR as INCAR, KPOINTS and POTCAR not written on GitHub actions,
-        # but tested locally
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
+            )
+            kwarged_INCAR = self.V_Cd_INCAR.copy()
+            kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
+            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR.pop("NELECT")
+            assert kwarged_INCAR == Int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in V_Cd_POSCAR.structure.symbol_set
+            }
 
         # Test `Rattled` folder not generated for non-fully-ionised defects,
         # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
@@ -1276,7 +1588,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             V_Cd_minus0pt5_POSCAR.comment,
-            "-50.0%__num_neighbours=2__vac_1_Cd",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
 
         self.assertFalse(os.path.exists("vac_1_Cd_0/Rattled"))
@@ -1295,7 +1607,11 @@ class InputTestCase(unittest.TestCase):
         )
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         dist = input.Distortions(
-            {"vac_1_Cd": [reduced_V_Cd_entry,]},
+            {
+                "vac_1_Cd": [
+                    reduced_V_Cd_entry,
+                ]
+            },
             oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
             stdev=0.15,
@@ -1335,19 +1651,22 @@ class InputTestCase(unittest.TestCase):
         ]
 
         with patch("builtins.print") as mock_Int_Cd_2_print:
-            dist = input.Distortions(
-                {"Int_Cd_2": reduced_Int_Cd_2_entries},
-                oxidation_states=oxidation_states,
-                distortion_increment=0.25,
-                distorted_elements={"Int_Cd_2": ["Cd"]},
-                dict_number_electrons_user={"Int_Cd_2": 3},
-                local_rattle=False,
-                stdev=0.25,  # old default
-                seed=42,  # old default
-            )
-            _, distortion_metadata = dist.write_vasp_files(
-                verbose=True,
-            )
+            with warnings.catch_warnings(record=True) as w:
+                dist = input.Distortions(
+                    {"Int_Cd_2": reduced_Int_Cd_2_entries},
+                    oxidation_states=oxidation_states,
+                    distortion_increment=0.25,
+                    distorted_elements={"Int_Cd_2": ["Cd"]},
+                    dict_number_electrons_user={"Int_Cd_2": 3},
+                    local_rattle=False,
+                    stdev=0.25,  # old default
+                    seed=42,  # old default
+                )
+                _, distortion_metadata = dist.write_vasp_files(
+                    verbose=True,
+                    user_potcar_settings={"Cd": "Cd_sv_GW", "Te": "Te_GW"},
+                    user_potcar_functional="PBE_52",
+                )
 
         kwarged_Int_Cd_2_dict = {
             "distortion_parameters": {
@@ -1519,7 +1838,38 @@ class InputTestCase(unittest.TestCase):
             + "(1.36, 30, 'Cd'), (1.36, 39, 'Te')]"
         )  # Defect added at index 0, so atom indexing + 1 wrt original structure
         # check correct folder was created:
-        self.assertTrue(os.path.exists("Int_Cd_2_1/Unperturbed"))
+        self.assertTrue(os.path.exists("Int_Cd_2_+1/Unperturbed"))
+        _int_Cd_2_POSCAR = Poscar.from_file(
+            "Int_Cd_2_+1/Unperturbed/POSCAR"
+        )  # test POSCAR loaded fine
+        kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            assert not filecmp.cmp(  # INCAR settings changed now
+                "Int_Cd_2_+1/Unperturbed/INCAR", self.V_Cd_INCAR_file
+            )
+            int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
+            v_Cd_INCAR = self.V_Cd_INCAR.copy()
+            v_Cd_INCAR.pop("NELECT")  # NELECT and NUPDOWN differs for the two defects
+            v_Cd_INCAR.pop("NUPDOWN")
+            int_Cd_2_INCAR.pop("NELECT")
+            int_Cd_2_INCAR.pop("NUPDOWN")
+            assert v_Cd_INCAR == int_Cd_2_INCAR
+
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file("Int_Cd_2_+1/Unperturbed/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
 
         # check correct output for "extra" electrons and positive charge state:
         with patch("builtins.print") as mock_Int_Cd_2_print:
@@ -1546,9 +1896,7 @@ class InputTestCase(unittest.TestCase):
             )
 
         # test renaming of old distortion_metadata.json file if present
-        dist = input.Distortions(
-            {"Int_Cd_2": reduced_Int_Cd_2_entries}
-        )
+        dist = input.Distortions({"Int_Cd_2": reduced_Int_Cd_2_entries})
         with patch("builtins.print") as mock_Int_Cd_2_print:
             _, distortion_metadata = dist.write_vasp_files()
         self.assertTrue(os.path.exists("distortion_metadata.json"))
@@ -1564,20 +1912,15 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertTrue(
             any(
-                [
-                    f"There is a previous version of distortion_metadata.json. Will rename old "
-                    f"metadata to distortion_metadata_{current_datetime}.json"
-                    in call[0][0]
-                    for call in mock_Int_Cd_2_print.call_args_list
-                ]
+                f"There is a previous version of distortion_metadata.json. Will rename old "
+                f"metadata to distortion_metadata_{current_datetime}.json" in call[0][0]
+                for call in mock_Int_Cd_2_print.call_args_list
             )
             or any(
-                [
-                    f"There is a previous version of distortion_metadata.json. Will rename old "
-                    f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
-                    in call[0][0]
-                    for call in mock_Int_Cd_2_print.call_args_list
-                ]
+                f"There is a previous version of distortion_metadata.json. Will rename old "
+                f"metadata to distortion_metadata_{current_datetime_minus1min}.json"
+                in call[0][0]
+                for call in mock_Int_Cd_2_print.call_args_list
             )
         )
 
@@ -1624,7 +1967,7 @@ class InputTestCase(unittest.TestCase):
         }
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(vacancies)
-        mock_print.assert_called_once_with(
+        mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
             "oxidation_states"
@@ -1633,7 +1976,25 @@ class InputTestCase(unittest.TestCase):
             "vac_1_Cd": self.cdte_defects["vac_1_Cd"],
             "vac_2_Te": self.cdte_defects["vac_2_Te"],  # same original names
         }
-        self.assertDictEqual(dist.defects_dict, pmg_defects)
+        self.assertEqual(list(dist.defects_dict.keys()), list(pmg_defects.keys()))
+        for defect_entry_key in dist.defects_dict.keys():
+            assert all(
+                dist.defects_dict[defect_entry_key][i].sc_entry
+                == pmg_defects[defect_entry_key][i].sc_entry
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
+            assert all(
+                dist.defects_dict[defect_entry_key][i].defect
+                == pmg_defects[defect_entry_key][i].defect
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
+            assert all(
+                np.isclose(
+                    dist.defects_dict[defect_entry_key][i].sc_defect_frac_coords,
+                    pmg_defects[defect_entry_key][i].sc_defect_frac_coords,
+                ).all()
+                for i in range(len(pmg_defects[defect_entry_key]))
+            )
 
         # Test distortion generation
         for defect_dict in vacancies["vacancies"]:
@@ -1709,8 +2070,8 @@ class InputTestCase(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as e:
             no_bulk_error = ValueError(
-                "Input `defects` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defects`."
+                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
+                "present. Please try again providing a `bulk` entry in `defect_entries`."
             )
             dist = input.Distortions(vacancies)
             self.assertIn(no_bulk_error, e.exception)
@@ -1730,12 +2091,14 @@ class InputTestCase(unittest.TestCase):
             new_key: self.cdte_defects[old_key]
             for new_key, old_key in self.new_names_old_names_CdTe.items()
         }
-        #self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
+        # self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
         # so we compare each DefectEntry (with same charge)
         for key, defect_list in pmg_defects.items():
             for c in defect_list[0].defect.get_charge_states():
                 self.assertEqual(
-                    [i.defect for i in dist.defects_dict[key] if i.charge_state == c][0],
+                    [i.defect for i in dist.defects_dict[key] if i.charge_state == c][
+                        0
+                    ],
                     [i.defect for i in pmg_defects[key] if i.charge_state == c][0],
                 )
 
@@ -1765,75 +2128,70 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd_s0" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: -2. Number of distorted " "neighbours: 0"
+            "\nDefect v_Cd in charge state: -2. Number of distorted " "neighbours: 0"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: -1. Number of distorted " "neighbours: 1"
+            "\nDefect v_Cd in charge state: -1. Number of distorted " "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect v_Cd in charge state: 0. Number of distorted " "neighbours: 2"
         )
         # test correct distorted neighbours based on oxidation states:
         mock_print.assert_any_call(
-            "\nDefect v_Te_s32 in charge state: -2. Number of distorted "
-            "neighbours: 4"
+            "\nDefect v_Te in charge state: -2. Number of distorted " "neighbours: 4"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_Te_s32 in charge state: -2. Number of "
-            "distorted neighbours: 2"
+            "\nDefect Cd_Te in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_Cd_s0 in charge state: -2. Number of "
-            "distorted neighbours: 2"
+            "\nDefect Te_Cd in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_i_m128 in charge state: 0. Number of distorted "
+            "\nDefect Cd_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Cd_i_Td_Cd2.83 in charge state: 0. Number of distorted "
             "neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_i_m32a in charge state: 0. Number of distorted "
+            "\nDefect Cd_i_Td_Te2.83 in charge state: 0. Number of distorted "
             "neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_i_m32b in charge state: 0. Number of distorted "
+            "\nDefect Te_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
+        )
+        mock_print.assert_any_call(
+            "\nDefect Te_i_Td_Cd2.83 in charge state: 0. Number of distorted "
             "neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_i_m128 in charge state: 0. Number of distorted "
+            "\nDefect Te_i_Td_Te2.83 in charge state: 0. Number of distorted "
             "neighbours: 2"
         )
-        mock_print.assert_any_call(
-            "\nDefect Te_i_m32a in charge state: 0. Number of distorted "
-            "neighbours: 2"
-        )
-        mock_print.assert_any_call(
-            "\nDefect Te_i_m32b in charge state: 0. Number of distorted "
-            "neighbours: 2"
-        )  # TODO: this is not created
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "v_Cd_s0_0/Bond_Distortion_-50.0%"
+        V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2__v_Cd_s0",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_m128_0/Bond_Distortion_-60.0%"
+        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2__Cd_i_m128",
+            "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
         )
         self.assertEqual(
             # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
@@ -1844,9 +2202,9 @@ class InputTestCase(unittest.TestCase):
 
         # Test distortion generation
         vacancies = [
-            defect_entry for defect_entry in self.cdte_defect_list
-            if "v_" in defect_entry.defect.name
-            and defect_entry.charge_state == 0
+            defect_entry
+            for defect_entry in self.cdte_defect_list
+            if "v_" in defect_entry.defect.name and defect_entry.charge_state == 0
         ]
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(
@@ -1865,22 +2223,22 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd_s0" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Te_s32" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Te" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m"
         )
-        for defect_name in ["v_Cd_s0", "v_Te_s32"]:
+        for defect_name in ["v_Cd", "v_Te"]:
             self.assertTrue(
                 os.path.exists(f"{defect_name}_0/Bond_Distortion_-30.0%/POSCAR")
             )
-            self.assertFalse(os.path.exists(f"{defect_name}_1"))
+            self.assertFalse(os.path.exists(f"{defect_name}_+1"))
         metadata = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
         self.assertDictEqual(loadfn("distortion_metadata.json"), metadata)
         dumpfn(dist_defects_dict, "distorted_defects_dict.json")
@@ -1898,15 +2256,16 @@ class InputTestCase(unittest.TestCase):
         }
         with self.assertRaises(ValueError) as e:
             no_bulk_error = ValueError(
-                "Input `defects` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defects`."
+                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
+                "present. Please try again providing a `bulk` entry in `defect_entries`."
             )
             dist = input.Distortions(vacancies)
             self.assertIn(no_bulk_error, e.exception)
 
         # Test setting chargge state
         vacancies = [
-            defect_entry for defect_entry in self.cdte_defect_list
+            defect_entry
+            for defect_entry in self.cdte_defect_list
             if "v_" in defect_entry.defect.name
             if defect_entry.charge_state == 0  # only 1 charge state
         ]
@@ -1918,27 +2277,37 @@ class InputTestCase(unittest.TestCase):
             defect = defect_entry.defect
             if defect.name == "v_Cd":
                 vacancies_entries.extend(
-                    [input._get_defect_entry_from_defect(defect, charge)
-                    for charge in [1,]]
+                    [
+                        input._get_defect_entry_from_defect(defect, charge)
+                        for charge in [
+                            1,
+                        ]
+                    ]
                 )
             elif defect.name == "v_Te":
                 vacancies_entries.extend(
-                    [input._get_defect_entry_from_defect(defect, charge)
-                    for charge in [1, 2, 3,]]
+                    [
+                        input._get_defect_entry_from_defect(defect, charge)
+                        for charge in [
+                            1,
+                            2,
+                            3,
+                        ]
+                    ]
                 )
         # test default
         dist = input.Distortions(
             vacancies_entries,
         )
         dist_defects_dict, dist_metadata = dist.write_vasp_files()
-        for defect_name in ["v_Cd_s0", "v_Te_s32"]:
+        for defect_name in ["v_Cd", "v_Te"]:
             self.assertTrue(
-                os.path.exists(f"{defect_name}_1/Bond_Distortion_-30.0%/POSCAR")
+                os.path.exists(f"{defect_name}_+1/Bond_Distortion_-30.0%/POSCAR")
             )  # +1 charge state exists for both
-            self.assertFalse(os.path.exists(f"{defect_name}_7"))
-        self.assertFalse(os.path.exists("v_Cd_s0_2"))
-        self.assertTrue(os.path.exists("v_Te_s32_3"))
-        self.assertFalse(os.path.exists("v_Te_s32_4"))
+            self.assertFalse(os.path.exists(f"{defect_name}_+7"))
+        self.assertFalse(os.path.exists("v_Cd_+2"))
+        self.assertTrue(os.path.exists("v_Te_+3"))
+        self.assertFalse(os.path.exists("v_Te_+4"))
         self.tearDown()
 
     @patch("builtins.print")
@@ -2400,7 +2769,7 @@ class InputTestCase(unittest.TestCase):
         fake_hydrogen_V_Cd_dict["charges"] = [0]
         fake_hydrogen_bulk = copy.copy(self.cdte_doped_defect_dict["bulk"])
         fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
-        fake_hydrogen_V_Cd = cli.generate_defect_object(
+        fake_hydrogen_V_Cd = input.generate_defect_object(
             fake_hydrogen_V_Cd_dict,
             fake_hydrogen_bulk,
         )
@@ -2487,7 +2856,9 @@ class InputTestCase(unittest.TestCase):
 
         # Check interstitial (internally uses defect_index rather fractional coords)
         int_Cd_2 = copy.copy(self.Int_Cd_2)
-        int_Cd_2.user_charges = [+2, ]
+        int_Cd_2.user_charges = [
+            +2,
+        ]
         int_Cd_2_entries = [
             input._get_defect_entry_from_defect(int_Cd_2, c)
             for c in int_Cd_2.user_charges
@@ -2517,7 +2888,7 @@ class InputTestCase(unittest.TestCase):
         ]["Rattled"]
         gen_struct.remove_oxidation_states()
         test_struct = Structure.from_file(
-            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_+2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
         )
         self.assertEqual(
             test_struct,
@@ -2583,7 +2954,7 @@ class InputTestCase(unittest.TestCase):
         ]["Rattled"]
         generated_struct.remove_oxidation_states()
         test_struct = Structure.from_file(
-            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/Int_Cd_2_+2_tailed_off_rattle_seed_0_stdev_0.28_POSCAR"
         )
         self.assertEqual(
             test_struct,
@@ -2594,18 +2965,25 @@ class InputTestCase(unittest.TestCase):
         """Test from_structures() method of Distortion() class.
         Implicitly, this also tests the functionality of `input.identify_defect()`
         """
-        # Test normal behaviour (no defect_index or defect_coords), with `defects` as a single
+        # Test normal behaviour (no defect_index or defect_coords), with `defect_entries` as a single
         # structure
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures(
-                self.V_Cd_struc,
-                self.CdTe_bulk_struc
+                self.V_Cd_struc, self.CdTe_bulk_struc
             )
             dist.write_vasp_files()
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # check expected info printing:
@@ -2617,33 +2995,33 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd_s0" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: -2. Number of distorted " "neighbours: 0"
+            "\nDefect v_Cd in charge state: -2. Number of distorted " "neighbours: 0"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: -1. Number of distorted " "neighbours: 1"
+            "\nDefect v_Cd in charge state: -1. Number of distorted " "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd_s0 in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect v_Cd in charge state: 0. Number of distorted " "neighbours: 2"
         )
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "v_Cd_s0_0/Bond_Distortion_-50.0%"
+        V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             V_Cd_POSCAR.comment,
-            "-50.0%__num_neighbours=2__v_Cd_s0",
+            "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
-        # test interstitial generation, with defects as list of structures
+        # test interstitial generation, with defect_entries as list of structures
         # with patch("builtins.print") as mock_print:
         dist = input.Distortions.from_structures(
             [self.Int_Cd_2_struc, self.V_Cd_struc], self.CdTe_bulk_struc
@@ -2652,28 +3030,44 @@ class InputTestCase(unittest.TestCase):
         # self.assertDictEqual(
         #     dist.defects_dict,
         #     {
-        #         "Cd_i_m128": self.cdte_defects["Int_Cd_2"],
-        #         "v_Cd_s0": self.cdte_defects["vac_1_Cd"],
+        #         "Cd_i_C3v": self.cdte_defects["Int_Cd_2"],
+        #         "v_Cd": self.cdte_defects["vac_1_Cd"],
         #     },
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
         for charge in [0, 1, 2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["Cd_i_m128"] if i.charge_state == charge][0],
-                [i.defect for i in self.cdte_defects["Int_Cd_2"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["Cd_i_C3v"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["Int_Cd_2"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # check if correct files were created:
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_m128_0/Bond_Distortion_-60.0%"
+        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
-            "-60.0%__num_neighbours=2__Cd_i_m128",
+            "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
         )
         self.assertEqual(
             # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
@@ -2706,12 +3100,20 @@ class InputTestCase(unittest.TestCase):
             "oxidation_states"
         )
         # self.assertDictEqual(
-        #     dist.defects_dict, {"v_Cd_s0": self.cdte_defects["vac_1_Cd"]}
+        #     dist.defects_dict, {"v_Cd": self.cdte_defects["vac_1_Cd"]}
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Test defect position given with `defect_index`
@@ -2720,12 +3122,20 @@ class InputTestCase(unittest.TestCase):
                 [(self.V_Cd_struc, 0)], bulk=self.CdTe_bulk_struc
             )
         # self.assertDictEqual(
-        #     dist.defects_dict, {"v_Cd_s0": self.cdte_defects["vac_1_Cd"]}
+        #     dist.defects_dict, {"v_Cd": self.cdte_defects["vac_1_Cd"]}
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Most cases already tested in test_cli.py for `snb-generate`` (which uses
@@ -2746,9 +3156,11 @@ class InputTestCase(unittest.TestCase):
                 ],
                 bulk=self.CdTe_bulk_struc,
             )
-        self.assertEqual(dist.defects_dict["Cd_i_m128"][0].defect.defect_site_index, 0)
+        self.assertEqual(dist.defects_dict["Cd_i_C3v"][0].defect.defect_site_index, 0)
         self.assertEqual(
-            list(dist.defects_dict["Cd_i_m128"][0].defect.defect_structure[0].frac_coords),
+            list(
+                dist.defects_dict["Cd_i_C3v"][0].defect.defect_structure[0].frac_coords
+            ),
             list([0.8125, 0.1875, 0.8125]),
         )
 
@@ -2761,8 +3173,16 @@ class InputTestCase(unittest.TestCase):
             )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
         # Test wrong type for defect index/coords
@@ -2774,43 +3194,51 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             str(w[0].message),
             (
-                f"Unrecognised format for defect frac_coords/index: wrong type! in `defects`. If "
+                f"Unrecognised format for defect frac_coords/index: wrong type! in `defect_entries`. If "
                 f"specifying frac_coords, it should be a list or numpy array, or if specifying "
                 f"defect index, should be an integer. Got type <class 'str'> instead. Will "
                 f"proceed with auto-site matching."
             ),
         )
         # self.assertDictEqual(
-        #     dist.defects_dict, {"v_Cd_s0": self.cdte_defects["vac_1_Cd"]}
+        #     dist.defects_dict, {"v_Cd": self.cdte_defects["vac_1_Cd"]}
         # )
         for charge in [0, -1, -2]:
             self.assertEqual(
-                [i.defect for i in dist.defects_dict["v_Cd_s0"] if i.charge_state == charge][0],
-                 [i.defect for i in self.cdte_defects["vac_1_Cd"] if i.charge_state == charge][0],
+                [
+                    i.defect
+                    for i in dist.defects_dict["v_Cd"]
+                    if i.charge_state == charge
+                ][0],
+                [
+                    i.defect
+                    for i in self.cdte_defects["vac_1_Cd"]
+                    if i.charge_state == charge
+                ][0],
             )
 
-        # Test wrong type for `defects`
+        # Test wrong type for `defect_entries`
         with self.assertRaises(TypeError) as e:
             wrong_type_error = TypeError(
-                "Wrong format for `defects`. Should be a list of pymatgen Structure objects"
+                "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects"
             )
             dist = input.Distortions.from_structures(
                 "wrong type!", bulk=self.CdTe_bulk_struc
-            )  # `defects` as string
+            )  # `defect_entries` as string
             self.assertIn(no_bulk_error, e.exception)
 
-        if_present_rm(os.path.join("Cd_i_m128_3"))
-        if_present_rm(os.path.join("v_Cd_s0_-3"))  # default padding
+        if_present_rm(os.path.join("Cd_i_C3v_+3"))
+        if_present_rm(os.path.join("v_Cd_-3"))  # default padding
 
         # Test padding usage
         # test default
         dist = input.Distortions.from_structures(self.V_Cd_struc, self.CdTe_bulk_struc)
         dist.write_vasp_files()
-        defect_name = "v_Cd_s0"
+        defect_name = "v_Cd"
         self.assertTrue(
-            os.path.exists(f"{defect_name}_1/Bond_Distortion_-30.0%/POSCAR")
+            os.path.exists(f"{defect_name}_+1/Bond_Distortion_-30.0%/POSCAR")
         )
-        self.assertFalse(os.path.exists(f"{defect_name}_2"))
+        self.assertFalse(os.path.exists(f"{defect_name}_+2"))
         self.assertTrue(os.path.exists(f"{defect_name}_-3"))
         self.tearDown()
 
@@ -2820,9 +3248,9 @@ class InputTestCase(unittest.TestCase):
         )
         dist.write_vasp_files()
         self.assertTrue(
-            os.path.exists(f"{defect_name}_4/Bond_Distortion_-30.0%/POSCAR")
+            os.path.exists(f"{defect_name}_+4/Bond_Distortion_-30.0%/POSCAR")
         )
-        self.assertFalse(os.path.exists(f"{defect_name}_5"))
+        self.assertFalse(os.path.exists(f"{defect_name}_+5"))
         self.assertTrue(os.path.exists(f"{defect_name}_-6"))
         self.assertFalse(os.path.exists(f"{defect_name}_-7"))
 

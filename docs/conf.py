@@ -25,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '23.02.08'
+release = '3.2.2'
 
 
 # -- General configuration ---------------------------------------------------
@@ -93,8 +93,6 @@ html_theme_options = {
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_repository_button": True,
-    "use_issues_button": True,
-    "use_edit_page_button": True, # add button to suggest edits
     "home_page_in_toc": True,
 }
 
@@ -111,7 +109,7 @@ html_context = {
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.6", None),
+    "python": ("https://docs.python.org/3.8", None),
     "numpy": ("http://docs.scipy.org/doc/numpy/", None),
     "pymatgen": ("http://pymatgen.org/", None),
     "matplotlib": ("http://matplotlib.org", None),
