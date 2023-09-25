@@ -7,6 +7,12 @@ ShakeNBreak can be installed using ``pip``:
 
     pip install --user shakenbreak
 
+Alternatively if needed, it can also be installed from ``conda`` with:
+
+.. code:: bash
+
+    conda install -c conda-forge shakenbreak
+
 If using ``VASP``, in order for ``ShakeNBreak`` to automatically generate the pseudopotential
 input files (``POTCARs``), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``
 configuration file ``$HOME/.pmgrc.yaml`` as follows:
@@ -16,8 +22,9 @@ configuration file ``$HOME/.pmgrc.yaml`` as follows:
   PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 
 Within your ``VASP`` pseudopotential top directory, you should have a folder named ``POT_GGA_PAW_PBE``
-which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). More details given
-`here <https://pymatgen.org/installation.html#potcar-setup>`_.
+which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). Please refer to the
+`doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
+difficulty with this.
 
 .. NOTE::
    The font `Montserrat <https://fonts.google.com/specimen/Montserrat/about>`_

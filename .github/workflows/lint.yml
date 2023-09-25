@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - develop
-      - pymatgen>2022.8.23_compatibility
   workflow_dispatch:
 
 jobs:
@@ -32,12 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install setuptools setuptools_scm wheel
-          pip install numpy
-          pip install pydocstyle
-          pip install black
-          pip install flake8
-          pip install isort
-          pip install -e .
+          pip install pydocstyle black flake8 isort
           pip install -e .[tests]
 
       - name: sort imports
@@ -52,8 +46,8 @@ jobs:
       - name: black
         run:  |
           black --version
-          black  --line-length 88 --color shakenbreak
-          black  --line-length 88 --check --diff --color shakenbreak
+          black --color shakenbreak
+          black --check --diff --color shakenbreak
 
       - name: flake8
         run:  |

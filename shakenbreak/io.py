@@ -2,6 +2,8 @@
 Module to parse input and output files for VASP, Quantum Espresso,
 FHI-aims, CASTEP and CP2K.
 """
+
+import contextlib
 import datetime
 import os
 import warnings
@@ -33,6 +35,7 @@ def parse_energies(
     """
     Parse final energy for all distortions present in the given defect
     directory and write them to a `yaml` file in the defect directory.
+    Returns the energies_file path.
 
     Args:
         defect (:obj:`str`):
@@ -52,7 +55,7 @@ def parse_energies(
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
 
-    Returns: None
+    Returns: energies_file path.
     """
 
     def _match(filename, grep_string):
@@ -113,15 +116,15 @@ def parse_energies(
         if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
         if outcar:  # regrep faster than using Outcar/vasprun class
-            try:
-                energy = _match(outcar, r"energy\(sigma->0\)\s+=\s+([\d\-\.]+)")[0][0][
+            with contextlib.suppress(IndexError):
+                energy = _match(
+                    outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
+                )[0][0][
                     0
                 ]  # Energy of first match
                 converged = _match(
                     outcar, "required accuracy"
                 )  # check if ionic relaxation converged
-            except IndexError:  # no energy match found in OUTCAR, not converged
-                pass
             if not converged:
                 converged = _match(outcar, "considering this converged")
         return converged, energy, outcar
@@ -166,9 +169,7 @@ def parse_energies(
         output_files = [
             file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file
         ]
-        if len(output_files) >= 1 and os.path.exists(
-            f"{defect_dir}/{dist}/{output_files[0]}"
-        ):
+        if output_files and os.path.exists(f"{defect_dir}/{dist}/{output_files[0]}"):
             castep_out = f"{defect_dir}/{dist}/{output_files[0]}"
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
             castep_out = os.path.join(defect_dir, dist, filename)
@@ -222,188 +223,201 @@ def parse_energies(
         path = os.path.dirname(path)
 
     defect_dir = f"{path}/{defect}"
-    if os.path.isdir(defect_dir):
-        dist_dirs = [
-            dir
-            for dir in os.listdir(defect_dir)
-            if os.path.isdir(os.path.join(defect_dir, dir))
-            and (
-                any(
-                    [
-                        substring in dir
-                        for substring in [
-                            "Bond_Distortion",
-                            "Rattled",
-                            "Unperturbed",
+    if not os.path.isdir(defect_dir):
+        orig_defect_name = defect
+        defect = defect.replace(
+            "+", ""
+        )  # try removing '+' from defect name, old format
+        defect_dir = f"{path}/{defect}"  # try removing '+' from defect name, old format
+
+        if not os.path.isdir(defect_dir):
+            warnings.warn(
+                f"Defect folder '{orig_defect_name}' not found in '{path}'. Please check these folders "
+                f"and paths."
+            )
+            return
+
+    dist_dirs = [
+        dir
+        for dir in os.listdir(defect_dir)
+        if os.path.isdir(os.path.join(defect_dir, dir))
+        and any(
+            substring in dir
+            for substring in [
+                            
+                "Bond_Distortion",
+                           
+                "Rattled",
+                           
+                "Unperturbed",
                             "Dimer",
-                        ]
+                        ,
+            ]  # distortion directories
+        )
+        and "High_Energy" not in dir
+    ]
+
+    # load previously-parsed energies file if present
+    energies_file = f"{path}/{defect}/{defect}.yaml"
+    if os.path.exists(energies_file):
+        try:
+            prev_energies_dict, _, _ = analysis._sort_data(energies_file, verbose=False)
+        except Exception:
+            prev_energies_dict = {}
+    else:
+        prev_energies_dict = {}
+
+    # Parse energies and write them to file
+    for dist in dist_dirs:
+        outcar = None
+        energy = None
+        converged = False
+        if code.lower() == "vasp":
+            converged, energy, outcar = parse_vasp_energy(
+                defect_dir, dist, energy, outcar
+            )
+        elif code.lower() in [
+            "espresso",
+            "quantum_espresso",
+            "quantum-espresso",
+            "quantumespresso",
+        ]:
+            converged, energy, outcar = parse_espresso_energy(
+                defect_dir, dist, energy, outcar
+            )
+        elif code.lower() == "cp2k":
+            converged, energy, outcar = parse_cp2k_energy(
+                defect_dir, dist, energy, outcar
+            )
+        elif code.lower() == "castep":
+            converged, energy, outcar = parse_castep_energy(
+                defect_dir, dist, energy, outcar
+            )
+        elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
+            converged, energy, outcar = parse_fhi_aims_energy(
+                defect_dir, dist, energy, outcar
+            )
+
+        if analysis._format_distortion_names(dist) != "Label_not_recognized":
+            dist_name = analysis._format_distortion_names(dist)
+        else:
+            dist_name = dist
+
+        if energy:
+            if "Unperturbed" in dist:
+                energies[dist_name] = float(energy)
+            else:
+                energies["distortions"][dist_name] = float(energy)
+
+            if not converged:
+                print(f"{dist} for {defect} is not fully relaxed")
+
+        elif not outcar:
+            # check if energy not found, but was previously parsed, then add to dict
+            if dist_name in prev_energies_dict:
+                energies[dist_name] = prev_energies_dict[dist_name]
+            elif (
+                "distortions" in prev_energies_dict
+                and dist_name in prev_energies_dict["distortions"]
+            ):
+                energies["distortions"][dist_name] = prev_energies_dict["distortions"][
+                    dist_name
+                ]
+            else:
+                warnings.warn(f"No output file in {dist} directory")
+
+    # only write energy file if energies have been parsed
+    if energies["distortions"]:
+        if "Unperturbed" in energies and all(
+            value - energies["Unperturbed"] > 0.1
+            for value in energies["distortions"].values()
+        ):
+            warnings.warn(
+                f"All distortions parsed for {defect} are >0.1 eV higher energy than unperturbed, "
+                f"indicating problems with the relaxations. You should first check if the calculations "
+                f"finished ok for this defect species and if this defect charge state is reasonable ("
+                f"often this is the result of an unreasonable charge state). If both checks pass, "
+                f"you likely need to adjust the `stdev` rattling parameter (can occur for "
+                f"hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. – This "
+                f"often indicates a complex PES with multiple minima, thus energy-lowering distortions "
+                f"particularly likely, so important to test with reduced `stdev`!"
+            )
+
+        elif (
+            "Unperturbed" in energies
+            and all(
+                value - energies["Unperturbed"] < -0.1
+                for value in energies["distortions"].values()
+            )
+            and len(energies["distortions"]) > 2
+        ):
+            warnings.warn(
+                f"All distortions parsed for {defect} are <-0.1 eV lower energy than unperturbed. If "
+                f"this happens for multiple defects/charge states, it can indicate that a bulk phase "
+                f"transformation is occurring within your defect supercell. If so, see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#bulk-phase-transformations for "
+                f"advice on dealing with this phenomenon."
+            )
+
+        # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
+        # warn user about output files not being parsed for this entry
+        for key, value in prev_energies_dict.items():
+            if key not in energies:
+                energies[key] = value
+                warnings.warn(
+                    f"No output file in {key} directory, but previous parsed result found in "
+                    f"{energies_file}, using this."
+                )
+            elif key == "distortions":
+                for key2, value2 in prev_energies_dict["distortions"].items():
+                    if key2 not in energies["distortions"]:
+                        energies["distortions"][key2] = value2
+                        warnings.warn(
+                            f"No output file in {key2} directory, but previous parsed result found in "
+                            f"{energies_file}, using this."
+                        )
+
+        energies = sort_energies(energies)
+        save_file(energies, defect, path)
+    else:
+        # check if distortion directories were present but were all "*High_Energy*"
+        try:
+            high_energy_dist_dirs = [
+                dir
+                for dir in os.listdir(defect_dir)
+                if os.path.isdir(os.path.join(defect_dir, dir))
+                and any(
+                    substring in dir
+                    for substring in [
+                        "Bond_Distortion",
+                        "Rattled",
+                        "Unperturbed",
+                                    "Dimer",
                     ]
                 )
-                and "High_Energy" not in dir
+                and "High_Energy" in dir
+            ]
+        except FileNotFoundError:  # no "*High_Energy*" distortion folders
+            high_energy_dist_dirs = []
+        if (
+            high_energy_dist_dirs
+        ):  # "*High_Energy*" distortion directories present and no distortion energies parsed
+            warnings.warn(
+                f"All distortions for {defect} gave positive energies or forces errors, indicating "
+                f"problems with these relaxations. You should first check that no user INCAR setting is "
+                f"causing this issue. If not, you likely need to adjust the `stdev` rattling parameter ("
+                f"can occur for hard/ionic/magnetic materials); see "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
             )
-        ]  # parse distortion directories
-
-        # load previously-parsed energies file if present
-        energies_file = f"{path}/{defect}/{defect}.yaml"
-        if os.path.exists(energies_file):
-            try:
-                prev_energies_dict, _, _ = analysis._sort_data(
-                    energies_file, verbose=False
-                )
-            except Exception:
-                prev_energies_dict = {}
         else:
-            prev_energies_dict = {}
+            warnings.warn(
+                f"Energies could not be parsed for defect '{defect}' in '{path}'. If these directories "
+                f"are correct, check calculations have converged, and that distortion subfolders match "
+                f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
+            )
 
-        # Parse energies and write them to file
-        for dist in dist_dirs:
-            outcar = None
-            energy = None
-            converged = False
-            if code.lower() == "vasp":
-                converged, energy, outcar = parse_vasp_energy(
-                    defect_dir, dist, energy, outcar
-                )
-            elif code.lower() in [
-                "espresso",
-                "quantum_espresso",
-                "quantum-espresso",
-                "quantumespresso",
-            ]:
-                converged, energy, outcar = parse_espresso_energy(
-                    defect_dir, dist, energy, outcar
-                )
-            elif code.lower() == "cp2k":
-                converged, energy, outcar = parse_cp2k_energy(
-                    defect_dir, dist, energy, outcar
-                )
-            elif code.lower() == "castep":
-                converged, energy, outcar = parse_castep_energy(
-                    defect_dir, dist, energy, outcar
-                )
-            elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
-                converged, energy, outcar = parse_fhi_aims_energy(
-                    defect_dir, dist, energy, outcar
-                )
-
-            if analysis._format_distortion_names(dist) != "Label_not_recognized":
-                dist_name = analysis._format_distortion_names(dist)
-            else:
-                dist_name = dist
-
-            if energy:
-                if "Unperturbed" in dist:
-                    energies[dist_name] = float(energy)
-                else:
-                    energies["distortions"][dist_name] = float(energy)
-
-                if not converged:
-                    print(f"{dist} not fully relaxed")
-
-            elif not outcar:
-                # check if energy not found, but was previously parsed, then add to dict
-                if dist_name in prev_energies_dict:
-                    energies[dist_name] = prev_energies_dict[dist_name]
-                elif (
-                    "distortions" in prev_energies_dict
-                    and dist_name in prev_energies_dict["distortions"]
-                ):
-                    energies["distortions"][dist_name] = prev_energies_dict[
-                        "distortions"
-                    ][dist_name]
-                else:
-                    warnings.warn(f"No output file in {dist} directory")
-
-        # only write energy file if energies have been parsed
-        if energies["distortions"]:
-            if "Unperturbed" in energies and all(
-                [
-                    value - energies["Unperturbed"] > 0.1
-                    for value in energies["distortions"].values()
-                ]
-            ):
-                warnings.warn(
-                    f"All distortions parsed for {defect} are >0.1 eV higher energy than "
-                    f"unperturbed, indicating problems with the relaxations. You should first "
-                    f"check if the calculations finished ok for this defect species and if this "
-                    f"defect charge state is reasonable (often this is the result of an "
-                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
-                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
-                    f"materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
-                    f"-ionic-materials. – This often indicates a complex PES with multiple minima, "
-                    f"thus energy-lowering distortions particularly likely, so important to test "
-                    f"with reduced `stdev`!"
-                )
-
-            # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
-            # warn user about output files not being parsed for this entry
-            for key, value in prev_energies_dict.items():
-                if key not in energies:
-                    energies[key] = value
-                    warnings.warn(
-                        f"No output file in {key} directory, but previous parsed result "
-                        f"found in {energies_file}, using this."
-                    )
-                elif key == "distortions":
-                    for key2, value2 in prev_energies_dict["distortions"].items():
-                        if key2 not in energies["distortions"]:
-                            energies["distortions"][key2] = value2
-                            warnings.warn(
-                                f"No output file in {key2} directory, but previous parsed result "
-                                f"found in {energies_file}, using this."
-                            )
-
-            energies = sort_energies(energies)
-            save_file(energies, defect, path)
-        else:
-            # check if distortion directories were present but were all "*High_Energy*"
-            try:
-                high_energy_dist_dirs = [
-                    dir
-                    for dir in os.listdir(defect_dir)
-                    if os.path.isdir(os.path.join(defect_dir, dir))
-                    and (
-                        any(
-                            [
-                                substring in dir
-                                for substring in [
-                                    "Bond_Distortion",
-                                    "Rattled",
-                                    "Unperturbed",
-                                    "Dimer",
-                                ]
-                            ]
-                        )
-                        and "High_Energy" in dir
-                    )
-                ]
-            except FileNotFoundError:  # no "*High_Energy*" distortion folders
-                high_energy_dist_dirs = []
-            if (
-                high_energy_dist_dirs
-            ):  # "*High_Energy*" distortion directories present and no distortion energies parsed
-                warnings.warn(
-                    f"All distortions for {defect} gave positive energies or forces errors, "
-                    f"indicating problems with these relaxations. You should first check that no "
-                    f"user INCAR setting is causing this issue. If not, you likely need to adjust "
-                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
-                    f"materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
-                    f"-ionic-materials."
-                )
-            else:
-                warnings.warn(
-                    f"Energies could not be parsed for defect '{defect}' in '{path}'. "
-                    f"If these directories are correct, check calculations have converged, "
-                    f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-                    f"Bond_Distortion_xxx, Rattled, Unperturbed)"
-                )
-    else:
-        warnings.warn(
-            f"Energies could not be parsed for defect '{defect}' in '{path}'. "
-            f"If these directories are correct, check calculations have converged, "
-            f"and that distortion subfolders match ShakeNBreak naming (e.g. "
-            f"Bond_Distortion_xxx, Rattled, Unperturbed)"
-        )
+    return energies_file
 
 
 # Parsing output structures of different codes
@@ -458,7 +472,7 @@ def read_espresso_structure(
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
-        with open(filename, "r") as f:
+        with open(filename, "r", encoding="utf-8") as f:
             file_content = f.read()
     else:
         warnings.warn(
@@ -718,7 +732,7 @@ def parse_qe_input(path: str) -> dict:
         "ATOMIC_FORCES",
         "SOLVENTS",
     ]
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
     for line in lines:
@@ -773,7 +787,7 @@ def parse_fhi_aims_input(path: str) -> dict:
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {path} does not exist!")
-    with open(path, "r") as f:
+    with open(path, "r", encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
     for line in lines:
@@ -786,15 +800,13 @@ def parse_fhi_aims_input(path: str) -> dict:
                 # Convent numeric values to float
                 # (necessary when feeding into the ASE calculator)
                 for i in range(len(values)):
-                    try:
+                    with contextlib.suppress(
+                        Exception
+                    ):  # Convent numeric values to float
                         values[i] = float(values[i])
-                    except Exception:
-                        pass
             else:
                 key, values = line.split()[0], line.split()[1]
-                try:  # Convent numeric values to float
+                with contextlib.suppress(Exception):
                     values = float(values)
-                except Exception:
-                    pass
             params[key.strip()] = values
     return params
