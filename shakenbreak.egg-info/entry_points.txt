@@ -1,0 +1,19 @@
+[console_scripts]
+shakenbreak = shakenbreak.cli:snb
+shakenbreak-analyse = shakenbreak.cli:analyse
+shakenbreak-generate = shakenbreak.cli:generate
+shakenbreak-generate_all = shakenbreak.cli:generate_all
+shakenbreak-groundstate = shakenbreak.cli:groundstate
+shakenbreak-parse = shakenbreak.cli:parse
+shakenbreak-plot = shakenbreak.cli:plot
+shakenbreak-regenerate = shakenbreak.cli:regenerate
+shakenbreak-run = shakenbreak.cli:run
+snb = shakenbreak.cli:snb
+snb-analyse = shakenbreak.cli:analyse
+snb-generate = shakenbreak.cli:generate
+snb-generate_all = shakenbreak.cli:generate_all
+snb-groundstate = shakenbreak.cli:groundstate
+snb-parse = shakenbreak.cli:parse
+snb-plot = shakenbreak.cli:plot
+snb-regenerate = shakenbreak.cli:regenerate
+snb-run = shakenbreak.cli:run

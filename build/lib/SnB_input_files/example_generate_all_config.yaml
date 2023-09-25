@@ -1,0 +1,45 @@
+## Example config file for snb-generate_all
+
+# General/distortion options
+oxidation_states:
+  Cd: 2
+  Te: -2
+distortion_increment: 0.1
+bond_distortions: [-0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+distorted_elements:  # (Default = None, distorts nearest neighbours)
+  Int_Cd_2:
+    Cd
+dict_number_electrons_user:  # (Default = None, determined from electron change at defect site)
+  Int_Cd_2:
+    2
+
+# Rattle options
+stdev: 0.25  # Rattle standard deviation (Default = 10% of auto-determined bulk bond length)
+d_min: 2.25 # Displacements that place atoms closer than d_min are penalised. (Default = 80% of auto-determined bulk bond length)
+n_iter: 1  # Number of Monte Carlo cycles to perform. (Default: 1)
+active_atoms: None  # Atoms to apply rattle displacement to. (Default = all atoms)
+nbr_cutoff: 5  # The radial cutoff distance (in Angstroms) used to construct the list of atomic neighbours for checking interatomic distances. (Default: 5)
+width: 0.1  # Width of the Monte Carlo rattling error function, in Angstroms. (Default: 0.1)
+max_attempts: 5000  # Limit for how many attempted rattle moves are allowed a single atom; if this limit is reached an `Exception` is raised
+max_disp: 2.0  # Rattle moves that yields a displacement larger than max_disp will always be rejected. Rarely occurs, mostly used as a safety net
+seed: 42  # Seed from which rattle random displacements are generated (Default = 100*distortion_factor, e.g. 40 for -60% distortion, 100 for 0% Distortion/Rattled etc)
+local_rattle: False  # If True, rattle displacements will tail-off as we move away from the defect site. Not recommended as typically worsens performance.
+
+# Defects section: to specify charge states and defect index/frac coords
+defects:
+  vac_1_Cd:  # Name should match your defect structure file/folder
+    charges: [0, -1, -2]  # List of charge states
+    defect_coords: [0.0, 0.0, 0.0]  # Fractional coords for vacancies!
+  Int_Cd_2:
+    charges: [0, +1, +2]
+    defect_index: -1
+
+# Code specific section
+# For VASP, we can specify POTCARs like this:
+POTCAR:
+  Sn: Sn_d  # Element matching its POTCAR symbol
+  Te: Te
+# For Quantum Espresso, we can specify the pseudopotentials like:
+pseudopotentials:
+  Cd: Cd_pbe_v1.uspp.F.UPF
+  Te: Te.pbe-n-rrkjus_psl.1.0.0.UPF
