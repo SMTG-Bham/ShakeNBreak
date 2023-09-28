@@ -181,9 +181,9 @@ def _format_distortion_names(
         # distortions from other charge state of the defect
         return distortion_label.split("Bond_Distortion_")[-1]
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     elif "Dimer" in distortion_label and "_from_" in distortion_label:
-        distortion = distortion_label
+        return distortion_label
     else:
         return "Label_not_recognized"
 
