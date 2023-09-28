@@ -958,7 +958,7 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    element: str,
+    elements: list,
     radius: Optional[float] = 3.3,
     verbose: bool = True,
 ) -> dict:
@@ -970,8 +970,8 @@ def get_homoionic_bonds(
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
-        element (:obj:`str`):
-            element symbol for which to find the homoionic bonds.
+        elements (:obj:`list`):
+            List of element symbols for which to find the homoionic bonds.
         radius (:obj:`float`, optional):
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
@@ -984,10 +984,14 @@ def get_homoionic_bonds(
             homoionic neighbours and distances (A) (e.g.
             {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
     """
+    if isinstance(elements, str): # For backward compatibility
+        elements = [elements,]
+    element = elements[0]
     structure = structure.copy()
-    if Element(element) not in structure.composition.elements:
-        warnings.warn(f"Your structure does not contain element {element}!")
-        return {}
+    for element in elements:
+        if Element(element) not in structure.composition.elements:
+            warnings.warn(f"Your structure does not contain element {element}!")
+            return {}
     # Search for homoionic bonds in the whole structure
     sites = [
         (site_index, site)
@@ -997,32 +1001,39 @@ def get_homoionic_bonds(
     homoionic_bonds = {}
     for site_index, site in sites:
         neighbours = structure.get_neighbors(site, r=radius)
-        if element in [site.species_string for site in neighbours]:
-            site_neighbours = [
-                (
-                    neighbour.species_string,
-                    neighbour.index,
-                    round(neighbour.distance(site), 2),
-                )
-                for neighbour in neighbours
-            ]
-            if f"{site.species_string}({site_index})" not in [
-                list(element.keys())[0] for element in homoionic_bonds.values()
-            ]:  # avoid duplicates
-                homoionic_neighbours = {
-                    f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A"
-                    for neighbour in site_neighbours
-                    if neighbour[0] == element
-                }
-                homoionic_bonds[
-                    f"{site.species_string}({site_index})"
-                ] = homoionic_neighbours
-                if verbose:
-                    print(
-                        f"{site.species_string}({site_index}): "
-                        f"{homoionic_neighbours}",
-                        "\n",
+        # Check if any of the neighbours is the specified elements
+        for element in elements:
+            if element in [site.species_string for site in neighbours]:
+                site_neighbours = [
+                    (
+                        neighbour.species_string,
+                        neighbour.index,
+                        round(neighbour.distance(site), 2),
                     )
+                    for neighbour in neighbours
+                ]
+                if f"{site.species_string}({site_index})" not in [
+                    list(element.keys())[0] for element in homoionic_bonds.values()
+                ]:  # avoid duplicates
+                    homoionic_neighbours = {
+                        f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A"
+                        for neighbour in site_neighbours
+                        if neighbour[0] == element
+                    }
+                    if f"{site.species_string}({site_index})" in homoionic_bonds:
+                        homoionic_bonds[
+                            f"{site.species_string}({site_index})"
+                        ].update(homoionic_neighbours)
+                    else:
+                        homoionic_bonds[
+                            f"{site.species_string}({site_index})"
+                        ] = homoionic_neighbours
+                    if verbose:
+                        print(
+                            f"{site.species_string}({site_index}): "
+                            f"{homoionic_neighbours}",
+                            "\n",
+                        )
     if not homoionic_bonds and verbose:
         print(f"No homoionic bonds found with a search radius of {radius} A")
     return homoionic_bonds
