@@ -842,7 +842,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_print:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_minus0pt3_dimer_ground_state,
-                element="Te",
+                elements=["Te",],
                 radius=2.9,
                 verbose=False,
             )
@@ -852,7 +852,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_unperturbed_print:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_unperturbed,
-                element="Te",
+                elements=["Te",],
                 radius=2.9,
                 verbose=True,
             )
@@ -864,7 +864,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_minus0pt3_dimer_ground_state,
-                element="Na",
+                elements=["Na",],
                 radius=2.9,
                 verbose=False,
             )
