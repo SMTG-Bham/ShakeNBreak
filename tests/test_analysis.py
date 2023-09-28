@@ -93,6 +93,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             "Unperturbed", analysis._format_distortion_names("Unperturbed")
         )
         self.assertEqual("Rattled", analysis._format_distortion_names("Rattled"))
+        self.assertEqual("Dimer", analysis._format_distortion_names("Dimer"))
         self.assertEqual(
             0.3, analysis._format_distortion_names("Bond_Distortion_30.0%")
         )
@@ -102,6 +103,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(
             "Rattled_from_-1", analysis._format_distortion_names("Rattled_from_-1")
+        )
+        self.assertEqual(
+            "Dimer_from_-1", analysis._format_distortion_names("Dimer_from_-1")
         )
         self.assertEqual(
             "Label_not_recognized", analysis._format_distortion_names("Wally_McDoodle")
