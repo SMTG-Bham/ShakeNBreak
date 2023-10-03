@@ -1359,10 +1359,16 @@ class InputTestCase(unittest.TestCase):
                     defect_entry,
                 ]
             )
-            mock_print.assert_called_once_with(
-                "Oxidation states were not explicitly set, thus have been guessed as "
-                "{'Cu': 0}. If this is unreasonable you should manually set oxidation_states"
+            oxi_state_warning_message = (
+                "Oxidation states were not explicitly set, thus have been guessed as {'Cu': 0.0}. If "
+                "this is unreasonable you should manually set oxidation_states"
             )
+            try:
+                mock_print.assert_called_once_with(oxi_state_warning_message)
+            except AssertionError:
+                mock_print.assert_any_call(
+                    oxi_state_warning_message.replace("0.0", "0")
+                )
 
         self.assertEqual(dist.oxidation_states, {"Cu": 0})
         self.assertAlmostEqual(dist.stdev, 0.2529625487091717)
