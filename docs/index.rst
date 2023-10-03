@@ -213,6 +213,7 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
+- Y\. Kumagai, S. R. Kavanagh et al. `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
 - J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
 - X\. Wang et al. `arXiv`_ 2023
