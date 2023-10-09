@@ -801,7 +801,7 @@ def compare_structures(
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
         display_df (:obj:`bool`):
-            Whether or not to display the structure comparison DataFrame
+            Whether to display the structure comparison DataFrame
             interactively in Jupyter/Ipython (Default: True).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
