@@ -84,10 +84,33 @@ to:
   specified element (see next section).
 
 - Specify the total magnetic moment (``NUPDOWN`` in ``VASP``). We recommend to use a wider distortion mesh
-  (``delta = 0.2``) and run main ``NUPDOWN`` possibilities, e.g. if there are two extra/missing electrons run
-  ``NUPDOWN = 0`` (anti-parallel arrangement) and ``NUPDOWN = 2`` (parallel arrangement).
+  (``delta = 0.2``) and test the main ``NUPDOWN`` possibilities, e.g. if there are two extra/missing
+  electrons, trial ``NUPDOWN = 0`` (anti-parallel arrangement) and ``NUPDOWN = 2`` (parallel arrangement).
 
-:code:`neighbour_elements` Use Cases
+Magnetism
+---------
+
+If your host system is magnetic (e.g. (anti-)ferromagnetic), you should initialise the magnetic moments
+(i.e. set the ``MAGMOM`` values in the ``INCAR`` files using ``user_incar_settings`` in
+``Distortions.write_vasp_files()``) to match this.
+
+In these cases, the defect ground-state often involves a polaronic localisation which alters the local
+magnetic moment(s).
+Often the defect formation breaks the (magnetic) symmetry of the host, and so the choice of spin up/down
+for an *anti-ferromagnetic* (AFM) system is no longer arbitrary within a ``VASP`` calculation, as the
+initialisation favours spin-up as the majority spin of the system (by only allowing positive ``NUPDOWN``
+values). To account for this magnetic symmetry-breaking and thus differing localisation solutions for
+different choices of AFM orderings, it is recommended to test both equivalent\ :sup:`‡` AFM orderings for
+each potential polaronic defect state (i.e. when ``NUPDOWN`` is not zero).
+This can be done by 'flipping' the ``MAGMOM`` values (to flip the AFM ordering) by changing the sign of
+each ``MAGMOM`` value for the supercell. If doing this, it is recommended to use a wider distortion mesh
+(``delta = 0.2``) to reduce the number of calculations required, as the testing of both AFM orderings
+should allow sufficient coverage of the defect PES with this reduced sampling.
+
+:sup:`‡` = equivalent for the pristine host system, but not for the defect supercell with ``NUPDOWN`` ≠ 0.
+
+
+``neighbour_elements`` Use Cases
 -------------------------------------
 
 When generating atomic distortions with :code:`ShakeNBreak`, the :code:`neighbour_elements` optional parameter can be
