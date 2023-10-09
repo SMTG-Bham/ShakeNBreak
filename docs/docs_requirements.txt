@@ -1,4 +1,5 @@
 sphinx
+recommonmark
 myst-nb
 sphinx-book-theme
 sphinx_click
