@@ -13,7 +13,7 @@ import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
 from doped import _ignore_pmg_warnings
-from doped.vasp import _test_potcar_functional_choice
+from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
@@ -988,7 +988,7 @@ class InputTestCase(unittest.TestCase):
             )
         self._check_V_Cd_folder_renaming(
             w,
-            "A previously-generated defect folder vac_1_Cd_0 exists in ",
+            "A previously-generated defect distortions folder vac_1_Cd_0 exists in ",
             ", and the Unperturbed defect structure could not be matched to the current defect species: "
             "vac_1_Cd_0. These are assumed to be inequivalent defects, so the previous vac_1_Cd_0 will "
             "be renamed to vac_1_Cda_0 and ShakeNBreak files for the current defect will be saved to "
@@ -1093,7 +1093,7 @@ class InputTestCase(unittest.TestCase):
             )
         self._check_V_Cd_folder_renaming(
             w,
-            "The previously-generated defect folder vac_1_Cdb_0 in ",
+            "The previously-generated defect distortions folder vac_1_Cdb_0 in ",
             " has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be overwritten.",
         )
         if not _potcars_available():  # test POTCAR warning
@@ -1127,7 +1127,7 @@ class InputTestCase(unittest.TestCase):
             )
         self._check_V_Cd_folder_renaming(
             w,
-            "Previously-generated defect folders (vac_1_Cdb_0...) exist in ",
+            "Previously-generated defect distortions folders (vac_1_Cdb_0...) exist in ",
             ", and the Unperturbed defect structures could not be matched to the current defect species: vac_1_Cd_0. These are assumed to be inequivalent defects, so ShakeNBreak files for the current defect will be saved to vac_1_Cdc_0 to prevent overwriting.",
         )
         self.assertTrue(os.path.exists("vac_1_Cdc_0"))
@@ -2270,6 +2270,37 @@ class InputTestCase(unittest.TestCase):
         # reset to doped names:
         self._check_agsbte2_files("Ag_Sb_-2", mock_print, w, charge_state=-2)
         self._check_agsbte2_files("Ag_Sb_0", mock_print, w, charge_state=0)
+
+
+    def test_write_vasp_files_overwriting(self):
+        """
+        Test that no warnings are thrown when the defect folder already
+        exists, but no SnB distortion folders in it (i.e. if doped
+        defect folder already generated).
+        """
+        drs = DefectRelaxSet(self.Ag_Sb_AgSbTe2_m2_defect_entry)
+        drs.write_all(unperturbed_poscar=True)
+
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}"))
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std"))
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/POSCAR"))
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/KPOINTS"))
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_ncl"))
+        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_nkred_std"))
+
+        dist = input.Distortions(self.Ag_Sb_AgSbTe2_m2_defect_entry)
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"IVDW": 12},
+                    verbose=True,
+                )
+
+        self.assertEqual(
+            len([warning for warning in w if warning.category == UserWarning]), 0
+        )
+        self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2)
+
 
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""

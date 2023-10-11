@@ -256,31 +256,47 @@ def _create_vasp_input(
 
     if matching_dirs:  # defect species with same name already present
         # check if Unperturbed structures match
-        match_found = False
+
+        match_found = True
+
         for dir in matching_dirs:
-            with contextlib.suppress(
-                Exception
-            ):  # if Unperturbed structure could not be parsed /
-                # compared to distorted_defect_dict, then pass
-                prev_unperturbed_struc = Structure.from_file(
-                    f"{output_path}/{dir}/Unperturbed/POSCAR"
-                )
-                current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
-                    "Defect Structure"
-                ].copy()
-                for i in [prev_unperturbed_struc, current_unperturbed_struc]:
-                    i.remove_oxidation_states()
-                if prev_unperturbed_struc == current_unperturbed_struc:
-                    warnings.warn(
-                        f"The previously-generated defect folder {dir} in "
-                        f"{os.path.basename(os.path.abspath(output_path))} "
-                        f"has the same Unperturbed defect structure as the current "
-                        f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
-                        f"be overwritten."
+            if any(
+                x in i
+                for i in os.listdir(dir)
+                for x in ["Unperturbed", "Rattled", "Bond_Distortion"]
+            ):
+                # if any SnB folder found in matching_dirs, then we need to check if structures match,
+                # otherwise we can write to this same folder
+                match_found = False
+                break
+
+        if (
+            not match_found
+        ):  # SnB folders in matching_dirs, so check if Unperturbed structures match
+            for dir in matching_dirs:
+                with contextlib.suppress(
+                    Exception
+                ):  # if Unperturbed structure could not be parsed /
+                    # compared to distorted_defect_dict, then pass
+                    prev_unperturbed_struc = Structure.from_file(
+                        f"{output_path}/{dir}/Unperturbed/POSCAR"
                     )
-                    defect_name = dir
-                    match_found = True
-                    break
+                    current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
+                        "Defect Structure"
+                    ].copy()
+                    for i in [prev_unperturbed_struc, current_unperturbed_struc]:
+                        i.remove_oxidation_states()
+                    if prev_unperturbed_struc == current_unperturbed_struc:
+                        warnings.warn(
+                            f"The previously-generated defect folder {dir} in "
+                            f"{os.path.basename(os.path.abspath(output_path))} "
+                            f"has the same Unperturbed defect structure as the current "
+                            f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
+                            f"be overwritten."
+                        )
+                        defect_name = dir
+                        match_found = True
+                        break
 
         if not match_found:  # no matching structure found, assume inequivalent defects
             last_letter = [
@@ -304,7 +320,7 @@ def _create_vasp_input(
                     f"{charge_state}"
                 )
                 warnings.warn(
-                    f"A previously-generated defect folder {prev_dir_name} exists in "
+                    f"A previously-generated defect distortions folder {prev_dir_name} exists in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
                     f"and the Unperturbed defect structure could not be matched to the "
                     f"current defect species: {defect_name}. These are assumed to be "
@@ -324,7 +340,7 @@ def _create_vasp_input(
                     f"_{'+' if charge_state > 0 else ''}{charge_state}"
                 )
                 warnings.warn(
-                    f"Previously-generated defect folders ({prev_dir_name}...) exist in "
+                    f"Previously-generated defect distortions folders ({prev_dir_name}...) exist in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
                     f"and the Unperturbed defect structures could not be matched to the "
                     f"current defect species: {defect_name}. These are assumed to be "
