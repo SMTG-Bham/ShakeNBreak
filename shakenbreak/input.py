@@ -288,7 +288,7 @@ def _create_vasp_input(
                         i.remove_oxidation_states()
                     if prev_unperturbed_struc == current_unperturbed_struc:
                         warnings.warn(
-                            f"The previously-generated defect folder {dir} in "
+                            f"The previously-generated defect distortions folder {dir} in "
                             f"{os.path.basename(os.path.abspath(output_path))} "
                             f"has the same Unperturbed defect structure as the current "
                             f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
@@ -378,10 +378,10 @@ def _create_vasp_input(
     for (
         distortion,
         single_defect_dict,
-    ) in (
-        distorted_defect_dict.items()
-    ):  # for each distortion, create sub-subfolder folder
-        dds._structure = single_defect_dict["Defect Structure"]
+    ) in distorted_defect_dict.items():  # for each distortion, create subfolder
+        dds._structure = single_defect_dict[
+            "Defect Structure"
+        ].get_sorted_structure()  # ensure sorted
         dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
 
         try:
@@ -2306,7 +2306,7 @@ class Distortions:
                     **self._mc_rattle_kwargs,
                 )
 
-                # Remove distortions with interatomic distances less than 1 Angstrom if Hydrogen
+                # Remove distortions with inter-atomic distances less than 1 Angstrom if Hydrogen
                 # not present
                 for dist, struct in list(
                     defect_distorted_structures["distortions"].items()
