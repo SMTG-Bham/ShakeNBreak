@@ -1094,7 +1094,8 @@ class InputTestCase(unittest.TestCase):
         self._check_V_Cd_folder_renaming(
             w,
             "The previously-generated defect distortions folder vac_1_Cdb_0 in ",
-            " has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. ShakeNBreak files in vac_1_Cdb_0 will be overwritten.",
+            " has the same Unperturbed defect structure as the current defect species: vac_1_Cd_0. "
+            "ShakeNBreak files in vac_1_Cdb_0 will be overwritten.",
         )
         if not _potcars_available():  # test POTCAR warning
             assert any(
@@ -1110,6 +1111,9 @@ class InputTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists("vac_1_Cdc_0"))
         V_Cd_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
         self.assertEqual(V_Cd_POSCAR.comment, "V_Cd Unperturbed, Overwritten")
+        self.assertEqual(
+            len(V_Cd_POSCAR.site_symbols), len(set(V_Cd_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_struc)
 
         # 3. Unperturbed structures are present, but don't match. "a" and "b" present,
@@ -1133,8 +1137,14 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists("vac_1_Cdc_0"))
         self.assertFalse(os.path.exists("vac_1_Cdd_0"))
         V_Cd_prev_POSCAR = Poscar.from_file("vac_1_Cdb_0/Unperturbed/POSCAR")
+        self.assertEqual(
+            len(V_Cd_prev_POSCAR.site_symbols), len(set(V_Cd_prev_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(V_Cd_prev_POSCAR.comment, "V_Cd Unperturbed, Overwritten")
         V_Cd_new_POSCAR = Poscar.from_file("vac_1_Cdc_0/Unperturbed/POSCAR")
+        self.assertEqual(
+            len(V_Cd_new_POSCAR.site_symbols), len(set(V_Cd_new_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(V_Cd_new_POSCAR.comment, "V_Cd Rattled, New Folder")
         self.assertEqual(V_Cd_new_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
 
@@ -1145,10 +1155,13 @@ class InputTestCase(unittest.TestCase):
             self.test_create_vasp_input()
 
     def _check_V_Cd_rattled_poscar(self, defect_dir):
-        result = Poscar.from_file(f"{defect_dir}/POSCAR")
-        self.assertEqual(result.comment, "V_Cd Rattled")
-        self.assertEqual(result.structure, self.V_Cd_minus0pt5_struc_rattled)
-        return result
+        poscar = Poscar.from_file(f"{defect_dir}/POSCAR")
+        self.assertEqual(
+            len(poscar.site_symbols), len(set(poscar.site_symbols))
+        )  # no duplicates
+        self.assertEqual(poscar.comment, "V_Cd Rattled")
+        self.assertEqual(poscar.structure, self.V_Cd_minus0pt5_struc_rattled)
+        return poscar
 
     def _check_V_Cd_folder_renaming(self, w, top_dir, defect_dir):
         self.assertTrue(
@@ -1504,6 +1517,9 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
+            len(V_Cd_POSCAR.site_symbols), len(set(V_Cd_POSCAR.site_symbols))
+        )  # no duplicates
+        self.assertEqual(
             V_Cd_POSCAR.comment,
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
@@ -1544,6 +1560,9 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
+        self.assertEqual(
+            len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
@@ -1598,6 +1617,10 @@ class InputTestCase(unittest.TestCase):
             "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertEqual(
+            len(V_Cd_minus0pt5_POSCAR.site_symbols),
+            len(set(V_Cd_minus0pt5_POSCAR.site_symbols)),
+        )  # no duplicates
+        self.assertEqual(
             V_Cd_minus0pt5_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled
         )
         self.assertEqual(
@@ -1645,6 +1668,10 @@ class InputTestCase(unittest.TestCase):
         V_Cd_kwarged_POSCAR = Poscar.from_file(
             "vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
         )
+        self.assertEqual(
+            len(V_Cd_kwarged_POSCAR.site_symbols),
+            len(set(V_Cd_kwarged_POSCAR.site_symbols)),
+        )  # no duplicates
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
@@ -1856,6 +1883,9 @@ class InputTestCase(unittest.TestCase):
         _int_Cd_2_POSCAR = Poscar.from_file(
             "Int_Cd_2_+1/Unperturbed/POSCAR"
         )  # test POSCAR loaded fine
+        self.assertEqual(
+            len(_int_Cd_2_POSCAR.site_symbols), len(set(_int_Cd_2_POSCAR.site_symbols))
+        )  # no duplicates
         kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
@@ -1966,6 +1996,10 @@ class InputTestCase(unittest.TestCase):
             "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR"
         )
         self.assertEqual(
+            len(V_Cd_kwarged_POSCAR.site_symbols),
+            len(set(V_Cd_kwarged_POSCAR.site_symbols)),
+        )  # no duplicates
+        self.assertEqual(
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
 
@@ -2038,6 +2072,9 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(f"{V_Cd_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
+            len(V_Cd_POSCAR.site_symbols), len(set(V_Cd_POSCAR.site_symbols))
+        )  # no duplicates
+        self.assertEqual(
             V_Cd_POSCAR.comment,
             "-50.0% N(Distort)=2 ~[0.5,0.5,0.5]",  # closest to middle
         )  # default
@@ -2077,6 +2114,9 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
+        self.assertEqual(
+            len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.3,0.4,0.4]",  # closest to middle
@@ -2150,6 +2190,12 @@ class InputTestCase(unittest.TestCase):
             poscar.comment,
             f"{distortion_folder} N(Distort)={int(2 + charge_state)} ~[0.5,0.9,0.6]",
         )  # closest to middle default
+
+        # check correct element ordering in POSCAR:
+        self.assertEqual(
+            len(poscar.site_symbols), len(set(poscar.site_symbols))
+        )  # no duplicates
+
         kpoints = Kpoints.from_file(f"{folder_name}/{distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
@@ -2271,7 +2317,6 @@ class InputTestCase(unittest.TestCase):
         self._check_agsbte2_files("Ag_Sb_-2", mock_print, w, charge_state=-2)
         self._check_agsbte2_files("Ag_Sb_0", mock_print, w, charge_state=0)
 
-
     def test_write_vasp_files_overwriting(self):
         """
         Test that no warnings are thrown when the defect folder already
@@ -2282,11 +2327,23 @@ class InputTestCase(unittest.TestCase):
         drs.write_all(unperturbed_poscar=True)
 
         self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}"))
-        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std"))
-        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/POSCAR"))
-        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/KPOINTS"))
-        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_ncl"))
-        self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_nkred_std"))
+        self.assertTrue(
+            os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std")
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/POSCAR")
+        )
+        self.assertTrue(
+            os.path.exists(
+                f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_std/KPOINTS"
+            )
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_ncl")
+        )
+        self.assertTrue(
+            os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}/vasp_nkred_std")
+        )
 
         dist = input.Distortions(self.Ag_Sb_AgSbTe2_m2_defect_entry)
         with patch("builtins.print") as mock_print:
@@ -2299,8 +2356,9 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             len([warning for warning in w if warning.category == UserWarning]), 0
         )
-        self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2)
-
+        self._check_agsbte2_files(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2
+        )
 
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""
@@ -2534,6 +2592,10 @@ class InputTestCase(unittest.TestCase):
             V_Cd_POSCAR.comment,
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
+        self.assertEqual(
+            len(V_Cd_POSCAR.site_symbols), len(set(V_Cd_POSCAR.site_symbols))
+        )  # no duplicates
+
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
@@ -2544,6 +2606,9 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
         )
+        self.assertEqual(
+            len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(
             # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure,
@@ -3369,6 +3434,9 @@ class InputTestCase(unittest.TestCase):
             V_Cd_POSCAR.comment,
             "-50.0% N(Distort)=2 ~[0.0,0.0,0.0]",
         )  # default
+        self.assertEqual(
+            len(V_Cd_POSCAR.site_symbols), len(set(V_Cd_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
@@ -3416,6 +3484,9 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        self.assertEqual(
+            len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
+        )  # no duplicates
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
