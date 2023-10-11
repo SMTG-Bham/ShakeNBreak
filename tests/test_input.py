@@ -113,7 +113,7 @@ class InputTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Bulk_Supercell_POSCAR")
         )
 
-        self.cdte_doped_defect_dict = loadfn(
+        self.cdte_doped_defect_dict = loadfn(  # old doped defects dict
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
         self.cdte_doped_reduced_defect_gen = loadfn(
@@ -2102,10 +2102,20 @@ class InputTestCase(unittest.TestCase):
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
             }
 
-    def _check_agsbte2_files(self, folder_name, mock_print, w):
+    def _check_agsbte2_files(self, folder_name, mock_print, w, charge_state=-2):
         # check if expected folders were created:
         self.assertTrue(os.path.exists(f"{folder_name}"))
-        for i in ["Rattled", "Unperturbed"]:
+        if charge_state == -2:
+            folder_list = ["Rattled", "Unperturbed"]
+        else:
+            folder_list = [
+                "Unperturbed",
+                "Bond_Distortion_-50.0%",
+                "Bond_Distortion_20.0%",
+            ]  # just
+            # check sub-sample
+
+        for i in folder_list:
             self.assertTrue(os.path.exists(f"{folder_name}/{i}"))
             self.assertTrue(os.path.exists(f"{folder_name}/{i}/POSCAR"))
             self.assertTrue(os.path.exists(f"{folder_name}/{i}/KPOINTS"))
@@ -2129,24 +2139,26 @@ class InputTestCase(unittest.TestCase):
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            f"\nDefect {defect_wout_charge} in charge state: -2. Number of distorted neighbours: 0"
+            f"\nDefect {defect_wout_charge} in charge state: {int(charge_state)}. Number of distorted "
+            f"neighbours: {int(2 + charge_state)}"
         )
 
         # check if correct files were created:
-        rattled_poscar = Poscar.from_file(f"{folder_name}/Rattled/POSCAR")
+        distortion_folder = "Rattled" if charge_state == -2 else "Unperturbed"
+        poscar = Poscar.from_file(f"{folder_name}/{distortion_folder}/POSCAR")
         self.assertEqual(
-            rattled_poscar.comment,
-            "Rattled N(Distort)=0 ~[0.5,0.9,0.6]",  # closest to middle
-        )  # default
-        kpoints = Kpoints.from_file(f"{folder_name}/Rattled/KPOINTS")
+            poscar.comment,
+            f"{distortion_folder} N(Distort)={int(2 + charge_state)} ~[0.5,0.9,0.6]",
+        )  # closest to middle default
+        kpoints = Kpoints.from_file(f"{folder_name}/{distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
             # check if POTCARs have been written:
-            potcar = Potcar.from_file(f"{folder_name}/Rattled/POTCAR")
+            potcar = Potcar.from_file(f"{folder_name}/{distortion_folder}/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {
                 input.default_potcar_dict["POTCAR"][el_symbol]
-                for el_symbol in rattled_poscar.structure.symbol_set
+                for el_symbol in poscar.structure.symbol_set
             }
         else:  # test POTCAR warning
             assert any(
@@ -2175,7 +2187,9 @@ class InputTestCase(unittest.TestCase):
                     verbose=True,
                 )
 
-        self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w)
+        self._check_agsbte2_files(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w
+        )
 
     def test_write_vasp_files_from_doped_defect_entry_wout_name(self):
         """
@@ -2194,6 +2208,68 @@ class InputTestCase(unittest.TestCase):
                 _, distortion_metadata = dist.write_vasp_files()
 
         self._check_agsbte2_files("Ag_Sb_-2", mock_print, w)
+
+    def test_write_vasp_files_from_doped_defect_entry_list(self):
+        """
+        Test Distortions() class with input of doped DefectEntry list.
+        Here the DefectEntry.name attributes are set in all cases, so
+        these should be used as the folder names for the defects.
+
+        Note that here we test all name attributes set for DefectEntry
+        list, the next test ("w_incomplete_names") tests with only some
+        name attributes set, and then `test_write_vasp_files_from_list`
+        tests no name attributes set.
+        """
+        Ag_Sb_AgSbTe2_neutral_defect_entry = copy.deepcopy(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry
+        )
+        Ag_Sb_AgSbTe2_neutral_defect_entry.charge_state = 0
+        Ag_Sb_AgSbTe2_neutral_defect_entry.name = (
+            Ag_Sb_AgSbTe2_neutral_defect_entry.name.rsplit("_", 1)[0] + "_0"
+        )
+
+        dist = input.Distortions(
+            [self.Ag_Sb_AgSbTe2_m2_defect_entry, Ag_Sb_AgSbTe2_neutral_defect_entry],
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"IVDW": 12},
+                    verbose=True,
+                )
+
+        self._check_agsbte2_files(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2
+        )
+        self._check_agsbte2_files(
+            Ag_Sb_AgSbTe2_neutral_defect_entry.name, mock_print, w, charge_state=0
+        )
+
+    def test_write_vasp_files_from_doped_defect_entry_list_w_incomplete_names(self):
+        """
+        Test Distortions() class with input of doped DefectEntry list.
+        Here the DefectEntry.name attributes are not set in all cases, so
+        the doped defect names are regenerated and used as folder names.
+        """
+        Ag_Sb_AgSbTe2_neutral_defect_entry = copy.deepcopy(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry
+        )
+        Ag_Sb_AgSbTe2_neutral_defect_entry.charge_state = 0
+        delattr(Ag_Sb_AgSbTe2_neutral_defect_entry, "name")
+
+        dist = input.Distortions(
+            [self.Ag_Sb_AgSbTe2_m2_defect_entry, Ag_Sb_AgSbTe2_neutral_defect_entry],
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"IVDW": 12},
+                    verbose=True,
+                )
+
+        # reset to doped names:
+        self._check_agsbte2_files("Ag_Sb_-2", mock_print, w, charge_state=-2)
+        self._check_agsbte2_files("Ag_Sb_0", mock_print, w, charge_state=0)
 
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""
@@ -2317,7 +2393,11 @@ class InputTestCase(unittest.TestCase):
             self.assertIn(no_bulk_error, e.exception)
 
     def test_write_vasp_files_from_list(self):
-        """Test Distortion() class with Defect list input"""
+        """
+        Test Distortion() class with DefectEntry list input.
+        Here, the DefectEntry.name attributes are not set, and
+        so the doped defect names are regenerated.
+        """
         # Test normal behaviour
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(self.cdte_defect_list)
