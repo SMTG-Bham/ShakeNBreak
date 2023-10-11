@@ -1157,45 +1157,64 @@ def _get_defects_dict_from_defects_entries(defect_entries):
     """
     Return a dictionary in the SnB format:
     {"defect_name_wout_charge": [DefectEntry, ...]} for the given defect_entries list.
+
+    If the DefectEntry.name attribute is set for all DefectEntrys in defect_entries,
+    then these are used to obtain 'defect_name_wout_charge', otherwise the names are
+    set to the default doped defect names.
     """
-    # defect_entries is a list of DefectEntry objects which likely has duplicate DefectEntry's of the
-    # same type but different charge state. So get list of included charge states for each
-    # DefectEntry.defect base name:
-    charge_state_dict = {
-        defect_entry.defect.name: [
-            entry.charge_state
-            for entry in defect_entries
-            if entry.defect.name == defect_entry.defect.name
-        ]
-        for defect_entry in defect_entries
-    }
+    # check if all defect_entries have a name attribute set:
+    if all(getattr(defect_entry, "name", False) for defect_entry in defect_entries):
+        snb_defects_dict = {
+            defect_entry.name.rsplit("_", 1)[0]: [  # defect names without charge
+                def_entry
+                for def_entry in defect_entries
+                if def_entry.name.rsplit("_", 1)[0]
+                == defect_entry.name.rsplit("_", 1)[0]
+            ]
+            for defect_entry in defect_entries
+        }
 
-    # subselect defect_entries to those with a unique defect.defect_structure to avoid duplicates:
-    sm = StructureMatcher()
-    defect_entry_list = []
-    for defect_entry in defect_entries:
-        if not any(
-            sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure)
-            for entry in defect_entry_list
-        ):
-            # ensure sc_defect_frac_coords defined:
-            _find_sc_defect_coords(defect_entry)
-            defect_entry_list.append(defect_entry)
+    else:
+        # defect_entries is a list of DefectEntry objects which likely has duplicate DefectEntry's of the
+        # same type but different charge state. So get list of included charge states for each
+        # DefectEntry.defect base name:
+        charge_state_dict = {
+            defect_entry.defect.name: [
+                entry.charge_state
+                for entry in defect_entries
+                if entry.defect.name == defect_entry.defect.name
+            ]
+            for defect_entry in defect_entries
+        }
 
-    defect_entries_dict = name_defect_entries(
-        defect_entry_list
-    )  # DefectsGenerator.defect_entries
-    # format: {"defect_species": DefectEntry} -> convert:
-    snb_defects_dict = {
-        defect_entry_name_wout_charge: []
-        for defect_entry_name_wout_charge in defect_entries_dict
-    }
+        # sub-select defect_entries to those with a unique defect.defect_structure to avoid duplicates:
+        sm = StructureMatcher()
+        defect_entry_list = []
+        for defect_entry in defect_entries:
+            if not any(
+                sm.fit(
+                    defect_entry.defect.defect_structure, entry.defect.defect_structure
+                )
+                for entry in defect_entry_list
+            ):
+                # ensure sc_defect_frac_coords defined:
+                _find_sc_defect_coords(defect_entry)
+                defect_entry_list.append(defect_entry)
 
-    for name_wout_charge, defect_entry in defect_entries_dict.items():
-        for charge in charge_state_dict[defect_entry.defect.name]:
-            charged_defect_entry = copy.deepcopy(defect_entry)
-            charged_defect_entry.charge_state = charge
-            snb_defects_dict[name_wout_charge].append(charged_defect_entry)
+        defect_entries_dict = name_defect_entries(
+            defect_entry_list
+        )  # DefectsGenerator.defect_entries
+        # format: {"defect_species": DefectEntry} -> convert:
+        snb_defects_dict = {
+            defect_entry_name_wout_charge: []
+            for defect_entry_name_wout_charge in defect_entries_dict
+        }
+
+        for name_wout_charge, defect_entry in defect_entries_dict.items():
+            for charge in charge_state_dict[defect_entry.defect.name]:
+                charged_defect_entry = copy.deepcopy(defect_entry)
+                charged_defect_entry.charge_state = charge
+                snb_defects_dict[name_wout_charge].append(charged_defect_entry)
 
     return snb_defects_dict
 
@@ -1590,7 +1609,8 @@ class Distortions:
                 set equal to `defect_species` (with charge states included). If
                 a list or single `DefectEntry` object is provided, the defect
                 folder names will be set equal to `DefectEntry.name` if the `name`
-                attribute is set, otherwise generated according to the `doped` convention
+                attribute is set for all input `DefectEntry`s, otherwise generated
+                according to the `doped` convention
                 (see: https://doped.readthedocs.io/en/latest/dope_workflow_example.html).
 
                 Defect charge states (from which bond distortions are determined) are

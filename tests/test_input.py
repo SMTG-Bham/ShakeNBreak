@@ -407,6 +407,10 @@ class InputTestCase(unittest.TestCase):
         # Get the current locale setting
         self.original_locale = locale.getlocale(locale.LC_CTYPE)  # should be UTF-8
 
+        self.Ag_Sb_AgSbTe2_m2_defect_entry = loadfn(
+            f"{self.DATA_DIR}/Ag_Sb_Cs_Te2.90_-2.json"
+        )
+
     def tearDown(self) -> None:
         # reset locale:
         locale.setlocale(locale.LC_CTYPE, self.original_locale)  # should be UTF-8
@@ -415,7 +419,9 @@ class InputTestCase(unittest.TestCase):
         for i in self.cdte_defect_folders_old_names + self.cdte_defect_folders:
             if_present_rm(i)
         for i in os.listdir():
-            if os.path.isdir(i) and ("v_Te" in i or "v_Cd" in i or "vac_1_Cd" in i):
+            if os.path.isdir(i) and any(
+                x in i for x in ["v_Te", "v_Cd", "vac_1_Cd", "Ag_Sb"]
+            ):
                 if_present_rm(i)
         for fname in os.listdir("./"):
             if fname.endswith("json"):  # distortion_metadata and parsed_defects_dict
@@ -2095,6 +2101,99 @@ class InputTestCase(unittest.TestCase):
                 input.default_potcar_dict["POTCAR"][el_symbol]
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
             }
+
+    def _check_agsbte2_files(self, folder_name, mock_print, w):
+        # check if expected folders were created:
+        self.assertTrue(os.path.exists(f"{folder_name}"))
+        for i in ["Rattled", "Unperturbed"]:
+            self.assertTrue(os.path.exists(f"{folder_name}/{i}"))
+            self.assertTrue(os.path.exists(f"{folder_name}/{i}/POSCAR"))
+            self.assertTrue(os.path.exists(f"{folder_name}/{i}/KPOINTS"))
+            if _potcars_available():
+                self.assertTrue(os.path.exists(f"{folder_name}/{i}/INCAR"))
+                self.assertTrue(os.path.exists(f"{folder_name}/{i}/POTCAR"))
+
+        # check expected info printing:
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6'].",
+            "Then, will rattle with a std dev of 0.29 Å \n",
+        )
+        defect_wout_charge = folder_name.rsplit("_", 1)[0]
+        mock_print.assert_any_call(
+            "\033[1m" + f"\nDefect: {defect_wout_charge}" + "\033[0m"
+        )  # bold print
+        mock_print.assert_any_call(
+            "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
+        )
+        mock_print.assert_any_call(
+            f"\nDefect {defect_wout_charge} in charge state: -2. Number of distorted neighbours: 0"
+        )
+
+        # check if correct files were created:
+        rattled_poscar = Poscar.from_file(f"{folder_name}/Rattled/POSCAR")
+        self.assertEqual(
+            rattled_poscar.comment,
+            "Rattled N(Distort)=0 ~[0.5,0.9,0.6]",  # closest to middle
+        )  # default
+        kpoints = Kpoints.from_file(f"{folder_name}/Rattled/KPOINTS")
+        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+
+        if _potcars_available():
+            # check if POTCARs have been written:
+            potcar = Potcar.from_file(f"{folder_name}/Rattled/POTCAR")
+            assert set(potcar.as_dict()["symbols"]) == {
+                input.default_potcar_dict["POTCAR"][el_symbol]
+                for el_symbol in rattled_poscar.structure.symbol_set
+            }
+        else:  # test POTCAR warning
+            assert any(
+                str(warning.message)
+                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
+                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
+                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
+                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
+                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
+                for warning in w
+            )
+
+    def test_write_vasp_files_from_doped_defect_entry(self):
+        """
+        Test Distortions() class with (new) doped DefectEntry input.
+        If the DefectEntry.name attribute is set, then this should be
+        used as the folder name for the defect.
+        """
+        dist = input.Distortions(
+            self.Ag_Sb_AgSbTe2_m2_defect_entry,
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files(
+                    user_incar_settings={"IVDW": 12},
+                    verbose=True,
+                )
+
+        self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w)
+
+    def test_write_vasp_files_from_doped_defect_entry_wout_name(self):
+        """
+        Test Distortions() class with (new) doped DefectEntry input.
+        Here the DefectEntry.name attribute is not set (e.g. manual
+        DefectEntry generation from the user), and so the doped
+        defect name is regenerated.
+        """
+        defect_entry = copy.deepcopy(self.Ag_Sb_AgSbTe2_m2_defect_entry)
+        delattr(defect_entry, "name")
+        dist = input.Distortions(
+            defect_entry,
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                _, distortion_metadata = dist.write_vasp_files()
+
+        self._check_agsbte2_files("Ag_Sb_-2", mock_print, w)
 
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""
