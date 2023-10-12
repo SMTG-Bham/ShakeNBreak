@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. image:: https://github.com/SMTG-UCL/ShakeNBreak/actions/workflows/test.yml/badge.svg
- :target: https://github.com/SMTG-UCL/ShakeNBreak/actions
+.. image:: https://github.com/SMTG-Bham/ShakeNBreak/actions/workflows/test.yml/badge.svg
+ :target: https://github.com/SMTG-Bham/ShakeNBreak/actions
 
 .. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat
  :target: https://shakenbreak.readthedocs.io/en/latest/
@@ -106,7 +106,7 @@ For development work, ``ShakeNBreak`` can also be installed from a copy of the s
 
    .. code:: bash
 
-      git clone https://github.com/SMTG-UCL/ShakeNBreak
+      git clone https://github.com/SMTG-Bham/ShakeNBreak
 
 2. Navigate to root directory:
 
@@ -191,7 +191,7 @@ Contributing
 Bugs reports, feature requests and questions
 ----------------------------------------------
 
-Please use the `Issue Tracker <https://github.com/SMTG-UCL/ShakeNBreak/issues>`_
+Please use the `Issue Tracker <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_
 to report bugs or request new features.
 
 Contributions to extend this package are very welcome! Please use the
@@ -213,9 +213,10 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
+- X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
+- Y\. Kumagai, S. R. Kavanagh et al. `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
 - J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
-- X\. Wang et al. `arXiv`_ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
 - J\. Willis & R. Claes et al. `ChemRxiv <https://doi.org/10.26434/chemrxiv-2023-lttnf>`__ 2023
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
@@ -234,7 +235,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
-.. _arXiv: https://arxiv.org/abs/2302.04901
 .. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
 .. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
@@ -257,7 +257,7 @@ You may also find this Preview paper useful, which discusses the general problem
 
 - Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_. *Matter* 4 (8), 2602-2605, **2021**
 
-``BibTeX`` entries for these papers are provided in the repository `CITATIONS.md <https://github.com/SMTG-UCL/ShakeNBreak/blob/main/CITATIONS.md>`_ file.
+``BibTeX`` entries for these papers are provided in the repository `CITATIONS.md <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/CITATIONS.md>`_ file.
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
 .. _Journal of Open Source Software: https://doi.org/10.21105/joss.04817
@@ -298,4 +298,4 @@ Requirements
    Code_Compatibility
    Contributing
    changelog_link
-   ShakeNBreak on GitHub <https://github.com/SMTG-UCL/ShakeNBreak>
+   ShakeNBreak on GitHub <https://github.com/SMTG-Bham/ShakeNBreak>

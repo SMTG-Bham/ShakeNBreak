@@ -25,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '3.2.2'
+release = '3.2.3'
 
 
 # -- General configuration ---------------------------------------------------
@@ -89,7 +89,7 @@ html_use_smartypants = True
 # html_show_sphinx = True
 
 html_theme_options = {
-    "repository_url": "https://github.com/SMTG-UCL/ShakeNBreak",
+    "repository_url": "https://github.com/SMTG-Bham/ShakeNBreak",
     "repository_branch": "develop",
     "path_to_docs": "docs",
     "use_repository_button": True,
@@ -99,7 +99,7 @@ html_theme_options = {
 # Adding “Edit Source” links on your Sphinx theme
 html_context = {
     "display_github": True, # Integrate GitHub
-    "github_user": "SMTG-UCL", # Username
+    "github_user": "SMTG-Bham", # Username
     "github_repo": "ShakeNBreak", # Repo name
     "github_version": "master", # Version
     "conf_py_path": "/docs/", # Path in the checkout to the docs root
