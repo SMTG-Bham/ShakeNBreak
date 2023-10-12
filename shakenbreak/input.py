@@ -257,19 +257,16 @@ def _create_vasp_input(
     if matching_dirs:  # defect species with same name already present
         # check if Unperturbed structures match
 
-        match_found = True
-
-        for dir in matching_dirs:
-            if any(
+        # first check if any SnB folders are present in matching_dirs (if so then need to check if
+        # structures match), otherwise we can write to this same folder
+        match_found = not any(
+            any(
                 x in i
                 for i in os.listdir(dir)
                 for x in ["Unperturbed", "Rattled", "Bond_Distortion"]
-            ):
-                # if any SnB folder found in matching_dirs, then we need to check if structures match,
-                # otherwise we can write to this same folder
-                match_found = False
-                break
-
+            )
+            for dir in matching_dirs
+        )
         if (
             not match_found
         ):  # SnB folders in matching_dirs, so check if Unperturbed structures match
@@ -384,37 +381,12 @@ def _create_vasp_input(
         ].get_sorted_structure()  # ensure sorted
         dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
 
-        try:
-            dds._check_user_potcars(unperturbed_poscar=False)
-            dds.write_input(f"{output_path}/{defect_name}/{distortion}", **kwargs)
-
-        except ValueError:
-            # POTCARs not set up, warn and write other files
-            warnings.warn(
-                "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\n"
-                "No `POTCAR` files will be written, and `NELECT` and `NUPDOWN` will not be set in "
-                "`INCAR`s. Beware!"
-            )
-
-            os.makedirs(f"{output_path}/{defect_name}/{distortion}", exist_ok=True)
-            dds.incar.write_file(f"{output_path}/{defect_name}/{distortion}/INCAR")
-            dds.poscar.write_file(f"{output_path}/{defect_name}/{distortion}/POSCAR")
-            try:
-                dds.kpoints.write_file(
-                    f"{output_path}/{defect_name}/{distortion}/KPOINTS"
-                )
-            except UnicodeEncodeError:
-                kpoints_settings = dds.kpoints.as_dict()
-                kpoints_settings["comment"] = (
-                    kpoints_settings["comment"]
-                    .replace("Å⁻³", "Angstrom^(" "-3)")
-                    .replace("Γ", "Gamma")
-                )
-                kpoints = Kpoints.from_dict(kpoints_settings)
-                kpoints.write_file(f"{output_path}/{defect_name}/{distortion}/KPOINTS")
+        dds.write_input(
+            f"{output_path}/{defect_name}/{distortion}",
+            unperturbed_poscar=True,
+            snb=True,
+            **kwargs,
+        )
 
 
 def _get_bulk_comp(defect_object) -> Composition:

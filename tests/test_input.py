@@ -962,13 +962,7 @@ class InputTestCase(unittest.TestCase):
                 len(w) == 2
             )  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         # test with kwargs:
@@ -1017,13 +1011,7 @@ class InputTestCase(unittest.TestCase):
             }  # Cd_sv_GW POTCAR has Cd_sv symbol, checked
         else:  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         # test output_path option
@@ -1099,13 +1087,7 @@ class InputTestCase(unittest.TestCase):
         )
         if not _potcars_available():  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         self.assertFalse(os.path.exists("vac_1_Cdc_0"))
@@ -1548,13 +1530,7 @@ class InputTestCase(unittest.TestCase):
             }
         else:  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
@@ -1906,13 +1882,7 @@ class InputTestCase(unittest.TestCase):
             assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
         else:  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         # check correct output for "extra" electrons and positive charge state:
@@ -2102,13 +2072,7 @@ class InputTestCase(unittest.TestCase):
             }
         else:  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
         Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
@@ -2208,13 +2172,7 @@ class InputTestCase(unittest.TestCase):
             }
         else:  # test POTCAR warning
             assert any(
-                str(warning.message)
-                == "POTCAR directory not set up with pymatgen (see the doped docs Installation page: "
-                "https://doped.readthedocs.io/en/latest/Installation.html for instructions on setting "
-                "this up). This is required to generate `POTCAR` files and set `NELECT` (i.e. charge "
-                "state) and `NUPDOWN` in the `INCAR` files!\nNo `POTCAR` files will be written, and "
-                "`NELECT` and `NUPDOWN` will not be set in `INCAR`s. Beware!"
-                for warning in w
+                "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
     def test_write_vasp_files_from_doped_defect_entry(self):
@@ -2319,9 +2277,9 @@ class InputTestCase(unittest.TestCase):
 
     def test_write_vasp_files_overwriting(self):
         """
-        Test that no warnings are thrown when the defect folder already
-        exists, but no SnB distortion folders in it (i.e. if doped
-        defect folder already generated).
+        Test that no overwriting warnings are thrown when the defect
+        folder already exists, but no SnB distortion folders in it
+        (i.e. if doped defect folder already generated).
         """
         drs = DefectRelaxSet(self.Ag_Sb_AgSbTe2_m2_defect_entry)
         drs.write_all(unperturbed_poscar=True)
@@ -2354,7 +2312,14 @@ class InputTestCase(unittest.TestCase):
                 )
 
         self.assertEqual(
-            len([warning for warning in w if warning.category == UserWarning]), 0
+            len(
+                [
+                    warning
+                    for warning in w
+                    if "reviously-generated" in str(warning.message)
+                ]
+            ),
+            0,
         )
         self._check_agsbte2_files(
             self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2
