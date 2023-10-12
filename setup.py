@@ -130,7 +130,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.2.2",
+    version="3.2.3",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -163,7 +163,7 @@ setup(
         "numpy",  # >=1.21.2" needed for numpy.typing.NDArray?
         "pymatgen>=2022.10.22",
         "pymatgen-analysis-defects>=2022.10.28",
-        "matplotlib",
+        "matplotlib>=3.6",
         "ase",
         "pandas>=1.1.0",
         "seaborn",
@@ -228,7 +228,7 @@ setup(
         "Homepage": "https://shakenbreak.readthedocs.io/en/latest/index.html",
         "Documentation": "https://shakenbreak.readthedocs.io/en/latest/index.html",
         "Package": "https://pypi.org/project/shakenbreak/",
-        "Repository": "https://github.com/SMTG-UCL/shakenbreak",
+        "Repository": "https://github.com/SMTG-Bham/shakenbreak",
     },
 )
 

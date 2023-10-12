@@ -203,8 +203,8 @@ def _create_vasp_input(
             Dictionary of user VASP INCAR settings, to overwrite/update the
             `doped` defaults.
         user_potcar_functional (str):
-                POTCAR functional to use. Default is "PBE" and if this fails,
-                tries "PBE_52", then "PBE_54".
+            POTCAR functional to use. Default is "PBE" and if this fails,
+            tries "PBE_52", then "PBE_54".
         user_potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update
             the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
@@ -256,31 +256,47 @@ def _create_vasp_input(
 
     if matching_dirs:  # defect species with same name already present
         # check if Unperturbed structures match
-        match_found = False
+
+        match_found = True
+
         for dir in matching_dirs:
-            with contextlib.suppress(
-                Exception
-            ):  # if Unperturbed structure could not be parsed /
-                # compared to distorted_defect_dict, then pass
-                prev_unperturbed_struc = Structure.from_file(
-                    f"{output_path}/{dir}/Unperturbed/POSCAR"
-                )
-                current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
-                    "Defect Structure"
-                ].copy()
-                for i in [prev_unperturbed_struc, current_unperturbed_struc]:
-                    i.remove_oxidation_states()
-                if prev_unperturbed_struc == current_unperturbed_struc:
-                    warnings.warn(
-                        f"The previously-generated defect folder {dir} in "
-                        f"{os.path.basename(os.path.abspath(output_path))} "
-                        f"has the same Unperturbed defect structure as the current "
-                        f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
-                        f"be overwritten."
+            if any(
+                x in i
+                for i in os.listdir(dir)
+                for x in ["Unperturbed", "Rattled", "Bond_Distortion"]
+            ):
+                # if any SnB folder found in matching_dirs, then we need to check if structures match,
+                # otherwise we can write to this same folder
+                match_found = False
+                break
+
+        if (
+            not match_found
+        ):  # SnB folders in matching_dirs, so check if Unperturbed structures match
+            for dir in matching_dirs:
+                with contextlib.suppress(
+                    Exception
+                ):  # if Unperturbed structure could not be parsed /
+                    # compared to distorted_defect_dict, then pass
+                    prev_unperturbed_struc = Structure.from_file(
+                        f"{output_path}/{dir}/Unperturbed/POSCAR"
                     )
-                    defect_name = dir
-                    match_found = True
-                    break
+                    current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
+                        "Defect Structure"
+                    ].copy()
+                    for i in [prev_unperturbed_struc, current_unperturbed_struc]:
+                        i.remove_oxidation_states()
+                    if prev_unperturbed_struc == current_unperturbed_struc:
+                        warnings.warn(
+                            f"The previously-generated defect distortions folder {dir} in "
+                            f"{os.path.basename(os.path.abspath(output_path))} "
+                            f"has the same Unperturbed defect structure as the current "
+                            f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
+                            f"be overwritten."
+                        )
+                        defect_name = dir
+                        match_found = True
+                        break
 
         if not match_found:  # no matching structure found, assume inequivalent defects
             last_letter = [
@@ -304,7 +320,7 @@ def _create_vasp_input(
                     f"{charge_state}"
                 )
                 warnings.warn(
-                    f"A previously-generated defect folder {prev_dir_name} exists in "
+                    f"A previously-generated defect distortions folder {prev_dir_name} exists in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
                     f"and the Unperturbed defect structure could not be matched to the "
                     f"current defect species: {defect_name}. These are assumed to be "
@@ -324,7 +340,7 @@ def _create_vasp_input(
                     f"_{'+' if charge_state > 0 else ''}{charge_state}"
                 )
                 warnings.warn(
-                    f"Previously-generated defect folders ({prev_dir_name}...) exist in "
+                    f"Previously-generated defect distortions folders ({prev_dir_name}...) exist in "
                     f"{os.path.basename(os.path.abspath(output_path))}, "
                     f"and the Unperturbed defect structures could not be matched to the "
                     f"current defect species: {defect_name}. These are assumed to be "
@@ -362,10 +378,10 @@ def _create_vasp_input(
     for (
         distortion,
         single_defect_dict,
-    ) in (
-        distorted_defect_dict.items()
-    ):  # for each distortion, create sub-subfolder folder
-        dds._structure = single_defect_dict["Defect Structure"]
+    ) in distorted_defect_dict.items():  # for each distortion, create subfolder
+        dds._structure = single_defect_dict[
+            "Defect Structure"
+        ].get_sorted_structure()  # ensure sorted
         dds.poscar_comment = single_defect_dict.get("POSCAR Comment", None)
 
         try:
@@ -1157,45 +1173,64 @@ def _get_defects_dict_from_defects_entries(defect_entries):
     """
     Return a dictionary in the SnB format:
     {"defect_name_wout_charge": [DefectEntry, ...]} for the given defect_entries list.
+
+    If the DefectEntry.name attribute is set for all DefectEntrys in defect_entries,
+    then these are used to obtain 'defect_name_wout_charge', otherwise the names are
+    set to the default doped defect names.
     """
-    # defect_entries is a list of DefectEntry objects which likely has duplicate DefectEntry's of the
-    # same type but different charge state. So get list of included charge states for each
-    # DefectEntry.defect base name:
-    charge_state_dict = {
-        defect_entry.defect.name: [
-            entry.charge_state
-            for entry in defect_entries
-            if entry.defect.name == defect_entry.defect.name
-        ]
-        for defect_entry in defect_entries
-    }
+    # check if all defect_entries have a name attribute set:
+    if all(getattr(defect_entry, "name", False) for defect_entry in defect_entries):
+        snb_defects_dict = {
+            defect_entry.name.rsplit("_", 1)[0]: [  # defect names without charge
+                def_entry
+                for def_entry in defect_entries
+                if def_entry.name.rsplit("_", 1)[0]
+                == defect_entry.name.rsplit("_", 1)[0]
+            ]
+            for defect_entry in defect_entries
+        }
 
-    # subselect defect_entries to those with a unique defect.defect_structure to avoid duplicates:
-    sm = StructureMatcher()
-    defect_entry_list = []
-    for defect_entry in defect_entries:
-        if not any(
-            sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure)
-            for entry in defect_entry_list
-        ):
-            # ensure sc_defect_frac_coords defined:
-            _find_sc_defect_coords(defect_entry)
-            defect_entry_list.append(defect_entry)
+    else:
+        # defect_entries is a list of DefectEntry objects which likely has duplicate DefectEntry's of the
+        # same type but different charge state. So get list of included charge states for each
+        # DefectEntry.defect base name:
+        charge_state_dict = {
+            defect_entry.defect.name: [
+                entry.charge_state
+                for entry in defect_entries
+                if entry.defect.name == defect_entry.defect.name
+            ]
+            for defect_entry in defect_entries
+        }
 
-    defect_entries_dict = name_defect_entries(
-        defect_entry_list
-    )  # DefectsGenerator.defect_entries
-    # format: {"defect_species": DefectEntry} -> convert:
-    snb_defects_dict = {
-        defect_entry_name_wout_charge: []
-        for defect_entry_name_wout_charge in defect_entries_dict
-    }
+        # sub-select defect_entries to those with a unique defect.defect_structure to avoid duplicates:
+        sm = StructureMatcher()
+        defect_entry_list = []
+        for defect_entry in defect_entries:
+            if not any(
+                sm.fit(
+                    defect_entry.defect.defect_structure, entry.defect.defect_structure
+                )
+                for entry in defect_entry_list
+            ):
+                # ensure sc_defect_frac_coords defined:
+                _find_sc_defect_coords(defect_entry)
+                defect_entry_list.append(defect_entry)
 
-    for name_wout_charge, defect_entry in defect_entries_dict.items():
-        for charge in charge_state_dict[defect_entry.defect.name]:
-            charged_defect_entry = copy.deepcopy(defect_entry)
-            charged_defect_entry.charge_state = charge
-            snb_defects_dict[name_wout_charge].append(charged_defect_entry)
+        defect_entries_dict = name_defect_entries(
+            defect_entry_list
+        )  # DefectsGenerator.defect_entries
+        # format: {"defect_species": DefectEntry} -> convert:
+        snb_defects_dict = {
+            defect_entry_name_wout_charge: []
+            for defect_entry_name_wout_charge in defect_entries_dict
+        }
+
+        for name_wout_charge, defect_entry in defect_entries_dict.items():
+            for charge in charge_state_dict[defect_entry.defect.name]:
+                charged_defect_entry = copy.deepcopy(defect_entry)
+                charged_defect_entry.charge_state = charge
+                snb_defects_dict[name_wout_charge].append(charged_defect_entry)
 
     return snb_defects_dict
 
@@ -1590,7 +1625,8 @@ class Distortions:
                 set equal to `defect_species` (with charge states included). If
                 a list or single `DefectEntry` object is provided, the defect
                 folder names will be set equal to `DefectEntry.name` if the `name`
-                attribute is set, otherwise generated according to the `doped` convention
+                attribute is set for all input `DefectEntry`s, otherwise generated
+                according to the `doped` convention
                 (see: https://doped.readthedocs.io/en/latest/dope_workflow_example.html).
 
                 Defect charge states (from which bond distortions are determined) are
@@ -2270,7 +2306,7 @@ class Distortions:
                     **self._mc_rattle_kwargs,
                 )
 
-                # Remove distortions with interatomic distances less than 1 Angstrom if Hydrogen
+                # Remove distortions with inter-atomic distances less than 1 Angstrom if Hydrogen
                 # not present
                 for dist, struct in list(
                     defect_distorted_structures["distortions"].items()

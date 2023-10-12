@@ -125,18 +125,10 @@ class CLITestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
-            elif (
-                "Vac_Cd" in i
-                or "Int_Cd" in i
-                or "Wally_McDoodle" in i
-                or "pesky_defects" in i
-                or "vac_1_Cd" in i
-                or "v_Cd" in i
-                or "v_Te" in i
-                or "Cd_i" in i
-                or "_defect_folder" in i
-                or "Te_Cd" in i
-            ):
+            elif any(x in i for x in [
+                "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects", "vac_1_Cd", "v_Cd", "v_Te", "Cd_i",
+                "_defect_folder", "Te_Cd", "Te_i_Td_Te2.83"
+            ]):
                 shutil.rmtree(i)
 
         for defect in os.listdir(self.EXAMPLE_RESULTS):
@@ -154,11 +146,11 @@ class CLITestCase(unittest.TestCase):
             elif os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}"):
                 os.remove(f"{self.EXAMPLE_RESULTS}/{defect}")
 
-        if_present_rm(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
-        if_present_rm(f"{self.EXAMPLE_RESULTS}/vac_1_Ti_0_defect_folder")
-        if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0_defect_folder")
+        for i in os.listdir(f"{self.EXAMPLE_RESULTS}"):
+            if any(x in i for x in ["pesky_defects", "vac_1_Ti_0_defect_folder", "v_Ti_0_defect_folder",
+                                    "test_groundstate_all", "Te_i_Td_Te2.83"]):
+                if_present_rm(f"{self.EXAMPLE_RESULTS}/{i}")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
-        if_present_rm(f"{self.EXAMPLE_RESULTS}/test_groundstate_all")
 
         # Remove re-generated files
         folder = "Bond_Distortion_-60.0%_from_0"
@@ -3271,6 +3263,41 @@ Chosen VASP error message: {error_string}
             for file in os.listdir(os.path.join(self.EXAMPLE_RESULTS, defect))
             if "yaml" in file or "png" in file
         ]
+
+        # test with new doped naming
+        defect = "Te_i_Td_Te2.83_+2"
+        shutil.copytree(f"{self.EXAMPLE_RESULTS}/v_Ti_0", f"{self.EXAMPLE_RESULTS}/{defect}")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-d",
+                    defect,
+                    "-p",
+                    self.EXAMPLE_RESULTS,
+                    "-v",
+                ],
+            )
+        self.assertIn(
+            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
+            "and unperturbed: -3.26 eV.",
+            result.output,
+        )  # verbose output
+        self.assertIn(
+            f"Plot saved to {defect}/{defect}.png", result.output
+        )
+        self.assertEqual(w[0].category, UserWarning)
+        self.assertEqual(
+            f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or {self.EXAMPLE_RESULTS}/"
+            f"{defect}/distortion_metadata.json not found. Will not parse "
+            "its contents (to specify which neighbour atoms were distorted in plot text).",
+            str(w[0].message),
+        )
+        self.assertTrue(
+            os.path.exists(os.path.join(self.EXAMPLE_RESULTS, defect, defect + ".png"))
+        )
+        self.tearDown()
 
         # Test --all option, with the distortion_metadata.json file present to parse number of
         # distorted neighbours and their identities
