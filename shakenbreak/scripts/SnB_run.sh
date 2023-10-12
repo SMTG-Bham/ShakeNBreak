@@ -112,7 +112,7 @@ SnB_run_loop() {
               echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
             fi
             echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
-            # sed -i 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
+            # sed -i'' 's/IBRION.*/IBRION = 1/g' INCAR # sometimes helps to change IBRION if relaxation not converging
             builtin cd .. || return
             continue
           fi
@@ -126,7 +126,7 @@ SnB_run_loop() {
             if [ "$verbose" = true ]; then
               echo "${i%?} is showing poor electronic convergence, changing ALGO to All."
             fi
-            sed -i 's/ALGO.*/ALGO = All/g' INCAR
+            sed -i'' 's/ALGO.*/ALGO = All/g' INCAR
           fi
         fi
 
@@ -146,7 +146,7 @@ SnB_run_loop() {
         # check if calc was spin-polarised and magnetisation below threshold, then switch to ISPIN = 1
         if grep -q "ISPIN  =      2" OUTCAR; then  # spin-polarised calc
           if snb-mag; then
-            sed -i 's/ISPIN.*/ISPIN = 1  # atomic magnetization in previous run below threshold/' INCAR
+            sed -i'' 's/ISPIN.*/ISPIN = 1  # atomic magnetization in previous run below threshold/' INCAR
           fi
         fi
       fi
