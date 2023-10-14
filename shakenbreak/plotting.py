@@ -1308,11 +1308,9 @@ def plot_colorbar(
                 alpha=1,
             )
 
-        if (
-            len(sorted_distortions) > 0
-            and len([key for key in energies_dict["distortions"] if key != "Rattled"])
-            > 0
-        ):  # more than just Rattled
+        if len(sorted_distortions) > 0 and [
+            key for key in energies_dict["distortions"] if key != "Rattled"
+        ]:  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
                     i
@@ -1349,11 +1347,11 @@ def plot_colorbar(
             # Datapoints from other charge states
             if imported_indices:
                 other_charges = len(
-                    list(
+                    [  # number of other charge states whose distortions have been imported
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
                         for i in imported_indices.keys()
-                    )
-                )  # number of other charge states whose distortions have been imported
+                    ]
+                )
                 for i, j in zip(imported_indices.keys(), range(other_charges)):
                     other_charge_state = int(
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
