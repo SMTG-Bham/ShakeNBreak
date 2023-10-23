@@ -215,7 +215,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 
 - X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
 - Y\. Kumagai, S. R. Kavanagh et al. `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
-- J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
+- J\. Willis, K. B. Spooner, D. O. Scanlon. `Applied Physics Letters <https://doi.org/10.1063/5.0170552>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
 - J\. Willis & R. Claes et al. `ChemRxiv <https://doi.org/10.26434/chemrxiv-2023-lttnf>`__ 2023
