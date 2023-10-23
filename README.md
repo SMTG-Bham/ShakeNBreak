@@ -131,7 +131,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 
 - X. Wang et al. [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023
 - Y. Kumagai, S. R. Kavanagh et al [_PRX Energy_](http://dx.doi.org/10.1103/PRXEnergy.2.043002) 2023
-- J. Willis, K. B. Spooner, D. O. Scanlon. [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb) 2023
+- J. Willis, K. B. Spooner, D. O. Scanlon. [_Applied Physics Letters_](https://doi.org/10.1063/5.0170552) 2023
 - A. T. J. Nicolson et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA02429F) 2023
 - J. Cen et al. [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA00532A) 2023
 - J. Willis & R. Claes et al. [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2023-lttnf) 2023
@@ -144,6 +144,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 
 
 <!-- Se -->
+<!-- Ke Sb2O5 -->
 <!-- Oba book -->
 <!-- BiOI -->
 <!-- Kumagai collab paper -->
