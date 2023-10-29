@@ -20,11 +20,8 @@ from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
 from doped import _ignore_pmg_warnings
-from doped.generation import (
-    DefectsGenerator,
-    get_defect_name_from_entry,
-    name_defect_entries,
-)
+from doped.core import DefectEntry
+from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
     get_defect_site_idxs_and_unrelaxed_structure,
     get_defect_type_and_composition_diff,
@@ -34,7 +31,6 @@ from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.core import Defect
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
-from pymatgen.analysis.defects.thermo import DefectEntry
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
@@ -476,6 +472,13 @@ def _get_defect_entry_from_defect(
             structure=defect.defect_structure,
             energy=0.0,  # needs to be set, so set to 0.0
         ),
+        bulk_entry=ComputedStructureEntry(
+            structure=defect.structure,
+            energy=0.0,  # needs to be set, so set to 0.0
+        ),
+        defect_supercell_site=defect.site,
+        defect_supercell=defect.defect_structure,
+        bulk_supercell=defect.structure,
     )
     if defect_entry is None:
         raise ValueError("DefectEntry could not be generated.")
