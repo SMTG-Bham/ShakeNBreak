@@ -1006,9 +1006,9 @@ class InputTestCase(unittest.TestCase):
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_kwarg_folder}/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {
-                "Cd_sv",
+                "Cd_sv_GW",  # PBE_64 set now has "GW" with Cd_sv_GW POTCAR symbol (previously didn't)
                 "Te_GW",
-            }  # Cd_sv_GW POTCAR has Cd_sv symbol, checked
+            }
         else:  # test POTCAR warning
             assert any(
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
@@ -1649,7 +1649,8 @@ class InputTestCase(unittest.TestCase):
             len(set(V_Cd_kwarged_POSCAR.site_symbols)),
         )  # no duplicates
         self.assertEqual(
-            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+            V_Cd_kwarged_POSCAR.structure.get_sorted_structure(),
+            self.V_Cd_minus0pt5_struc_kwarged.get_sorted_structure()
         )
         rounded_bond_distortions = np.around(bond_distortions, 3)
         np.testing.assert_equal(
@@ -1879,7 +1880,7 @@ class InputTestCase(unittest.TestCase):
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file("Int_Cd_2_+1/Unperturbed/POTCAR")
-            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te_GW"}
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv_GW", "Te_GW"}
         else:  # test POTCAR warning
             assert any(
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
@@ -1970,7 +1971,8 @@ class InputTestCase(unittest.TestCase):
             len(set(V_Cd_kwarged_POSCAR.site_symbols)),
         )  # no duplicates
         self.assertEqual(
-            V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
+            V_Cd_kwarged_POSCAR.structure.get_sorted_structure(),
+            self.V_Cd_minus0pt5_struc_kwarged.get_sorted_structure()
         )
 
     def test_write_vasp_files_from_doped_defect_gen(self):

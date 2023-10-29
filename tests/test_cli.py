@@ -1354,7 +1354,7 @@ POTCAR:
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POTCAR")
-            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv", "Te"}
+            assert set(potcar.as_dict()["symbols"]) == {"Cd_sv_GW", "Te"}
 
         if_present_rm(defects_dir)
         for charge in range(-2, 3):
