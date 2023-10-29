@@ -13,6 +13,7 @@ import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
 from doped import _ignore_pmg_warnings
+from doped.generation import get_defect_name_from_entry
 from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
@@ -427,6 +428,11 @@ class InputTestCase(unittest.TestCase):
             if fname.endswith("json"):  # distortion_metadata and parsed_defects_dict
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
+
+        regen_defect_folder_names = [get_defect_name_from_entry(self.cdte_defects[old_key][0]) for old_key in self.new_names_old_names_CdTe.values()]
+        for i in os.listdir():
+            if os.path.isdir(i) and any(x in i for x in regen_defect_folder_names):
+                if_present_rm(i)
 
     def test_get_bulk_comp(self):
         V_Cd_comp = input._get_bulk_comp(self.V_Cd)
@@ -2464,8 +2470,8 @@ class InputTestCase(unittest.TestCase):
             "oxidation_states"
         )
         pmg_defects = {
-            new_key: self.cdte_defects[old_key]
-            for new_key, old_key in self.new_names_old_names_CdTe.items()
+            get_defect_name_from_entry(self.cdte_defects[old_key][0]): self.cdte_defects[old_key]
+            for old_key in self.new_names_old_names_CdTe.values()
         }
         # self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
         # so we compare each DefectEntry (with same charge)
@@ -2483,18 +2489,6 @@ class InputTestCase(unittest.TestCase):
             set(self.cdte_defect_folders_old_names).issubset(set(os.listdir()))
         )  # new pmg names
 
-        self.assertTrue(
-            set(
-                [
-                    folder_name
-                    for folder_name in self.cdte_defect_folders  # default charge states,
-                    # but here we've generated from doped dict so uses doped's charge states
-                    if not (
-                        folder_name.startswith("Cd_i") and folder_name.endswith("-1")
-                    )
-                ]
-            ).issubset(set(os.listdir()))
-        )
         # check expected info printing:
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
@@ -2504,32 +2498,32 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd_Td_Te2.83" + "\033[0m"  # generates full defect names now
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: -2. Number of distorted " "neighbours: 0"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: -2. Number of distorted " "neighbours: 0"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: -1. Number of distorted " "neighbours: 1"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: -1. Number of distorted " "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: 0. Number of distorted " "neighbours: 2"
         )
         # test correct distorted neighbours based on oxidation states:
         mock_print.assert_any_call(
-            "\nDefect v_Te in charge state: -2. Number of distorted " "neighbours: 4"
+            "\nDefect v_Te_Td_Cd2.83 in charge state: -2. Number of distorted " "neighbours: 4"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_Te in charge state: -2. Number of " "distorted neighbours: 2"
+            "\nDefect Cd_Te_Td_Cd2.83 in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_Cd in charge state: -2. Number of " "distorted neighbours: 2"
+            "\nDefect Te_Cd_Td_Te2.83 in charge state: -2. Number of " "distorted neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Cd_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect Cd_i_C3v_Cd2.71 in charge state: 0. Number of distorted " "neighbours: 2"
         )
         mock_print.assert_any_call(
             "\nDefect Cd_i_Td_Cd2.83 in charge state: 0. Number of distorted "
@@ -2540,7 +2534,7 @@ class InputTestCase(unittest.TestCase):
             "neighbours: 2"
         )
         mock_print.assert_any_call(
-            "\nDefect Te_i_C3v in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect Te_i_C3v_Cd2.71 in charge state: 0. Number of distorted " "neighbours: 2"
         )
         mock_print.assert_any_call(
             "\nDefect Te_i_Td_Cd2.83 in charge state: 0. Number of distorted "
@@ -2552,7 +2546,7 @@ class InputTestCase(unittest.TestCase):
         )
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
+        V_Cd_Bond_Distortion_folder = "v_Cd_Td_Te2.83_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
@@ -2566,7 +2560,7 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
+        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
@@ -2606,18 +2600,18 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd_Td_Te2.83" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Te" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Te_Td_Cd2.83" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m"
         )
-        for defect_name in ["v_Cd", "v_Te"]:
+        for defect_name in ["v_Cd_Td_Te2.83", "v_Te_Td_Cd2.83"]:
             self.assertTrue(
                 os.path.exists(f"{defect_name}_0/Bond_Distortion_-30.0%/POSCAR")
             )
@@ -2683,14 +2677,14 @@ class InputTestCase(unittest.TestCase):
             vacancies_entries,
         )
         dist_defects_dict, dist_metadata = dist.write_vasp_files()
-        for defect_name in ["v_Cd", "v_Te"]:
+        for defect_name in ["v_Cd_Td_Te2.83", "v_Te_Td_Cd2.83"]:
             self.assertTrue(
                 os.path.exists(f"{defect_name}_+1/Bond_Distortion_-30.0%/POSCAR")
             )  # +1 charge state exists for both
             self.assertFalse(os.path.exists(f"{defect_name}_+7"))
-        self.assertFalse(os.path.exists("v_Cd_+2"))
-        self.assertTrue(os.path.exists("v_Te_+3"))
-        self.assertFalse(os.path.exists("v_Te_+4"))
+        self.assertFalse(os.path.exists("v_Cd_Td_Te2.83_+2"))
+        self.assertTrue(os.path.exists("v_Te_Td_Cd2.83_+3"))
+        self.assertFalse(os.path.exists("v_Te_Td_Cd2.83_+4"))
         self.tearDown()
 
     @patch("builtins.print")
@@ -3359,7 +3353,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict["v_Cd_Td_Te2.83"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3378,23 +3372,23 @@ class InputTestCase(unittest.TestCase):
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call(
-            "\033[1m" + "\nDefect: v_Cd" + "\033[0m"
+            "\033[1m" + "\nDefect: v_Cd_Td_Te2.83" + "\033[0m"
         )  # bold print
         mock_print.assert_any_call(
             "\033[1m" + "Number of missing electrons in neutral state: 2" + "\033[0m"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: -2. Number of distorted " "neighbours: 0"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: -2. Number of distorted " "neighbours: 0"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: -1. Number of distorted " "neighbours: 1"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: -1. Number of distorted " "neighbours: 1"
         )
         mock_print.assert_any_call(
-            "\nDefect v_Cd in charge state: 0. Number of distorted " "neighbours: 2"
+            "\nDefect v_Cd_Td_Te2.83 in charge state: 0. Number of distorted " "neighbours: 2"
         )
 
         # check if correct files were created:
-        V_Cd_Bond_Distortion_folder = "v_Cd_0/Bond_Distortion_-50.0%"
+        V_Cd_Bond_Distortion_folder = "v_Cd_Td_Te2.83_0/Bond_Distortion_-50.0%"
         self.assertTrue(os.path.exists(V_Cd_Bond_Distortion_folder))
         V_Cd_POSCAR = Poscar.from_file(V_Cd_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
@@ -3424,7 +3418,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict["v_Cd_Td_Te2.83"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3437,7 +3431,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["Cd_i_C3v"]
+                    for i in dist.defects_dict["Cd_i_C3v_Cd2.71"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3448,7 +3442,7 @@ class InputTestCase(unittest.TestCase):
             )
 
         # check if correct files were created:
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
+        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
         self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
         Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
@@ -3495,7 +3489,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict["v_Cd_Td_Te2.83"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3517,7 +3511,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict["v_Cd_Td_Te2.83"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3545,10 +3539,10 @@ class InputTestCase(unittest.TestCase):
                 ],
                 bulk=self.CdTe_bulk_struc,
             )
-        self.assertEqual(dist.defects_dict["Cd_i_C3v"][0].defect.defect_site_index, 0)
+        self.assertEqual(dist.defects_dict["Cd_i_C3v_Cd2.71"][0].defect.defect_site_index, 0)
         self.assertEqual(
             list(
-                dist.defects_dict["Cd_i_C3v"][0].defect.defect_structure[0].frac_coords
+                dist.defects_dict["Cd_i_C3v_Cd2.71"][0].defect.defect_structure[0].frac_coords
             ),
             list([0.8125, 0.1875, 0.8125]),
         )
@@ -3564,7 +3558,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict[list(dist.defects_dict.keys())[0]]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3596,7 +3590,7 @@ class InputTestCase(unittest.TestCase):
             self.assertEqual(
                 [
                     i.defect
-                    for i in dist.defects_dict["v_Cd"]
+                    for i in dist.defects_dict["v_Cd_Td_Te2.83"]
                     if i.charge_state == charge
                 ][0],
                 [
@@ -3614,16 +3608,16 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions.from_structures(
                 "wrong type!", bulk=self.CdTe_bulk_struc
             )  # `defect_entries` as string
-            self.assertIn(no_bulk_error, e.exception)
+            self.assertIn(wrong_type_error, e.exception)
 
-        if_present_rm(os.path.join("Cd_i_C3v_+3"))
-        if_present_rm(os.path.join("v_Cd_-3"))  # default padding
+        if_present_rm(os.path.join("Cd_i_C3v_Cd2.71_+3"))
+        if_present_rm(os.path.join("v_Cd_Td_Te2.83_-3"))  # default padding
 
         # Test padding usage
         # test default
         dist = input.Distortions.from_structures(self.V_Cd_struc, self.CdTe_bulk_struc)
         dist.write_vasp_files()
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         self.assertTrue(
             os.path.exists(f"{defect_name}_+1/Bond_Distortion_-30.0%/POSCAR")
         )
