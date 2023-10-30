@@ -1237,7 +1237,7 @@ nonsense_key: nonsense_value"""
         defects_dir = "pesky_defects"
         os.mkdir(defects_dir)
         runner = CliRunner()
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1363,7 +1363,6 @@ POTCAR:
 
         # Test defects not organised in folders
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1432,7 +1431,6 @@ POTCAR:
 
         # Test defects with new pymatgen naming
         # Test defect_settings (charges, defect index/coords)
-        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")
         shutil.copyfile(
@@ -1504,7 +1502,6 @@ POTCAR:
         # CONFIG file
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
-        defect_name = "v_Cd"
         os.mkdir(defects_dir)
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -1616,12 +1613,12 @@ POTCAR:
             result.output,  # test auto-determined stdev and bond length
         )
         self.assertIn(
-            f"Defect v_Cd in charge state: 0. Number of distorted neighbours: 2",
+            f"Defect v_Cd_Td_Te2.83 in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         # Not only neutral charge state because auto-determined defect name doesn't match config
         self.assertIn(
-            f"Defect v_Cd in charge state: -2. Number of distorted neighbours: 0",
+            f"Defect v_Cd_Td_Te2.83 in charge state: -2. Number of distorted neighbours: 0",
             result.output,
         )
         self.assertIn("--Distortion 30.0%", result.output)
@@ -1632,13 +1629,13 @@ POTCAR:
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
-            self.assertTrue(os.path.exists(f"v_Cd_0/{dist}/POSCAR"))
-            self.assertTrue(os.path.exists(f"v_Cd_-1/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_Td_Te2.83_0/{dist}/POSCAR"))
+            self.assertTrue(os.path.exists(f"v_Cd_Td_Te2.83_-1/{dist}/POSCAR"))
         # The input_file option is tested in local test, as INCAR
         # not written in Github Actions
 
         # test padding
-        defect_name = "v_Cd"
+        defect_name = "v_Cd_Td_Te2.83"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",

@@ -339,6 +339,18 @@ class InputTestCase(unittest.TestCase):
             "Te_i_C3v": "Int_Te_2",
             "Te_i_Td_Te2.83": "Int_Te_3",
         }
+        self.new_full_names_old_names_CdTe = {
+            "v_Cd_Td_Te2.83": "vac_1_Cd",
+            "v_Te_Td_Cd2.83": "vac_2_Te",
+            "Cd_Te_Td_Cd2.83": "as_1_Cd_on_Te",
+            "Te_Cd_Td_Te2.83": "as_1_Te_on_Cd",
+            "Cd_i_Td_Cd2.83": "Int_Cd_1",
+            "Cd_i_C3v_Cd2.71": "Int_Cd_2",
+            "Cd_i_Td_Te2.83": "Int_Cd_3",
+            "Te_i_Td_Cd2.83": "Int_Te_1",
+            "Te_i_C3v_Cd2.71": "Int_Te_2",
+            "Te_i_Td_Te2.83": "Int_Te_3",
+        }
         self.cdte_defect_folders = [  # different charge states!
             "Cd_Te_-2",
             "Cd_Te_-1",
@@ -482,7 +494,7 @@ class InputTestCase(unittest.TestCase):
             ]
         )
         defect_dict, _ = Dist.apply_distortions()
-        output_frac_coords = defect_dict["v_Cd"]["defect_supercell_site"].frac_coords
+        output_frac_coords = defect_dict["v_Cd_Td_Te2.83"]["defect_supercell_site"].frac_coords
         self.assertEqual(intput_frac_coords.tolist(), output_frac_coords.tolist())
 
     @patch("builtins.print")
@@ -1331,11 +1343,11 @@ class InputTestCase(unittest.TestCase):
         # test Distortions() initialised fine with a single Defect
         dist = input.Distortions(self.V_Cd_entries)
         assert np.isclose(
-            dist.defects_dict["v_Cd"][0].sc_defect_frac_coords,
+            dist.defects_dict["v_Cd_Td_Te2.83"][0].sc_defect_frac_coords,
             self.cdte_defects["vac_1_Cd"][0].sc_defect_frac_coords,
         ).all()
         self.assertEqual(
-            dist.defects_dict["v_Cd"][0].defect, self.cdte_defects["vac_1_Cd"][0].defect
+            dist.defects_dict["v_Cd_Td_Te2.83"][0].defect, self.cdte_defects["vac_1_Cd"][0].defect
         )
 
     def test_Distortions_single_atom_primitive(self):
@@ -2428,8 +2440,8 @@ class InputTestCase(unittest.TestCase):
                 os.path.exists(f"{defect_name}_0/Bond_Distortion_-30.0%/POSCAR")
             )
             # get key for value = defect_name in self.new_names_dict
-            snb_name = list(self.new_names_old_names_CdTe.keys())[
-                list(self.new_names_old_names_CdTe.values()).index(defect_name)
+            snb_name = list(self.new_full_names_old_names_CdTe.keys())[
+                list(self.new_full_names_old_names_CdTe.values()).index(defect_name)
             ]
             self.assertDictEqual(
                 doped_dict_metadata["defects"][defect_name],
@@ -2470,8 +2482,8 @@ class InputTestCase(unittest.TestCase):
             "oxidation_states"
         )
         pmg_defects = {
-            get_defect_name_from_entry(self.cdte_defects[old_key][0]): self.cdte_defects[old_key]
-            for old_key in self.new_names_old_names_CdTe.values()
+            new_key: self.cdte_defects[old_key] for new_key, old_key in
+            self.new_full_names_old_names_CdTe.items()
         }
         # self.assertDictEqual(dist.defects_dict, pmg_defects)  # order of list of DefectEntries varies
         # so we compare each DefectEntry (with same charge)

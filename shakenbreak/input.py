@@ -20,7 +20,7 @@ from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
 from doped import _ignore_pmg_warnings
-from doped.core import DefectEntry
+from doped.core import Defect, DefectEntry
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
     get_defect_site_idxs_and_unrelaxed_structure,
@@ -29,7 +29,7 @@ from doped.utils.parsing import (
 from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
-from pymatgen.analysis.defects.core import Defect
+from pymatgen.analysis.defects import core, thermo
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
@@ -1683,13 +1683,16 @@ class Distortions:
 
         # To allow user to specify defect names (with CLI), `defect_entries` can be either
         # a dict or list of DefectEntry's, or a single DefectEntry
-        if isinstance(defect_entries, DefectEntry):
+        if isinstance(defect_entries, (DefectEntry, thermo.DefectEntry)):
             defect_entries = [
                 defect_entries,
             ]
         # To account for this, here we refactor the list into a dict
         if isinstance(defect_entries, list):
-            if not all(isinstance(defect, DefectEntry) for defect in defect_entries):
+            if not all(
+                isinstance(defect, (DefectEntry, thermo.DefectEntry))
+                for defect in defect_entries
+            ):
                 raise TypeError(
                     "Some entries in `defect_entries` list are not DefectEntry objects (required "
                     "format, see docstring). Distortions can also be initialised from "
@@ -1741,7 +1744,7 @@ class Distortions:
             else:
                 # check if {defect_species: DefectEntry} dict:
                 if all(
-                    isinstance(defect, DefectEntry)
+                    isinstance(defect, (DefectEntry, thermo.DefectEntry))
                     for defect in defect_entries.values()
                 ):
                     self.defects_dict = {
@@ -1757,7 +1760,7 @@ class Distortions:
                 else:
                     for defect_entry_list in defect_entries.values():
                         if not all(
-                            isinstance(defect_entry, DefectEntry)
+                            isinstance(defect_entry, (DefectEntry, thermo.DefectEntry))
                             for defect_entry in defect_entry_list
                         ):
                             raise TypeError(
