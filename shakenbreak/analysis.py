@@ -175,6 +175,7 @@ def _format_distortion_names(
         "%"
     ):
         return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
+    # From other charge states
     elif distortion_label.startswith("Bond_Distortion") and (
         "_from_" in distortion_label
     ):
@@ -183,6 +184,18 @@ def _format_distortion_names(
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
         return distortion_label
     elif "Dimer" in distortion_label and "_from_" in distortion_label:
+        return distortion_label
+    # detected as High_Energy - normally wouldn't be parsed, but for debugging purposes
+    # TODO: remove this
+    elif (
+        distortion_label.startswith("Bond_Distortion") 
+        and "High_Energy" in distortion_label
+    ):
+        return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
+    elif (
+        ("Dimer" in distortion_label or "Rattled" in distortion_label)
+        and "High_Energy" in distortion_label
+    ):
         return distortion_label
     else:
         return "Label_not_recognized"
