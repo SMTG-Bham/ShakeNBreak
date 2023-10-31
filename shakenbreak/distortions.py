@@ -366,7 +366,7 @@ def rattle(
                         active_atoms=active_atoms,
                         nbr_cutoff=nbr_cutoff,
                         width=width,
-                        max_attempts=7000,  # default is 5000
+                        max_attempts=max(max_attempts, 7000),  # default is 5000
                         max_disp=max_disp,
                         seed=seed,
                     )[0]
@@ -742,7 +742,7 @@ def local_mc_rattle(
                 active_atoms=active_atoms,
                 nbr_cutoff=nbr_cutoff,
                 width=width,
-                max_attempts=7000,  # default is 5000
+                max_attempts=max(7000, max_attempts),  # default is 5000
                 max_disp=max_disp,
                 seed=seed,
             )[0]
