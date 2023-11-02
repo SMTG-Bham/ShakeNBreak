@@ -30,6 +30,8 @@ may require manual tuning from the user:
     - Switching the electronic minimisation algorithm (e.g. change :code:`ALGO` to :code:`All` in :code:`VASP`), if
       electronic concergence seems to be causing issues.
     - Tightening/reducing the electronic convergence criterion (e.g. change :code:`EDIFF` to :code:`1e-7` in :code:`VASP`)
+    - Rattling the structure slightly, using the ``rattle`` function. An example of using this fucntion is
+      shown in the 'Bulk Phase Transformations' section below).
 
 In the other rare case where all distortions yield high energies, relative to the :code:`Unperturbed` structure, this is
 typically indicative of an unreasonable defect charge state (with the extreme excess charge inducing many false local
