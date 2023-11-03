@@ -171,7 +171,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=2.0.0",
+        "doped>=2.1.0",
     ],
     extras_require={
         "tests": [
