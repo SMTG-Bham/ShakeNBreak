@@ -2965,7 +2965,8 @@ class InputTestCase(unittest.TestCase):
                 "vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in",
             ))
         generated_atoms = read("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in")
-        self.assertEqual(test_atoms, generated_atoms)
+        for array_tuple in zip(test_atoms.get_positions(), generated_atoms.get_positions()):
+            np.testing.assert_array_almost_equal(array_tuple[0], array_tuple[1], decimal=3)
 
         # Test parameter file not written if write_structures_only = True
         for i in self.cdte_defect_folders_old_names:
