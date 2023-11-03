@@ -12,6 +12,7 @@ from unittest.mock import patch
 import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
+from ase.io import read
 from doped import _ignore_pmg_warnings
 from doped.generation import get_defect_name_from_entry
 from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
@@ -2931,7 +2932,7 @@ class InputTestCase(unittest.TestCase):
         """Test method write_fhi_aims_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = [
-            0.3,
+            0.3, 0.7
         ]
 
         Dist = input.Distortions(
@@ -2959,16 +2960,12 @@ class InputTestCase(unittest.TestCase):
             generated_input = f.readlines()[6:]
         self.assertEqual(test_input, generated_input)
         # Test input structure file
-        with open(
-            os.path.join(
+        test_atoms = read(os.path.join(
                 self.FHI_AIMS_DATA_DIR,
                 "vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in",
-            )
-        ) as f:
-            test_input_struct = f.readlines()[6:]
-        with open("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in") as f:
-            generated_input_struct = f.readlines()[6:]
-        self.assertEqual(test_input_struct, generated_input_struct)
+            ))
+        generated_atoms = read("vac_1_Cd_0/Bond_Distortion_30.0%/geometry.in")
+        self.assertEqual(test_atoms, generated_atoms)
 
         # Test parameter file not written if write_structures_only = True
         for i in self.cdte_defect_folders_old_names:
