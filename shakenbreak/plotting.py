@@ -224,11 +224,8 @@ def _purge_data_dicts(
     """
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
-    To achieve this, it removes:
-    - Any data point from disp_dict if its energy is not in the energy dict
-        (this may be due to relaxation not converged).
-    - Any data point from energies_dict if its displacement is not in the disp_dict
-        (this might be due to the lattice matching algorithm failing).
+    To achieve this, it removes any data point from disp_dict if its energy is not
+    in the energy dict (this may be due to relaxation not converged).
 
     Args:
         disp_dict (dict):
@@ -249,12 +246,11 @@ def _purge_data_dicts(
             (key not in energies_dict["distortions"].keys() and key != "Unperturbed")
             or disp_dict[key] == "Not converged"
             or disp_dict[key] is None
-        ):
+        ) and key not in energies_dict[
+            "distortions"
+        ].keys():  # remove it from disp and energy dicts
             disp_dict.pop(key)
-            if (
-                key in energies_dict["distortions"].keys()
-            ):  # remove it from energy dict as well
-                energies_dict["distortions"].pop(key)
+
     return disp_dict, energies_dict
 
 
@@ -349,12 +345,10 @@ def _get_displacement_dict(
         )
         disp_dict = analysis.calculate_struct_comparison(
             defect_structs, metric=metric
-        )  # calculate sum of atomic displacements and maximum displacement
-        # between paired sites
+        )  # calculate sum of atomic displacements and maximum displacement between paired sites
         if (
             disp_dict
-        ):  # if struct_comparison algorithms worked (sometimes struggles matching
-            # lattices)
+        ):  # if struct_comparison algorithms worked (sometimes struggles matching lattices)
             disp_dict, energies_dict = _purge_data_dicts(
                 disp_dict=disp_dict,
                 energies_dict=energies_dict,
@@ -681,7 +675,9 @@ def _setup_colormap(
         Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
         colormap, vmin, vmedium, vmax, norm
     """
-    array_disp = np.array(list(disp_dict.values()))
+    array_disp = np.array(
+        [val for val in disp_dict.values() if isinstance(val, float)]
+    )  # ignore "Not converged" or None values
     colormap = sns.cubehelix_palette(
         start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
     )
@@ -1087,6 +1083,7 @@ def plot_defect(
         max_energy_above_unperturbed=max_energy_above_unperturbed,
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
+
     if not energies_dict["distortions"]:
         warnings.warn(
             f"No distortion energies within {max_energy_above_unperturbed} {units} above "
@@ -1322,14 +1319,43 @@ def plot_colorbar(
 
             # Plot non-imported distortions
             im = ax.scatter(  # Points for each distortion
-                [sorted_distortions[i] for i in non_imported_sorted_indices],
-                [sorted_energies[i] for i in non_imported_sorted_indices],
-                c=[sorted_disp[i] for i in non_imported_sorted_indices],
+                [
+                    sorted_distortions[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
+                [
+                    sorted_energies[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
+                c=[
+                    sorted_disp[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
                 ls="-",
                 s=50,
                 marker="o",
                 cmap=colormap,
                 norm=norm,
+                alpha=1,
+            )
+            ax.scatter(  # plot any datapoints where disp could not be determined as black
+                [
+                    sorted_distortions[i]
+                    for i in non_imported_sorted_indices
+                    if not isinstance(sorted_disp[i], float)
+                ],
+                [
+                    sorted_energies[i]
+                    for i in non_imported_sorted_indices
+                    if not isinstance(sorted_disp[i], float)
+                ],
+                c="k",
+                ls="-",
+                s=50,
+                marker="o",
                 alpha=1,
             )
             if len(non_imported_sorted_indices) > 1:  # more than one point
