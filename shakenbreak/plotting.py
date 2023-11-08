@@ -831,13 +831,17 @@ def plot_all_defects(
             for charge in defects_dict[defect]
             for format_charge in [charge, f"+{charge}"]
         ]  # allow for defect species names with "+" sign (in SnB > 3.1)
-        if any(
-            os.path.isfile(
-                os.path.join(output_path, defect_species, "distortion_metadata.json")
+        distortion_metadata_list = [
+            analysis._read_distortion_metadata(
+                output_path=os.path.join(output_path, defect_species)
             )
             for defect_species in defect_species_list
-        ):
-            distortion_metadata = "in_defect_species_folders"
+            if os.path.isfile(
+                os.path.join(output_path, defect_species, "distortion_metadata.json")
+            )
+        ]
+        if distortion_metadata_list:
+            distortion_metadata = distortion_metadata_list
 
         else:
             if verbose:
@@ -886,11 +890,31 @@ def plot_all_defects(
                         f"Energy lowering distortion found for {defect} with "
                         f"charge {'+' if charge > 0 else ''}{charge}. Generating distortion plot..."
                     )
-                if distortion_metadata == "in_defect_species_folders":
+                if distortion_metadata and isinstance(distortion_metadata, list):
+                    # try load directly from defect folder first:
                     with contextlib.suppress(FileNotFoundError):
-                        distortion_metadata = analysis._read_distortion_metadata(
+                        single_distortion_metadata = analysis._read_distortion_metadata(
                             output_path=f"{output_path}/{defect_species}"
                         )
+                        (
+                            num_nearest_neighbours,
+                            neighbour_atom,
+                        ) = _parse_distortion_metadata(
+                            single_distortion_metadata, defect, charge
+                        )
+                        if (
+                            num_nearest_neighbours is None
+                        ):  # try pull from one of distortion_metadata_list
+                            for distortion_metadata_dict in distortion_metadata:
+                                (
+                                    num_nearest_neighbours,
+                                    neighbour_atom,
+                                ) = _parse_distortion_metadata(
+                                    distortion_metadata_dict, defect, charge
+                                )
+                                if num_nearest_neighbours:
+                                    break
+
                 if distortion_metadata and isinstance(distortion_metadata, dict):
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
