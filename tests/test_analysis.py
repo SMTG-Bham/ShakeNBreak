@@ -1107,7 +1107,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertTrue(
                 any(
-                    "OUTCAR file not found in path" in str(warning.message)
+                    f"OUTCAR(.gz) file not found in path" in str(warning.message)
                     for warning in w
                 )
             )
