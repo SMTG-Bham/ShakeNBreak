@@ -125,12 +125,12 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
         except KeyError:
             num_nearest_neighbours = None
         try:
-            neighbour_atoms = list(
+            neighbour_atoms = [  # get element of the distorted site
                 i[1]  # element symbol
                 for i in distortion_metadata["defects"][defect]["charges"][str(charge)][
                     "distorted_atoms"
                 ]
-            )  # get element of the distorted site
+            ]
 
             if all(element == neighbour_atoms[0] for element in neighbour_atoms):
                 neighbour_atom = neighbour_atoms[0]
@@ -888,10 +888,7 @@ def plot_all_defects(
                     )
                 if distortion_metadata == "in_defect_species_folders":
                     with contextlib.suppress(FileNotFoundError):
-                        (
-                            num_nearest_neighbours,
-                            neighbour_atom,
-                        ) = analysis._read_distortion_metadata(
+                        distortion_metadata = analysis._read_distortion_metadata(
                             output_path=f"{output_path}/{defect_species}"
                         )
                 if distortion_metadata and isinstance(distortion_metadata, dict):
