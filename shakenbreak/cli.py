@@ -11,12 +11,12 @@ from subprocess import call
 import click
 from doped.generation import get_defect_name_from_entry
 from doped.plotting import _format_defect_name
+from doped.utils.parsing import get_outcar
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import Incar
-from pymatgen.io.vasp.outputs import Outcar
 
 # ShakeNBreak
 from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
@@ -1472,7 +1472,7 @@ def groundstate(
 @click.option(
     "--outcar",
     "-o",
-    help="Path to OUTCAR file",
+    help="Path to OUTCAR(.gz) file",
     default="OUTCAR",
     type=click.Path(exists=True, dir_okay=False),
 )
@@ -1500,7 +1500,7 @@ def mag(outcar, threshold, verbose):
     Returns a shell exit status of 0 if magnetisation is below the threshold and 1 if above.
     """
     try:
-        outcar_obj = Outcar(outcar)
+        outcar_obj = get_outcar(outcar)
         abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
 
         if (

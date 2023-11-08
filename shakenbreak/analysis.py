@@ -12,6 +12,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -1122,7 +1123,7 @@ def get_site_magnetizations(
         raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
 
     defect_site_coords = None
-    if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+    if isinstance(defect_site, (list, np.ndarray)):
         defect_site_coords = defect_site
     elif not defect_site:  # look for defect site, in order to include the distance
         # between sites with significant magnetization and the defect
@@ -1130,8 +1131,8 @@ def get_site_magnetizations(
             with open(f"{output_path}/distortion_metadata.json", "r") as f:
                 try:
                     defect_species_without_charge = "_".join(
-                        defect_species.split("_")[0:-1]
-                    )  # remove charge state
+                        defect_species.split("_")[:-1]
+                    )
                     defect_site_coords = json.load(f)["defects"][
                         defect_species_without_charge
                     ]["unique_site"]
@@ -1164,22 +1165,22 @@ def get_site_magnetizations(
                 "found. Skipping magnetisation analysis."
             )
             continue
-        if isinstance(defect_site_coords, list) or isinstance(
-            defect_site_coords, np.ndarray
-        ):
+        if isinstance(defect_site_coords, (list, np.ndarray)):
             # for vacancies, append fake atom
             structure.append(
                 species="V", coords=defect_site_coords, coords_are_cartesian=False
             )
             defect_site = -1  # index of the added fake atom
-        if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
+
+        try:
+            outcar = get_outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+        except FileNotFoundError:
             warnings.warn(
-                f"OUTCAR file not found in path {output_path}/{defect_species}/"
-                f"{dist_label}/OUTCAR. "
+                f"OUTCAR(.gz) file not found in path {output_path}/{defect_species}/{dist_label}. "
                 "Skipping magnetization analysis."
             )
             continue
-        outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+
         if not outcar.spin:
             warnings.warn(
                 f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "
