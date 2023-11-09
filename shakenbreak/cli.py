@@ -298,7 +298,7 @@ def generate(
     ]
 
     if name is None:
-        name = get_defect_name_from_entry(defect_entries[0])
+        name = get_defect_name_from_entry(defect_entries[0], unrelaxed=True)
 
     # if user_charges not set for all defects, print info about how charge states will be
     # determined
