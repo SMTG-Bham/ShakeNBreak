@@ -442,7 +442,9 @@ class InputTestCase(unittest.TestCase):
                 os.remove(f"./{fname}")
         if_present_rm("test_path")  # remove test_path if present
 
-        regen_defect_folder_names = [get_defect_name_from_entry(self.cdte_defects[old_key][0]) for old_key in self.new_names_old_names_CdTe.values()]
+        regen_defect_folder_names = [
+            get_defect_name_from_entry(self.cdte_defects[old_key][0], unrelaxed=True)
+            for old_key in self.new_names_old_names_CdTe.values()]
         for i in os.listdir():
             if os.path.isdir(i) and any(x in i for x in regen_defect_folder_names):
                 if_present_rm(i)
