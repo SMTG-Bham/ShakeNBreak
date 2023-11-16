@@ -188,6 +188,10 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
         :obj:`tuple`:
             (Energy difference, ground state bond distortion)
     """
+    if not defect_energies_dict["distortions"]:
+        if "Unperturbed" in defect_energies_dict:
+            return 0, "Unperturbed"
+
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
@@ -273,10 +277,7 @@ def _sort_data(
         and "Unperturbed" in defect_energies_dict
     ):
         # no parsed distortion results but Unperturbed present
-        warnings.warn(
-            f"No distortion results parsed from {energies_file}, returning None"
-        )
-        return None, None, None
+        warnings.warn(f"No distortion results parsed from {energies_file}")
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".yaml")[0]
