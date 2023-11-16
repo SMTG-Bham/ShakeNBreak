@@ -408,7 +408,8 @@ def parse_energies(
                         )
 
     energies = sort_energies(energies)
-    save_file(energies, defect, path)
+    if energies and energies != {"distortions": {}}:
+        save_file(energies, defect, path)
 
     return energies_file
 

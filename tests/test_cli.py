@@ -2857,7 +2857,7 @@ Chosen VASP error message: {error_string}
                 ],
                 catch_exceptions=False,
             )
-        self.assertFalse(
+        self.assertTrue(  # yaml file still created, but also warning shown
             os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         )
         # test print statement about not being fully relaxed
