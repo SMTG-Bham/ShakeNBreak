@@ -6,7 +6,6 @@ import os
 import re
 import shutil
 import subprocess
-import inspect
 import unittest
 import warnings
 
@@ -15,7 +14,7 @@ import yaml
 
 # Click
 from click.testing import CliRunner
-from monty.serialization import loadfn
+from monty.serialization import loadfn, dumpfn
 
 # Pymatgen
 from pymatgen.core.structure import Structure
@@ -148,7 +147,7 @@ class CLITestCase(unittest.TestCase):
 
         for i in os.listdir(f"{self.EXAMPLE_RESULTS}"):
             if any(x in i for x in ["pesky_defects", "vac_1_Ti_0_defect_folder", "v_Ti_0_defect_folder",
-                                    "test_groundstate_all", "Te_i_Td_Te2.83"]):
+                                    "test_groundstate_all", "Te_i_Td_Te2.83", "test_groundstate_only_unp"]):
                 if_present_rm(f"{self.EXAMPLE_RESULTS}/{i}")
         if_present_rm(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_20.0%")
 
@@ -3978,7 +3977,32 @@ Chosen VASP error message: {error_string}
             f"{defect}/Bond_Distortion_-40.0%/CONTCAR"
         )
         self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
-        if_present_rm(f"{defect}/Groundstate")
+
+        # test groundstate with only Unperturbed not high energy (should still write groundstate fine)
+        os.chdir(f"{self.EXAMPLE_RESULTS}")
+        os.mkdir("test_groundstate_only_unp")
+        os.chdir("test_groundstate_only_unp")
+        defect = "v_Ti_0"
+        shutil.copytree("../v_Ti_0", defect)
+        os.chdir("v_Ti_0")
+        os.remove("Bond_Distortion_-40.0%/OUTCAR")
+        os.remove("Unperturbed/OUTCAR")
+        dumpfn({"distortions":{}, "Unperturbed": -822.66563022}, "v_Ti_0.yaml")  # only Unperturbed
+        # parsed as all high energy
+
+        result = runner.invoke(
+            snb,
+            [
+                "groundstate",
+            ],
+            catch_exceptions=False,
+        )
+        self.assertTrue(os.path.exists(f"Groundstate/POSCAR"))
+        gs_structure = Structure.from_file(f"Groundstate/POSCAR")
+        V_Ti_minus0pt4_structure = Structure.from_file(
+            f"Unperturbed/CONTCAR"
+        )
+        self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
         self.tearDown()  # return to test file directory
 
     def test_mag(self):
