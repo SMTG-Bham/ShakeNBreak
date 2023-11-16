@@ -319,7 +319,6 @@ def parse_energies(
             else:
                 warnings.warn(f"No output file in {dist} directory")
 
-    # only write energy file if energies have been parsed
     if energies["distortions"]:
         if "Unperturbed" in energies and all(
             value - energies["Unperturbed"] > 0.1
@@ -353,26 +352,6 @@ def parse_energies(
                 f"advice on dealing with this phenomenon."
             )
 
-        # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
-        # warn user about output files not being parsed for this entry
-        for key, value in prev_energies_dict.items():
-            if key not in energies:
-                energies[key] = value
-                warnings.warn(
-                    f"No output file in {key} directory, but previous parsed result found in "
-                    f"{energies_file}, using this."
-                )
-            elif key == "distortions":
-                for key2, value2 in prev_energies_dict["distortions"].items():
-                    if key2 not in energies["distortions"]:
-                        energies["distortions"][key2] = value2
-                        warnings.warn(
-                            f"No output file in {key2} directory, but previous parsed result found in "
-                            f"{energies_file}, using this."
-                        )
-
-        energies = sort_energies(energies)
-        save_file(energies, defect, path)
     else:
         # check if distortion directories were present but were all "*High_Energy*"
         try:
@@ -408,6 +387,28 @@ def parse_energies(
                 f"are correct, check calculations have converged, and that distortion subfolders match "
                 f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
             )
+
+    # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
+    # warn user about output files not being parsed for this entry
+    if prev_energies_dict:
+        for key, value in prev_energies_dict.items():
+            if key not in energies:
+                energies[key] = value
+                warnings.warn(
+                    f"No output file in {key} directory, but previous parsed result found in "
+                    f"{energies_file}, using this."
+                )
+            elif key == "distortions":
+                for key2, value2 in prev_energies_dict["distortions"].items():
+                    if key2 not in energies["distortions"]:
+                        energies["distortions"][key2] = value2
+                        warnings.warn(
+                            f"No output file in {key2} directory, but previous parsed result found in "
+                            f"{energies_file}, using this."
+                        )
+
+    energies = sort_energies(energies)
+    save_file(energies, defect, path)
 
     return energies_file
 
