@@ -984,7 +984,8 @@ def get_homoionic_bonds(
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
         elements (:obj:`list`):
-            List of element symbols for which to find the homoionic bonds.
+            List of element symbols (wihout oxidation state) for which
+            to find the homoionic bonds (e.g. ["Te", "Se"]).
         radius (:obj:`float`, optional):
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
@@ -1000,6 +1001,7 @@ def get_homoionic_bonds(
     if isinstance(elements, str): # For backward compatibility
         elements = [elements,]
     structure = structure.copy()
+    structure.remove_oxidation_states()
     for element in elements:
         if Element(element) not in structure.composition.elements:
             warnings.warn(f"Your structure does not contain element {element}!")
