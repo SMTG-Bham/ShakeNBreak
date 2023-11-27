@@ -1246,6 +1246,7 @@ def _apply_rattle_bond_distortions(
     d_min: Optional[float] = None,
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
+    distorted_atoms: Optional[list] = None,
     verbose: bool = False,
     **mc_rattle_kwargs,
 ) -> dict:
@@ -1288,6 +1289,9 @@ def _apply_rattle_bond_distortions(
             Neighbouring element to distort. If None, the closest neighbours
             to the defect will be chosen.
             (Default: None)
+        distorted_atoms (:obj:`list`, optional):
+            List of the atomic indices which should undergo bond distortions.
+            (Default: None)
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
@@ -1329,6 +1333,7 @@ def _apply_rattle_bond_distortions(
             distortion_factor=distortion_factor,
             frac_coords=frac_coords,
             distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,  # site indices starting from 0
             verbose=verbose,
         )  # Dict with distorted struct, undistorted struct,
         # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
@@ -1344,6 +1349,7 @@ def _apply_rattle_bond_distortions(
                 distortion_factor=distortion_factor,
                 site_index=defect_site_index,
                 distorted_element=distorted_element,
+                distorted_atoms=distorted_atoms,  # site indices starting from 0
                 verbose=verbose,
             )
         else:
@@ -1399,6 +1405,7 @@ def apply_snb_distortions(
     stdev: Optional[float] = None,
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
+    distorted_atoms: Optional[list] = None,
     verbose: bool = False,
     **mc_rattle_kwargs,
 ) -> dict:
@@ -1432,6 +1439,10 @@ def apply_snb_distortions(
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours
             to the defect will be chosen.
+            (Default: None)
+        distorted_atoms (:obj:`list`, optional):
+            List of the atomic indices which should undergo bond distortions.
+            If None, the closest neighbours to the defect will be chosen.
             (Default: None)
         verbose (:obj:`bool`):
             Whether to print distortion information.
@@ -1498,6 +1509,7 @@ def apply_snb_distortions(
                     stdev=stdev,
                     d_min=d_min,
                     distorted_element=distorted_element,
+                    distorted_atoms=distorted_atoms,
                     verbose=verbose,
                     seed=seed,
                     **mc_rattle_kwargs,
@@ -1516,7 +1528,7 @@ def apply_snb_distortions(
                     distorted_defect_dict["distortion_parameters"][
                         "defect_site_index"
                     ] = bond_distorted_defect["defect_site_index"]
-            
+
             elif isinstance(distortion, str) and distortion.lower() == "dimer":
                 # Apply dimer distortion, without rattling
                 if defect_type == "vacancy":
@@ -1585,7 +1597,7 @@ def apply_snb_distortions(
             distorted_defect_dict["distortion_parameters"][
                 "defect_site_index"
             ] = defect_site_index
-        
+
         if "Dimer" in bond_distortions:
             # Apply dimer distortion, without rattling
             bond_distorted_defect = distortions.apply_dimer_distortion(
@@ -1619,6 +1631,7 @@ class Distortions:
         bond_distortions: Optional[list] = None,
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
+        distorted_atoms: Optional[list] = None,
         **mc_rattle_kwargs,
     ):
         """
@@ -1677,6 +1690,13 @@ class Distortions:
                 (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
                 the defect are chosen.
                 (Default: None)
+            distorted_atoms (:obj:`list`):
+                Optional argument to specify the indices of the
+                neighbouring atoms to distort (indices starting from 0)
+                for each defect, in the form of a dictionary with
+                format {'defect_name': [index_1, index_2, ...]}
+                (e.g {'vac_1_Cd': [0, 2]}).
+                If None, the closest neighbours to the defect are chosen.
             **mc_rattle_kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
                 `mc_rattle` function. These include:
@@ -1709,6 +1729,7 @@ class Distortions:
         """
         self.oxidation_states = oxidation_states
         self.distorted_elements = distorted_elements
+        self.distorted_atoms = distorted_atoms
         self.dict_number_electrons_user = dict_number_electrons_user
         self.local_rattle = local_rattle
 
@@ -2316,6 +2337,7 @@ class Distortions:
                     local_rattle=self.local_rattle,
                     stdev=self.stdev,
                     distorted_element=distorted_element,
+                    distorted_atoms=self.distorted_atoms,
                     verbose=verbose,
                     **self._mc_rattle_kwargs,
                 )
@@ -2922,6 +2944,7 @@ class Distortions:
         bond_distortions: Optional[list] = None,
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
+        distorted_atoms: Optional[list] = None,
         **mc_rattle_kwargs,
     ) -> "Distortions":
         """
@@ -2979,6 +3002,12 @@ class Distortions:
                 format {'defect_name': ['element1', 'element2', ...]}
                 (e.g {'vac_1_Cd': ['Te']}). If None, the closest neighbours to
                 the defect are chosen.
+                (Default: None)
+            distorted_atoms (:obj:`list`):
+                Optional argument to specify the neighbouring atoms to distort
+                for each defect, in the form of a dictionary with format
+                {'defect_name': [atom1, atom2, ...]} (e.g {'vac_1_Cd': [0, 1]}).
+                If None, the closest neighbours to the defect are chosen.
                 (Default: None)
             **mc_rattle_kwargs:
                 Additional keyword arguments to pass to `hiphive`'s
@@ -3130,5 +3159,6 @@ class Distortions:
             bond_distortions=bond_distortions,
             local_rattle=local_rattle,
             distorted_elements=distorted_elements,
+            distorted_atoms=distorted_atoms,
             **mc_rattle_kwargs,
         )

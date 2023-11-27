@@ -30,6 +30,7 @@ def distort(
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     distorted_element: Optional[str] = None,
+    distorted_atoms: Optional[list] = None,
     verbose: Optional[bool] = False,
 ) -> dict:
     """
@@ -54,6 +55,9 @@ def distort(
             vacancies).
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to
+            the defect will be chosen. (Default: None)
+        distorted_atoms (:obj:`list`, optional):
+            List of atom indices to distort. If None, the closest neighbours to
             the defect will be chosen. (Default: None)
         verbose (:obj:`bool`, optional):
             Whether to print distortion information. (Default: False)
@@ -82,58 +86,77 @@ def distort(
     neighbours = (
         num_nearest_neighbours + 1
     )  # Prevent self-counting of the defect atom itself
-    distances = [  # Get all distances between the selected atom and all other atoms
-        (
-            round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
-            index + 1,
-            symbol,
-        )
-        for index, symbol in zip(
-            list(range(len(input_structure_ase))),
-            input_structure_ase.get_chemical_symbols(),
-        )
-    ]
-    distances = sorted(  # Sort the distances shortest->longest
-        distances, key=lambda tup: tup[0]
-    )
-
-    if (
-        distorted_element
-    ):  # filter the neighbours that match the element criteria and are
-        # closer than 4.5 Angstroms
-        nearest = []  # list of nearest neighbours
-        for dist, index, element in distances[1:]:
-            if (
-                element == distorted_element
-                and dist < 4.5
-                and len(nearest) < num_nearest_neighbours
-            ):
-                nearest.append((dist, index, element))
-
-        # if the number of nearest neighbours not reached, add other neighbouring
-        # elements
-        if len(nearest) < num_nearest_neighbours:
-            for i in distances[1:]:
-                if (
-                    len(nearest) < num_nearest_neighbours
-                    and i not in nearest
-                    and i[0] < 4.5
-                ):
-                    nearest.append(i)
-            warnings.warn(
-                f"{distorted_element} was specified as the nearest neighbour "
-                f"element to distort, with `distortion_factor` {distortion_factor} "
-                f"but did not find `num_nearest_neighbours` "
-                f"({num_nearest_neighbours}) of these elements within 4.5 \u212B "
-                f"of the defect site. For the remaining neighbours to distort, "
-                f"we ignore the elemental identity. The final distortion information is:"
+    if distorted_atoms and len(distorted_atoms) >= num_nearest_neighbours:
+        nearest = [
+            (
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                index + 1,
+                input_structure_ase.get_chemical_symbols()[index],
             )
-            sys.stderr.flush()  # ensure warning message printed before distortion info
-            verbose = True
+            for index in distorted_atoms
+        ]
+        nearest = sorted(nearest, key=lambda tup: tup[0])[0:num_nearest_neighbours]
     else:
-        nearest = distances[
-            1:neighbours
-        ]  # Extract the nearest neighbours according to distance
+        if distorted_atoms:
+            warnings.warn(
+                f"Only {len(distorted_atoms)} atoms were specified to distort in `distorted_atoms`, "
+                f"but `num_nearest_neighbours` was set to {num_nearest_neighbours}. "
+                f"Will overide the indices specified in `distorted_atoms` and distort the "
+                f"{num_nearest_neighbours} closest neighbours to the defect site."
+            )
+        distances = [  # Get all distances between the selected atom and all other atoms
+            (
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                index + 1,
+                symbol,
+            )
+            for index, symbol in zip(
+                list(range(len(input_structure_ase))),
+                input_structure_ase.get_chemical_symbols(),
+            )
+        ]
+        distances = sorted(  # Sort the distances shortest->longest
+            distances, key=lambda tup: tup[0]
+        )
+
+        if (
+            distorted_element
+        ):  # filter the neighbours that match the element criteria and are
+            # closer than 4.5 Angstroms
+            nearest = []  # list of nearest neighbours
+            for dist, index, element in distances[1:]: # starting from 1 to exclude defect atom
+                if (
+                    element == distorted_element
+                    and dist < 4.5
+                    and len(nearest) < num_nearest_neighbours
+                ):
+                    nearest.append((dist, index, element))
+
+            # if the number of nearest neighbours not reached, add other neighbouring
+            # elements
+            if len(nearest) < num_nearest_neighbours:
+                for i in distances[1:]:
+                    if (
+                        len(nearest) < num_nearest_neighbours
+                        and i not in nearest
+                        and i[0] < 4.5
+                    ):
+                        nearest.append(i)
+                warnings.warn(
+                    f"{distorted_element} was specified as the nearest neighbour "
+                    f"element to distort, with `distortion_factor` {distortion_factor} "
+                    f"but did not find `num_nearest_neighbours` "
+                    f"({num_nearest_neighbours}) of these elements within 4.5 \u212B "
+                    f"of the defect site. For the remaining neighbours to distort, "
+                    f"we ignore the elemental identity. The final distortion information is:"
+                )
+                sys.stderr.flush()  # ensure warning message printed before distortion info
+                verbose = True
+        else:
+            nearest = distances[
+                1:neighbours
+            ]  # Extract the nearest neighbours according to distance
+
     distorted = [
         (i[0] * distortion_factor, i[1], i[2]) for i in nearest
     ]  # Distort the nearest neighbour distances according to the distortion factor

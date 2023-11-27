@@ -1667,7 +1667,7 @@ def plot_datasets(
                     dataset["distortions"]["Dimer"],
                     c=colors[dataset_number],
                     s=50,
-                    marker=default_style_settings["marker"],
+                    marker="s", #default_style_settings["marker"],
                     label="Dimer",
                 )
 

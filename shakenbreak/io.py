@@ -412,6 +412,9 @@ def parse_energies(
                 f"are correct, check calculations have converged, and that distortion subfolders match "
                 f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
             )
+            # TODO: remove next two lines
+            energies = sort_energies(energies)
+            save_file(energies, defect, path)
 
     return energies_file
 
