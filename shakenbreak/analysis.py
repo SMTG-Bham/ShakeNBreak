@@ -122,8 +122,8 @@ def _get_distortion_filename(distortion) -> str:
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
         elif (
-            "Rattled_from_" in distortion 
-            or "Dimer_from" in distortion 
+            "Rattled_from_" in distortion
+            or "Dimer_from" in distortion
             or distortion in [
                 "Unperturbed",
                 "Rattled",
@@ -188,7 +188,7 @@ def _format_distortion_names(
     # detected as High_Energy - normally wouldn't be parsed, but for debugging purposes
     # TODO: remove this
     elif (
-        distortion_label.startswith("Bond_Distortion") 
+        distortion_label.startswith("Bond_Distortion")
         and "High_Energy" in distortion_label
     ):
         return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
@@ -999,18 +999,20 @@ def get_homoionic_bonds(
     """
     if isinstance(elements, str): # For backward compatibility
         elements = [elements,]
-    element = elements[0]
     structure = structure.copy()
     for element in elements:
         if Element(element) not in structure.composition.elements:
             warnings.warn(f"Your structure does not contain element {element}!")
             return {}
+    # element = elements[0]
     # Search for homoionic bonds in the whole structure
-    sites = [
-        (site_index, site)
-        for site_index, site in enumerate(structure)
-        if site.species_string == element
-    ]
+    sites = []
+    for element in elements:
+        sites.extend([
+            (site_index, site)
+            for site_index, site in enumerate(structure)
+            if site.species_string == element
+        ])
     homoionic_bonds = {}
     for site_index, site in sites:
         neighbours = structure.get_neighbors(site, r=radius)
