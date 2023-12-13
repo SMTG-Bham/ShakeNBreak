@@ -211,8 +211,12 @@ def apply_dimer_distortion(
         structure (Structure):
             Defect structure.
         site_index (Optional[int], optional):
-            Index of defect site
-            (for non vacancy defects). Defaults to None.
+            Index of defect site (for non vacancy defects).
+            Defaults to None.
+        frac_coords (Optional[np.array], optional):
+            Fractional coordinates of the defect site in the structure (for
+            vacancies).
+            Defaults to None.
 
     Returns:
         obj:`Structure`:
@@ -224,7 +228,7 @@ def apply_dimer_distortion(
 
     if site_index is not None:  # site_index can be 0
         atom_number = site_index - 1  # Align atom number with python 0-indexing
-    elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
+    elif type(frac_coords) in  [list, tuple, np.ndarray]:  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy
         input_structure_ase.positions[-1] = np.dot(
             frac_coords, input_structure_ase.cell
@@ -252,7 +256,7 @@ def apply_dimer_distortion(
     input_structure_ase.set_distance(
         a0=site_indexes[0], a1=site_indexes[1], distance=2.0, fix=0.5, mic=True
     )
-    if isinstance(frac_coords, np.ndarray):
+    if type(frac_coords) in  [list, tuple, np.ndarray]:
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
     distorted_structure = aaa.get_structure(input_structure_ase)

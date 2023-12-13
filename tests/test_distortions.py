@@ -7,7 +7,7 @@ import numpy as np
 from monty.serialization import loadfn
 from pymatgen.core.structure import Structure
 
-from shakenbreak import distortions
+from shakenbreak import distortions, analysis
 
 
 class DistortionTestCase(unittest.TestCase):
@@ -75,6 +75,11 @@ class DistortionTestCase(unittest.TestCase):
             os.path.join(self.DATA_DIR, "vasp/K4MnFe2F12_POSCAR")
         )
 
+        self.V_Cd_dimer_distortion = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Distortion_Unrattled_POSCAR"
+            )
+        )
         warnings.simplefilter("always")  # Cause all warnings to always be triggered.
 
     def tearDown(self):
@@ -371,6 +376,21 @@ class DistortionTestCase(unittest.TestCase):
         self.assertAlmostEqual(np.mean(rattled_distances), 3.4581277362842666)
         self.assertAlmostEqual(np.sort(rattled_distances.flatten())[3], 1.7410986565232485)
 
+    def test_apply_dimer_distortion(self):
+        """Test apply_dimer_distortion function"""
+        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
+        output = distortions.apply_dimer_distortion(
+            self.V_Cd_struc, frac_coords=vac_coords
+        )
+        self.assertEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
+        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
+        self.assertEqual(output["num_distorted_neighbours"], 2)
+        self.assertEqual(output["defect_site_index"], [62, 51])
+        # Check that 2 Te are separated by 2 A
+        homo_bonds = analysis.get_homoionic_bonds(
+            output['distorted_structure'], elements=["Te",]
+        )
+        self.assertEqual(homo_bonds, {"Te(51)": {'Te(62)': '2.0 A'}})
 
 if __name__ == "__main__":
     unittest.main()
