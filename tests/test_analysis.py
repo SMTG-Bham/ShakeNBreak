@@ -81,7 +81,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR",
-            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR"
+            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR",
         )
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
@@ -207,15 +207,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             dumpfn({"Unperturbed": -378.66236832, "distortions": {}}, "fake_file.yaml")
             output = analysis._sort_data("fake_file.yaml")
-            warning_message = (
-                "No distortion results parsed from fake_file.yaml, returning None"
-            )
+            warning_message = "No distortion results parsed from fake_file.yaml"
             user_warnings = [
                 warning for warning in w if warning.category == UserWarning
             ]
             self.assertEqual(len(user_warnings), 1)
             self.assertIn(warning_message, str(user_warnings[0].message))
-            self.assertEqual(output, (None, None, None))
+            self.assertEqual(
+                output,
+                ({"Unperturbed": -378.66236832, "distortions": {}}, 0, "Unperturbed"),
+            )
 
     def test_analyse_defect_site(self):
         """Test analyse_defect_site() function."""
@@ -937,7 +938,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 ),
             )
 
-        # Without defect site and with orbital projections; 
+        # Without defect site and with orbital projections;
         # With inccorrect distortion_metadata.json
         # 1 distortion
         with warnings.catch_warnings(record=True) as w:
@@ -996,7 +997,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                     }
                 ),
             )
-        
+
         # Without defect site, > distortion (test distance between defect and
         # polarons)
         with warnings.catch_warnings(record=True) as w:
@@ -1011,29 +1012,32 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 distortions=[-0.6, -0.5],
             )
             mags_dict_test = {
-                -0.6: DataFrame({
-                    "Site": {"Ce(16)": "Ce(16)", "Ce(20)": "Ce(20)"},
-                    "Frac coords": {
-                        "Ce(16)": [0.246, 0.511, 0.244],
-                        "Ce(20)": [0.506, 0.511, 0.504]
-                    },
-                    "Site mag": {"Ce(16)": -1.794, "Ce(20)": 1.795},
-                    "Dist. (Å)": {"Ce(16)": 2.46, "Ce(20)": 2.46}
-                }),
-                -0.5: DataFrame({
-                    "Site": {"Ce(8)": "Ce(8)", "Ce(16)": "Ce(16)"},
-                    "Frac coords": {
-                        "Ce(8)": [0.506, 0.248, 0.242],
-                        "Ce(16)": [0.246, 0.509, 0.242]
-                    },
-                    "Site mag": {"Ce(8)": 1.792, "Ce(16)": -1.795},
-                    "Dist. (Å)": {"Ce(8)": 2.42, "Ce(16)": 2.46}
-                })
-            } 
+                -0.6: DataFrame(
+                    {
+                        "Site": {"Ce(16)": "Ce(16)", "Ce(20)": "Ce(20)"},
+                        "Frac coords": {
+                            "Ce(16)": [0.246, 0.511, 0.244],
+                            "Ce(20)": [0.506, 0.511, 0.504],
+                        },
+                        "Site mag": {"Ce(16)": -1.794, "Ce(20)": 1.795},
+                        "Dist. (Å)": {"Ce(16)": 2.46, "Ce(20)": 2.46},
+                    }
+                ),
+                -0.5: DataFrame(
+                    {
+                        "Site": {"Ce(8)": "Ce(8)", "Ce(16)": "Ce(16)"},
+                        "Frac coords": {
+                            "Ce(8)": [0.506, 0.248, 0.242],
+                            "Ce(16)": [0.246, 0.509, 0.242],
+                        },
+                        "Site mag": {"Ce(8)": 1.792, "Ce(16)": -1.795},
+                        "Dist. (Å)": {"Ce(8)": 2.42, "Ce(16)": 2.46},
+                    }
+                ),
+            }
             pd.testing.assert_frame_equal(mags[-0.6], mags_dict_test[-0.6])
             pd.testing.assert_frame_equal(mags[-0.5], mags_dict_test[-0.5])
-            
-        
+
         # Non existent structure
         self.copy_v_Ti_OUTCARs()
         os.mkdir(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
@@ -1107,7 +1111,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertTrue(
                 any(
-                    "OUTCAR file not found in path" in str(warning.message)
+                    f"OUTCAR(.gz) file not found in path" in str(warning.message)
                     for warning in w
                 )
             )

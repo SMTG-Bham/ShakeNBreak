@@ -9,18 +9,18 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
+  build:
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     # only run when tests have passed (or manually triggered)
 
     strategy:
-      max-parallel: 5
+      fail-fast: false
 
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: [ '3.9', '3.10', '3.11' ]
+        os: [ ubuntu-latest,macos-latest ]
 
-    name: Python ${{ matrix.python-version }} pip install
+    runs-on: ${{matrix.os}}
 
     steps:
       - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sleep 10m  # wait 10 minutes for PyPI to update with the new release
+          sleep 360  # wait 10 minutes for PyPI to update with the new release
           python -m pip install --upgrade pip
           pip install shakenbreak[tests]  # install only from PyPI
 

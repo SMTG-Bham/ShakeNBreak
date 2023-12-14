@@ -12,6 +12,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -187,6 +188,10 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
         :obj:`tuple`:
             (Energy difference, ground state bond distortion)
     """
+    if not defect_energies_dict["distortions"]:
+        if "Unperturbed" in defect_energies_dict:
+            return 0, "Unperturbed"
+
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
@@ -272,10 +277,7 @@ def _sort_data(
         and "Unperturbed" in defect_energies_dict
     ):
         # no parsed distortion results but Unperturbed present
-        warnings.warn(
-            f"No distortion results parsed from {energies_file}, returning None"
-        )
-        return None, None, None
+        warnings.warn(f"No distortion results parsed from {energies_file}")
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".yaml")[0]
@@ -801,7 +803,7 @@ def compare_structures(
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
         display_df (:obj:`bool`):
-            Whether or not to display the structure comparison DataFrame
+            Whether to display the structure comparison DataFrame
             interactively in Jupyter/Ipython (Default: True).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
@@ -1122,7 +1124,7 @@ def get_site_magnetizations(
         raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
 
     defect_site_coords = None
-    if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+    if isinstance(defect_site, (list, np.ndarray)):
         defect_site_coords = defect_site
     elif not defect_site:  # look for defect site, in order to include the distance
         # between sites with significant magnetization and the defect
@@ -1130,8 +1132,8 @@ def get_site_magnetizations(
             with open(f"{output_path}/distortion_metadata.json", "r") as f:
                 try:
                     defect_species_without_charge = "_".join(
-                        defect_species.split("_")[0:-1]
-                    )  # remove charge state
+                        defect_species.split("_")[:-1]
+                    )
                     defect_site_coords = json.load(f)["defects"][
                         defect_species_without_charge
                     ]["unique_site"]
@@ -1164,22 +1166,22 @@ def get_site_magnetizations(
                 "found. Skipping magnetisation analysis."
             )
             continue
-        if isinstance(defect_site_coords, list) or isinstance(
-            defect_site_coords, np.ndarray
-        ):
+        if isinstance(defect_site_coords, (list, np.ndarray)):
             # for vacancies, append fake atom
             structure.append(
                 species="V", coords=defect_site_coords, coords_are_cartesian=False
             )
             defect_site = -1  # index of the added fake atom
-        if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
+
+        try:
+            outcar = get_outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+        except FileNotFoundError:
             warnings.warn(
-                f"OUTCAR file not found in path {output_path}/{defect_species}/"
-                f"{dist_label}/OUTCAR. "
+                f"OUTCAR(.gz) file not found in path {output_path}/{defect_species}/{dist_label}. "
                 "Skipping magnetization analysis."
             )
             continue
-        outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+
         if not outcar.spin:
             warnings.warn(
                 f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "

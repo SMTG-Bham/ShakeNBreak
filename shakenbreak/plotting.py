@@ -125,12 +125,12 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
         except KeyError:
             num_nearest_neighbours = None
         try:
-            neighbour_atoms = list(
+            neighbour_atoms = [  # get element of the distorted site
                 i[1]  # element symbol
                 for i in distortion_metadata["defects"][defect]["charges"][str(charge)][
                     "distorted_atoms"
                 ]
-            )  # get element of the distorted site
+            ]
 
             if all(element == neighbour_atoms[0] for element in neighbour_atoms):
                 neighbour_atom = neighbour_atoms[0]
@@ -224,11 +224,8 @@ def _purge_data_dicts(
     """
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
-    To achieve this, it removes:
-    - Any data point from disp_dict if its energy is not in the energy dict
-        (this may be due to relaxation not converged).
-    - Any data point from energies_dict if its displacement is not in the disp_dict
-        (this might be due to the lattice matching algorithm failing).
+    To achieve this, it removes any data point from disp_dict if its energy is not
+    in the energy dict (this may be due to relaxation not converged).
 
     Args:
         disp_dict (dict):
@@ -249,12 +246,11 @@ def _purge_data_dicts(
             (key not in energies_dict["distortions"].keys() and key != "Unperturbed")
             or disp_dict[key] == "Not converged"
             or disp_dict[key] is None
-        ):
+        ) and key not in energies_dict[
+            "distortions"
+        ].keys():  # remove it from disp and energy dicts
             disp_dict.pop(key)
-            if (
-                key in energies_dict["distortions"].keys()
-            ):  # remove it from energy dict as well
-                energies_dict["distortions"].pop(key)
+
     return disp_dict, energies_dict
 
 
@@ -349,12 +345,10 @@ def _get_displacement_dict(
         )
         disp_dict = analysis.calculate_struct_comparison(
             defect_structs, metric=metric
-        )  # calculate sum of atomic displacements and maximum displacement
-        # between paired sites
+        )  # calculate sum of atomic displacements and maximum displacement between paired sites
         if (
             disp_dict
-        ):  # if struct_comparison algorithms worked (sometimes struggles matching
-            # lattices)
+        ):  # if struct_comparison algorithms worked (sometimes struggles matching lattices)
             disp_dict, energies_dict = _purge_data_dicts(
                 disp_dict=disp_dict,
                 energies_dict=energies_dict,
@@ -681,7 +675,9 @@ def _setup_colormap(
         Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
         colormap, vmin, vmedium, vmax, norm
     """
-    array_disp = np.array(list(disp_dict.values()))
+    array_disp = np.array(
+        [val for val in disp_dict.values() if isinstance(val, float)]
+    )  # ignore "Not converged" or None values
     colormap = sns.cubehelix_palette(
         start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
     )
@@ -835,13 +831,17 @@ def plot_all_defects(
             for charge in defects_dict[defect]
             for format_charge in [charge, f"+{charge}"]
         ]  # allow for defect species names with "+" sign (in SnB > 3.1)
-        if any(
-            os.path.isfile(
-                os.path.join(output_path, defect_species, "distortion_metadata.json")
+        distortion_metadata_list = [
+            analysis._read_distortion_metadata(
+                output_path=os.path.join(output_path, defect_species)
             )
             for defect_species in defect_species_list
-        ):
-            distortion_metadata = "in_defect_species_folders"
+            if os.path.isfile(
+                os.path.join(output_path, defect_species, "distortion_metadata.json")
+            )
+        ]
+        if distortion_metadata_list:
+            distortion_metadata = distortion_metadata_list
 
         else:
             if verbose:
@@ -890,14 +890,31 @@ def plot_all_defects(
                         f"Energy lowering distortion found for {defect} with "
                         f"charge {'+' if charge > 0 else ''}{charge}. Generating distortion plot..."
                     )
-                if distortion_metadata == "in_defect_species_folders":
+                if distortion_metadata and isinstance(distortion_metadata, list):
+                    # try load directly from defect folder first:
                     with contextlib.suppress(FileNotFoundError):
+                        single_distortion_metadata = analysis._read_distortion_metadata(
+                            output_path=f"{output_path}/{defect_species}"
+                        )
                         (
                             num_nearest_neighbours,
                             neighbour_atom,
-                        ) = analysis._read_distortion_metadata(
-                            output_path=f"{output_path}/{defect_species}"
+                        ) = _parse_distortion_metadata(
+                            single_distortion_metadata, defect, charge
                         )
+                        if (
+                            num_nearest_neighbours is None
+                        ):  # try pull from one of distortion_metadata_list
+                            for distortion_metadata_dict in distortion_metadata:
+                                (
+                                    num_nearest_neighbours,
+                                    neighbour_atom,
+                                ) = _parse_distortion_metadata(
+                                    distortion_metadata_dict, defect, charge
+                                )
+                                if num_nearest_neighbours:
+                                    break
+
                 if distortion_metadata and isinstance(distortion_metadata, dict):
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
@@ -1087,6 +1104,7 @@ def plot_defect(
         max_energy_above_unperturbed=max_energy_above_unperturbed,
         disp_dict=disp_dict if add_colorbar else None,
     )  # remove high energy points
+
     if not energies_dict["distortions"]:
         warnings.warn(
             f"No distortion energies within {max_energy_above_unperturbed} {units} above "
@@ -1308,11 +1326,9 @@ def plot_colorbar(
                 alpha=1,
             )
 
-        if (
-            len(sorted_distortions) > 0
-            and len([key for key in energies_dict["distortions"] if key != "Rattled"])
-            > 0
-        ):  # more than just Rattled
+        if len(sorted_distortions) > 0 and [
+            key for key in energies_dict["distortions"] if key != "Rattled"
+        ]:  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
                     i
@@ -1324,14 +1340,43 @@ def plot_colorbar(
 
             # Plot non-imported distortions
             im = ax.scatter(  # Points for each distortion
-                [sorted_distortions[i] for i in non_imported_sorted_indices],
-                [sorted_energies[i] for i in non_imported_sorted_indices],
-                c=[sorted_disp[i] for i in non_imported_sorted_indices],
+                [
+                    sorted_distortions[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
+                [
+                    sorted_energies[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
+                c=[
+                    sorted_disp[i]
+                    for i in non_imported_sorted_indices
+                    if isinstance(sorted_disp[i], float)
+                ],
                 ls="-",
                 s=50,
                 marker="o",
                 cmap=colormap,
                 norm=norm,
+                alpha=1,
+            )
+            ax.scatter(  # plot any datapoints where disp could not be determined as black
+                [
+                    sorted_distortions[i]
+                    for i in non_imported_sorted_indices
+                    if not isinstance(sorted_disp[i], float)
+                ],
+                [
+                    sorted_energies[i]
+                    for i in non_imported_sorted_indices
+                    if not isinstance(sorted_disp[i], float)
+                ],
+                c="k",
+                ls="-",
+                s=50,
+                marker="o",
                 alpha=1,
             )
             if len(non_imported_sorted_indices) > 1:  # more than one point
@@ -1349,11 +1394,11 @@ def plot_colorbar(
             # Datapoints from other charge states
             if imported_indices:
                 other_charges = len(
-                    list(
+                    [  # number of other charge states whose distortions have been imported
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
                         for i in imported_indices.keys()
-                    )
-                )  # number of other charge states whose distortions have been imported
+                    ]
+                )
                 for i, j in zip(imported_indices.keys(), range(other_charges)):
                     other_charge_state = int(
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
