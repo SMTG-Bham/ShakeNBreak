@@ -535,6 +535,26 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     @pytest.mark.mpl_image_compare(
         baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="vac_1_Cd_0_unparsed_disp.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_colorbar_unparsed_disp(self):
+        """Test plot_colorbar() function with disp_dict values equal to None/'Not converged'"""
+        disp_dict = deepcopy(self.V_Cd_displacement_dict)
+        disp_dict[-0.05] = None
+        disp_dict[-0.3] = "Not converged"
+
+        return plotting.plot_colorbar(
+            energies_dict=self.V_Cd_energies_dict,
+            disp_dict=disp_dict,
+            defect_species="vac_1_Cd_0",
+            num_nearest_neighbours=2,
+            neighbour_atom="Te",
+        )
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
         filename="vac_1_Cd_0_fake_defect_name.png",
         style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
         savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
