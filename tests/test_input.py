@@ -106,6 +106,7 @@ class InputTestCase(unittest.TestCase):
     def setUp(self):
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.CASTEP_DATA_DIR = os.path.join(self.DATA_DIR, "castep")
         self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
@@ -1005,6 +1006,34 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
         self.assertEqual(distortion_parameters_dict["distorted_atoms_in_dimer"], [(62, "Te"), (51, "Te")])
         self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
+
+    def test_apply_snb_distortions_indexes(self):
+        """Test selecting indices of atoms to distort"""
+        defect_structure = Structure.from_file(
+            os.path.join(self.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
+        )
+        coords = [0.986350003237154, 0.4992578370461876, 0.9995065238765345]
+        bulk = defect_structure.copy()
+        bulk.append("Cd", coords, coords_are_cartesian=False)
+        defect = input.identify_defect(
+            defect_structure=defect_structure,
+            bulk_structure=bulk,
+        )
+        # Generate a defect entry for each charge state
+        defect_entry = input._get_defect_entry_from_defect(
+            defect=defect, charge_state=0
+        )
+        dist_dict = input.apply_snb_distortions(
+            defect_entry=defect_entry,
+            distorted_atoms=[33, 57], # Te, Se
+            num_nearest_neighbours=2,
+            bond_distortions=[0.1,],
+            verbose=True,
+        )
+        self.assertEqual(
+            dist_dict["distortion_parameters"]["distorted_atoms_in_dimer"],
+            [(57+1, 'Se'), (33+1, 'Te')] # indices start at 1
+        )
 
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
