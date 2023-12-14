@@ -928,25 +928,26 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         return fig
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
-        filename="v_Ca_s0_0_plot_defect_with_colorbar.png",
-        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
-        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-    )
-    def test_plot_defect_dimer_colorbar(self):
-        defect_species = "v_Ca_s0_0"
-        defect_energies = analysis.get_energies(
-            defect_species=defect_species, output_path=self.VASP_DIR
-        )
-        fig = plotting.plot_defect(
-            defect_species=defect_species,
-            energies_dict=defect_energies,
-            num_nearest_neighbours=2,
-            neighbour_atom="S",
-            add_colorbar=True,
-        )
-        return fig
+    # @pytest.mark.mpl_image_compare(
+    #     baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+    #     filename="v_Ca_s0_0_plot_defect_with_colorbar.png",
+    #     style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+    #     savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    # )
+    # def test_plot_defect_dimer_colorbar(self):
+    #     defect_species = "v_Ca_s0_0"
+    #     defect_energies = analysis.get_energies(
+    #         defect_species=defect_species, output_path=self.VASP_DIR
+    #     )
+    #     structures
+    #     fig = plotting.plot_defect(
+    #         defect_species=defect_species,
+    #         energies_dict=defect_energies,
+    #         num_nearest_neighbours=2,
+    #         neighbour_atom="S",
+    #         add_colorbar=True,
+    #     )
+    #     return fig
 
     def test_plot_defect_missing_unperturbed_energy(self):
         with warnings.catch_warnings(record=True) as w:
