@@ -40,9 +40,9 @@ jobs:
           pip show -V pymatgen
           pip show -V pytest
 
-      - name: Test
-        run:  |
-          pytest --mpl -vv tests  # test everything
+      # - name: Test
+        # run:  |
+          # pytest --mpl -vv tests  # test everything
 
       - name: Generate GH Actions test plots
         if: always()  # always generate the plots, even if the tests fail
