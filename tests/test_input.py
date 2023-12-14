@@ -2105,7 +2105,7 @@ class InputTestCase(unittest.TestCase):
                     "Then, will rattle with a std dev of 0.25 Å \n",
                 )
         V_Cd_dimer_POSCAR = Structure.from_file(
-            "v_Cd_0/Dimer/POSCAR"
+            "v_Cd_Td_Te2.83_0/Dimer/POSCAR"
         )
         self.assertEqual(
             V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled
