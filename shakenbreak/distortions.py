@@ -261,12 +261,24 @@ def apply_dimer_distortion(
 
     distorted_structure = aaa.get_structure(input_structure_ase)
     # Create dictionary with distortion info & distorted structure
+    # Get distorted atoms
+    distorted_structure_wout_oxi = distorted_structure.copy()
+    distorted_structure_wout_oxi.remove_oxidation_states()
+    distorted_atoms = [
+        (site_indexes[0], distorted_structure_wout_oxi[site_indexes[0]].species_string),
+        (site_indexes[1], distorted_structure_wout_oxi[site_indexes[1]].species_string),
+    ]
     bond_distorted_defect = {
         "distorted_structure": distorted_structure,
         "num_distorted_neighbours": 2,
-        "distorted_atoms": [site_indexes[0], site_indexes[1]],
+        "distorted_atoms": distorted_atoms,
         "undistorted_structure": structure,
     }
+    if site_index:
+        bond_distorted_defect["defect_site_index"] = site_index
+    elif type(frac_coords) in [np.ndarray, list]:
+        bond_distorted_defect["defect_frac_coords"] = frac_coords
+
     return bond_distorted_defect
 
 
