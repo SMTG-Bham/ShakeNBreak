@@ -174,6 +174,9 @@ class InputTestCase(unittest.TestCase):
         self.V_Cd_entry = input._get_defect_entry_from_defect(
             self.V_Cd, self.V_Cd.user_charges[0]
         )
+        self.V_Cd_entry_neutral = input._get_defect_entry_from_defect(
+            self.V_Cd, 0
+        )
         self.V_Cd_entries = [
             input._get_defect_entry_from_defect(self.V_Cd, c)
             for c in self.V_Cd.user_charges
@@ -1489,6 +1492,14 @@ class InputTestCase(unittest.TestCase):
         self.assertIn("v_Ag", dist.defects_dict)
         self.assertEqual(len(dist.defects_dict["v_Cu"][0].sc_entry.structure), 31)
         self.assertEqual(len(dist.defects_dict["v_Ag"][0].sc_entry.structure), 31)
+
+    def test_Distortions_dimer(self):
+        """Test initialising Distortions with a dimer distortion"""
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            bond_distortions=["Dimer",]
+        )
+        self.assertEqual(dist.bond_distortions, ["Dimer"])
 
     def test_write_vasp_files(self):
         """Test `write_vasp_files` method"""
