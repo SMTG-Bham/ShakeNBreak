@@ -1327,7 +1327,7 @@ def _apply_rattle_bond_distortions(
         # (no atom site in structure!)
         frac_coords = bulk_supercell_site.frac_coords
         defect_site_index = None
-        if type(distortion_factor) == str and distortion_factor.lower() == "dimer":
+        if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
             bond_distorted_defect = distortions.apply_dimer_distortion(
                 structure=defect_structure,
                 site_index=defect_site_index,
@@ -1350,7 +1350,7 @@ def _apply_rattle_bond_distortions(
         # unit cell is conserved in the supercell
         frac_coords = None  # only for vacancies
         if defect_site_index is not None:
-            if type(distortion_factor) == str and distortion_factor.lower() == "dimer":
+            if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
                 bond_distorted_defect = distortions.apply_dimer_distortion(
                     structure=defect_structure,
                     site_index=defect_site_index,
