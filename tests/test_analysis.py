@@ -25,6 +25,7 @@ def if_present_rm(path):
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
@@ -526,6 +527,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_energies_dict["distortions"][-0.2], 0.75157698000001
             )
             self.assertFalse("Unperturbed" in defect_energies_dict)
+        # With dimer distortion
+        defect_energies = analysis.get_energies(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        np.testing.assert_almost_equal(defect_energies["distortions"]["Dimer"], -0.00025174000006700226)
 
     def test_calculate_struct_comparison(self):
         """Test calculate_struct_comparison() function."""
@@ -840,6 +846,45 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(len(user_warnings), 1)
             self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, None)
+
+    def test_compare_structures_dimer(self):
+        # With Dimer distortion
+        energies_v_Ca = analysis.get_energies(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        # Create distortion directories
+        for distortion in energies_v_Ca["distortions"]:
+            dist_name = analysis._get_distortion_filename(distortion)
+            os.mkdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name))
+            # Copy CONTCAR into each distortion directory
+            shutil.copy(
+                os.path.join(self.VASP_DIR, "v_Ca_s0_0", f"{dist_name}.POSCAR"),
+                os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name, "CONTCAR"),
+            )
+        # Same for Unperturbed
+        os.mkdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed"))
+        shutil.copy(
+            os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed.POSCAR"),
+            os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed", "CONTCAR"),
+        )
+        structures_v_Ca = analysis.get_structures(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        df = analysis.compare_structures(
+            defect_structures_dict=structures_v_Ca,
+            defect_energies_dict=energies_v_Ca
+        )
+        # df_from_csv = pd.read_csv(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "df_v_Ca_s0_0.csv"))
+        # Check that the two dataframes are the same
+        # pd.testing.assert_frame_equal(df, df_from_csv)
+        self.assertEqual(
+            df.iloc[13].to_list(), ['Dimer', 0.0, 0.012, 0.0]
+        )
+        # Delete distortion directories
+        for distortion in energies_v_Ca["distortions"]:
+            dist_name = analysis._get_distortion_filename(distortion)
+            shutil.rmtree(os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name))
+        shutil.rmtree(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed"))
 
     @patch("builtins.print")
     def test_get_homoionic_bonds(self, mock_print):
