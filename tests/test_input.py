@@ -433,6 +433,21 @@ class InputTestCase(unittest.TestCase):
         self.Ag_Sb_AgSbTe2_m2_defect_entry = loadfn(
             f"{self.DATA_DIR}/Ag_Sb_Cs_Te2.90_-2.json"
         )
+        # Generate defect entry for V_Cd in CdSeTe
+        defect_structure = Structure.from_file(
+            os.path.join(self.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
+        )
+        coords = [0.986350003237154, 0.4992578370461876, 0.9995065238765345]
+        bulk = defect_structure.copy()
+        bulk.append("Cd", coords, coords_are_cartesian=False)
+        defect = input.identify_defect(
+            defect_structure=defect_structure,
+            bulk_structure=bulk,
+        )
+        # Generate a defect entry for each charge state
+        self.V_Cd_in_CdSeTe_entry = input._get_defect_entry_from_defect(
+            defect=defect, charge_state=0
+        )
 
     def tearDown(self) -> None:
         # reset locale:
@@ -1009,29 +1024,15 @@ class InputTestCase(unittest.TestCase):
 
     def test_apply_snb_distortions_indexes(self):
         """Test selecting indices of atoms to distort"""
-        defect_structure = Structure.from_file(
-            os.path.join(self.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
-        )
-        coords = [0.986350003237154, 0.4992578370461876, 0.9995065238765345]
-        bulk = defect_structure.copy()
-        bulk.append("Cd", coords, coords_are_cartesian=False)
-        defect = input.identify_defect(
-            defect_structure=defect_structure,
-            bulk_structure=bulk,
-        )
-        # Generate a defect entry for each charge state
-        defect_entry = input._get_defect_entry_from_defect(
-            defect=defect, charge_state=0
-        )
         dist_dict = input.apply_snb_distortions(
-            defect_entry=defect_entry,
+            defect_entry=self.V_Cd_in_CdSeTe_entry,
             distorted_atoms=[33, 57], # Te, Se
             num_nearest_neighbours=2,
             bond_distortions=[0.1,],
             verbose=True,
         )
         self.assertEqual(
-            dist_dict["distortion_parameters"]["distorted_atoms_in_dimer"],
+            dist_dict["distortion_parameters"]["distorted_atoms"],
             [(57+1, 'Se'), (33+1, 'Te')] # indices start at 1
         )
 
@@ -3342,6 +3343,40 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(len(V_Cd_distortions_dict), 21)  # 21 total distortions
         self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
+
+    def test_apply_distortions_indices(self):
+        """Test apply_distortions() method when specifying indices of atoms to distort"""
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_in_CdSeTe_entry,],
+            distorted_atoms=[33, 57], # Te, Se
+            bond_distortions=[-0.2,],
+        )
+        output = dist.apply_distortions()
+        self.assertEqual(
+            output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
+            [(58, 'Se'), (34, 'Te')]
+        )
+        # Test when user doesn't specify enough neighbours to distort
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_in_CdSeTe_entry,],
+            distorted_atoms=[33,], # Te, Se
+            bond_distortions=[-0.2,],
+        )
+        with warnings.catch_warnings(record=True) as w:
+            output = dist.apply_distortions()
+        self.assertEqual(
+            str(w[0].message),
+            (
+                f"Only 1 atoms were specified to distort in `distorted_atoms`, "
+                f"but `num_nearest_neighbours` was set to 2. "
+                f"Will overide the indices specified in `distorted_atoms` and distort the "
+                f"2 closest neighbours to the defect site."
+            ),
+        )
+        self.assertEqual(
+            output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
+            [(58, 'Se'), (63, 'Se')]
+        )
 
     def test_local_rattle(
         self,
