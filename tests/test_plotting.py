@@ -31,6 +31,7 @@ _DATA_DIR = os.path.join(_file_path, "data")
 class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.organized_V_Cd_distortion_data = loadfn(
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_vac_1_Cd_0_stdev_0.25.yaml")
@@ -902,6 +903,50 @@ class PlottingDefectsTestCase(unittest.TestCase):
             energies_dict=self.V_Cd_energies_dict,
         )
         os.remove(f"{self.VASP_CDTE_DATA_DIR}/fake_defect.png")
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="v_Ca_s0_0_plot_defect_without_colorbar.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_dimer(self):
+        defect_species = "v_Ca_s0_0"
+        defect_energies = analysis.get_energies(
+            defect_species=defect_species, output_path=self.VASP_DIR
+        )
+        fig = plotting.plot_defect(
+            defect_species=defect_species,
+            energies_dict=defect_energies,
+            num_nearest_neighbours=2,
+            neighbour_atom="S",
+        )
+        # Check Dimer label
+        ax = fig.gca()
+        self.assertEqual(
+            ax.get_legend_handles_labels()[1][0], "Dimer"
+        )
+        return fig
+
+    @pytest.mark.mpl_image_compare(
+        baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
+        filename="v_Ca_s0_0_plot_defect_with_colorbar.png",
+        style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
+        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
+    )
+    def test_plot_defect_dimer_colorbar(self):
+        defect_species = "v_Ca_s0_0"
+        defect_energies = analysis.get_energies(
+            defect_species=defect_species, output_path=self.VASP_DIR
+        )
+        fig = plotting.plot_defect(
+            defect_species=defect_species,
+            energies_dict=defect_energies,
+            num_nearest_neighbours=2,
+            neighbour_atom="S",
+            add_colorbar=True,
+        )
+        return fig
 
     def test_plot_defect_missing_unperturbed_energy(self):
         with warnings.catch_warnings(record=True) as w:

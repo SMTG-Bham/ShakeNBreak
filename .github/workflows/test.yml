@@ -59,7 +59,7 @@ jobs:
           name: output-plots
           path: tests/remote_baseline
 
-      # - name: Download a single artifact
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: output-plots
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: output-plots
