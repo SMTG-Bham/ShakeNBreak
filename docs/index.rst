@@ -213,11 +213,12 @@ Studies using ``ShakeNBreak``
 
 We'll add papers that use `ShakeNBreak` to this list as they come out!
 
-- J\. Willis, K. B. Spooner, D. O. Scanlon. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/64c29140ce23211b20a787bb>`__ 2023
+- X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
+- Y\. Kumagai, S. R. Kavanagh et al. `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
+- J\. Willis, K. B. Spooner, D. O. Scanlon. `Applied Physics Letters <https://doi.org/10.1063/5.0170552>`__ 2023
 - A\. T. J. Nicolson et al. `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
-- X\. Wang et al. `arXiv`_ 2023
 - J\. Cen et al. `Journal of Materials Chemistry A`_ 2023
-- J\. Willis & R. Claes et al. `ChemRxiv <https://doi.org/10.26434/chemrxiv-2023-lttnf>`__ 2023
+- J\. Willis & R. Claes et al. `Chem Mater <https://doi.org/10.1021/acs.chemmater.3c01628>`__ 2023
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
@@ -234,7 +235,6 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
 
-.. _arXiv: https://arxiv.org/abs/2302.04901
 .. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
 .. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
 .. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
@@ -268,7 +268,7 @@ You may also find this Preview paper useful, which discusses the general problem
 Requirements
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.8 - 3.11 and requires the following open-source python packages:
+``ShakeNBreak`` is compatible with Python 3.9 - 3.12 and requires the following open-source python packages:
 
 * `Pymatgen <https://pymatgen.org/>`_
 * `Ase <https://wiki.fysik.dtu.dk/ase/>`_

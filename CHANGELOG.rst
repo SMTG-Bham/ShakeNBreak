@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+v3.2.3
+----------
+- Ensure the sorted `pymatgen` `Structure` is created for the VASP input (fixes a rare bug in `v3.2.1`
+  and `v3.2.2` where for certain structures the order of elements in the POSCAR was not properly sorted,
+  which is usually fine, but messed with the `ROPT` `INCAR` setting).
+- Plotting format updates (make legend frame more transparent to make datapoints behind it easier to see).
+- Update tests
+- Update docs (note about handling AFM systems)
+
 v3.2.2
 ----------
 - Consolidate ``SnB``/``doped`` ``INCAR`` defaults and remove redundant settings.

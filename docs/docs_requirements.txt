@@ -1,4 +1,5 @@
 sphinx
+recommonmark
 myst-nb
 sphinx-book-theme
 sphinx_click
@@ -14,5 +15,5 @@ hiphive
 monty
 click
 shakenbreak
-doped>=2.0.0
+doped>=2.2.0
 importlib-metadata
