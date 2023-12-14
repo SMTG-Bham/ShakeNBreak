@@ -1330,6 +1330,22 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
+        # Plot Dimer
+        if (
+            "Dimer" in energies_dict["distortions"].keys()
+            and "Dimer" in disp_dict.keys()
+        ):
+            im = ax.scatter(
+                0.0,
+                energies_dict["distortions"]["Dimer"],
+                c=disp_dict["Dimer"],
+                s=50,
+                marker="s", #default_style_settings["marker"],
+                label="Dimer",
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+            )
 
         if len(sorted_distortions) > 0 and [
             key for key in energies_dict["distortions"] if key != "Rattled"
