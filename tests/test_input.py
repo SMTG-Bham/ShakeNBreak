@@ -952,6 +952,30 @@ class InputTestCase(unittest.TestCase):
             self.V_Cd_distortion_parameters,
         )
 
+    def test_apply_snb_distortions_V_Cd_dimer(self):
+        """Test apply_distortions function for V_Cd"""
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+        V_Cd_distorted_dict = input.apply_snb_distortions(
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            bond_distortions=["dimer",],
+            d_min=d_min,
+            stdev=0.25,
+            verbose=True,
+            seed=42,  # old default
+        )
+        self.assertEqual(self.V_Cd_entry, V_Cd_distorted_dict["Unperturbed"])
+        distorted_V_Cd_struc = V_Cd_distorted_dict["distortions"][
+            "Dimer"
+        ]
+        distorted_V_Cd_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
+        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
+        distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
+        self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
+        self.assertEqual(distortion_parameters_dict["distorted_atoms_in_dimer"], [(62, "Te"), (51, "Te")])
+        self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
+
     # test create_folder and create_vasp_input simultaneously:
     def test_create_vasp_input(self):
         """Test create_vasp_input function"""
