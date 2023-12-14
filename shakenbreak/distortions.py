@@ -107,7 +107,7 @@ def distort(
         distances = [  # Get all distances between the selected atom and all other atoms
             (
                 round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
-                index + 1,
+                index + 1,  # Indices start from 1
                 symbol,
             )
             for index, symbol in zip(
