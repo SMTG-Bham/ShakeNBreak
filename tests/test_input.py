@@ -2044,6 +2044,34 @@ class InputTestCase(unittest.TestCase):
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
 
+    def test_write_vasp_files_dimer_distortion(self):
+        # Test with Dimer distortion
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            bond_distortions=["Dimer",],
+            seed=42,
+            stdev=0.25,
+            d_min=d_min,
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                dist.write_vasp_files()
+                # check expected info printing:
+                mock_print.assert_any_call(
+                    "Applying ShakeNBreak...",
+                    "Will apply the following bond distortions:",
+                    "['Dimer'].",
+                    "Then, will rattle with a std dev of 0.25 Å \n",
+                )
+        V_Cd_dimer_POSCAR = Structure.from_file(
+            "v_Cd_0/Dimer/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled
+        )
+
     def test_write_vasp_files_from_doped_defect_gen(self):
         """Test Distortions() class with (new) doped DefectsGenerator input"""
         dist = input.Distortions(
