@@ -124,9 +124,12 @@ class CLITestCase(unittest.TestCase):
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
+            elif "previous_default_rattle_settings" in i:
+                os.remove(i)
             elif any(x in i for x in [
-                "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects", "vac_1_Cd", "v_Cd", "v_Te", "Cd_i",
-                "_defect_folder", "Te_Cd", "Te_i_Td_Te2.83"
+                "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects",
+                "vac_1_Cd", "v_Cd", "v_Te", "Cd_i",
+                "_defect_folder", "Te_Cd", "Te_i_Td_Te2.83", "v_Ca"
             ]):
                 shutil.rmtree(i)
 
@@ -2523,6 +2526,7 @@ Chosen VASP error message: {error_string}
         os.chdir(self.EXAMPLE_RESULTS)
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(snb, ["parse"], catch_exceptions=True)
+        print(os.listdir())
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
@@ -2536,6 +2540,10 @@ Chosen VASP error message: {error_string}
                 ]
             )
         )
+        if os.path.exists("./example_results.yaml"):
+            # Print contents
+            tmp = loadfn("./example_results.yaml")
+            print(tmp)
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )

@@ -391,9 +391,10 @@ def parse_energies(
                 f"are correct, check calculations have converged, and that distortion subfolders match "
                 f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
             )
-            # TODO: remove next two lines
-            energies = sort_energies(energies)
-            save_file(energies, defect, path)
+            if "Unperturbed" in energies:
+                # TODO: remove next two lines
+                energies = sort_energies(energies)
+                save_file(energies, defect, path)
 
     # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
     # warn user about output files not being parsed for this entry
