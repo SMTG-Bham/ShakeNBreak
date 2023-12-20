@@ -1745,8 +1745,20 @@ POTCAR:
         if_present_rm("Bond_Distortion_10.0%/job_file")
 
         # test save_vasp_files:
+        car_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "CAR_" in file and "on" in file
+        ]
+        for file in car_files:
+            # remove
+            os.remove(f"Bond_Distortion_10.0%/{file}")
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write("Test pop")
+        car_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "CAR_" in file and "on" in file
+        ]
+        # print(car_files) # TODO: remove
         proc = subprocess.Popen(
             ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -1755,10 +1767,14 @@ POTCAR:
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
         files = os.listdir("Bond_Distortion_10.0%")
-        saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 2)
+        saved_files = [
+            file for file in files if "on" in file and "CAR_" in file
+        ] # contcar and outcar
+        # print(saved_files) # TODO: remove
+        self.assertEqual(len(saved_files), 3)
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
@@ -1867,6 +1883,12 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         """
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write(positive_energies_outcar_string)
+        car_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]
+        for i in car_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
         proc = subprocess.Popen(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
             stdout=subprocess.PIPE,
@@ -1890,9 +1912,10 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         )
         files = os.listdir("Bond_Distortion_10.0%")
         saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 2)
+        self.assertEqual(len(saved_files), 3)
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
+        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
@@ -2003,6 +2026,10 @@ Chosen VASP error message: {error_string}
         )
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         if_present_rm("Bond_Distortion_10.0%/job_file")
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        for file in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{file}")
 
         # test not ignoring and renaming when positive energies present in *Unperturbed* OUTCAR
         os.chdir(self.VASP_TIO2_DATA_DIR)
@@ -2094,6 +2121,7 @@ Chosen VASP error message: {error_string}
         os.chdir(self.VASP_TIO2_DATA_DIR)
         with open("job_file", "w") as fp:
             fp.write("Test pop")
+        # Copy different POSCAR
         shutil.copyfile("Bond_Distortion_-40.0%/CONTCAR", "Unperturbed/POSCAR")
         single_energy_outcar_string = """
         energy  without entropy=     -1156.08478433  energy(sigma->0) =     -1156.08478433

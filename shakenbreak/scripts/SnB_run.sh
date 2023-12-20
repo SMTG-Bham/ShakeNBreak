@@ -64,6 +64,16 @@ check_multiple_single_step_outcars() {
     fi
 }
 
+check_many_outcars() {
+  # Check if more than 6 OUTCARs present - might indicate tricky relaxation
+  num_outcars=$(ls OUTCAR*on* | wc -l)
+  # Return 0 if multiple files matching the condition exist, else return 1
+  if [[ $counter -gt 6 ]]; then
+      return 0
+  else
+      return 1
+  fi
+}
 
 SnB_run_loop() {
   for i in ?(*Distortion*|*Unperturbed*|*attled*|*imer*)/; do # for each distortion
