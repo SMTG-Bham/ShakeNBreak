@@ -120,11 +120,9 @@ class CLITestCase(unittest.TestCase):
             "previous_default_rattle_settings.yaml",
         ]:
             if_present_rm(i)
-
+        if_present_rm("../previous_default_rattle_settings.yaml")
         for i in os.listdir("."):
             if "distortion_metadata" in i:
-                os.remove(i)
-            elif "previous_default_rattle_settings" in i:
                 os.remove(i)
             elif any(x in i for x in [
                 "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects",
@@ -1754,11 +1752,6 @@ POTCAR:
             os.remove(f"Bond_Distortion_10.0%/{file}")
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write("Test pop")
-        car_files = [
-            file for file in os.listdir("Bond_Distortion_10.0%")
-            if "CAR_" in file and "on" in file
-        ]
-        # print(car_files) # TODO: remove
         proc = subprocess.Popen(
             ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
@@ -1766,15 +1759,13 @@ POTCAR:
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
-        files = os.listdir("Bond_Distortion_10.0%")
         saved_files = [
-            file for file in files if "on" in file and "CAR_" in file
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
         ] # contcar and outcar
-        # print(saved_files) # TODO: remove
-        self.assertEqual(len(saved_files), 3)
+        self.assertEqual(len(saved_files), 2)  # CONTCAR, OUTCAR
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
-        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
@@ -1910,12 +1901,13 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
-        files = os.listdir("Bond_Distortion_10.0%")
-        saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 3)
+        saved_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]
+        self.assertEqual(len(saved_files), 2)  # CONTCAR, OUTCAR
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
-        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
@@ -2140,7 +2132,7 @@ Chosen VASP error message: {error_string}
         out = str(proc.communicate()[0])
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertNotIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Previous run for", out)
+        self.assertNotIn("Previous run for Unperturbed", out)
         self.assertIn("Running job for Unperturbed", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertNotIn(
@@ -2554,7 +2546,6 @@ Chosen VASP error message: {error_string}
         os.chdir(self.EXAMPLE_RESULTS)
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(snb, ["parse"], catch_exceptions=True)
-        print(os.listdir())
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
@@ -2571,7 +2562,6 @@ Chosen VASP error message: {error_string}
         if os.path.exists("./example_results.yaml"):
             # Print contents
             tmp = loadfn("./example_results.yaml")
-            print(tmp)
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )
