@@ -1019,7 +1019,10 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
         self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
-        self.assertEqual(distortion_parameters_dict["distorted_atoms_in_dimer"], [(62, "Te"), (51, "Te")])
+        self.assertEqual(
+            set(distortion_parameters_dict["distorted_atoms_in_dimer"]),
+            set([(62, "Te"), (51, "Te")])  # order of elements not important
+        )
         self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
 
     def test_apply_snb_distortions_indexes(self):
@@ -1032,8 +1035,8 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         self.assertEqual(
-            dist_dict["distortion_parameters"]["distorted_atoms"],
-            [(57+1, 'Se'), (33+1, 'Te')] # indices start at 1
+            set(dist_dict["distortion_parameters"]["distorted_atoms"]),
+            set([(57+1, 'Se'), (33+1, 'Te')]) # indices start at 1
         )
 
     # test create_folder and create_vasp_input simultaneously:
