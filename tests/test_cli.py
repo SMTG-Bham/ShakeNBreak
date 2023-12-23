@@ -1778,8 +1778,44 @@ POTCAR:
             ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out = str(proc.communicate()[0])
+        self.assertIn("Looping through distortion folders for v_Ca_s0_0", out)
+        self.assertIn(
+            "No distortion folders found in current directory", out
+        ) # no dist folders for this defect
         self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
         self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
+        self.assertIn("Looping through distortion folders for v_Ge_s16_0", out)
+        # Check it filters distortions stuck in high energy basins for v_Ge (-0.6 and 0.5)
+        self.assertIn("More than 150 ionic steps present for Bond_Distortion_-60.0%.", out)
+        self.assertIn("More than 150 ionic steps present for Bond_Distortion_50.0%.", out)
+        self.assertIn("Bond_Distortion_40.0% not (fully) relaxed, saving files and rerunning", out)
+        self.assertTrue(os.path.exists("v_Ge_s16_0/Bond_Distortion_-60.0%_High_Energy"))
+        self.assertTrue(os.path.exists("v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy"))
+        self.assertFalse(os.path.exists("v_Ge_s16_0/Bond_Distortion_50.0%"))
+        # Check number of OUTCARs in Bond_Distortion_50.0%_High_Energy
+        outcars = [
+            f for f in os.listdir("v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy") if "OUTCAR" in f
+        ]
+        print("OUTCARS for v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy:", outcars)
+        self.assertTrue(len(outcars) == 6) # last OUTCAR not saved cause high energy distortion
+        outcars = [
+            f for f in os.listdir("v_Ge_s16_0/Bond_Distortion_40.0%") if "OUTCAR" in f
+        ]
+        self.assertTrue(len(outcars) == 4) # last OUTCAR saved
+        # Clean up
+        # Rename high energy directories
+        os.rename(
+            "v_Ge_s16_0/Bond_Distortion_-60.0%_High_Energy",
+            "v_Ge_s16_0/Bond_Distortion_-60.0%"
+        )
+        os.rename(
+            "v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy",
+            "v_Ge_s16_0/Bond_Distortion_50.0%"
+        )
+        # Remove saved OUTCAR in Bond_Distortion_40.0%
+        for f in os.listdir("v_Ge_s16_0/Bond_Distortion_40.0%"):
+            if f not in ["OUTCAR", "OUTCAR_08_01_43on29_03_23", "OUTCAR_15_27_15on28_03_23"]:
+                os.remove(f"v_Ge_s16_0/Bond_Distortion_40.0%/{f}")
         shutil.rmtree("vac_1_Ti_1")
 
         os.chdir("..")
@@ -2343,37 +2379,6 @@ Chosen VASP error message: {error_string}
         self.assertEqual(
             len(os.listdir(f"Unperturbed")), 10
         )  # new files as calc being rerun, but without changing ISPIN
-
-
-    def test_run_filtering(self):
-        """Test snb-run function for filtering high energy distortions"""
-        # Check filtering distortions stuck in high energy regions
-        os.chdir(f"{self.VASP_DIR}/v_Ge_s16_0")
-        proc = subprocess.Popen(
-            ["snb-run", "-v", "-s echo", "-n this",],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )  # setting 'job command' to 'echo' to
-        out = str(proc.communicate()[0])
-        self.assertIn("More than 150 ionic steps present for Bond_Distortion_-60.0%.", out)
-        self.assertIn("More than 150 ionic steps present for Bond_Distortion_50.0%.", out)
-        self.assertIn("Bond_Distortion_40.0% not (fully) relaxed, saving files and rerunning", out)
-        self.assertTrue(os.path.exists("Bond_Distortion_-60.0%_High_Energy"))
-        self.assertTrue(os.path.exists("Bond_Distortion_50.0%_High_Energy"))
-        self.assertFalse(os.path.exists("Bond_Distortion_50.0%"))
-        # Check number of OUTCARs in Bond_Distortion_50.0%_High_Energy
-        outcars = [f for f in os.listdir("Bond_Distortion_50.0%_High_Energy") if "OUTCAR" in f]
-        self.assertTrue(len(outcars) == 6) # last OUTCAR not saved
-        outcars = [f for f in os.listdir("Bond_Distortion_40.0%") if "OUTCAR" in f]
-        self.assertTrue(len(outcars) == 4) # last OUTCAR saved
-        # Clean up
-        # Rename high energy directories
-        os.rename("Bond_Distortion_-60.0%_High_Energy", "Bond_Distortion_-60.0%")
-        os.rename("Bond_Distortion_50.0%_High_Energy", "Bond_Distortion_50.0%")
-        # Remove saved OUTCAR in Bond_Distortion_40.0%
-        for f in os.listdir("Bond_Distortion_40.0%"):
-            if f not in ["OUTCAR", "OUTCAR_08_01_43on29_03_23", "OUTCAR_15_27_15on28_03_23"]:
-                os.remove(f"Bond_Distortion_40.0%/{f}")
 
     def test_parse(self):
         """Test parse() function.
