@@ -1,4 +1,7 @@
 [
+  "tests/test_input.py::InputTestCase::test_apply_rattle_bond_distortions_V_Cd_dimer",
+  "tests/test_input.py::InputTestCase::test_apply_snb_distortions_V_Cd_Dimer",
+  "tests/test_input.py::InputTestCase::test_apply_snb_distortions_V_Cd_dimer",
   "tests/test_plotting.py::PlottingDefectsTestCase::test_cast_energies_to_floats",
   "tests/test_plotting.py::PlottingDefectsTestCase::test_change_energy_units_to_meV",
   "tests/test_plotting.py::PlottingDefectsTestCase::test_format_axis",

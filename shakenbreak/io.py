@@ -85,6 +85,8 @@ def parse_energies(
         }
         if "Unperturbed" in defect_energies_dict:
             sorted_energies_dict["Unperturbed"] = defect_energies_dict["Unperturbed"]
+        if "Dimer" in defect_energies_dict:
+            sorted_energies_dict["Dimer"] = defect_energies_dict["Dimer"]
         return sorted_energies_dict
 
     def save_file(energies, defect, path):
@@ -245,6 +247,7 @@ def parse_energies(
                 "Bond_Distortion",
                 "Rattled",
                 "Unperturbed",
+                "Dimer",
             ]  # distortion directories
         )
         and "High_Energy" not in dir
@@ -365,6 +368,7 @@ def parse_energies(
                         "Bond_Distortion",
                         "Rattled",
                         "Unperturbed",
+                                    "Dimer",
                     ]
                 )
                 and "High_Energy" in dir
@@ -387,6 +391,10 @@ def parse_energies(
                 f"are correct, check calculations have converged, and that distortion subfolders match "
                 f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
             )
+            if "Unperturbed" in energies:
+                # TODO: remove next two lines
+                energies = sort_energies(energies)
+                save_file(energies, defect, path)
 
     # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
     # warn user about output files not being parsed for this entry

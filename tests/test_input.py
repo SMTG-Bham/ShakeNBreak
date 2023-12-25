@@ -26,7 +26,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints, Potcar
 
 from shakenbreak import input
-from shakenbreak.distortions import rattle, distort
+from shakenbreak.distortions import rattle, distort, apply_dimer_distortion
 
 
 def if_present_rm(path):
@@ -106,6 +106,7 @@ class InputTestCase(unittest.TestCase):
     def setUp(self):
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.CASTEP_DATA_DIR = os.path.join(self.DATA_DIR, "castep")
         self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
@@ -176,6 +177,9 @@ class InputTestCase(unittest.TestCase):
         self.V_Cd_entry = input._get_defect_entry_from_defect(
             self.V_Cd, self.V_Cd.user_charges[0]
         )
+        self.V_Cd_entry_neutral = input._get_defect_entry_from_defect(
+            self.V_Cd, 0
+        )
         self.V_Cd_entries = [
             input._get_defect_entry_from_defect(self.V_Cd, c)
             for c in self.V_Cd.user_charges
@@ -198,6 +202,11 @@ class InputTestCase(unittest.TestCase):
         self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(
                 self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+            )
+        )
+        self.V_Cd_dimer_struc_0pt25_rattled = Structure.from_file(
+            os.path.join(
+                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt25_POSCAR"
             )
         )
         self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
@@ -423,6 +432,21 @@ class InputTestCase(unittest.TestCase):
 
         self.Ag_Sb_AgSbTe2_m2_defect_entry = loadfn(
             f"{self.DATA_DIR}/Ag_Sb_Cs_Te2.90_-2.json"
+        )
+        # Generate defect entry for V_Cd in CdSeTe
+        defect_structure = Structure.from_file(
+            os.path.join(self.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
+        )
+        coords = [0.986350003237154, 0.4992578370461876, 0.9995065238765345]
+        bulk = defect_structure.copy()
+        bulk.append("Cd", coords, coords_are_cartesian=False)
+        defect = input.identify_defect(
+            defect_structure=defect_structure,
+            bulk_structure=bulk,
+        )
+        # Generate a defect entry for each charge state
+        self.V_Cd_in_CdSeTe_entry = input._get_defect_entry_from_defect(
+            defect=defect, charge_state=0
         )
 
     def tearDown(self) -> None:
@@ -743,6 +767,53 @@ class InputTestCase(unittest.TestCase):
             V_Cd_kwarg_distorted_dict.get("defect_frac_coords"), vac_coords
         )
 
+    def test_apply_rattle_bond_distortions_V_Cd_dimer(self):
+        """Test _apply_rattle_bond_distortions function with dimer distortion
+        for V_Cd"""
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+        V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            distortion_factor="dimer",
+            d_min=d_min,
+            verbose=True,
+        )
+        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
+        output = apply_dimer_distortion(structure=self.V_Cd_struc, frac_coords=vac_coords)
+        np.testing.assert_raises(
+            AssertionError, np.testing.assert_array_equal, V_Cd_distorted_dict, output
+        )  # Shouldn't match because rattling not done yet
+
+        rattling_atom_indices = np.arange(0, 63)
+        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [62, 51]])
+        rattling_atom_indices = rattling_atom_indices[
+            ~idx
+        ]  # removed distorted Te indices
+        output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
+            # structure
+            output["distorted_structure"],
+            d_min=d_min,
+            active_atoms=rattling_atom_indices,
+            verbose=True,
+        )
+        # pymatgen-analysis-defects decorates the structure with oxidation states.
+        V_Cd_distorted_dict["distorted_structure"].remove_oxidation_states()
+        V_Cd_distorted_dict["undistorted_structure"].remove_oxidation_states()
+        np.testing.assert_equal(V_Cd_distorted_dict, output)
+        stdev_0pt25_V_Cd_distorted_dict = input._apply_rattle_bond_distortions(
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            distortion_factor="dimer",
+            d_min=d_min,
+            stdev=0.25,
+            verbose=True,
+        )
+        self.assertEqual(
+            stdev_0pt25_V_Cd_distorted_dict["distorted_structure"],
+            self.V_Cd_dimer_struc_0pt25_rattled,  # this is with stdev=0.25
+        )
+
     def test_apply_snb_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""
         V_Cd_distorted_dict = input.apply_snb_distortions(
@@ -925,6 +996,47 @@ class InputTestCase(unittest.TestCase):
         np.testing.assert_equal(
             V_Cd_kwarg_distorted_dict["distortion_parameters"],
             self.V_Cd_distortion_parameters,
+        )
+
+    def test_apply_snb_distortions_V_Cd_dimer(self):
+        """Test apply_distortions function for V_Cd"""
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+        V_Cd_distorted_dict = input.apply_snb_distortions(
+            self.V_Cd_entry,
+            num_nearest_neighbours=2,
+            bond_distortions=["dimer",],
+            d_min=d_min,
+            stdev=0.25,
+            verbose=True,
+            seed=42,  # old default
+        )
+        self.assertEqual(self.V_Cd_entry, V_Cd_distorted_dict["Unperturbed"])
+        distorted_V_Cd_struc = V_Cd_distorted_dict["distortions"][
+            "Dimer"
+        ]
+        distorted_V_Cd_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
+        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
+        distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
+        self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
+        self.assertEqual(
+            set(distortion_parameters_dict["distorted_atoms_in_dimer"]),
+            set([(62, "Te"), (51, "Te")])  # order of elements not important
+        )
+        self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
+
+    def test_apply_snb_distortions_indexes(self):
+        """Test selecting indices of atoms to distort"""
+        dist_dict = input.apply_snb_distortions(
+            defect_entry=self.V_Cd_in_CdSeTe_entry,
+            distorted_atoms=[33, 57], # Te, Se
+            num_nearest_neighbours=2,
+            bond_distortions=[0.1,],
+            verbose=True,
+        )
+        self.assertEqual(
+            set(dist_dict["distortion_parameters"]["distorted_atoms"]),
+            set([(57+1, 'Se'), (33+1, 'Te')]) # indices start at 1
         )
 
     # test create_folder and create_vasp_input simultaneously:
@@ -1441,6 +1553,14 @@ class InputTestCase(unittest.TestCase):
         self.assertIn("v_Ag", dist.defects_dict)
         self.assertEqual(len(dist.defects_dict["v_Cu"][0].sc_entry.structure), 31)
         self.assertEqual(len(dist.defects_dict["v_Ag"][0].sc_entry.structure), 31)
+
+    def test_Distortions_dimer(self):
+        """Test initialising Distortions with a dimer distortion"""
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            bond_distortions=["Dimer",]
+        )
+        self.assertEqual(dist.bond_distortions, ["Dimer"])
 
     def test_write_vasp_files(self):
         """Test `write_vasp_files` method"""
@@ -1994,6 +2114,34 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(
             V_Cd_kwarged_POSCAR.structure.get_sorted_structure(),
             self.V_Cd_minus0pt5_struc_kwarged.get_sorted_structure()
+        )
+
+    def test_write_vasp_files_dimer_distortion(self):
+        # Test with Dimer distortion
+        sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
+        d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            bond_distortions=["Dimer",],
+            seed=42,
+            stdev=0.25,
+            d_min=d_min,
+        )
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                dist.write_vasp_files()
+                # check expected info printing:
+                mock_print.assert_any_call(
+                    "Applying ShakeNBreak...",
+                    "Will apply the following bond distortions:",
+                    "['Dimer'].",
+                    "Then, will rattle with a std dev of 0.25 Å \n",
+                )
+        V_Cd_dimer_POSCAR = Structure.from_file(
+            "v_Cd_Td_Te2.83_0/Dimer/POSCAR"
+        )
+        self.assertEqual(
+            V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled
         )
 
     def test_write_vasp_files_from_doped_defect_gen(self):
@@ -3198,6 +3346,40 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(len(V_Cd_distortions_dict), 21)  # 21 total distortions
         self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
+
+    def test_apply_distortions_indices(self):
+        """Test apply_distortions() method when specifying indices of atoms to distort"""
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_in_CdSeTe_entry,],
+            distorted_atoms=[33, 57], # Te, Se
+            bond_distortions=[-0.2,],
+        )
+        output = dist.apply_distortions()
+        self.assertEqual(
+            output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
+            [(58, 'Se'), (34, 'Te')]
+        )
+        # Test when user doesn't specify enough neighbours to distort
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_in_CdSeTe_entry,],
+            distorted_atoms=[33,], # Te, Se
+            bond_distortions=[-0.2,],
+        )
+        with warnings.catch_warnings(record=True) as w:
+            output = dist.apply_distortions()
+        self.assertEqual(
+            str(w[0].message),
+            (
+                f"Only 1 atoms were specified to distort in `distorted_atoms`, "
+                f"but `num_nearest_neighbours` was set to 2. "
+                f"Will overide the indices specified in `distorted_atoms` and distort the "
+                f"2 closest neighbours to the defect site."
+            ),
+        )
+        self.assertEqual(
+            output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
+            [(58, 'Se'), (63, 'Se')]
+        )
 
     def test_local_rattle(
         self,
