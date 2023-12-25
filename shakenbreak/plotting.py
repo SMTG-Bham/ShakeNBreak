@@ -405,9 +405,14 @@ def _format_datapoints_from_other_chargestates(
     for entry in energies_dict["distortions"].keys():
         if isinstance(entry, str) and "%_from_" in entry:
             keys.append(float(entry.split("%")[0]) / 100)
-        elif isinstance(entry, str) and "Rattled_from_" in entry:
-            keys.append(0.0)  # Rattled will be plotted at x = 0.0
+        elif isinstance(entry, str) and (
+            "Rattled_from_" in entry or "Dimer_from_" in entry
+        ):
+            keys.append(0.0)  # Rattled and Dimer will be plotted at x = 0.0
         elif entry == "Rattled":  # add 0.0 for Rattled
+            # (to avoid problems when sorting distortions)
+            keys.append(0.0)
+        elif entry == "Dimer": # add 0.0 for Dimer
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
@@ -1325,6 +1330,22 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
+        # Plot Dimer
+        if (
+            "Dimer" in energies_dict["distortions"].keys()
+            and "Dimer" in disp_dict.keys()
+        ):
+            im = ax.scatter(
+                0.0,
+                energies_dict["distortions"]["Dimer"],
+                c=disp_dict["Dimer"],
+                s=50,
+                marker="s", #default_style_settings["marker"],
+                label="Dimer",
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+            )
 
         if len(sorted_distortions) > 0 and [
             key for key in energies_dict["distortions"] if key != "Rattled"
@@ -1700,8 +1721,22 @@ def plot_datasets(
                     label="Rattled",
                 )
 
+            # Plot Dimer
+            if "Dimer" in dataset["distortions"].keys():
+                ax.scatter(  # Scatter plot for Rattled (1 datapoint)
+                    0.0,
+                    dataset["distortions"]["Dimer"],
+                    c=colors[dataset_number],
+                    s=50,
+                    marker="s", #default_style_settings["marker"],
+                    label="Dimer",
+                )
+
             if len(sorted_distortions) > 0 and [
-                key for key in dataset["distortions"] if key != "Rattled"
+
+                    key for key in dataset["distortions"]
+                    if (key != "Rattled" and key != "Dimer")
+
             ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [

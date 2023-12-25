@@ -120,13 +120,14 @@ class CLITestCase(unittest.TestCase):
             "previous_default_rattle_settings.yaml",
         ]:
             if_present_rm(i)
-
+        if_present_rm("../previous_default_rattle_settings.yaml")
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
             elif any(x in i for x in [
-                "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects", "vac_1_Cd", "v_Cd", "v_Te", "Cd_i",
-                "_defect_folder", "Te_Cd", "Te_i_Td_Te2.83"
+                "Vac_Cd", "Int_Cd", "Wally_McDoodle", "pesky_defects",
+                "vac_1_Cd", "v_Cd", "v_Te", "Cd_i",
+                "_defect_folder", "Te_Cd", "Te_i_Td_Te2.83", "v_Ca"
             ]):
                 shutil.rmtree(i)
 
@@ -1742,6 +1743,13 @@ POTCAR:
         if_present_rm("Bond_Distortion_10.0%/job_file")
 
         # test save_vasp_files:
+        car_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "CAR_" in file and "on" in file
+        ]
+        for file in car_files:
+            # remove
+            os.remove(f"Bond_Distortion_10.0%/{file}")
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write("Test pop")
         proc = subprocess.Popen(
@@ -1751,9 +1759,11 @@ POTCAR:
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
-        files = os.listdir("Bond_Distortion_10.0%")
-        saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 2)
+        saved_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ] # contcar and outcar
+        self.assertEqual(len(saved_files), 2)  # CONTCAR, OUTCAR
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
         for i in saved_files:
@@ -1768,8 +1778,44 @@ POTCAR:
             ["snb-run", "-v", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out = str(proc.communicate()[0])
+        self.assertIn("Looping through distortion folders for v_Ca_s0_0", out)
+        self.assertIn(
+            "No distortion folders found in current directory", out
+        ) # no dist folders for this defect
         self.assertIn("Looping through distortion folders for vac_1_Ti_0", out)
         self.assertIn("Looping through distortion folders for vac_1_Ti_1", out)
+        self.assertIn("Looping through distortion folders for v_Ge_s16_0", out)
+        # Check it filters distortions stuck in high energy basins for v_Ge (-0.6 and 0.5)
+        self.assertIn("More than 150 ionic steps present for Bond_Distortion_-60.0%.", out)
+        self.assertIn("More than 150 ionic steps present for Bond_Distortion_50.0%.", out)
+        self.assertIn("Bond_Distortion_40.0% not (fully) relaxed, saving files and rerunning", out)
+        self.assertTrue(os.path.exists("v_Ge_s16_0/Bond_Distortion_-60.0%_High_Energy"))
+        self.assertTrue(os.path.exists("v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy"))
+        self.assertFalse(os.path.exists("v_Ge_s16_0/Bond_Distortion_50.0%"))
+        # Check number of OUTCARs in Bond_Distortion_50.0%_High_Energy
+        outcars = [
+            f for f in os.listdir("v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy") if "OUTCAR" in f
+        ]
+        print("OUTCARS for v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy:", outcars)
+        self.assertTrue(len(outcars) == 6) # last OUTCAR not saved cause high energy distortion
+        outcars = [
+            f for f in os.listdir("v_Ge_s16_0/Bond_Distortion_40.0%") if "OUTCAR" in f
+        ]
+        self.assertTrue(len(outcars) == 4) # last OUTCAR saved
+        # Clean up
+        # Rename high energy directories
+        os.rename(
+            "v_Ge_s16_0/Bond_Distortion_-60.0%_High_Energy",
+            "v_Ge_s16_0/Bond_Distortion_-60.0%"
+        )
+        os.rename(
+            "v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy",
+            "v_Ge_s16_0/Bond_Distortion_50.0%"
+        )
+        # Remove saved OUTCAR in Bond_Distortion_40.0%
+        for f in os.listdir("v_Ge_s16_0/Bond_Distortion_40.0%"):
+            if f not in ["OUTCAR", "OUTCAR_08_01_43on29_03_23", "OUTCAR_15_27_15on28_03_23"]:
+                os.remove(f"v_Ge_s16_0/Bond_Distortion_40.0%/{f}")
         shutil.rmtree("vac_1_Ti_1")
 
         os.chdir("..")
@@ -1864,6 +1910,12 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         """
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write(positive_energies_outcar_string)
+        car_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]
+        for i in car_files:
+            os.remove(f"Bond_Distortion_10.0%/{i}")
         proc = subprocess.Popen(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
             stdout=subprocess.PIPE,
@@ -1885,9 +1937,11 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
         )
-        files = os.listdir("Bond_Distortion_10.0%")
-        saved_files = [file for file in files if "on" in file and "CAR_" in file]
-        self.assertEqual(len(saved_files), 2)
+        saved_files = [
+            file for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]
+        self.assertEqual(len(saved_files), 2)  # CONTCAR, OUTCAR
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
         for i in saved_files:
@@ -2000,6 +2054,10 @@ Chosen VASP error message: {error_string}
         )
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         if_present_rm("Bond_Distortion_10.0%/job_file")
+        files = os.listdir("Bond_Distortion_10.0%")
+        saved_files = [file for file in files if "on" in file and "CAR_" in file]
+        for file in saved_files:
+            os.remove(f"Bond_Distortion_10.0%/{file}")
 
         # test not ignoring and renaming when positive energies present in *Unperturbed* OUTCAR
         os.chdir(self.VASP_TIO2_DATA_DIR)
@@ -2091,6 +2149,7 @@ Chosen VASP error message: {error_string}
         os.chdir(self.VASP_TIO2_DATA_DIR)
         with open("job_file", "w") as fp:
             fp.write("Test pop")
+        # Copy different POSCAR
         shutil.copyfile("Bond_Distortion_-40.0%/CONTCAR", "Unperturbed/POSCAR")
         single_energy_outcar_string = """
         energy  without entropy=     -1156.08478433  energy(sigma->0) =     -1156.08478433
@@ -2109,7 +2168,7 @@ Chosen VASP error message: {error_string}
         out = str(proc.communicate()[0])
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertNotIn("Unperturbed fully relaxed", out)
-        self.assertNotIn("Previous run for", out)
+        self.assertNotIn("Previous run for Unperturbed", out)
         self.assertIn("Running job for Unperturbed", out)
         self.assertIn("this vac_1_Ti_0_10.0% job_file", out)  # job submit command
         self.assertNotIn(
@@ -2536,6 +2595,9 @@ Chosen VASP error message: {error_string}
                 ]
             )
         )
+        if os.path.exists("./example_results.yaml"):
+            # Print contents
+            tmp = loadfn("./example_results.yaml")
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )

@@ -733,6 +733,9 @@ def compare_struct_to_distortions(
         rattled_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(lambda x: "Rattled" in str(x))
         ]  # if present, otherwise empty
+        dimer_df = matching_sub_df[
+            matching_sub_df["Bond Distortion"].apply(lambda x: "Dimer" in str(x))
+        ]  # if present, otherwise empty
         sorted_distorted_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(
                 lambda x: isinstance(x, float)
@@ -767,12 +770,13 @@ def compare_struct_to_distortions(
                 )
             )
 
-        # first unperturbed, then rattled, then distortions sorted by
+        # first unperturbed, then rattled, then dimer, then distortions sorted by
         # initial distortion magnitude from low to high (if present)
         sorted_matching_df = pd.concat(
             [
                 unperturbed_df,
                 rattled_df,
+                dimer_df,
                 sorted_distorted_df,
                 imported_sorted_distorted_float_df,
             ]
