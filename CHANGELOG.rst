@@ -15,6 +15,8 @@ v3.2.4
 - Update functions that read `OUTCARs` to be able to read `OUTCAR.gz` files too
 - Update energies parsing to still work when all distortions are high energy, but warn
   the user about this (i.e. only `Unperturbed`)
+- Update `snb-run` to add early-on detection of distortions that are stuck in high energy basins and
+  rename them to "High_Energy" to avoid continuing their relaxation
 
 v3.2.3
 ----------
