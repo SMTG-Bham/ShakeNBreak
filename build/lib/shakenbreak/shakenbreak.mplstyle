@@ -1,0 +1,55 @@
+# Figure
+figure.figsize : 6, 5.5
+figure.dpi: 600
+
+axes.prop_cycle: cycler('color', ['1f77b4', 'ff7f0e', '2ca02c', 'd62728', '9467bd', '8c564b', 'e377c2', '7f7f7f', 'bcbd22', '17becf']) # Matplotlib default
+
+# Font
+font.family : sans-serif
+font.sans-serif : Montserrat, Helvetica, Catamaran, Liberation Sans, Arial
+font.size            : 15
+text.usetex          : False
+pdf.fonttype         : 42
+ps.fonttype          : 42
+mathtext.fontset     : stixsans
+mathtext.default     : regular
+
+# Axes
+axes.titlesize       : 20
+axes.titlepad        : 15
+axes.linewidth       : 0.5
+axes.unicode_minus   : False
+axes.labelpad        : 10
+
+# Grid
+grid.linewidth       : 0.4
+grid.color           : black
+
+# Lines
+lines.linewidth      : 1.0
+
+# Ticks
+xtick.major.size     : 12
+xtick.minor.size     : 5
+xtick.major.width    : 0.2
+xtick.minor.width    : 0.2
+xtick.major.pad      : 6
+xtick.direction      : in
+xtick.top            : False
+xtick.bottom         : True
+xtick.labelsize      : 11.5
+
+ytick.major.size     : 12
+ytick.minor.size     : 5
+ytick.major.width    : 0.2
+ytick.minor.width    : 0.2
+ytick.major.pad      : 6
+ytick.direction      : in
+ytick.right          : False
+ytick.left           : True
+ytick.labelsize      : 11.5
+
+# Legend
+legend.handlelength  : 1.2
+legend.fontsize      : 13
+legend.frameon       : False

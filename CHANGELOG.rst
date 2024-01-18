@@ -1,6 +1,23 @@
 Change Log
 ==========
 
+v3.2.4
+----------
+- Add Dimer distortion as a targeted distortion for dimer reconstructions. It pushes two of the defect NN
+  to a distance of 2 A.
+- Add option `distorted_atoms` to the `Distortion` class to allow users to specify the indexes of the
+  atoms to distort.
+- Update tests to check the new functionality.
+- Update `get_homoionic_bonds` to detect homoionic bonds between different cations/anions (rather than
+  just bonds between the same element)
+- Fix issue with `snb-generate` when no defect name was specified (by adding `unrelaxed=True` when
+  calling `get_defect_name_from_entry`)
+- Update functions that read `OUTCARs` to be able to read `OUTCAR.gz` files too
+- Update energies parsing to still work when all distortions are high energy, but warn
+  the user about this (i.e. only `Unperturbed`)
+- Update `snb-run` to add early-on detection of distortions that are stuck in high energy basins and
+  rename them to "High_Energy" to avoid continuing their relaxation
+
 v3.2.3
 ----------
 - Ensure the sorted `pymatgen` `Structure` is created for the VASP input (fixes a rare bug in `v3.2.1`

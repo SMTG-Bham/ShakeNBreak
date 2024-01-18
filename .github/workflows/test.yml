@@ -9,6 +9,7 @@ on:
     branches:
       - main
       - develop
+      - sync_dimer
   workflow_dispatch:
 
 jobs:
@@ -17,7 +18,7 @@ jobs:
       fail-fast: false
 
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.9', '3.10', '3.11']
         os: [ubuntu-latest,macos-latest]
 
     runs-on: ${{matrix.os}}
@@ -42,7 +43,7 @@ jobs:
       - name: Test
         run:  |
           pytest --mpl -vv tests  # test everything
-          
+
       - name: Generate GH Actions test plots
         if: always()  # always generate the plots, even if the tests fail
         run:  |

@@ -15,5 +15,5 @@ hiphive
 monty
 click
 shakenbreak
-doped>=2.1.0
+doped>=2.2.0
 importlib-metadata

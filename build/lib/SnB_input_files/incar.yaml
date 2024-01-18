@@ -1,0 +1,26 @@
+'# May want to change NCORE, KPAR, AEXX, ENCUT, NUPDOWN, ISPIN, POTIM': ''
+'# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''
+'# KPAR': '# No KPAR, only one kpoint'
+ALGO: Normal
+EDIFFG: -0.01
+ENCUT: 300
+HFSCREEN: 0.2
+IBRION: '2 # While often slower than ''1'' (RMM-DIIS), this is more stable and reliable,
+    and vasp_gam relaxations are typically cheap enough to justify it'
+ISIF: 2
+ISMEAR: 0
+ISPIN: '2 # Spin polarisation likely for defects'
+ISYM: '0 # Symmetry breaking extremely likely for defects'
+LASPH: true
+LCHARG: false
+LHFCALC: true
+LORBIT: 11
+LREAL: Auto
+LWAVE: false
+NCORE: 12
+NEDOS: 2000
+NELM: 100
+NSW: 300
+PREC: Accurate
+PRECFOCK: Fast
+SIGMA: 0.05
