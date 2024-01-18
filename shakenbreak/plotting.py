@@ -125,12 +125,12 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
         except KeyError:
             num_nearest_neighbours = None
         try:
-            neighbour_atoms = list(
+            neighbour_atoms = [  # get element of the distorted site
                 i[1]  # element symbol
                 for i in distortion_metadata["defects"][defect]["charges"][str(charge)][
                     "distorted_atoms"
                 ]
-            )  # get element of the distorted site
+            ]
 
             if all(element == neighbour_atoms[0] for element in neighbour_atoms):
                 neighbour_atom = neighbour_atoms[0]
@@ -405,9 +405,14 @@ def _format_datapoints_from_other_chargestates(
     for entry in energies_dict["distortions"].keys():
         if isinstance(entry, str) and "%_from_" in entry:
             keys.append(float(entry.split("%")[0]) / 100)
-        elif isinstance(entry, str) and "Rattled_from_" in entry:
-            keys.append(0.0)  # Rattled will be plotted at x = 0.0
+        elif isinstance(entry, str) and (
+            "Rattled_from_" in entry or "Dimer_from_" in entry
+        ):
+            keys.append(0.0)  # Rattled and Dimer will be plotted at x = 0.0
         elif entry == "Rattled":  # add 0.0 for Rattled
+            # (to avoid problems when sorting distortions)
+            keys.append(0.0)
+        elif entry == "Dimer": # add 0.0 for Dimer
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
@@ -831,13 +836,17 @@ def plot_all_defects(
             for charge in defects_dict[defect]
             for format_charge in [charge, f"+{charge}"]
         ]  # allow for defect species names with "+" sign (in SnB > 3.1)
-        if any(
-            os.path.isfile(
-                os.path.join(output_path, defect_species, "distortion_metadata.json")
+        distortion_metadata_list = [
+            analysis._read_distortion_metadata(
+                output_path=os.path.join(output_path, defect_species)
             )
             for defect_species in defect_species_list
-        ):
-            distortion_metadata = "in_defect_species_folders"
+            if os.path.isfile(
+                os.path.join(output_path, defect_species, "distortion_metadata.json")
+            )
+        ]
+        if distortion_metadata_list:
+            distortion_metadata = distortion_metadata_list
 
         else:
             if verbose:
@@ -886,14 +895,31 @@ def plot_all_defects(
                         f"Energy lowering distortion found for {defect} with "
                         f"charge {'+' if charge > 0 else ''}{charge}. Generating distortion plot..."
                     )
-                if distortion_metadata == "in_defect_species_folders":
+                if distortion_metadata and isinstance(distortion_metadata, list):
+                    # try load directly from defect folder first:
                     with contextlib.suppress(FileNotFoundError):
+                        single_distortion_metadata = analysis._read_distortion_metadata(
+                            output_path=f"{output_path}/{defect_species}"
+                        )
                         (
                             num_nearest_neighbours,
                             neighbour_atom,
-                        ) = analysis._read_distortion_metadata(
-                            output_path=f"{output_path}/{defect_species}"
+                        ) = _parse_distortion_metadata(
+                            single_distortion_metadata, defect, charge
                         )
+                        if (
+                            num_nearest_neighbours is None
+                        ):  # try pull from one of distortion_metadata_list
+                            for distortion_metadata_dict in distortion_metadata:
+                                (
+                                    num_nearest_neighbours,
+                                    neighbour_atom,
+                                ) = _parse_distortion_metadata(
+                                    distortion_metadata_dict, defect, charge
+                                )
+                                if num_nearest_neighbours:
+                                    break
+
                 if distortion_metadata and isinstance(distortion_metadata, dict):
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
@@ -1304,6 +1330,22 @@ def plot_colorbar(
                 norm=norm,
                 alpha=1,
             )
+        # Plot Dimer
+        if (
+            "Dimer" in energies_dict["distortions"].keys()
+            and "Dimer" in disp_dict.keys()
+        ):
+            im = ax.scatter(
+                0.0,
+                energies_dict["distortions"]["Dimer"],
+                c=disp_dict["Dimer"],
+                s=50,
+                marker="s", #default_style_settings["marker"],
+                label="Dimer",
+                cmap=colormap,
+                norm=norm,
+                alpha=1,
+            )
 
         if len(sorted_distortions) > 0 and [
             key for key in energies_dict["distortions"] if key != "Rattled"
@@ -1679,8 +1721,22 @@ def plot_datasets(
                     label="Rattled",
                 )
 
+            # Plot Dimer
+            if "Dimer" in dataset["distortions"].keys():
+                ax.scatter(  # Scatter plot for Rattled (1 datapoint)
+                    0.0,
+                    dataset["distortions"]["Dimer"],
+                    c=colors[dataset_number],
+                    s=50,
+                    marker="s", #default_style_settings["marker"],
+                    label="Dimer",
+                )
+
             if len(sorted_distortions) > 0 and [
-                key for key in dataset["distortions"] if key != "Rattled"
+
+                    key for key in dataset["distortions"]
+                    if (key != "Rattled" and key != "Dimer")
+
             ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [

@@ -25,6 +25,7 @@ def if_present_rm(path):
 class AnalyseDefectsTestCase(unittest.TestCase):
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
         self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
         self.VASP_TIO2_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/vac_1_Ti_0")
         self.EXAMPLE_RESULTS = os.path.join(self.DATA_DIR, "example_results")
@@ -81,7 +82,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         """
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR",
-            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR"
+            f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR",
         )
         shutil.copyfile(
             f"{self.EXAMPLE_RESULTS}/v_Ti_0/Bond_Distortion_-40.0%/OUTCAR",
@@ -93,6 +94,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             "Unperturbed", analysis._format_distortion_names("Unperturbed")
         )
         self.assertEqual("Rattled", analysis._format_distortion_names("Rattled"))
+        self.assertEqual("Dimer", analysis._format_distortion_names("Dimer"))
         self.assertEqual(
             0.3, analysis._format_distortion_names("Bond_Distortion_30.0%")
         )
@@ -102,6 +104,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(
             "Rattled_from_-1", analysis._format_distortion_names("Rattled_from_-1")
+        )
+        self.assertEqual(
+            "Dimer_from_-1", analysis._format_distortion_names("Dimer_from_-1")
         )
         self.assertEqual(
             "Label_not_recognized", analysis._format_distortion_names("Wally_McDoodle")
@@ -207,15 +212,16 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             dumpfn({"Unperturbed": -378.66236832, "distortions": {}}, "fake_file.yaml")
             output = analysis._sort_data("fake_file.yaml")
-            warning_message = (
-                "No distortion results parsed from fake_file.yaml, returning None"
-            )
+            warning_message = "No distortion results parsed from fake_file.yaml"
             user_warnings = [
                 warning for warning in w if warning.category == UserWarning
             ]
             self.assertEqual(len(user_warnings), 1)
             self.assertIn(warning_message, str(user_warnings[0].message))
-            self.assertEqual(output, (None, None, None))
+            self.assertEqual(
+                output,
+                ({"Unperturbed": -378.66236832, "distortions": {}}, 0, "Unperturbed"),
+            )
 
     def test_analyse_defect_site(self):
         """Test analyse_defect_site() function."""
@@ -521,6 +527,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 defect_energies_dict["distortions"][-0.2], 0.75157698000001
             )
             self.assertFalse("Unperturbed" in defect_energies_dict)
+        # With dimer distortion
+        defect_energies = analysis.get_energies(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        np.testing.assert_almost_equal(defect_energies["distortions"]["Dimer"], -0.00025174000006700226)
 
     def test_calculate_struct_comparison(self):
         """Test calculate_struct_comparison() function."""
@@ -836,13 +847,52 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertIn(warning_message, str(user_warnings[0].message))
             self.assertEqual(output, None)
 
+    def test_compare_structures_dimer(self):
+        # With Dimer distortion
+        energies_v_Ca = analysis.get_energies(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        # Create distortion directories
+        for distortion in energies_v_Ca["distortions"]:
+            dist_name = analysis._get_distortion_filename(distortion)
+            os.mkdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name))
+            # Copy CONTCAR into each distortion directory
+            shutil.copy(
+                os.path.join(self.VASP_DIR, "v_Ca_s0_0", f"{dist_name}.POSCAR"),
+                os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name, "CONTCAR"),
+            )
+        # Same for Unperturbed
+        os.mkdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed"))
+        shutil.copy(
+            os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed.POSCAR"),
+            os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed", "CONTCAR"),
+        )
+        structures_v_Ca = analysis.get_structures(
+            defect_species="v_Ca_s0_0", output_path=self.VASP_DIR
+        )
+        df = analysis.compare_structures(
+            defect_structures_dict=structures_v_Ca,
+            defect_energies_dict=energies_v_Ca
+        )
+        # df_from_csv = pd.read_csv(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "df_v_Ca_s0_0.csv"))
+        # Check that the two dataframes are the same
+        # pd.testing.assert_frame_equal(df, df_from_csv)
+        self.assertEqual(
+            df.iloc[13].to_list(), ['Dimer', 0.0, 0.012, 0.0]
+        )
+        # Delete distortion directories
+        for distortion in energies_v_Ca["distortions"]:
+            dist_name = analysis._get_distortion_filename(distortion)
+            shutil.rmtree(os.path.join(self.VASP_DIR, "v_Ca_s0_0", dist_name))
+        shutil.rmtree(os.path.join(self.VASP_DIR, "v_Ca_s0_0", "Unperturbed"))
+
     @patch("builtins.print")
     def test_get_homoionic_bonds(self, mock_print):
         """Test get_homoionic_bonds() function"""
         with patch("builtins.print") as mock_print:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_minus0pt3_dimer_ground_state,
-                element="Te",
+                elements=["Te",],
                 radius=2.9,
                 verbose=False,
             )
@@ -852,7 +902,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_unperturbed_print:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_unperturbed,
-                element="Te",
+                elements=["Te",],
                 radius=2.9,
                 verbose=True,
             )
@@ -864,7 +914,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             bonds = analysis.get_homoionic_bonds(
                 structure=self.V_Cd_minus0pt3_dimer_ground_state,
-                element="Na",
+                elements=["Na",],
                 radius=2.9,
                 verbose=False,
             )
@@ -937,7 +987,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 ),
             )
 
-        # Without defect site and with orbital projections; 
+        # Without defect site and with orbital projections;
         # With inccorrect distortion_metadata.json
         # 1 distortion
         with warnings.catch_warnings(record=True) as w:
@@ -996,7 +1046,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                     }
                 ),
             )
-        
+
         # Without defect site, > distortion (test distance between defect and
         # polarons)
         with warnings.catch_warnings(record=True) as w:
@@ -1011,29 +1061,32 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 distortions=[-0.6, -0.5],
             )
             mags_dict_test = {
-                -0.6: DataFrame({
-                    "Site": {"Ce(16)": "Ce(16)", "Ce(20)": "Ce(20)"},
-                    "Frac coords": {
-                        "Ce(16)": [0.246, 0.511, 0.244],
-                        "Ce(20)": [0.506, 0.511, 0.504]
-                    },
-                    "Site mag": {"Ce(16)": -1.794, "Ce(20)": 1.795},
-                    "Dist. (Å)": {"Ce(16)": 2.46, "Ce(20)": 2.46}
-                }),
-                -0.5: DataFrame({
-                    "Site": {"Ce(8)": "Ce(8)", "Ce(16)": "Ce(16)"},
-                    "Frac coords": {
-                        "Ce(8)": [0.506, 0.248, 0.242],
-                        "Ce(16)": [0.246, 0.509, 0.242]
-                    },
-                    "Site mag": {"Ce(8)": 1.792, "Ce(16)": -1.795},
-                    "Dist. (Å)": {"Ce(8)": 2.42, "Ce(16)": 2.46}
-                })
-            } 
+                -0.6: DataFrame(
+                    {
+                        "Site": {"Ce(16)": "Ce(16)", "Ce(20)": "Ce(20)"},
+                        "Frac coords": {
+                            "Ce(16)": [0.246, 0.511, 0.244],
+                            "Ce(20)": [0.506, 0.511, 0.504],
+                        },
+                        "Site mag": {"Ce(16)": -1.794, "Ce(20)": 1.795},
+                        "Dist. (Å)": {"Ce(16)": 2.46, "Ce(20)": 2.46},
+                    }
+                ),
+                -0.5: DataFrame(
+                    {
+                        "Site": {"Ce(8)": "Ce(8)", "Ce(16)": "Ce(16)"},
+                        "Frac coords": {
+                            "Ce(8)": [0.506, 0.248, 0.242],
+                            "Ce(16)": [0.246, 0.509, 0.242],
+                        },
+                        "Site mag": {"Ce(8)": 1.792, "Ce(16)": -1.795},
+                        "Dist. (Å)": {"Ce(8)": 2.42, "Ce(16)": 2.46},
+                    }
+                ),
+            }
             pd.testing.assert_frame_equal(mags[-0.6], mags_dict_test[-0.6])
             pd.testing.assert_frame_equal(mags[-0.5], mags_dict_test[-0.5])
-            
-        
+
         # Non existent structure
         self.copy_v_Ti_OUTCARs()
         os.mkdir(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%")
@@ -1107,7 +1160,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             self.assertTrue(
                 any(
-                    "OUTCAR file not found in path" in str(warning.message)
+                    f"OUTCAR(.gz) file not found in path" in str(warning.message)
                     for warning in w
                 )
             )

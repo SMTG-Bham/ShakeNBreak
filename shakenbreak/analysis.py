@@ -12,6 +12,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
@@ -115,14 +116,28 @@ def _get_distortion_filename(distortion) -> str:
         else:
             distortion_label = f"Bond_Distortion_{distortion:.1f}%"
     elif isinstance(distortion, str):
-        if "_from_" in distortion and "Rattled" not in distortion:
+        if "_from_" in distortion and (
+            "Rattled" not in distortion
+            and "Dimer" not in distortion
+        ):
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
-        elif "Rattled_from_" in distortion or distortion in [
-            "Unperturbed",
-            "Rattled",
-        ]:
+        elif (
+            "Rattled_from_" in distortion
+            or "Dimer_from" in distortion
+            or distortion in [
+                "Unperturbed",
+                "Rattled",
+                "Dimer",
+            ]
+        ):
             distortion_label = distortion
+        elif (
+            distortion == "Unperturbed"
+            or distortion == "Rattled"
+            or distortion == "Dimer"
+        ):
+            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"/"Dimer"
         else:
             try:  # try converting to float, in case user entered '0.5'
                 distortion = float(distortion)
@@ -152,19 +167,36 @@ def _format_distortion_names(
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
-        "Unperturbed" in distortion_label or "Rattled" in distortion_label
+        "Unperturbed" in distortion_label
+        or "Rattled" in distortion_label
+        or "Dimer" in distortion_label
     ) and "from" not in distortion_label:
         return distortion_label
     elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
         "%"
     ):
         return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
+    # From other charge states
     elif distortion_label.startswith("Bond_Distortion") and (
         "_from_" in distortion_label
     ):
         # distortions from other charge state of the defect
         return distortion_label.split("Bond_Distortion_")[-1]
     elif "Rattled" in distortion_label and "_from_" in distortion_label:
+        return distortion_label
+    elif "Dimer" in distortion_label and "_from_" in distortion_label:
+        return distortion_label
+    # detected as High_Energy - normally wouldn't be parsed, but for debugging purposes
+    # TODO: remove this
+    elif (
+        distortion_label.startswith("Bond_Distortion")
+        and "High_Energy" in distortion_label
+    ):
+        return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
+    elif (
+        ("Dimer" in distortion_label or "Rattled" in distortion_label)
+        and "High_Energy" in distortion_label
+    ):
         return distortion_label
     else:
         return "Label_not_recognized"
@@ -187,6 +219,10 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
         :obj:`tuple`:
             (Energy difference, ground state bond distortion)
     """
+    if not defect_energies_dict["distortions"]:
+        if "Unperturbed" in defect_energies_dict:
+            return 0, "Unperturbed"
+
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
@@ -272,10 +308,7 @@ def _sort_data(
         and "Unperturbed" in defect_energies_dict
     ):
         # no parsed distortion results but Unperturbed present
-        warnings.warn(
-            f"No distortion results parsed from {energies_file}, returning None"
-        )
-        return None, None, None
+        warnings.warn(f"No distortion results parsed from {energies_file}")
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
     defect_name = energies_file.split("/")[-1].split(".yaml")[0]
@@ -472,7 +505,7 @@ def get_structures(
         distortion_subdirectories = [
             i
             for i in next(os.walk(f"{output_path}/{defect_species}"))[1]
-            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("Rattled" in i)
+            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("Rattled" in i) or ("Dimer" in i)
         ]  # distortion subdirectories
         if not distortion_subdirectories:
             raise FileNotFoundError(
@@ -596,6 +629,8 @@ def _calculate_atomic_disp(
     struct1: Structure,
     struct2: Structure,
     stol: float = 0.5,
+    ltol: float = 0.3,
+    angle_tol: float = 5,
 ) -> tuple:
     """
     Calculate root mean square displacement and atomic displacements,
@@ -621,7 +656,7 @@ def _calculate_atomic_disp(
             normalized displacements between the two structures.
     """
     sm = StructureMatcher(
-        ltol=0.3, stol=stol, angle_tol=5, primitive_cell=False, scale=True
+        ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True
     )
     struct1, struct2 = sm._process_species([struct1, struct2])
     struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
@@ -639,6 +674,8 @@ def calculate_struct_comparison(
     metric: str = "max_dist",
     ref_structure: Union[str, float, Structure] = "Unperturbed",
     stol: float = 0.5,
+    ltol: float = 0.3,
+    angle_tol: float = 5,
     min_dist: float = 0.1,
     verbose: bool = True,
 ) -> dict:
@@ -727,6 +764,8 @@ def calculate_struct_comparison(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
                     stol=stol,
+                    ltol=ltol,
+                    angle_tol=angle_tol,
                 )
                 if metric == "disp":
                     disp_dict[distortion] = (
@@ -934,7 +973,7 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    element: str,
+    elements: list,
     radius: Optional[float] = 3.3,
     verbose: bool = True,
 ) -> dict:
@@ -946,8 +985,9 @@ def get_homoionic_bonds(
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
-        element (:obj:`str`):
-            element symbol for which to find the homoionic bonds.
+        elements (:obj:`list`):
+            List of element symbols (wihout oxidation state) for which
+            to find the homoionic bonds (e.g. ["Te", "Se"]).
         radius (:obj:`float`, optional):
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
@@ -960,45 +1000,59 @@ def get_homoionic_bonds(
             homoionic neighbours and distances (A) (e.g.
             {'O(1)': {'O(2)': '2.0 A', 'O(3)': '2.0 A'}})
     """
+    if isinstance(elements, str): # For backward compatibility
+        elements = [elements,]
     structure = structure.copy()
-    if Element(element) not in structure.composition.elements:
-        warnings.warn(f"Your structure does not contain element {element}!")
-        return {}
+    structure.remove_oxidation_states()
+    for element in elements:
+        if Element(element) not in structure.composition.elements:
+            warnings.warn(f"Your structure does not contain element {element}!")
+            return {}
+    # element = elements[0]
     # Search for homoionic bonds in the whole structure
-    sites = [
-        (site_index, site)
-        for site_index, site in enumerate(structure)
-        if site.species_string == element
-    ]
+    sites = []
+    for element in elements:
+        sites.extend([
+            (site_index, site)
+            for site_index, site in enumerate(structure)
+            if site.species_string == element
+        ])
     homoionic_bonds = {}
     for site_index, site in sites:
         neighbours = structure.get_neighbors(site, r=radius)
-        if element in [site.species_string for site in neighbours]:
-            site_neighbours = [
-                (
-                    neighbour.species_string,
-                    neighbour.index,
-                    round(neighbour.distance(site), 2),
-                )
-                for neighbour in neighbours
-            ]
-            if f"{site.species_string}({site_index})" not in [
-                list(element.keys())[0] for element in homoionic_bonds.values()
-            ]:  # avoid duplicates
-                homoionic_neighbours = {
-                    f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A"
-                    for neighbour in site_neighbours
-                    if neighbour[0] == element
-                }
-                homoionic_bonds[
-                    f"{site.species_string}({site_index})"
-                ] = homoionic_neighbours
-                if verbose:
-                    print(
-                        f"{site.species_string}({site_index}): "
-                        f"{homoionic_neighbours}",
-                        "\n",
+        # Check if any of the neighbours is the specified elements
+        for element in elements:
+            if element in [site.species_string for site in neighbours]:
+                site_neighbours = [
+                    (
+                        neighbour.species_string,
+                        neighbour.index,
+                        round(neighbour.distance(site), 2),
                     )
+                    for neighbour in neighbours
+                ]
+                if f"{site.species_string}({site_index})" not in [
+                    list(element.keys())[0] for element in homoionic_bonds.values()
+                ]:  # avoid duplicates
+                    homoionic_neighbours = {
+                        f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A"
+                        for neighbour in site_neighbours
+                        if neighbour[0] == element
+                    }
+                    if f"{site.species_string}({site_index})" in homoionic_bonds:
+                        homoionic_bonds[
+                            f"{site.species_string}({site_index})"
+                        ].update(homoionic_neighbours)
+                    else:
+                        homoionic_bonds[
+                            f"{site.species_string}({site_index})"
+                        ] = homoionic_neighbours
+                    if verbose:
+                        print(
+                            f"{site.species_string}({site_index}): "
+                            f"{homoionic_neighbours}",
+                            "\n",
+                        )
     if not homoionic_bonds and verbose:
         print(f"No homoionic bonds found with a search radius of {radius} A")
     return homoionic_bonds
@@ -1122,7 +1176,7 @@ def get_site_magnetizations(
         raise FileNotFoundError(f"{output_path}/{defect_species} does not exist!")
 
     defect_site_coords = None
-    if isinstance(defect_site, list) or isinstance(defect_site, np.ndarray):
+    if isinstance(defect_site, (list, np.ndarray)):
         defect_site_coords = defect_site
     elif not defect_site:  # look for defect site, in order to include the distance
         # between sites with significant magnetization and the defect
@@ -1130,8 +1184,8 @@ def get_site_magnetizations(
             with open(f"{output_path}/distortion_metadata.json", "r") as f:
                 try:
                     defect_species_without_charge = "_".join(
-                        defect_species.split("_")[0:-1]
-                    )  # remove charge state
+                        defect_species.split("_")[:-1]
+                    )
                     defect_site_coords = json.load(f)["defects"][
                         defect_species_without_charge
                     ]["unique_site"]
@@ -1164,22 +1218,22 @@ def get_site_magnetizations(
                 "found. Skipping magnetisation analysis."
             )
             continue
-        if isinstance(defect_site_coords, list) or isinstance(
-            defect_site_coords, np.ndarray
-        ):
+        if isinstance(defect_site_coords, (list, np.ndarray)):
             # for vacancies, append fake atom
             structure.append(
                 species="V", coords=defect_site_coords, coords_are_cartesian=False
             )
             defect_site = -1  # index of the added fake atom
-        if not os.path.exists(f"{output_path}/{defect_species}/{dist_label}/OUTCAR"):
+
+        try:
+            outcar = get_outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+        except FileNotFoundError:
             warnings.warn(
-                f"OUTCAR file not found in path {output_path}/{defect_species}/"
-                f"{dist_label}/OUTCAR. "
+                f"OUTCAR(.gz) file not found in path {output_path}/{defect_species}/{dist_label}. "
                 "Skipping magnetization analysis."
             )
             continue
-        outcar = Outcar(f"{output_path}/{defect_species}/{dist_label}/OUTCAR")
+
         if not outcar.spin:
             warnings.warn(
                 f"{output_path}/{defect_species}/{dist_label}/OUTCAR is from a non-spin-polarised "

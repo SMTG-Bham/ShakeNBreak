@@ -13,7 +13,7 @@ from hiphive.structure_generation.rattle import (
 from pymatgen.analysis.local_env import MinimumDistanceNN
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-
+from pymatgen.analysis.local_env import CrystalNN
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     """Format warnings output"""
@@ -30,6 +30,7 @@ def distort(
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     distorted_element: Optional[str] = None,
+    distorted_atoms: Optional[list] = None,
     verbose: Optional[bool] = False,
 ) -> dict:
     """
@@ -54,6 +55,9 @@ def distort(
             vacancies).
         distorted_element (:obj:`str`, optional):
             Neighbouring element to distort. If None, the closest neighbours to
+            the defect will be chosen. (Default: None)
+        distorted_atoms (:obj:`list`, optional):
+            List of atom indices to distort. If None, the closest neighbours to
             the defect will be chosen. (Default: None)
         verbose (:obj:`bool`, optional):
             Whether to print distortion information. (Default: False)
@@ -82,58 +86,77 @@ def distort(
     neighbours = (
         num_nearest_neighbours + 1
     )  # Prevent self-counting of the defect atom itself
-    distances = [  # Get all distances between the selected atom and all other atoms
-        (
-            round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
-            index + 1,
-            symbol,
-        )
-        for index, symbol in zip(
-            list(range(len(input_structure_ase))),
-            input_structure_ase.get_chemical_symbols(),
-        )
-    ]
-    distances = sorted(  # Sort the distances shortest->longest
-        distances, key=lambda tup: tup[0]
-    )
-
-    if (
-        distorted_element
-    ):  # filter the neighbours that match the element criteria and are
-        # closer than 4.5 Angstroms
-        nearest = []  # list of nearest neighbours
-        for dist, index, element in distances[1:]:
-            if (
-                element == distorted_element
-                and dist < 4.5
-                and len(nearest) < num_nearest_neighbours
-            ):
-                nearest.append((dist, index, element))
-
-        # if the number of nearest neighbours not reached, add other neighbouring
-        # elements
-        if len(nearest) < num_nearest_neighbours:
-            for i in distances[1:]:
-                if (
-                    len(nearest) < num_nearest_neighbours
-                    and i not in nearest
-                    and i[0] < 4.5
-                ):
-                    nearest.append(i)
-            warnings.warn(
-                f"{distorted_element} was specified as the nearest neighbour "
-                f"element to distort, with `distortion_factor` {distortion_factor} "
-                f"but did not find `num_nearest_neighbours` "
-                f"({num_nearest_neighbours}) of these elements within 4.5 \u212B "
-                f"of the defect site. For the remaining neighbours to distort, "
-                f"we ignore the elemental identity. The final distortion information is:"
+    if distorted_atoms and len(distorted_atoms) >= num_nearest_neighbours:
+        nearest = [
+            (
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                index + 1,
+                input_structure_ase.get_chemical_symbols()[index],
             )
-            sys.stderr.flush()  # ensure warning message printed before distortion info
-            verbose = True
+            for index in distorted_atoms
+        ]
+        nearest = sorted(nearest, key=lambda tup: tup[0])[0:num_nearest_neighbours]
     else:
-        nearest = distances[
-            1:neighbours
-        ]  # Extract the nearest neighbours according to distance
+        if distorted_atoms:
+            warnings.warn(
+                f"Only {len(distorted_atoms)} atoms were specified to distort in `distorted_atoms`, "
+                f"but `num_nearest_neighbours` was set to {num_nearest_neighbours}. "
+                f"Will overide the indices specified in `distorted_atoms` and distort the "
+                f"{num_nearest_neighbours} closest neighbours to the defect site."
+            )
+        distances = [  # Get all distances between the selected atom and all other atoms
+            (
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                index + 1,  # Indices start from 1
+                symbol,
+            )
+            for index, symbol in zip(
+                list(range(len(input_structure_ase))),
+                input_structure_ase.get_chemical_symbols(),
+            )
+        ]
+        distances = sorted(  # Sort the distances shortest->longest
+            distances, key=lambda tup: tup[0]
+        )
+
+        if (
+            distorted_element
+        ):  # filter the neighbours that match the element criteria and are
+            # closer than 4.5 Angstroms
+            nearest = []  # list of nearest neighbours
+            for dist, index, element in distances[1:]: # starting from 1 to exclude defect atom
+                if (
+                    element == distorted_element
+                    and dist < 4.5
+                    and len(nearest) < num_nearest_neighbours
+                ):
+                    nearest.append((dist, index, element))
+
+            # if the number of nearest neighbours not reached, add other neighbouring
+            # elements
+            if len(nearest) < num_nearest_neighbours:
+                for i in distances[1:]:
+                    if (
+                        len(nearest) < num_nearest_neighbours
+                        and i not in nearest
+                        and i[0] < 4.5
+                    ):
+                        nearest.append(i)
+                warnings.warn(
+                    f"{distorted_element} was specified as the nearest neighbour "
+                    f"element to distort, with `distortion_factor` {distortion_factor} "
+                    f"but did not find `num_nearest_neighbours` "
+                    f"({num_nearest_neighbours}) of these elements within 4.5 \u212B "
+                    f"of the defect site. For the remaining neighbours to distort, "
+                    f"we ignore the elemental identity. The final distortion information is:"
+                )
+                sys.stderr.flush()  # ensure warning message printed before distortion info
+                verbose = True
+        else:
+            nearest = distances[
+                1:neighbours
+            ]  # Extract the nearest neighbours according to distance
+
     distorted = [
         (i[0] * distortion_factor, i[1], i[2]) for i in nearest
     ]  # Distort the nearest neighbour distances according to the distortion factor
@@ -169,6 +192,92 @@ def distort(
             Original Neighbour Distances: {nearest}
             Distorted Neighbour Distances:\n\t{distorted}"""
         )
+
+    return bond_distorted_defect
+
+
+def apply_dimer_distortion(
+    structure: Structure,
+    site_index: Optional[int] = None,
+    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+) -> dict:
+    """
+    Apply a dimer distortion to a defect structure.
+    The defect nearest neighbours are determined, from them the two closest
+    in distance are selected, which are pushed towards each other so that
+    their distance is 2.0 A.
+
+    Args:
+        structure (Structure):
+            Defect structure.
+        site_index (Optional[int], optional):
+            Index of defect site (for non vacancy defects).
+            Defaults to None.
+        frac_coords (Optional[np.array], optional):
+            Fractional coordinates of the defect site in the structure (for
+            vacancies).
+            Defaults to None.
+
+    Returns:
+        obj:`Structure`:
+            Distorted dimer structure
+    """
+    # Get ase atoms object
+    aaa = AseAtomsAdaptor()
+    input_structure_ase = aaa.get_atoms(structure)
+
+    if site_index is not None:  # site_index can be 0
+        atom_number = site_index - 1  # Align atom number with python 0-indexing
+    elif type(frac_coords) in  [list, tuple, np.ndarray]:  # Only for vacancies!
+        input_structure_ase.append("V")  # fake "V" at vacancy
+        input_structure_ase.positions[-1] = np.dot(
+            frac_coords, input_structure_ase.cell
+        )
+        atom_number = len(input_structure_ase) - 1
+    else:
+        raise ValueError(
+            "Insufficient information to apply bond distortions, no `site_index`"
+            " or `frac_coords` provided."
+        )
+
+    # Get defect nn
+    struct = aaa.get_structure(input_structure_ase)
+    cnn = CrystalNN()
+    sites = [d['site'] for d in cnn.get_nn_info(struct, atom_number)]
+
+    # Get distances between NN
+    distances = {}
+    for i, site in enumerate(sites):
+        for other_site in sites[i+1:]:
+            distances[(site.index, other_site.index)] = site.distance(other_site)
+    # Get defect NN with smallest distance
+    site_indexes = min(distances, key=distances.get)
+    # Set their distance to 2 A
+    input_structure_ase.set_distance(
+        a0=site_indexes[0], a1=site_indexes[1], distance=2.0, fix=0.5, mic=True
+    )
+    if type(frac_coords) in  [list, tuple, np.ndarray]:
+        input_structure_ase.pop(-1)  # remove fake V from vacancy structure
+
+    distorted_structure = aaa.get_structure(input_structure_ase)
+    # Create dictionary with distortion info & distorted structure
+    # Get distorted atoms
+    distorted_structure_wout_oxi = distorted_structure.copy()
+    distorted_structure_wout_oxi.remove_oxidation_states()
+    distorted_atoms = [
+        (site_indexes[0], distorted_structure_wout_oxi[site_indexes[0]].species_string),
+        (site_indexes[1], distorted_structure_wout_oxi[site_indexes[1]].species_string),
+    ]
+    bond_distorted_defect = {
+        "distorted_structure": distorted_structure,
+        "num_distorted_neighbours": 2,
+        "distorted_atoms": distorted_atoms,
+        "undistorted_structure": structure,
+    }
+    if site_index:
+        bond_distorted_defect["defect_site_index"] = site_index
+    elif type(frac_coords) in [np.ndarray, list]:
+        bond_distorted_defect["defect_frac_coords"] = frac_coords
 
     return bond_distorted_defect
 
@@ -296,7 +405,7 @@ def rattle(
                         active_atoms=active_atoms,
                         nbr_cutoff=nbr_cutoff,
                         width=width,
-                        max_attempts=7000,  # default is 5000
+                        max_attempts=max(max_attempts, 7000),  # default is 5000
                         max_disp=max_disp,
                         seed=seed,
                     )[0]
@@ -672,7 +781,7 @@ def local_mc_rattle(
                 active_atoms=active_atoms,
                 nbr_cutoff=nbr_cutoff,
                 width=width,
-                max_attempts=7000,  # default is 5000
+                max_attempts=max(7000, max_attempts),  # default is 5000
                 max_disp=max_disp,
                 seed=seed,
             )[0]

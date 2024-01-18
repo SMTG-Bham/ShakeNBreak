@@ -190,7 +190,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         )
         defect_charges_dict = {**defect_charges_dict_cdte, **defect_charges_dict_tio2}
         self.assertDictEqual(
-            defect_charges_dict, {"v_O_s1": [0], "vac_1_Ti": [0], "vac_1_Cd": [0]}
+            defect_charges_dict,
+            {"v_O_s1": [0], 'v_Ca_s0': [0], "vac_1_Ti": [0], "vac_1_Cd": [0], "v_Ge_s16": [0]}
         )
 
         for i in self.defect_folders_list:
@@ -207,6 +208,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "vac_1_Cd": [0],
             "vac_1_Ti": [0],
             "v_O_s1": [0],
+            'v_Ca_s0': [0],
+            "v_Ge_s16": [0],
         }
         self.assertEqual(
             defect_charges_dict.keys(),
