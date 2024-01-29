@@ -14,7 +14,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from doped.plotting import _format_defect_name
+from doped.utils.plotting import _format_defect_name
 from matplotlib import font_manager
 from matplotlib.figure import Figure
 
