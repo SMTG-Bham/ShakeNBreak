@@ -85,7 +85,7 @@ SnB_run_loop() {
     if [[ "$i" == *"_High_Energy"* ]]; then
       continue
     fi
-    if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR; then # check calculation fully relaxed and finished
+    if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR || ! grep -q "converged" "${i}"/OUTCAR; then  # check calculation not converged
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
         "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
@@ -111,17 +111,17 @@ SnB_run_loop() {
 
         num_energies=$(grep -c entropy= OUTCAR)
         if ((num_energies > 50)); then
-          init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | head -1)
+          init_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -50 | head -1)  # 50th last energy
           fin_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
           energy_diff=$(echo "$init_energy - $fin_energy" | bc)
 
-          # if there are more than 50 ionic steps and the final energy is less than 2 meV lower than the
-          # initial energy then calculation is essentially converged, don't rerun
+          # if the energy has changed by less than 2 meV in the last 50 ionic steps, then calculation is
+          # essentially converged, don't rerun
           if (($(echo "${energy_diff#-} < 0.002" | bc -l))); then
             if [ "$verbose" = true ]; then
               echo "${i%?} has some (small) residual forces but energy converged to < 2 meV, considering this converged."
             fi
-            echo "ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, considering this converged." >>OUTCAR
+            echo "ShakeNBreak: <2 meV over last 50 ionic steps for this defect, considering this converged." >>OUTCAR
             # sed -i.bak 's/IBRION.*/IBRION = 1/g' INCAR  && rm -f INCAR.bak # sometimes helps to change IBRION if relaxation not converging
             builtin cd .. || return
             continue
