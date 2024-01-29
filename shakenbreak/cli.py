@@ -10,7 +10,7 @@ from subprocess import call
 
 import click
 from doped.generation import get_defect_name_from_entry
-from doped.plotting import _format_defect_name
+from doped.utils.plotting import _format_defect_name
 from doped.utils.parsing import get_outcar
 
 # Monty and pymatgen
@@ -298,7 +298,7 @@ def generate(
     ]
 
     if name is None:
-        name = get_defect_name_from_entry(defect_entries[0], unrelaxed=True)
+        name = get_defect_name_from_entry(defect_entries[0], relaxed=False)
 
     # if user_charges not set for all defects, print info about how charge states will be
     # determined

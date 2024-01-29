@@ -11,7 +11,7 @@ from typing import Optional
 
 import pandas as pd
 from ase.io import write as ase_write
-from doped.plotting import _format_defect_name
+from doped.utils.plotting import _format_defect_name
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
