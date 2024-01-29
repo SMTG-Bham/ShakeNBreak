@@ -209,10 +209,10 @@ Automatic testing is run on the master and develop branches using Github Actions
 run tests and add new tests for any new features whenever submitting pull requests.
 
 Studies using ``ShakeNBreak``
-========================
+=============================
 
-We'll add papers that use `ShakeNBreak` to this list as they come out!
-
+- I\. Mosquera-Lois et al. `arXiv <https://doi.org/10.48550/arXiv.2401.12127>`_ 2024
+- K\. Li et al. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23>`_ 2024
 - X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
 - Y\. Kumagai, S. R. Kavanagh et al. `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
 - J\. Willis, K. B. Spooner, D. O. Scanlon. `Applied Physics Letters <https://doi.org/10.1063/5.0170552>`__ 2023
@@ -227,6 +227,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 - (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
+.. Xinwei, Wenzhen early 2024 papers
 .. Oba book
 .. BiOI
 .. Kumagai collab paper

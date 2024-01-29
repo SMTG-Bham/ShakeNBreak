@@ -127,8 +127,9 @@ Automatic testing is run on the master and develop branches using Github Actions
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and Chris Savory.
 
 ## Studies using `ShakeNBreak`
-We'll add papers that use `ShakeNBreak` to this list as they come out!
-
+<!-- Wenzhen, Xinwei papers -->
+- I. Mosquera-Lois et al. [_arXiv_](https://doi.org/10.48550/arXiv.2401.12127) 2024
+- K. Li et al. [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23) 2023
 - X. Wang et al. [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023
 - Y. Kumagai, S. R. Kavanagh et al [_PRX Energy_](http://dx.doi.org/10.1103/PRXEnergy.2.043002) 2023
 - J. Willis, K. B. Spooner, D. O. Scanlon. [_Applied Physics Letters_](https://doi.org/10.1063/5.0170552) 2023
@@ -142,9 +143,7 @@ We'll add papers that use `ShakeNBreak` to this list as they come out!
 - C. J. Krajewska et al. [_Chemical Science_](https://doi.org/10.1039/D1SC03775G) 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi [_Nature Physics_](https://doi.org/10.1038/s41567-023-02049-9) 2023 ([Free-to-read link](https://t.co/EetpnRgjzh))
 
-
 <!-- Se -->
-<!-- Ke Sb2O5 -->
 <!-- Oba book -->
 <!-- BiOI -->
 <!-- Kumagai collab paper -->
