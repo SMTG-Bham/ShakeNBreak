@@ -188,7 +188,6 @@ SnB_run_loop() {
         fi
 
         echo "${i%?} not (fully) relaxed, saving files and rerunning"
-        bash "${DIR}"/save_vasp_files.sh
 
         if [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -ge 9 ]]; then # CONTCAR exists and greater than 9 lines
           "cp" CONTCAR POSCAR
@@ -205,7 +204,10 @@ SnB_run_loop() {
         echo "Running job for ${i%?}"
         folder_shortname="${i#*_*_}"
         # Remove % from folder_shortname as messes with some HPC schedulers
-        ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || ${job_submit_command} "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"
+        if "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || \
+           "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"; then
+          bash "${DIR}"/save_vasp_files.sh  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
+        fi
       fi
       builtin cd .. || return
     else
