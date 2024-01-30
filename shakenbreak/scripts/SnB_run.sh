@@ -85,7 +85,7 @@ SnB_run_loop() {
     if [[ "$i" == *"_High_Energy"* ]]; then
       continue
     fi
-    if [ ! -f "${i}"/OUTCAR ] || ! grep -q "required accuracy" "${i}"/OUTCAR || ! grep -q "converged" "${i}"/OUTCAR; then  # check calculation not converged
+    if [ ! -f "${i}"/OUTCAR ] || ( ! grep -q "required accuracy" "${i}"/OUTCAR && ! grep -q "converged" "${i}"/OUTCAR ); then  # check calculation not converged
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
         "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
@@ -141,47 +141,50 @@ SnB_run_loop() {
         fi
 
         # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR
-        if check_multiple_single_step_outcars && { [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] || [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null || [[ ! -f "CONTCAR" ]]; }; then
+        if check_multiple_single_step_outcars && { ( [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] ) || ( [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null ) || [[ ! -f "CONTCAR" ]]; }; then
             echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic "
             echo "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
         fi
 
         # check if more than 2 OUTCARs present - might indicate tricky relaxation
         if check_many_outcars; then
-            # echo "More than 2 OUTCARs present for ${i%?}, suggesting tricky relaxation. "
-            #sed -i.bak 's/IBRION.*/IBRION = 1/g' INCAR  && rm -f INCAR.bak # sometimes helps to change IBRION if relaxation taking long
-            # Check total number of ionic steps in all OUTCARs
-            num_ionic_steps=$(grep entropy= OUTCAR* | wc -l)
+          # echo "More than 2 OUTCARs present for ${i%?}, suggesting tricky relaxation. "
+          #sed -i.bak 's/IBRION.*/IBRION = 1/g' INCAR  && rm -f INCAR.bak # sometimes helps to change IBRION if relaxation taking long
+          # Check total number of ionic steps in all OUTCARs
+          num_ionic_steps=$(grep entropy= OUTCAR* | wc -l)
+          if [ -f ../Unperturbed/OUTCAR ]; then  # only compare if Unperturbed folder present
             # If equal or higher than 150, compare to final energy in Unperturbed OUTCAR
             if ((num_ionic_steps >= 150)); then
-                # Get final energy from Unperturbed OUTCAR
-                final_energy=$(grep entropy= ../Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
-                # Get final energy from last OUTCAR
-                last_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
-                # Calculate difference between final energies
-                energy_diff=$(echo "$final_energy - $last_energy" | bc)
-                # If difference is higher than 2, rename to _High_Energy and continue
-                if (($(echo "${energy_diff#-} > 2" | bc -l))); then
-                    echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation"
-                    echo "is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
-                    echo "Renaming to ${i%?}_High_Energy and continuing."
-                    builtin cd .. || return
-                    mv "${i%/}" "${i%/}_High_Energy"
-                    continue
-                # If higher than 500 and energy similar to Unperturbed, rename to _High_Energy and continue
-                elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))); then
-                    echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, "
-                    echo "indicating that ${i%?} won't lead to an energy-lowering structure. "
-                    echo "Renaming to ${i%?}_High_Energy and continuing."
-                    builtin cd .. || return
-                    mv "${i%/}" "${i%/}_High_Energy"
-                    continue
-                # If higher than 300, warn user to check this manually
-                elif ((num_ionic_steps > 300)); then
-                    echo "More than 300 ionic steps present for ${i%?}, suggesting tricky relaxation. "
-                    echo "Recommended to manually check the VASP output files for this!"
-                fi
+              # Get final energy from Unperturbed OUTCAR
+              final_energy=$(grep entropy= ../Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
+              # Get final energy from last OUTCAR
+              last_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
+              # Calculate difference between final energies
+              energy_diff=$(echo "$final_energy - $last_energy" | bc)
+              # If difference is higher than 2 eV, rename to _High_Energy and continue
+              if (($(echo "${energy_diff#-} > 2" | bc -l))); then
+                echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation"
+                echo "is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
+                echo "Renaming to ${i%?}_High_Energy and continuing."
+                builtin cd .. || return
+                mv "${i%/}" "${i%/}_High_Energy"
+                continue
+              # If higher than 500 and energy similar to Unperturbed, rename to _High_Energy and continue
+              elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))); then
+                echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, "
+                echo "indicating that ${i%?} won't lead to an energy-lowering structure. "
+                echo "Renaming to ${i%?}_High_Energy and continuing."
+                builtin cd .. || return
+                mv "${i%/}" "${i%/}_High_Energy"
+                continue
+              fi
             fi
+          fi
+          # else if more than 300 ionic steps taken (and not moved to High_Energy), warn user to check this manually
+          if ((num_ionic_steps > 300)) && [ ! -f "${i%/}_High_Energy" ]; then
+              echo "More than 300 ionic steps present for ${i%?}, suggesting tricky relaxation. "
+              echo "Recommended to manually check the VASP output files for this!"
+          fi
         fi
 
         echo "${i%?} not (fully) relaxed, saving files and rerunning"
