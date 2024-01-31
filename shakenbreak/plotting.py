@@ -412,7 +412,7 @@ def _format_datapoints_from_other_chargestates(
         elif entry == "Rattled":  # add 0.0 for Rattled
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
-        elif entry == "Dimer": # add 0.0 for Dimer
+        elif entry == "Dimer":  # add 0.0 for Dimer
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
@@ -1340,7 +1340,7 @@ def plot_colorbar(
                 energies_dict["distortions"]["Dimer"],
                 c=disp_dict["Dimer"],
                 s=50,
-                marker="s", #default_style_settings["marker"],
+                marker="s",  # default_style_settings["marker"],
                 label="Dimer",
                 cmap=colormap,
                 norm=norm,
@@ -1728,15 +1728,14 @@ def plot_datasets(
                     dataset["distortions"]["Dimer"],
                     c=colors[dataset_number],
                     s=50,
-                    marker="s", #default_style_settings["marker"],
+                    marker="s",  # default_style_settings["marker"],
                     label="Dimer",
                 )
 
             if len(sorted_distortions) > 0 and [
-
-                    key for key in dataset["distortions"]
-                    if (key != "Rattled" and key != "Dimer")
-
+                key
+                for key in dataset["distortions"]
+                if (key != "Rattled" and key != "Dimer")
             ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [

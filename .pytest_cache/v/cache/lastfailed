@@ -29,5 +29,6 @@
   "tests/test_input.py::InputTestCase::test_write_vasp_files": true,
   "tests/test_input.py::InputTestCase::test_write_vasp_files_from_doped_defect_gen": true,
   "tests/test_input.py::InputTestCase::test_write_vasp_files_from_doped_dict": true,
-  "tests/test_input.py::InputTestCase::test_write_vasp_files_from_list": true
+  "tests/test_input.py::InputTestCase::test_write_vasp_files_from_list": true,
+  "tests/test_cli.py": true
 }
