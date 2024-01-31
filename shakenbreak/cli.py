@@ -10,8 +10,8 @@ from subprocess import call
 
 import click
 from doped.generation import get_defect_name_from_entry
-from doped.utils.plotting import _format_defect_name
 from doped.utils.parsing import get_outcar
+from doped.utils.plotting import _format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
