@@ -1,3 +1,1 @@
-include parse*
 recursive-include shakenbreak *
-recursive-include data *

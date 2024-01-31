@@ -813,7 +813,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
         job_name_option = "-N"
 
     call(
-        f"{os.path.dirname(__file__)}/scripts/SnB_run.sh {optional_flags} {submit_command} {job_script} "
+        f"{os.path.dirname(__file__)}/SnB_run.sh {optional_flags} {submit_command} {job_script} "
         f"{job_name_option}",
         shell=True,
     )
