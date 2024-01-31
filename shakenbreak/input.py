@@ -776,7 +776,9 @@ def identify_defect(
 
     Returns: :obj:`Defect`
     """
-    # identify defect site, structural information, and create defect object
+    # Note: Could replace much of the code in this function with the defect_from_structures function from
+    # doped if we wanted, but works fine as is.
+    # identify defect site, structural information, and create defect object:
     try:
         defect_type, comp_diff = get_defect_type_and_composition_diff(
             bulk_structure, defect_structure
