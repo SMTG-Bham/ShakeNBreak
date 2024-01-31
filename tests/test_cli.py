@@ -1702,8 +1702,8 @@ POTCAR:
         )
         out = str(proc.communicate()[0])
         self.assertIn(
-            "Job file 'job' not found, so will only submit jobs in folders with "
-            "'job' present",
+            "Job file 'job' not found, so will only save files and submit jobs in folders with 'job' "
+            "present",
             out,
         )
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
@@ -1721,7 +1721,7 @@ POTCAR:
         )  # setting 'job command' to 'echo' to
         out = str(proc.communicate()[0])
         self.assertNotIn(
-            "Job file 'job_file' not found, so will only submit jobs in folders with "
+            "Job file 'job_file' not found, so will only save files and submit jobs in folders with "
             "'job_file' present",
             out,
         )
@@ -1747,7 +1747,7 @@ POTCAR:
         )  # setting 'job command' to 'echo' to
         out = str(proc.communicate()[0])
         self.assertNotIn(
-            "Job file '../job_file' not found, so will only submit jobs in folders with "
+            "Job file '../job_file' not found, so will only save files and submit jobs in folders with "
             "'job_file' present",
             out,
         )
@@ -1769,8 +1769,7 @@ POTCAR:
             for file in os.listdir("Bond_Distortion_10.0%")
             if "CAR_" in file and "on" in file
         ]
-        for file in car_files:
-            # remove
+        for file in car_files:  # remove
             os.remove(f"Bond_Distortion_10.0%/{file}")
 
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
@@ -1787,13 +1786,52 @@ POTCAR:
             for file in os.listdir("Bond_Distortion_10.0%")
             if "on" in file and "CAR_" in file
         ]  # contcar and outcar
-        self.assertEqual(len(saved_files), 2)  # CONTCAR, OUTCAR
+        self.assertEqual(
+            len(saved_files), 0
+        )  # no saved files, because submit command will fail
+
+        # with job file present, but failing job submit command (no file saving)
+        with open("job", "w") as fp:
+            fp.write("Test pop")
+        proc = subprocess.Popen(["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out = str(proc.communicate()[0])
+        self.assertIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        saved_files = [
+            file
+            for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]
+        self.assertEqual(
+            len(saved_files), 0
+        )  # no saved files, because submit command fails
+
+        # with working (fake) job submit command:
+        proc = subprocess.Popen(
+            ["snb-run", "-s echo", "-n this"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        out = str(proc.communicate()[0])
+        self.assertIn(
+            "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
+        )
+        saved_files = [
+            file
+            for file in os.listdir("Bond_Distortion_10.0%")
+            if "on" in file and "CAR_" in file
+        ]  # poscar, contcar and outcar
+        self.assertEqual(len(saved_files), 3)  # POSCAR, CONTCAR, OUTCAR
+        self.assertEqual(len([i for i in saved_files if "POSCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
         self.assertEqual(len([i for i in saved_files if "OUTCAR" in i]), 1)
         for i in saved_files:
             os.remove(f"Bond_Distortion_10.0%/{i}")
         os.remove("Bond_Distortion_10.0%/OUTCAR")
         os.remove("Bond_Distortion_10.0%/POSCAR")
+        if_present_rm("Bond_Distortion_10.0%/job")
+        if_present_rm("job")
 
         # test "--all" option
         os.chdir("..")
@@ -1832,14 +1870,11 @@ POTCAR:
             for f in os.listdir("v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy")
             if "OUTCAR" in f
         ]
-        print("OUTCARS for v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy:", outcars)
-        self.assertTrue(
-            len(outcars) == 6
-        )  # last OUTCAR not saved cause high energy distortion
+        assert len(outcars) == 6  # last OUTCAR not saved cause high energy distortion
         outcars = [
             f for f in os.listdir("v_Ge_s16_0/Bond_Distortion_40.0%") if "OUTCAR" in f
         ]
-        self.assertTrue(len(outcars) == 4)  # last OUTCAR saved
+        assert len(outcars) == 3  # last OUTCAR saved
         # Clean up; rename high energy directories
         os.rename(
             "v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy",
@@ -1956,7 +1991,7 @@ energy  without entropy=        7.99185422  energy(sigma->0) =        7.99185422
             for file in os.listdir("Bond_Distortion_10.0%")
             if "on" in file and "CAR_" in file
         ]
-        for i in car_files:
+        for i in car_files:  # remove
             os.remove(f"Bond_Distortion_10.0%/{i}")
         proc = subprocess.Popen(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
@@ -2311,6 +2346,14 @@ Chosen VASP error message: {error_string}
         with open("Bond_Distortion_10.0%/INCAR", "w") as fp:
             fp.write("ALGO = Fast")
 
+        car_files = [
+            file
+            for file in os.listdir("Bond_Distortion_10.0%")
+            if "CAR_" in file and "on" in file
+        ]
+        for file in car_files:
+            os.remove(f"Bond_Distortion_10.0%/{file}")
+
         proc = subprocess.Popen(
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
             stdout=subprocess.PIPE,
@@ -2425,7 +2468,7 @@ Chosen VASP error message: {error_string}
             ["snb-run", "-v", "-s echo", "-n this", "-j job_file"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-        )  # setting 'job command' to 'echo' to
+        )  # setting 'job command' to 'echo'
         out = str(proc.communicate()[0])
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertNotIn("Unperturbed fully relaxed", out)
@@ -2440,7 +2483,7 @@ Chosen VASP error message: {error_string}
         self.assertIn(
             "ISPIN = 2", incar_string
         )  # no change in INCAR as run was fully converged
-        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+        self.assertEqual(len(os.listdir("Bond_Distortion_-40.0%")), 3)  # no new files
 
         with open(f"Unperturbed/INCAR", "r") as fp:
             incar_string = fp.read()
@@ -2713,9 +2756,6 @@ Chosen VASP error message: {error_string}
                 ]
             )
         )
-        if os.path.exists("./example_results.yaml"):
-            # Print contents
-            tmp = loadfn("./example_results.yaml")
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml"))
         )
