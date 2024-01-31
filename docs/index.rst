@@ -222,6 +222,7 @@ Studies using ``ShakeNBreak``
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+- Y-S\. Choi et al. `ACS Appl. Energy Mater. <https://doi.org/10.1021/acsaem.2c03466>`__ 2022 (early version)
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
 - C\. J. Krajewska et al. `Chemical Science`_ 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
