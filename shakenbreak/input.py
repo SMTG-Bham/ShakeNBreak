@@ -258,7 +258,7 @@ def _create_vasp_input(
         match_found = not any(
             any(
                 x in i
-                for i in os.listdir(dir)
+                for i in os.listdir(os.path.join(output_path, dir))
                 for x in ["Unperturbed", "Rattled", "Bond_Distortion"]
             )
             for dir in matching_dirs
@@ -2482,6 +2482,8 @@ class Distortions:
                 tuple of dictionaries with new defects_dict (containing the
                 distorted structures) and defect distortion parameters.
         """
+        # Note: If input file generation was becoming too slow, could try to profile deeper / possibly
+        # implement multiprocessing.
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
         )
