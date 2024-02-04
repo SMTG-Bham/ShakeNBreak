@@ -2243,24 +2243,12 @@ class Distortions:
         )
         pristine_site = _get_bulk_defect_site(defect_entry)
 
-        try:
-            distorted_defect_dict = {
-                "defect_type": defect_type,
-                "defect_site": defect_site,
-                "defect_supercell_site": pristine_site,  # original site in pristine supercell
-                "defect_multiplicity": defect.get_multiplicity(),
-                "charges": {int(charge): {} for charge in user_charges},
-            }  # General info about (neutral) defect
-        except NotImplementedError:  # interstitial
-            distorted_defect_dict = {
-                "defect_type": defect_type,
-                "defect_site": defect_site,
-                "defect_supercell_site": pristine_site,
-                "defect_multiplicity": _get_voronoi_multiplicity(
-                    defect.site, defect.structure
-                ),
-                "charges": {int(charge): {} for charge in user_charges},
-            }  # General info about (neutral) defect
+        distorted_defect_dict = {
+            "defect_type": defect_type,
+            "defect_site": defect_site,
+            "defect_supercell_site": pristine_site,  # original site in pristine supercell
+            "charges": {int(charge): {} for charge in user_charges},
+        }  # General info about (neutral) defect
         if defect_type == "substitution":  # substitutions and antisites
             sub_site_in_bulk = defect.defect_site
             distorted_defect_dict[
