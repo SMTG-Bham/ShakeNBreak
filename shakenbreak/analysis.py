@@ -789,10 +789,10 @@ def calculate_struct_comparison(
                     distortion
                 ] = None  # algorithm couldn't match lattices. Set comparison
                 # metric to None
-                warnings.warn(
-                    f"pymatgen StructureMatcher could not match lattices between "
-                    f"{ref_name} and {distortion} structures."
-                )
+                # warnings.warn(
+                #     f"pymatgen StructureMatcher could not match lattices between "
+                #     f"{ref_name} and {distortion} structures."
+                # )  # Unnecessary warning, occurs often with highly-distorted/disordered structures
 
     return disp_dict
 
