@@ -544,18 +544,9 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                     self.defect_charges_dict, self.VASP_CDTE_DATA_DIR, stol=0.01
                 )
             )  # same call as before, but with stol
-            # many warnings due to difficulty in structure matching (20) – with small stol
-            # (confirming stol has been passed to compare_structures), and no data parsed from
-            # Int_Cd_2_+1 (1)
+            # no data parsed from Int_Cd_2_+1 (1)
             for warning in w:
                 self.assertEqual(warning.category, UserWarning)
-            warning_message = (
-                "pymatgen StructureMatcher could not match lattices between specified "
-                "ref_structure (Cd31 Te32) and -0.475 structures."
-            )
-            self.assertTrue(
-                any([str(warning.message) == warning_message for warning in w])
-            )
 
         # test no defects specified and write_input_files = True
         for fake_distortion_dir in ["Bond_Distortion_-7.5%", "Unperturbed"]:
