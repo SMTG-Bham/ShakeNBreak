@@ -211,6 +211,7 @@ run tests and add new tests for any new features whenever submitting pull reques
 Studies using ``ShakeNBreak``
 =============================
 
+- X\. Wang et al. `arXiv <https://arxiv.org/abs/2402.04434>`_ 2024
 - I\. Mosquera-Lois et al. `arXiv <https://doi.org/10.48550/arXiv.2401.12127>`_ 2024
 - K\. Li et al. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23>`_ 2024
 - X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
@@ -228,7 +229,7 @@ Studies using ``ShakeNBreak``
 - (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
-.. Xinwei, Wenzhen early 2024 papers
+.. Wenzhen paper
 .. Oba book
 .. BiOI
 .. Kumagai collab paper
