@@ -127,7 +127,8 @@ Automatic testing is run on the master and develop branches using Github Actions
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and Chris Savory.
 
 ## Studies using `ShakeNBreak`
-<!-- Wenzhen, Xinwei papers -->
+
+- X. Wang et al. [_arXiv_](https://arxiv.org/abs/2402.04434) 2024
 - I. Mosquera-Lois et al. [_arXiv_](https://doi.org/10.48550/arXiv.2401.12127) 2024
 - K. Li et al. [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23) 2023
 - X. Wang et al. [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023
@@ -144,6 +145,7 @@ Automatic testing is run on the master and develop branches using Github Actions
 - C. J. Krajewska et al. [_Chemical Science_](https://doi.org/10.1039/D1SC03775G) 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi [_Nature Physics_](https://doi.org/10.1038/s41567-023-02049-9) 2023 ([Free-to-read link](https://t.co/EetpnRgjzh))
 
+<!-- Wenzhen paper -->
 <!-- Se -->
 <!-- Oba book -->
 <!-- BiOI -->
