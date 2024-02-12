@@ -1335,7 +1335,8 @@ def _apply_rattle_bond_distortions(
     defect_type = defect_object.defect_type.name.lower()
     bulk_supercell_site = _get_bulk_defect_site(defect_entry)
     defect_structure = defect_entry.sc_entry.structure
-    defect_structure.add_oxidation_state_by_element(oxidation_states)
+    if oxidation_states is not None:
+        defect_structure.add_oxidation_state_by_element(oxidation_states)
 
     if defect_type == "vacancy":  # for vacancies, we need to use fractional coordinates
         # (no atom site in structure!)
