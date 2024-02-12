@@ -786,7 +786,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [62, 51]])
+        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [41, 32]])
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
@@ -1021,7 +1021,7 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
         self.assertEqual(
             set(distortion_parameters_dict["distorted_atoms_in_dimer"]),
-            set([(62, "Te"), (51, "Te")])  # order of elements not important
+            set([(41, "Te"), (32, "Te")])  # order of elements not important
         )
         self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
 
