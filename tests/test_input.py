@@ -3306,6 +3306,9 @@ class InputTestCase(unittest.TestCase):
         fake_hydrogen_V_Cd_dict["charges"] = [0]
         fake_hydrogen_bulk = copy.copy(self.cdte_doped_defect_dict["bulk"])
         fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
+        fake_hydrogen_bulk["supercell"]["structure"].add_oxidation_state_by_element(
+            {"Cd": +2, "Te": -2, "H": +1}
+        )
         fake_hydrogen_V_Cd = input.generate_defect_object(
             fake_hydrogen_V_Cd_dict,
             fake_hydrogen_bulk,
@@ -3316,7 +3319,6 @@ class InputTestCase(unittest.TestCase):
         ]
         dist = input.Distortions(
             {"vac_1_Cd": fake_hydrogen_V_Cd_entries},
-            oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(
