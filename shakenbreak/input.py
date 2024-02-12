@@ -1259,6 +1259,7 @@ def _apply_rattle_bond_distortions(
     active_atoms: Optional[list] = None,
     distorted_element: Optional[str] = None,
     distorted_atoms: Optional[list] = None,
+    oxidation_states: Optional[dict] = None,
     verbose: bool = False,
     **mc_rattle_kwargs,
 ) -> dict:
@@ -1334,6 +1335,7 @@ def _apply_rattle_bond_distortions(
     defect_type = defect_object.defect_type.name.lower()
     bulk_supercell_site = _get_bulk_defect_site(defect_entry)
     defect_structure = defect_entry.sc_entry.structure
+    defect_structure.add_oxidation_state_by_element(oxidation_states)
 
     if defect_type == "vacancy":  # for vacancies, we need to use fractional coordinates
         # (no atom site in structure!)
@@ -1436,6 +1438,7 @@ def apply_snb_distortions(
     distorted_element: Optional[str] = None,
     distorted_atoms: Optional[list] = None,
     verbose: bool = False,
+    oxidation_states: Optional[dict] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1541,6 +1544,7 @@ def apply_snb_distortions(
                     distorted_atoms=distorted_atoms,
                     verbose=verbose,
                     seed=seed,
+                    oxidation_states=oxidation_states,
                     **mc_rattle_kwargs,
                 )
                 distorted_defect_dict["distortions"][
@@ -1571,6 +1575,7 @@ def apply_snb_distortions(
                     distorted_atoms=distorted_atoms,
                     verbose=verbose,
                     seed=seed,
+                    oxidation_states=oxidation_states,
                     **mc_rattle_kwargs,
                 )
                 distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect[
@@ -2371,6 +2376,7 @@ class Distortions:
                     distorted_element=distorted_element,
                     distorted_atoms=self.distorted_atoms,
                     verbose=verbose,
+                    oxidation_states=self.oxidation_states,
                     **self._mc_rattle_kwargs,
                 )
 
