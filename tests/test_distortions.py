@@ -386,13 +386,13 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
         self.assertEqual(
-            set(output["distorted_atoms"]), set([(62, 'Te'), (51, 'Te')])
+            set(output["distorted_atoms"]), set([(32, 'Te'), (41, 'Te')])
         )
         # Check that 2 Te are separated by 2 A
         homo_bonds = analysis.get_homoionic_bonds(
             output['distorted_structure'], elements=["Te",]
         )
-        self.assertEqual(homo_bonds, {"Te(51)": {'Te(62)': '2.0 A'}})
+        self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '2.0 A'}})
 
 if __name__ == "__main__":
     unittest.main()
