@@ -211,6 +211,7 @@ run tests and add new tests for any new features whenever submitting pull reques
 Studies using ``ShakeNBreak``
 =============================
 
+- X\. Wang et al. `arXiv <https://arxiv.org/abs/2402.04434>`_ 2024
 - I\. Mosquera-Lois et al. `arXiv <https://doi.org/10.48550/arXiv.2401.12127>`_ 2024
 - K\. Li et al. `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23>`_ 2024
 - X\. Wang et al. `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
@@ -222,12 +223,13 @@ Studies using ``ShakeNBreak``
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon `npj Computational Materials`_ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt `Faraday Discussions`_ 2022
+- Y-S\. Choi et al. `ACS Appl. Energy Mater. <https://doi.org/10.1021/acsaem.2c03466>`__ 2022 (early version)
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh `ACS Energy Letters`_ 2021
 - C\. J. Krajewska et al. `Chemical Science`_ 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
-.. Xinwei, Wenzhen early 2024 papers
+.. Wenzhen paper
 .. Oba book
 .. BiOI
 .. Kumagai collab paper

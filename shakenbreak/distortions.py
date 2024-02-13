@@ -10,10 +10,10 @@ from hiphive.structure_generation.rattle import (
     _probability_mc_rattle,
     generate_mc_rattled_structures,
 )
-from pymatgen.analysis.local_env import MinimumDistanceNN
+from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.analysis.local_env import CrystalNN
+
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
     """Format warnings output"""
@@ -89,7 +89,9 @@ def distort(
     if distorted_atoms and len(distorted_atoms) >= num_nearest_neighbours:
         nearest = [
             (
-                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                round(
+                    input_structure_ase.get_distance(atom_number, index, mic=True), 4
+                ),
                 index + 1,
                 input_structure_ase.get_chemical_symbols()[index],
             )
@@ -106,7 +108,9 @@ def distort(
             )
         distances = [  # Get all distances between the selected atom and all other atoms
             (
-                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
+                round(
+                    input_structure_ase.get_distance(atom_number, index, mic=True), 4
+                ),
                 index + 1,  # Indices start from 1
                 symbol,
             )
@@ -124,7 +128,9 @@ def distort(
         ):  # filter the neighbours that match the element criteria and are
             # closer than 4.5 Angstroms
             nearest = []  # list of nearest neighbours
-            for dist, index, element in distances[1:]: # starting from 1 to exclude defect atom
+            for dist, index, element in distances[
+                1:
+            ]:  # starting from 1 to exclude defect atom
                 if (
                     element == distorted_element
                     and dist < 4.5
@@ -228,7 +234,7 @@ def apply_dimer_distortion(
 
     if site_index is not None:  # site_index can be 0
         atom_number = site_index - 1  # Align atom number with python 0-indexing
-    elif type(frac_coords) in  [list, tuple, np.ndarray]:  # Only for vacancies!
+    elif type(frac_coords) in [list, tuple, np.ndarray]:  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy
         input_structure_ase.positions[-1] = np.dot(
             frac_coords, input_structure_ase.cell
@@ -243,20 +249,22 @@ def apply_dimer_distortion(
     # Get defect nn
     struct = aaa.get_structure(input_structure_ase)
     cnn = CrystalNN()
-    sites = [d['site'] for d in cnn.get_nn_info(struct, atom_number)]
+    sites = [d["site"] for d in cnn.get_nn_info(struct, atom_number)]
 
     # Get distances between NN
     distances = {}
     for i, site in enumerate(sites):
-        for other_site in sites[i+1:]:
+        for other_site in sites[i + 1 :]:
             distances[(site.index, other_site.index)] = site.distance(other_site)
-    # Get defect NN with smallest distance
-    site_indexes = min(distances, key=distances.get)
+    # Get defect NN with smallest distance and lowest indices:
+    site_indexes = min(
+        distances, key=lambda k: (round(distances.get(k, 10), 3), k[0], k[1])
+    )
     # Set their distance to 2 A
     input_structure_ase.set_distance(
         a0=site_indexes[0], a1=site_indexes[1], distance=2.0, fix=0.5, mic=True
     )
-    if type(frac_coords) in  [list, tuple, np.ndarray]:
+    if type(frac_coords) in [list, tuple, np.ndarray]:
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
     distorted_structure = aaa.get_structure(input_structure_ase)

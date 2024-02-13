@@ -786,7 +786,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [62, 51]])
+        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [41, 32]])
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
@@ -1021,7 +1021,7 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
         self.assertEqual(
             set(distortion_parameters_dict["distorted_atoms_in_dimer"]),
-            set([(62, "Te"), (51, "Te")])  # order of elements not important
+            set([(41, "Te"), (32, "Te")])  # order of elements not important
         )
         self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
 
@@ -3306,6 +3306,9 @@ class InputTestCase(unittest.TestCase):
         fake_hydrogen_V_Cd_dict["charges"] = [0]
         fake_hydrogen_bulk = copy.copy(self.cdte_doped_defect_dict["bulk"])
         fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
+        fake_hydrogen_bulk["supercell"]["structure"].add_oxidation_state_by_element(
+            {"Cd": +2, "Te": -2, "H": +1}
+        )
         fake_hydrogen_V_Cd = input.generate_defect_object(
             fake_hydrogen_V_Cd_dict,
             fake_hydrogen_bulk,
@@ -3316,7 +3319,6 @@ class InputTestCase(unittest.TestCase):
         ]
         dist = input.Distortions(
             {"vac_1_Cd": fake_hydrogen_V_Cd_entries},
-            oxidation_states=oxidation_states,
             bond_distortions=bond_distortions,
         )
         distortion_defect_dict, distortion_metadata = dist.apply_distortions(

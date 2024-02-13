@@ -31,40 +31,44 @@ def _install_custom_font():
         mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
 
         # Copy the font file to matplotlib's True Type font directory
-        fonts_dir = f"{path_to_file}/fonts/"
+        fonts_dir = f"{path_to_file}/shakenbreak/"
+        ttf_fonts = [
+            file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name
+        ]
         try:
-            for file_name in os.listdir(fonts_dir):
-                if ".ttf" in file_name:  # must be in ttf format for matplotlib
-                    old_path = os.path.join(fonts_dir, file_name)
-                    new_path = os.path.join(mpl_fonts_dir, file_name)
-                    shutil.copyfile(old_path, new_path)
-                    print("Copying " + old_path + " -> " + new_path)
-                else:
-                    print(f"No ttf fonts found in the {fonts_dir} directory.")
+            for font in ttf_fonts:  # must be in ttf format for matplotlib
+                old_path = os.path.join(fonts_dir, font)
+                new_path = os.path.join(mpl_fonts_dir, font)
+                shutil.copyfile(old_path, new_path)
+                print("Copying " + old_path + " -> " + new_path)
+            if not ttf_fonts:
+                print(f"No ttf fonts found in the {fonts_dir} directory.")
         except Exception:
             pass
 
         # Try to delete matplotlib's fontList cache
         mpl_cache_dir = mpl.get_cachedir()
         mpl_cache_dir_ls = os.listdir(mpl_cache_dir)
-        if "fontList.cache" in mpl_cache_dir_ls:
-            fontList_path = os.path.join(mpl_cache_dir, "fontList.cache")
-            if fontList_path:
-                os.remove(fontList_path)
-                print("Deleted the matplotlib fontList.cache.")
-        else:
+        for file_name in mpl_cache_dir_ls:
+            if "fontlist" in file_name.lower():
+                fontList_path = os.path.join(mpl_cache_dir, file_name)
+                if os.path.exists(fontList_path):
+                    os.remove(fontList_path)
+                    print("Deleted the matplotlib fontList cache.")
+        if not any("fontlist" in file_name.lower() for file_name in mpl_cache_dir_ls):
             print("Couldn't find matplotlib cache, so will continue.")
 
         # Add fonts
-        for font in os.listdir(fonts_dir):
+        for font in ttf_fonts:
             matplotlib.font_manager._load_fontmanager(try_read_cache=False)
             matplotlib.font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
             print(f"Adding {font} font to matplotlib fonts.")
 
     except Exception:
-        warning_msg = """WARNING: An issue occured while installing the custom font for ShakeNBreak.
-            The widely available Helvetica font will be used instead."""
-        warnings.warn(warning_msg)
+        warnings.warn(
+            "An issue occured while installing the custom font for ShakeNBreak. The widely available "
+            "Helvetica font will be used instead."
+        )
 
 
 class PostInstallCommand(install):
@@ -116,13 +120,12 @@ class CustomEggInfoCommand(egg_info):
 def package_files(directory):
     """Include package data."""
     paths = []
-    for (path, directories, filenames) in os.walk(directory):
+    for path, directories, filenames in os.walk(directory):
         paths.extend(os.path.join("..", path, filename) for filename in filenames)
     return paths
 
 
 input_files = package_files("SnB_input_files/")
-fonts = package_files("fonts/")
 
 with open("README.md", "r", encoding="utf-8") as file:
     long_description = file.read()
@@ -130,7 +133,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.2.4",
+    version="3.3.0",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -191,7 +194,7 @@ setup(
     },
     # Specify any non-python files to be distributed with the package
     package_data={
-        "shakenbreak": ["shakenbreak/*"] + input_files + fonts,
+        "shakenbreak": ["shakenbreak/*"] + input_files,
     },
     include_package_data=True,
     # Specify the custom installation class

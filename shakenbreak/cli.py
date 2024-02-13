@@ -10,8 +10,8 @@ from subprocess import call
 
 import click
 from doped.generation import get_defect_name_from_entry
-from doped.utils.plotting import _format_defect_name
 from doped.utils.parsing import get_outcar
+from doped.utils.plotting import _format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
@@ -813,7 +813,7 @@ def run(submit_command, job_script, job_name_option, all, verbose):
         job_name_option = "-N"
 
     call(
-        f"{os.path.dirname(__file__)}/scripts/SnB_run.sh {optional_flags} {submit_command} {job_script} "
+        f"{os.path.dirname(__file__)}/SnB_run.sh {optional_flags} {submit_command} {job_script} "
         f"{job_name_option}",
         shell=True,
     )
