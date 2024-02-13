@@ -20,7 +20,6 @@ job_filepath=${2:-"job"}                   # jobscript path
 job_filename=$(basename "${job_filepath}") # jobscript name
 job_name_option=${3:-"-N"}                 # job name option
 
-DIR="$(dirname "${BASH_SOURCE[0]}")"
 if [ $single_defect = true ]; then
   defect_name=${PWD##*/}/ # Use current directory name
 fi
@@ -33,7 +32,7 @@ else
 fi
 
 if [ ! -f "$job_filepath" ]; then
-  echo "Job file '$job_filepath' not found, so will only submit jobs in folders with '$job_filename' present"
+  echo "Job file '$job_filepath' not found, so will only save files and submit jobs in folders with '$job_filename' present"
   job_in_cwd=false
 fi
 
@@ -188,6 +187,12 @@ SnB_run_loop() {
         fi
 
         echo "${i%?} not (fully) relaxed, saving files and rerunning"
+        # save_vasp_files:
+        current_time=$(date +%H_%M_%Son%d_%m_%y)
+        for vasp_file in {CONTCAR,OUTCAR,XDATCAR,POSCAR,INCAR,OSZICAR,vasprun.xml}; do
+          cp ${vasp_file} ${vasp_file}_${current_time}
+        done
+        gzip vasprun.xml_${current_time} # gzip to save file space
 
         if [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -ge 9 ]]; then # CONTCAR exists and greater than 9 lines
           "cp" CONTCAR POSCAR
@@ -200,14 +205,17 @@ SnB_run_loop() {
           fi
         fi
       fi
+
       if [ -f "./${job_filename}" ]; then
         echo "Running job for ${i%?}"
         folder_shortname="${i#*_*_}"
         # Remove % from folder_shortname as messes with some HPC schedulers
-        if "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || \
-           "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}"; then
-          bash "${DIR}"/save_vasp_files.sh  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
+        if ! ( "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || \
+           "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}" ); then
+          rm *_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
         fi
+      else
+        rm *_"${current_time}"  # only save over files if job successfully submitted
       fi
       builtin cd .. || return
     else

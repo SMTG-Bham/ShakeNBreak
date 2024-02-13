@@ -368,7 +368,7 @@ def parse_energies(
                         "Bond_Distortion",
                         "Rattled",
                         "Unperturbed",
-                                    "Dimer",
+                        "Dimer",
                     ]
                 )
                 and "High_Energy" in dir

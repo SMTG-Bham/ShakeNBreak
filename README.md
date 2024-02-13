@@ -127,7 +127,8 @@ Automatic testing is run on the master and develop branches using Github Actions
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and Chris Savory.
 
 ## Studies using `ShakeNBreak`
-<!-- Wenzhen, Xinwei papers -->
+
+- X. Wang et al. [_arXiv_](https://arxiv.org/abs/2402.04434) 2024
 - I. Mosquera-Lois et al. [_arXiv_](https://doi.org/10.48550/arXiv.2401.12127) 2024
 - K. Li et al. [_ChemRxiv_](https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23) 2023
 - X. Wang et al. [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023
@@ -139,10 +140,12 @@ Automatic testing is run on the master and develop branches using Github Actions
 - I. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon [_npj Computational Materials_](https://doi.org/10.1038/s41524-023-00973-1) 2023
 - Y. T. Huang & S. R. Kavanagh et al. [_Nature Communications_](https://www.nature.com/articles/s41467-022-32669-3) 2022
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt [_Faraday Discussions_](https://doi.org/10.1039/D2FD00043A) 2022
+- Y-S. Choi et al. [_ACS Appl. Energy Mater._](https://doi.org/10.1021/acsaem.2c03466) 2022 (early version)
 - S. R. Kavanagh, D. O. Scanlon, A. Walsh [_ACS Energy Letters_](https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380) 2021
 - C. J. Krajewska et al. [_Chemical Science_](https://doi.org/10.1039/D1SC03775G) 2021  (early version)
 - (News & Views): A. Mannodi-Kanakkithodi [_Nature Physics_](https://doi.org/10.1038/s41567-023-02049-9) 2023 ([Free-to-read link](https://t.co/EetpnRgjzh))
 
+<!-- Wenzhen paper -->
 <!-- Se -->
 <!-- Oba book -->
 <!-- BiOI -->
