@@ -6,6 +6,8 @@ on:
     branches: [ main ]
     types:
       - completed  # only release when tests have passed
+    paths:
+      - 'setup.py'  # only release when setup.py has been updated
 
   workflow_dispatch:
 
