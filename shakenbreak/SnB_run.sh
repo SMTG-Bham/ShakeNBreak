@@ -76,6 +76,7 @@ check_many_outcars() {
 
 SnB_run_loop() {
   for i in ?(*Distortion*|*Unperturbed*|*attled*|*imer*)/; do # for each distortion
+    current_time=false  # catch if files saved or not
     if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*|*imer*)/" ]; then
       echo "No distortion folders found in current directory"
       break # exit if no distortion folders found
@@ -212,7 +213,9 @@ SnB_run_loop() {
         # Remove % from folder_shortname as messes with some HPC schedulers
         if ! ( "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || \
            "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}" ); then
-          rm *_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
+          if ! [ "$current_time" == false ]; then
+            rm *_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
+          fi
         fi
       else
         rm *_"${current_time}"  # only save over files if job successfully submitted
