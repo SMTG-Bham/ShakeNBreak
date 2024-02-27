@@ -11,7 +11,7 @@ from typing import Optional
 
 import pandas as pd
 from ase.io import write as ase_write
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -73,7 +73,7 @@ def read_defects_directories(output_path: str = "./") -> dict:
     ):  # need to make copy of list when iterating over and
         # removing elements
         try:
-            formatted_name = _format_defect_name(i, include_site_info_in_name=False)
+            formatted_name = format_defect_name(i, include_site_info_in_name=False)
             if (
                 formatted_name is None
             ):  # defect folder name not recognised, remove from list
