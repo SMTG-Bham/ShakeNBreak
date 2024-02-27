@@ -11,7 +11,7 @@ from subprocess import call
 import click
 from doped.generation import get_defect_name_from_entry
 from doped.utils.parsing import get_outcar
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
@@ -551,12 +551,12 @@ def generate_all(
             # if user didn't specify defect names in config file,
             # check if defect filename is recognised
             try:
-                defect_name = _format_defect_name(
+                defect_name = format_defect_name(
                     defect, include_site_info_in_name=False
                 )
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = _format_defect_name(
+                    defect_name = format_defect_name(
                         f"{defect}_0", include_site_info_in_name=False
                     )
             if defect_name:
@@ -1418,10 +1418,10 @@ def groundstate(
         for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
             defect_name = None
             try:
-                defect_name = _format_defect_name(dir, include_site_info_in_name=False)
+                defect_name = format_defect_name(dir, include_site_info_in_name=False)
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = _format_defect_name(
+                    defect_name = format_defect_name(
                         f"{dir}_0", include_site_info_in_name=False
                     )
             if (

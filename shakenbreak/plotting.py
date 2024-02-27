@@ -14,7 +14,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 from matplotlib import font_manager
 from matplotlib.figure import Figure
 
@@ -1125,7 +1125,7 @@ def plot_defect(
         return None
 
     try:
-        defect_name = _format_defect_name(
+        defect_name = format_defect_name(
             defect_species=defect_species,
             include_site_info_in_name=include_site_info_in_name,
         )  # Format defect name for title and axis labels
@@ -1270,7 +1270,7 @@ def plot_colorbar(
             ax.set_title(title)
 
         try:
-            formatted_defect_name = _format_defect_name(
+            formatted_defect_name = format_defect_name(
                 defect_species, include_site_info_in_name=include_site_info_in_name
             )
         except Exception:
@@ -1648,7 +1648,7 @@ def plot_datasets(
             ax.set_title(title)
 
     try:
-        formatted_defect_name = _format_defect_name(
+        formatted_defect_name = format_defect_name(
             defect_species, include_site_info_in_name=include_site_info_in_name
         )
     except Exception:
