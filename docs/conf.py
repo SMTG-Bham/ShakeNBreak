@@ -25,7 +25,7 @@ copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
 author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
 
 # The full version, including alpha/beta/rc tags
-release = '3.3.0'
+release = '3.3.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -94,6 +94,10 @@ html_theme_options = {
     "path_to_docs": "docs",
     "use_repository_button": True,
     "home_page_in_toc": True,
+    "launch_buttons": {
+        "binderhub_url": "https://mybinder.org",
+        "colab_url": "https://colab.research.google.com",
+    },
 }
 
 # Adding “Edit Source” links on your Sphinx theme
