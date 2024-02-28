@@ -774,11 +774,11 @@ def compare_struct_to_distortions(
         # initial distortion magnitude from low to high (if present)
         sorted_matching_df = pd.concat(
             [
-                unperturbed_df,
-                rattled_df,
-                dimer_df,
-                sorted_distorted_df,
-                imported_sorted_distorted_float_df,
+                unperturbed_df.dropna(axis=1, how="all"),
+                rattled_df.dropna(axis=1, how="all"),
+                dimer_df.dropna(axis=1, how="all"),
+                sorted_distorted_df.dropna(axis=1, how="all"),
+                imported_sorted_distorted_float_df.dropna(axis=1, how="all"),
             ]
         )
 
