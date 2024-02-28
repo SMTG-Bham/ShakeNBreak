@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+v3.3.1
+----------
+- Minor updates:
+    - Refactor ``_format_defect_name`` to ``format_defect_name`` from `doped` (now a public function)
+    - Update ``snb-run`` to avoid possible 'file exists' warning
+    - Update tutorials/notebooks to specify ``vasp_nkred_std`` to streamline workflow
+    - Remove unnecessary ``tutorials`` folder with duplicate tutorial notebook (to reduce workload).
+    - Add Binder/Colab buttons to run tutorials in the cloud from docs
+
 v3.3.0
 ----------
 - Add Dimer distortion as a targeted distortion for dimer reconstructions. It pushes two of the defect NN
