@@ -194,16 +194,24 @@ for the code specified with the flag ``--code`` (default = :code:`VASP`).
 Saving the ground state structures
 ---------------------------------------
 
-Finally, to continue our defect workflow, we want to save the ground state defect structures to continue our calculations
-with these structures. Using the ``snb-groundstate`` command, we can generate a ``Groundstate`` folder for each defect
-with its ground state structure.
+Finally, to continue our defect workflow, we want to save the ground state defect structures to continue
+our calculations with these structures. This can be achieved with the ``snb-groundstate`` command, e.g.:
 
 .. code:: bash
 
-    $ snb-groundstate
+    $ snb-groundstate -d vasp_std
+
+This command above will save our ground-state structures to ``POSCAR`` files in ``vasp_std`` subdirectories
+of the defect folder(s).
+
+.. TIP::
+    When using ``ShakeNBreak`` with ``doped`` for defect calculations, we would typically use
+    ``-d vasp_nkred_std`` or ``-d vasp_std`` to save our SnB-calculated ground-state structures to
+    ``POSCAR`` files in these sub-directories used by default with ``doped``, before continuing with our
+    final fully-converged defect calculations.
 
 The name of the ground state directory and of the structure file can be customised with the
-``--directory`` and ``--groundstate_filename`` flags, respectively:
+``--directory`` (``-d``) and ``--groundstate_filename`` (``-gsf``) flags, respectively:
 
 .. code:: bash
 

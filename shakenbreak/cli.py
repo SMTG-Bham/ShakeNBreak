@@ -1351,7 +1351,8 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
 @click.option(
     "--directory",
     "-d",
-    help="Folder name where the ground state structure will be written to.",
+    help="Folder name where the ground state structure will be written to. If using with `doped`, then "
+         "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
     type=str,
     default="Groundstate",
     show_default=True,
@@ -1375,8 +1376,7 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folders."
-    " Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folders. Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
