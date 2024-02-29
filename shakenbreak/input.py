@@ -2437,7 +2437,9 @@ class Distortions:
         """
         if defect is not None:
             distortion_metadata = {
-                "distortion_parameters": {**self.distortion_metadata["distortion_parameters"]},
+                "distortion_parameters": {
+                    **self.distortion_metadata["distortion_parameters"]
+                },
                 "defects": {defect: self.distortion_metadata["defects"][defect]},
             }
         else:
