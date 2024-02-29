@@ -334,7 +334,7 @@ def get_energy_lowering_distortions(
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
-    verbose: bool = True,
+    verbose: bool = False,
     write_input_files: bool = False,
     metastable: bool = False,
 ) -> dict:
@@ -379,8 +379,8 @@ def get_energy_lowering_distortions(
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
-            Whether to print verbose information about energy lowering
-            distortions, if found.
+            Whether to print verbose information about parsed defect
+            structures for energy-lowering distortions, if found.
             (Default: True)
         write_input_files (:obj:`bool`):
             Whether to write input files for the identified distortions
@@ -448,7 +448,7 @@ def get_energy_lowering_distortions(
                 )  # in case '+' removed
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
-                energies_file, verbose=verbose, min_e_diff=min_e_diff
+                energies_file, min_e_diff=min_e_diff, verbose=True, # always print energy_diff
             )
             # Defect without data
             if energies_dict is None:

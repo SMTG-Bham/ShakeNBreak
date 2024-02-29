@@ -666,9 +666,7 @@ def _calculate_atomic_disp(
         struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False
     )
 
-    if match is None:
-        return None
-    return match[0], match[1]
+    return None if match is None else (match[0], match[1])
 
 
 def calculate_struct_comparison(
@@ -679,7 +677,7 @@ def calculate_struct_comparison(
     ltol: float = 0.3,
     angle_tol: float = 5,
     min_dist: float = 0.1,
-    verbose: bool = True,
+    verbose: bool = False,
 ) -> dict:
     """
     Calculate either the summed atomic displacement, with metric = "disp",
