@@ -229,7 +229,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
             "and unperturbed: -0.76 eV."
         )
-        mock_print.assert_any_call(
+        mock_print.assert_not_called_with(
             "Comparing structures to specified ref_structure (Cd31 Te32)..."
         )
         mock_print.assert_any_call(
@@ -418,7 +418,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
             "and unperturbed: -0.76 eV."
         )
-        mock_print.assert_any_call(
+        mock_print.assert_not_called_with(
             "Comparing structures to specified ref_structure (Cd31 Te32)..."
         )
         mock_print.assert_any_call(

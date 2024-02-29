@@ -14,7 +14,7 @@ hiphive
 monty
 click
 shakenbreak
-doped>=2.3.0
+doped>=2.3.1
 importlib-metadata
 
 # Optional requirements

@@ -141,7 +141,7 @@ class CLITestCase(unittest.TestCase):
                     "v_Ca",
                 ]
             ):
-                shutil.rmtree(i)
+                if_present_rm(i)
 
         for defect in os.listdir(self.EXAMPLE_RESULTS):
             if os.path.isdir(f"{self.EXAMPLE_RESULTS}/{defect}"):
@@ -239,25 +239,29 @@ class CLITestCase(unittest.TestCase):
         )
 
     def test_snb_generate(self):
-        """Implicitly, the `snb-generate` tests also test the functionality of
+        """
+        Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
         """
         runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c 0",
-                "--config",
-                f"{self.previous_default_rattle_settings_config}",  # previous default
-                "-v",
-            ],
-            catch_exceptions=False,
-        )
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c 0",
+                    "--config",
+                    f"{self.previous_default_rattle_settings_config}",  # previous default
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        assert not w
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
             f"Auto site-matching identified {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
@@ -326,24 +330,27 @@ class CLITestCase(unittest.TestCase):
             assert set(potcar.as_dict()["symbols"]) == {"Cd", "Te"}
 
         # Test recognises distortion_metadata.json:
-        if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present
-        result = runner.invoke(
-            snb,
-            [
-                "generate",
-                "-d",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                "-b",
-                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                "-c",
-                "0",
-            ],
-            catch_exceptions=False,
-        )  # non-verbose this time
+        if_present_rm(
+            f"{defect_name}_0"
+        )  # but distortion_metadata.json still present, but different
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c",
+                    "0",
+                ],
+                catch_exceptions=False,
+            )  # non-verbose this time
         self.assertEqual(result.exit_code, 0)
         self.assertNotIn(
-            "Auto site-matching identified"
-            f" {self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
+            "Auto site-matching identified "
+            f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
             f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
             result.output,
         )
@@ -375,15 +382,257 @@ class CLITestCase(unittest.TestCase):
         current_datetime_wo_minutes = datetime.datetime.now().strftime(
             "%Y-%m-%d-%H"
         )  # keep copy of old metadata file
-        self.assertIn(
-            "There is a previous version of distortion_metadata.json. Will rename old "
-            f"metadata to distortion_metadata_{current_datetime_wo_minutes}",
+        self.assertIn(  # warning and renaming old metadata file as rattle settings differ
+            "There is a previous version of ./distortion_metadata.json with differences to the "
+            "current `distortion_metadata`. Will rename old metadata file to "
+            f"distortion_metadata_{current_datetime_wo_minutes}",
             # skipping minutes comparison in case this changes between test and check
             result.output,
         )
         self.assertIn(
             "Combining old and new metadata in distortion_metadata.json", result.output
         )
+        self.assertTrue(os.path.exists("distortion_metadata.json"))
+        self.assertTrue(
+            any(
+                f"distortion_metadata_{current_datetime_wo_minutes}" in i
+                for i in os.listdir(".")
+            )
+        )
+        self.assertIn(
+            "Previous and new metadata show different distortion parameters for v_Cd_Td_Te2.83 in "
+            "charge 0. ./distortion_metadata.json will only show the new distortion parameters.",
+            [str(warning.message) for warning in w],
+        )
+        # check distortion_metadata files:
+        new_distortion_metadata = loadfn("distortion_metadata.json")
+        self.assertTrue(
+            np.isclose(
+                new_distortion_metadata["distortion_parameters"][
+                    "mc_rattle_parameters"
+                ]["stdev"],
+                0.28333683853583164,
+            )
+        )
+        old_distortion_metadata = loadfn(
+            [file for file in os.listdir(".") if current_datetime_wo_minutes in file][0]
+        )
+        self.assertDictEqual(
+            old_distortion_metadata["distortion_parameters"]["mc_rattle_parameters"],
+            {"seed": 42, "stdev": 0.25},
+        )
+
+        # test rerunning with same settings now gives no warnings / info messages (about
+        # distortion_metadata):
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c",
+                    "0",
+                ],
+                catch_exceptions=False,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        assert len(w) == 1  # only overwriting structures warning
+        assert "has the same Unperturbed defect structure" in str(w[0].message)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertIn(
+            f"Defect {defect_name} in charge state: 0. Number of distorted neighbours: 2",
+            result.output,
+        )
+        self.assertNotIn(  # no warning or renaming old metadata file as rattle settings the same
+            "There is a previous version of",
+            result.output,
+        )
+        self.assertNotIn("Combining", result.output)
+        # test distortion_metadata file:
+        reloaded_distortion_metadata = loadfn("distortion_metadata.json")
+        self.assertEqual(len(reloaded_distortion_metadata["defects"]), 1)
+        self.assertEqual(
+            len(reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]), 1
+        )
+        self.assertEqual(
+            len(
+                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"][
+                    "0"
+                ]["distortion_parameters"]["bond_distortions"]
+            ),
+            13,
+        )  # no duplication of bond distortions
+        defect_folder_distortion_metadata = loadfn(
+            "v_Cd_Td_Te2.83_0/distortion_metadata.json"
+        )
+        self.assertDictEqual(
+            reloaded_distortion_metadata, defect_folder_distortion_metadata
+        )
+
+        # test rerunning with same settings but with more charge states, so previous distortion_metadata
+        # is a subset of current one, so no warnings / info messages (about distortion_metadata):
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                ],  # default charge state range
+                catch_exceptions=False,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        assert len(w) == 1  # only overwriting structures warning
+        assert "has the same Unperturbed defect structure" in str(w[0].message)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertIn(
+            f"Defect {defect_name} in charge state: -2. Number of distorted neighbours: 0",
+            result.output,
+        )
+        self.assertNotIn(  # no warning or renaming old metadata file as rattle settings the same
+            "There is a previous version of",
+            result.output,
+        )
+        self.assertNotIn("Combining", result.output)
+        # test distortion_metadata file:
+        reloaded_distortion_metadata = loadfn("distortion_metadata.json")
+        self.assertEqual(len(reloaded_distortion_metadata["defects"]), 1)
+        self.assertEqual(
+            len(reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]),
+            5,  # +2 to -2 now
+        )
+        self.assertEqual(
+            len(
+                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"][
+                    "0"
+                ]["distortion_parameters"]["bond_distortions"]
+            ),
+            13,
+        )  # no duplication of bond distortions
+        defect_folder_distortion_metadata = loadfn(
+            "v_Cd_Td_Te2.83_0/distortion_metadata.json"
+        )
+        self.assertNotEqual(
+            reloaded_distortion_metadata, defect_folder_distortion_metadata
+        )
+        self.assertDictEqual(
+            reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]["0"],
+            defect_folder_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"][
+                "0"
+            ],
+        )
+
+        # test rerunning with same settings but with less charge states, so new distortion_metadata
+        # is a subset of old one, so no warnings / info messages (about distortion_metadata):
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c",
+                    "0",
+                ],
+                catch_exceptions=False,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        assert len(w) == 1  # only overwriting structures warning
+        assert "has the same Unperturbed defect structure" in str(w[0].message)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertNotIn(
+            f"Defect {defect_name} in charge state: -2. Number of distorted neighbours: 0",
+            result.output,
+        )
+        self.assertNotIn(  # no warning or renaming old metadata file as rattle settings the same
+            "There is a previous version of",
+            result.output,
+        )
+        self.assertNotIn("Combining", result.output)
+        # test distortion_metadata file:
+        reloaded_distortion_metadata = loadfn("distortion_metadata.json")
+        self.assertEqual(len(reloaded_distortion_metadata["defects"]), 1)
+        self.assertEqual(
+            len(reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]), 5
+        )  # combined metadata so still has 5 charges
+        self.assertEqual(
+            len(
+                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"][
+                    "0"
+                ]["distortion_parameters"]["bond_distortions"]
+            ),
+            13,
+        )  # no duplication of bond distortions
+        defect_folder_distortion_metadata = loadfn(
+            "v_Cd_Td_Te2.83_0/distortion_metadata.json"
+        )
+        self.assertNotEqual(  # combined metadata so has 5 charges, rather than just neutral
+            reloaded_distortion_metadata, defect_folder_distortion_metadata
+        )
+
+        # test rerunning with same settings but with different distortion mesh, so combines without warning
+        with open("test_config.yml", "w") as fp:
+            fp.write("distortion_increment: 0.05")
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "generate",
+                    "-d",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                    "-b",
+                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                    "-c",
+                    "0",
+                    "--config",
+                    "test_config.yml",
+                ],
+                catch_exceptions=False,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        assert len(w) == 1  # only overwriting structures warning
+        assert "has the same Unperturbed defect structure" in str(w[0].message)
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn(f"Defect: {defect_name}", result.output)
+        self.assertIn("Number of missing electrons in neutral state: 2", result.output)
+        self.assertNotIn(
+            f"Defect {defect_name} in charge state: -2. Number of distorted neighbours: 0",
+            result.output,
+        )
+        self.assertIn(  # no warning or renaming old metadata file as rattle settings the same
+            "There is a previous version of",
+            result.output,
+        )
+        self.assertIn("Combining", result.output)
+        # test distortion_metadata file:
+        reloaded_distortion_metadata = loadfn("distortion_metadata.json")
+        self.assertEqual(len(reloaded_distortion_metadata["defects"]), 1)
+        self.assertEqual(
+            len(reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]), 5
+        )
+        self.assertEqual(
+            len(
+                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]["0"][
+                    "distortion_parameters"
+                ]["bond_distortions"]
+            ),
+            25,
+        )  # no duplication of bond distortions
+        defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
+        self.assertNotEqual(reloaded_distortion_metadata, defect_folder_distortion_metadata)
 
         # test defect_index option:
         self.tearDown()
@@ -1793,7 +2042,9 @@ POTCAR:
         # with job file present, but failing job submit command (no file saving)
         with open("job", "w") as fp:
             fp.write("Test pop")
-        proc = subprocess.Popen(["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(
+            ["snb-run", "-v"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
         out = str(proc.communicate()[0])
         self.assertIn(
             "Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out
@@ -3682,6 +3933,35 @@ Chosen VASP error message: {error_string}
                 f"{defect_name}/v_Ti_0.yaml"
             )
         )
+
+        # test distortion_metadata parsed fine when in defect folder (not above):
+        with open(
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/"
+                f"distortion_metadata.json", "w") as f:
+            f.write(json.dumps(fake_distortion_metadata, indent=4))
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(
+                snb,
+                [
+                    "plot",
+                    "-p",
+                    f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder",
+                    "-d",
+                    defect_name,
+                    "-cb",
+                    "-v",
+                ],
+                catch_exceptions=False,
+            )
+        self.assertTrue(
+            len([warning for warning in w if warning.category == UserWarning]) == 0
+        )  # verbose, but no distortion_metadata warning
+        self.assertTrue(
+            os.path.exists(
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/v_Ti_0.png"
+            )
+        )
+
         self.tearDown()
 
         # Test warning when setting path and plotting from inside the defect folder

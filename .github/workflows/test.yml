@@ -9,7 +9,7 @@ on:
     branches:
       - main
       - develop
-      - sync_dimer
+
   workflow_dispatch:
 
 jobs:
