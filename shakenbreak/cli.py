@@ -1352,7 +1352,7 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
     "--directory",
     "-d",
     help="Folder name where the ground state structure will be written to. If using with `doped`, then "
-         "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
+    "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
     type=str,
     default="Groundstate",
     show_default=True,

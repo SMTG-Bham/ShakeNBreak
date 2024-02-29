@@ -448,7 +448,9 @@ def get_energy_lowering_distortions(
                 )  # in case '+' removed
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
-                energies_file, min_e_diff=min_e_diff, verbose=True, # always print energy_diff
+                energies_file,
+                min_e_diff=min_e_diff,
+                verbose=True,  # always print energy_diff
             )
             # Defect without data
             if energies_dict is None:
