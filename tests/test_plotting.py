@@ -427,11 +427,74 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
             )
         )
-        mock_print.assert_called_once_with("Plot saved to vac_1_Cd_0/vac_1_Cd_0.png")
+        mock_print.assert_not_called_with(f"Plot saved to {defect_name}/{defect_name}.png")
         user_warnings = [warning for warning in w if warning.category == UserWarning]
         self.assertEqual(len(user_warnings), 0)  # No warnings in this case
         if_present_rm(
             f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+        )
+
+        # test verbose:
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(
+            record=True
+        ) as w:
+            plotting._save_plot(
+                fig=fig,
+                defect_name=defect_name,
+                output_path=self.VASP_CDTE_DATA_DIR,
+                save_format="png",
+                verbose=True,
+            )
+        self.assertTrue(
+            os.path.exists(
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+            )
+        )
+        mock_print.assert_called_once_with(f"Plot saved to {defect_name}/{defect_name}.png")
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 0)  # No warnings in this case
+
+        # test verbose overwriting info:
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(
+                record=True
+        ) as w:
+            plotting._save_plot(
+                fig=fig,
+                defect_name=defect_name,
+                output_path=self.VASP_CDTE_DATA_DIR,
+                save_format="png",
+                verbose=True
+            )
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+        current_datetime_minus1min = (
+                datetime.datetime.now() - datetime.timedelta(minutes=1)
+        ).strftime(
+            "%Y-%m-%d-%H-%M"
+        )  # in case delay between writing and testing plot generation
+        self.assertTrue(
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime}.png"
+                           ) or
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime_minus1min}.png")
+        )
+        self.assertTrue(
+            f"Previous version of {defect_name}.png found" in mock_print.call_args_list[0][0][0]
+        )
+        mock_print.assert_any_call(f"Plot saved to {defect_name}/{defect_name}.png")
+        self.assertTrue(
+            os.path.exists(
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+            )
+        )
+        user_warnings = [warning for warning in w if warning.category == UserWarning]
+        self.assertEqual(len(user_warnings), 0)  # No warnings in this case
+        if_present_rm(
+            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
+        )
+        if_present_rm(
+            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}_{current_datetime}.png"
+        )
+        if_present_rm(
+        f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}_{current_datetime_minus1min}.png"
         )
 
         # Saving to output_path where defect_dir is not in output_path and output_path is not cwd
@@ -441,7 +504,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
-        mock_print.assert_called_once_with("Plot saved to ./vac_1_Cd_0.svg")
+        mock_print.assert_not_called()  # non-verbose, no print call
         if_present_rm(f"./{defect_name}.svg")
 
         # Saving to defect_dir subfolder in output_path where output_path is cwd
@@ -449,13 +512,13 @@ class PlottingDefectsTestCase(unittest.TestCase):
         if_present_rm(f"{defect_name}/{defect_name}.svg")
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
-                fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
+                fig=fig, defect_name=defect_name, output_path=".", save_format="svg", verbose=True
             )
         self.assertFalse(
             os.path.exists(f"./{defect_name}.svg")
         )  # not in cwd, in defect directory
         self.assertTrue(os.path.exists(f"{defect_name}/{defect_name}.svg"))
-        mock_print.assert_called_once_with(
+        mock_print.assert_called_once_with(  # verbose is True
             f"Plot saved to {defect_name}/{defect_name}.svg"
         )
         if_present_rm(f"{defect_name}/{defect_name}.svg")
@@ -468,7 +531,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
-                fig=fig, defect_name=defect_name, output_path=".", save_format="png"
+                fig=fig, defect_name=defect_name, output_path=".", save_format="png", verbose=True
             )
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
         current_datetime_minus1min = (
@@ -478,7 +541,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )  # in case delay between writing and testing plot generation
 
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
-        mock_print.assert_any_call("Plot saved to ./vac_1_Cd_0.png")
+        mock_print.assert_any_call("Plot saved to ./vac_1_Cd_0.png")  # verbose
         self.assertTrue(
             os.path.exists(f"./{defect_name}_{current_datetime}.png")
             or os.path.exists(f"./{defect_name}_{current_datetime_minus1min}.png")
@@ -494,7 +557,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         self._remove_current_and_saved_plots(
             defect_name, current_datetime, current_datetime_minus1min
         )
-        # test no print statements with verbose = False
+        # test no print statements with verbose = False (default)
         plotting._save_plot(
             fig=fig, defect_name=defect_name, output_path=".", save_format="png"
         )
@@ -505,7 +568,6 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 defect_name=defect_name,
                 output_path=".",
                 save_format="png",
-                verbose=False,
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         mock_print.assert_not_called()

@@ -74,6 +74,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
+        if_present_rm("v_Ca_s0_0.png")
 
     def copy_v_Ti_OUTCARs(self):
         """

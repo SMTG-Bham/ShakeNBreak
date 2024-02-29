@@ -95,7 +95,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["num_distorted_neighbours"], 2)
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
-        self.assertCountEqual(output["distorted_atoms"], [(33, "Te"), (42, "Te")])
+        self.assertEqual(output["distorted_atoms"], [[33, "Te"], [42, "Te"]])
         distortions.distort(
             self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True
         )
@@ -134,7 +134,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["num_distorted_neighbours"], 2)
         self.assertEqual(output["defect_site_index"], 65)
         self.assertEqual(output.get("defect_frac_coords"), None)
-        self.assertCountEqual(output["distorted_atoms"], [(10, "Cd"), (22, "Cd")])
+        self.assertEqual(output["distorted_atoms"], [[10, "Cd"], [22, "Cd"]])
         distortions.distort(
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True
         )
@@ -163,16 +163,16 @@ class DistortionTestCase(unittest.TestCase):
         self.assertCountEqual(
             output["distorted_atoms"],
             [
-                (10, "Cd"),
-                (22, "Cd"),
-                (29, "Cd"),
-                (1, "Cd"),
-                (14, "Cd"),
-                (24, "Cd"),
-                (30, "Cd"),
-                (38, "Te"),
-                (54, "Te"),
-                (62, "Te"),
+                [10, "Cd"],
+                [22, "Cd"],
+                [29, "Cd"],
+                [1, "Cd"],
+                [14, "Cd"],
+                [24, "Cd"],
+                [30, "Cd"],
+                [38, "Te"],
+                [54, "Te"],
+                [62, "Te"],
             ],
         )
         distortions.distort(
@@ -385,9 +385,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertEqual(
-            set(output["distorted_atoms"]), set([(32, 'Te'), (41, 'Te')])
-        )
+        self.assertTrue(output["distorted_atoms"] == [[32, 'Te'], [41, 'Te']])
         # Check that 2 Te are separated by 2 A
         homo_bonds = analysis.get_homoionic_bonds(
             output['distorted_structure'], elements=["Te",]
