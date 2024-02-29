@@ -668,7 +668,7 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_distorted_dict["undistorted_structure"].remove_oxidation_states()
         # With pymatgen-analysis-defects, interstitial is added at the beginning
         # (rather than at the end) - so we need to shift all indexes + 1
-        output["distorted_atoms"] = [(11, "Cd"), (23, "Cd")]
+        output["distorted_atoms"] = [[11, "Cd"], [23, "Cd"]]
         output["defect_site_index"] = 1
         np.testing.assert_equal(Int_Cd_2_distorted_dict, output)
         self.assertEqual(
@@ -709,16 +709,16 @@ class InputTestCase(unittest.TestCase):
         self.assertCountEqual(
             Int_Cd_2_distorted_dict["distorted_atoms"],
             [
-                (10 + 1, "Cd"),
-                (22 + 1, "Cd"),
-                (29 + 1, "Cd"),
-                (1 + 1, "Cd"),
-                (14 + 1, "Cd"),
-                (24 + 1, "Cd"),
-                (30 + 1, "Cd"),
-                (38 + 1, "Te"),
-                (54 + 1, "Te"),
-                (62 + 1, "Te"),
+                [10 + 1, "Cd"],
+                [22 + 1, "Cd"],
+                [29 + 1, "Cd"],
+                [1 + 1, "Cd"],
+                [14 + 1, "Cd"],
+                [24 + 1, "Cd"],
+                [30 + 1, "Cd"],
+                [38 + 1, "Te"],
+                [54 + 1, "Te"],
+                [62 + 1, "Te"],
             ],
         )
         # Interstitial is added at the beginning - shift all indexes + 1
@@ -1020,8 +1020,8 @@ class InputTestCase(unittest.TestCase):
         distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
         self.assertEqual(distortion_parameters_dict["num_distorted_neighbours_in_dimer"], 2)
         self.assertEqual(
-            set(distortion_parameters_dict["distorted_atoms_in_dimer"]),
-            set([(41, "Te"), (32, "Te")])  # order of elements not important
+            distortion_parameters_dict["distorted_atoms_in_dimer"],
+            [[32, "Te"], [41, "Te"]]  # order of elements not important
         )
         self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
 
@@ -1035,8 +1035,8 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
         )
         self.assertEqual(
-            set(dist_dict["distortion_parameters"]["distorted_atoms"]),
-            set([(57+1, 'Se'), (33+1, 'Te')]) # indices start at 1
+            dist_dict["distortion_parameters"]["distorted_atoms"],
+            [[57+1, 'Se'], [33+1, 'Te']] # indices start at 1
         )
 
     # test create_folder and create_vasp_input simultaneously:
@@ -1963,13 +1963,11 @@ class InputTestCase(unittest.TestCase):
         for defect in metadata["defects"].values():
             defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
             # json converts integer keys to strings
-        metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"] = [
-            tuple(x)
-            for x in metadata["defects"]["Int_Cd_2"]["charges"][1]["distorted_atoms"]
-        ]
-        np.testing.assert_equal(
-            metadata,  # check defect in distortion_defect_dict
-            kwarged_Int_Cd_2_dict,
+        for defect in kwarged_Int_Cd_2_dict["defects"]:
+            for charge in kwarged_Int_Cd_2_dict["defects"][defect]["charges"]:
+                np.testing.assert_equal(
+            metadata["defects"][defect]["charges"][charge],  # check defect in distortion_defect_dict
+            kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge],
         )
 
         # check expected info printing:
@@ -2066,7 +2064,7 @@ class InputTestCase(unittest.TestCase):
                 f"./distortion_metadata_{current_datetime_minus1min}.json"
             )
         )
-        self.assertTrue(
+        self.assertFalse(  # no distortion_metadata warning with smooth merging
             any(
                 f"There is a previous version of distortion_metadata.json. Will rename old "
                 f"metadata to distortion_metadata_{current_datetime}.json" in call[0][0]
@@ -3359,7 +3357,7 @@ class InputTestCase(unittest.TestCase):
         output = dist.apply_distortions()
         self.assertEqual(
             output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
-            [(58, 'Se'), (34, 'Te')]
+            [[58, 'Se'], [34, 'Te']]
         )
         # Test when user doesn't specify enough neighbours to distort
         dist = input.Distortions(
@@ -3380,7 +3378,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             output[1]['defects']['v_Cd_C1_Se2.68']["charges"][0]['distorted_atoms'],
-            [(58, 'Se'), (63, 'Se')]
+            [[58, 'Se'], [63, 'Se']]
         )
 
     def test_local_rattle(
