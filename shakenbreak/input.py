@@ -89,8 +89,14 @@ def _write_distortion_metadata(
     output_path: str = ".",
 ) -> None:
     """
-    Write metadata to file. If the file already exists, it will be
-    renamed to distortion_metadata_<datetime>.json and updated with new metadata.
+    Write distortion metadata to file.
+
+    If the file already exists then the previous metadata will be
+    renamed to ``distortion_metadata_<datetime>.json`` (if it differs
+    from the current metadata), and also combined with the current
+    metadata if compatible (i.e. if they are using similar distortion
+    parameters and only differ in the set of defects / charge states /
+    distortions used), before writing this combined metadata to file.
 
     Args:
         new_metadata (:obj:`dict`):
@@ -2401,9 +2407,17 @@ class Distortions:
         charge: Optional[int] = None,
     ) -> None:
         """
-        Write metadata to file. If the file already exists, it will be
-        renamed to distortion_metadata_<datetime>.json and updated with
-        new metadata.
+        Write distortion metadata to file.
+
+        If the file already exists then the previous metadata will be
+        renamed to ``distortion_metadata_<datetime>.json`` (if it differs
+        from the current metadata), and also combined with the current
+        metadata if compatible (i.e. if they are using similar distortion
+        parameters and only differ in the set of defects / charge states /
+        distortions used), before writing this combined metadata to file.
+
+        If defect and/or charge are specified, then only distortion metadata
+        for that defect and/or charge state will be written.
 
         Args:
             output_path (:obj:`str`):
