@@ -85,7 +85,7 @@ SnB_run_loop() {
     if [[ "$i" == *"_High_Energy"* ]]; then
       continue
     fi
-    if [ ! -f "${i}"/OUTCAR ] || ( ! grep -q "required accuracy" "${i}"/OUTCAR && ! grep -q "converged" "${i}"/OUTCAR ); then  # check calculation not converged
+    if [ ! -f "${i}"/OUTCAR ] || ( ! grep -q "required accuracy" "${i}"/OUTCAR && ! grep -q "considering this converged" "${i}"/OUTCAR ); then  # check calculation not converged
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
         "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
