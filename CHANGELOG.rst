@@ -1,6 +1,27 @@
 Change Log
 ==========
 
+v3.3.1
+----------
+- ``distortion_metadata.json`` for each defect now saved to the individual defect folders (as well as the
+  combined total distortion metadata in the top level folder) – more likely to be retained by the user
+  when ``scp``ing around etc.
+- Minor updates:
+    - Refactor ``_format_defect_name`` to ``format_defect_name`` from `doped` (now a public function)
+    - Update ``snb-run`` to avoid possible 'file exists' warning
+    - Update tutorials/notebooks to specify ``vasp_nkred_std`` to streamline workflow
+    - Remove unnecessary ``tutorials`` folder with duplicate tutorial notebook (to reduce workload).
+    - Add Binder/Colab buttons to run tutorials in the cloud from docs
+    - Default verbosity updates (quieten some unnecessary info messages)
+    - Make ``distortion_metadata`` overwriting/combining more robust and less (unnecessarily) verbose
+- Bugfix of ``snb-run`` from ``v3.3.0``: If max number of electronic steps (``NELM``) threshold was reached
+  in an ionic step, it would be falsely recognised as converged (due to ``unconverged`` being in the
+  ``OUTCAR``). This would only affect ``snb-run`` behaviour in some cases with ``v3.3.0``, and if so the
+  user should be warned anyway with ``Bond_Distortion_X not fully relaxed`` when later running
+  ``snb-parse``/``snb-plot``/``snb-groundstate``. Now fixed. To double check, one can update
+  ``ShakeNBreak`` and just re-run ``snb-run``, and any affected distortions will be correctly determined as
+  unconverged and be re-submitted.
+
 v3.3.0
 ----------
 - Add Dimer distortion as a targeted distortion for dimer reconstructions. It pushes two of the defect NN

@@ -11,7 +11,7 @@ from typing import Optional
 
 import pandas as pd
 from ase.io import write as ase_write
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
@@ -73,7 +73,7 @@ def read_defects_directories(output_path: str = "./") -> dict:
     ):  # need to make copy of list when iterating over and
         # removing elements
         try:
-            formatted_name = _format_defect_name(i, include_site_info_in_name=False)
+            formatted_name = format_defect_name(i, include_site_info_in_name=False)
             if (
                 formatted_name is None
             ):  # defect folder name not recognised, remove from list
@@ -334,7 +334,7 @@ def get_energy_lowering_distortions(
     min_e_diff: float = 0.05,
     stol: float = 0.5,
     min_dist: float = 0.2,
-    verbose: bool = True,
+    verbose: bool = False,
     write_input_files: bool = False,
     metastable: bool = False,
 ) -> dict:
@@ -379,8 +379,8 @@ def get_energy_lowering_distortions(
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
-            Whether to print verbose information about energy lowering
-            distortions, if found.
+            Whether to print verbose information about parsed defect
+            structures for energy-lowering distortions, if found.
             (Default: True)
         write_input_files (:obj:`bool`):
             Whether to write input files for the identified distortions
@@ -448,7 +448,9 @@ def get_energy_lowering_distortions(
                 )  # in case '+' removed
 
             energies_dict, energy_diff, gs_distortion = analysis._sort_data(
-                energies_file, verbose=verbose, min_e_diff=min_e_diff
+                energies_file,
+                min_e_diff=min_e_diff,
+                verbose=True,  # always print energy_diff
             )
             # Defect without data
             if energies_dict is None:
@@ -774,11 +776,11 @@ def compare_struct_to_distortions(
         # initial distortion magnitude from low to high (if present)
         sorted_matching_df = pd.concat(
             [
-                unperturbed_df,
-                rattled_df,
-                dimer_df,
-                sorted_distorted_df,
-                imported_sorted_distorted_float_df,
+                unperturbed_df.dropna(axis=1, how="all"),
+                rattled_df.dropna(axis=1, how="all"),
+                dimer_df.dropna(axis=1, how="all"),
+                sorted_distorted_df.dropna(axis=1, how="all"),
+                imported_sorted_distorted_float_df.dropna(axis=1, how="all"),
             ]
         )
 

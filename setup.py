@@ -133,7 +133,7 @@ with open("README.md", "r", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.3.0",
+    version="3.3.1",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -175,7 +175,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=2.3.0",
+        "doped>=2.3.1",
     ],
     extras_require={
         "tests": [

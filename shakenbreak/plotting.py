@@ -14,7 +14,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 from matplotlib import font_manager
 from matplotlib.figure import Figure
 
@@ -479,12 +479,14 @@ def _save_plot(
     defect_name: str,
     output_path: str,
     save_format: str,
-    verbose: bool = True,
+    verbose: bool = False,
 ) -> None:
     """
-    Save plot in the defect directory. If defect directory not present/recognised, save to cwd.
-    If previous saved plots with the same name exist, rename to <defect>_<datetime>.<format> to
-    prevent overwriting.
+    Save plot in the defect directory.
+
+    If defect directory not present/recognised, save to cwd.
+    If previous saved plots with the same name exist, rename
+    to <defect>_<datetime>.<format> to prevent overwriting.
 
     Args:
         fig (:obj:`mpl.figure.Figure`):
@@ -772,7 +774,7 @@ def plot_all_defects(
     add_title: Optional[bool] = True,
     save_plot: bool = True,
     save_format: str = "png",
-    verbose: bool = True,
+    verbose: bool = False,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
@@ -971,7 +973,7 @@ def plot_defect(
     units: Optional[str] = "eV",
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "png",
-    verbose: bool = True,
+    verbose: bool = False,
 ) -> Optional[Figure]:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -1085,7 +1087,6 @@ def plot_defect(
                     f"{defect_species}/distortion_metadata.json not found. Will not parse "
                     f"its contents (to specify which neighbour atoms were distorted in plot text)."
                 )
-            pass
 
     energies_dict = _cast_energies_to_floats(
         energies_dict=energies_dict, defect_species=defect_species
@@ -1125,7 +1126,7 @@ def plot_defect(
         return None
 
     try:
-        defect_name = _format_defect_name(
+        defect_name = format_defect_name(
             defect_species=defect_species,
             include_site_info_in_name=include_site_info_in_name,
         )  # Format defect name for title and axis labels
@@ -1194,7 +1195,7 @@ def plot_colorbar(
     y_label: Optional[str] = "Energy (eV)",
     line_color: Optional[str] = None,
     save_format: Optional[str] = "png",
-    verbose: Optional[bool] = True,
+    verbose: Optional[bool] = False,
 ) -> Optional[Figure]:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
@@ -1270,7 +1271,7 @@ def plot_colorbar(
             ax.set_title(title)
 
         try:
-            formatted_defect_name = _format_defect_name(
+            formatted_defect_name = format_defect_name(
                 defect_species, include_site_info_in_name=include_site_info_in_name
             )
         except Exception:
@@ -1648,7 +1649,7 @@ def plot_datasets(
             ax.set_title(title)
 
     try:
-        formatted_defect_name = _format_defect_name(
+        formatted_defect_name = format_defect_name(
             defect_species, include_site_info_in_name=include_site_info_in_name
         )
     except Exception:

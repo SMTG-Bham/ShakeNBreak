@@ -11,7 +11,7 @@ from subprocess import call
 import click
 from doped.generation import get_defect_name_from_entry
 from doped.utils.parsing import get_outcar
-from doped.utils.plotting import _format_defect_name
+from doped.utils.plotting import format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
@@ -551,12 +551,12 @@ def generate_all(
             # if user didn't specify defect names in config file,
             # check if defect filename is recognised
             try:
-                defect_name = _format_defect_name(
+                defect_name = format_defect_name(
                     defect, include_site_info_in_name=False
                 )
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = _format_defect_name(
+                    defect_name = format_defect_name(
                         f"{defect}_0", include_site_info_in_name=False
                     )
             if defect_name:
@@ -1351,7 +1351,8 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
 @click.option(
     "--directory",
     "-d",
-    help="Folder name where the ground state structure will be written to.",
+    help="Folder name where the ground state structure will be written to. If using with `doped`, then "
+    "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
     type=str,
     default="Groundstate",
     show_default=True,
@@ -1375,8 +1376,7 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folders."
-    " Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folders. Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
@@ -1418,10 +1418,10 @@ def groundstate(
         for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
             defect_name = None
             try:
-                defect_name = _format_defect_name(dir, include_site_info_in_name=False)
+                defect_name = format_defect_name(dir, include_site_info_in_name=False)
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = _format_defect_name(
+                    defect_name = format_defect_name(
                         f"{dir}_0", include_site_info_in_name=False
                     )
             if (
