@@ -175,7 +175,7 @@ def distort(
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
     distorted_structure = aaa.get_structure(input_structure_ase)
-    distorted_atoms = [(i[1], i[2]) for i in nearest]  # element and site number
+    distorted_atoms = [[i[1], i[2]] for i in nearest]  # element and site number
 
     # Create dictionary with distortion info & distorted structure
     bond_distorted_defect = {
@@ -273,8 +273,8 @@ def apply_dimer_distortion(
     distorted_structure_wout_oxi = distorted_structure.copy()
     distorted_structure_wout_oxi.remove_oxidation_states()
     distorted_atoms = [
-        (site_indexes[0], distorted_structure_wout_oxi[site_indexes[0]].species_string),
-        (site_indexes[1], distorted_structure_wout_oxi[site_indexes[1]].species_string),
+        [site_indexes[0], distorted_structure_wout_oxi[site_indexes[0]].species_string],
+        [site_indexes[1], distorted_structure_wout_oxi[site_indexes[1]].species_string],
     ]
     bond_distorted_defect = {
         "distorted_structure": distorted_structure,
