@@ -3,14 +3,17 @@ import os
 import shutil
 import unittest
 import warnings
-from unittest.mock import call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
-from shakenbreak import cli, energy_lowering_distortions, input, io, plotting
+from shakenbreak import energy_lowering_distortions, input, io, plotting
+from test_energy_lowering_distortions import assert_not_called_with
+
+Mock.assert_not_called_with = assert_not_called_with
 
 file_path = os.path.dirname(__file__)
 

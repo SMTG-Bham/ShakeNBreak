@@ -5,15 +5,18 @@ import unittest
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pytest
-from monty.serialization import dumpfn, loadfn
+from monty.serialization import loadfn
 
 from shakenbreak import analysis, plotting
+from test_energy_lowering_distortions import assert_not_called_with
+
+Mock.assert_not_called_with = assert_not_called_with
 
 
 def if_present_rm(path):
