@@ -329,6 +329,7 @@ def rattle(
             (Default: 1)
         active_atoms (:obj:`list`, optional):
             List of which atomic indices should undergo Monte Carlo rattling.
+            If not set, rattles all atoms in the structure.
             (Default: None)
         nbr_cutoff (:obj:`float`):
             The radial cutoff distance (in Angstroms) used to construct the
