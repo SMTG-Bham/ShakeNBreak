@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import ase
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Element, Structure
+from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
 from shakenbreak import analysis, distortions, energy_lowering_distortions, io
