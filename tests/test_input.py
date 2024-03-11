@@ -3301,9 +3301,9 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
         # test short interatomic distance distortions not omitted when Hydrogen knocking about
-        fake_hydrogen_V_Cd_dict = copy.copy(self.V_Cd_dict)
+        fake_hydrogen_V_Cd_dict = copy.deepcopy(self.V_Cd_dict)  # deepcopy to avoid overwriting
         fake_hydrogen_V_Cd_dict["charges"] = [0]
-        fake_hydrogen_bulk = copy.copy(self.cdte_doped_defect_dict["bulk"])
+        fake_hydrogen_bulk = copy.deepcopy(self.cdte_doped_defect_dict["bulk"])
         fake_hydrogen_bulk["supercell"]["structure"][4].species = "H"
         fake_hydrogen_bulk["supercell"]["structure"].add_oxidation_state_by_element(
             {"Cd": +2, "Te": -2, "H": +1}
