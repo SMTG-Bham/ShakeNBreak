@@ -1091,6 +1091,7 @@ class InputTestCase(unittest.TestCase):
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
             }
         else:  # test POTCAR warning
+            print([str(warning.message) for warning in w])
             assert (
                 len(w) == 2
             )  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
