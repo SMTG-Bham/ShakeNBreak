@@ -31,8 +31,8 @@ jobs:
       - name: Check if version has changed
         id: check_version
         run: |
-          current_pip_version=$(pip index versions doped | grep LATEST | awk '{print $NF}')
-          current_repo_version=$(grep version setup.py | awk -F\" '{print $2}')"
+          current_pip_version=$(pip index versions shakenbreak | grep LATEST | awk '{print $NF}')
+          current_repo_version=$(grep version setup.py | awk -F\" '{print $2}' | head -1)
           if [ "$current_pip_version" != "$current_repo_version" ]; then
             echo "::set-output name=version_changed::true"
           else
