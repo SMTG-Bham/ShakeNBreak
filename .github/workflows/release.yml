@@ -6,10 +6,8 @@ on:
     branches: [ main ]
     types:
       - completed  # only release when tests have passed
-    paths:
-      - 'setup.py'  # only release when setup.py has been updated
 
-  workflow_dispatch:
+  workflow_dispatch:  # or when manually run
 
 jobs:
   release:
@@ -30,22 +28,37 @@ jobs:
           pip install setuptools setuptools_scm wheel
           pip install -e .[tests]
 
+      - name: Check if version has changed
+        id: check_version
+        run: |
+          current_pip_version=$(pip index versions doped | grep LATEST | awk '{print $NF}')
+          current_repo_version=$(grep version setup.py | awk -F\" '{print $2}')"
+          if [ "$current_pip_version" != "$current_repo_version" ]; then
+            echo "::set-output name=version_changed::true"
+          else
+            echo "::set-output name=version_changed::false"
+          fi
+      
       - name: Build packages
+        if: steps.check_version.outputs.version_changed == 'true'
         run: |
           python setup.py sdist bdist_wheel
 
       - name: Publish
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
           password: ${{ secrets.TWINE_PASSWORD }}
 
       - name: Generate release info
+        if: steps.check_version.outputs.version_changed == 'true'
         run: |
           awk 'BEGIN {p = 0} {a = 0 }; /^v\d*.\d*.\d*./ { p += 1; a = 1}; p + a == 1 { print } ' CHANGELOG.rst | sed -e '1,1d' | sed  -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' > release_info.txt
           echo "version=$(grep version setup.py | awk -F\" '{print $2}')" >> $GITHUB_ENV
 
       - name: Release
+        if: steps.check_version.outputs.version_changed == 'true'
         uses: actions/create-release@v1
         id: create_release
         env:
