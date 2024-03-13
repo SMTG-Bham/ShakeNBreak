@@ -34,31 +34,31 @@ jobs:
           current_pip_version=$(pip index versions shakenbreak | grep LATEST | awk '{print $NF}')
           current_repo_version=$(grep version setup.py | awk -F\" '{print $2}' | head -1)
           if [ "$current_pip_version" != "$current_repo_version" ]; then
-            echo "::set-output name=version_changed::true"
+            echo "version_changed=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=version_changed::false"
+            echo "version_changed=false" >> $GITHUB_ENV
           fi
       
       - name: Build packages
-        if: steps.check_version.outputs.version_changed == 'true'
+        if: env.version_changed == 'true'
         run: |
           python setup.py sdist bdist_wheel
 
       - name: Publish
-        if: steps.check_version.outputs.version_changed == 'true'
+        if: env.version_changed == 'true'
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
           password: ${{ secrets.TWINE_PASSWORD }}
 
       - name: Generate release info
-        if: steps.check_version.outputs.version_changed == 'true'
+        if: env.version_changed == 'true'
         run: |
           awk 'BEGIN {p = 0} {a = 0 }; /^v\d*.\d*.\d*./ { p += 1; a = 1}; p + a == 1 { print } ' CHANGELOG.rst | sed -e '1,1d' | sed  -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' > release_info.txt
           echo "version=$(grep version setup.py | awk -F\" '{print $2}')" >> $GITHUB_ENV
 
       - name: Release
-        if: steps.check_version.outputs.version_changed == 'true'
+        if: env.version_changed == 'true'
         uses: actions/create-release@v1
         id: create_release
         env:
