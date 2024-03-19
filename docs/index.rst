@@ -221,6 +221,7 @@ Studies using ``ShakeNBreak``
 - J\. Cen et al. **Cation disorder dominates the defect chemistry of high-voltage LiMn** :sub:`1.5`**Ni** :sub:`0.5`**O₄ (LMNO) spinel cathodes** `Journal of Materials Chemistry A`_ 2023
 - J\. Willis & R. Claes et al. **Limits to Hole Mobility and Doping in Copper Iodide** `Chem Mater <https://doi.org/10.1021/acs.chemmater.3c01628>`__ 2023
 - I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon **Identifying the ground state structures of point defects in solids** `npj Computational Materials`_ 2023
+- B\. Peng et al. **Advancing understanding of structural, electronic, and magnetic properties in 3d-transition-metal TM-doped α-Ga₂O₃ (TM = V, Cr, Mn, and Fe)** `Journal of Applied Physics <https://doi.org/10.1063/5.0173544>`__ 2023
 - Y\. T. Huang & S. R. Kavanagh et al. **Strong absorption and ultrafast localisation in NaBiS₂ nanocrystals with slow charge-carrier recombination** `Nature Communications`_ 2022
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt **Impact of metastable defect structures on carrier recombination in solar cells** `Faraday Discussions`_ 2022
 - Y-S\. Choi et al. **Intrinsic Defects and Their Role in the Phase Transition of Na-Ion Anode Na₂Ti₃O₇** `ACS Appl. Energy Mater. <https://doi.org/10.1021/acsaem.2c03466>`__ 2022 (Early version)
