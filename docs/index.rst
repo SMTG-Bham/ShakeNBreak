@@ -213,7 +213,7 @@ Studies using ``ShakeNBreak``
 
 - X\. Wang et al. **Upper efficiency limit of Sb₂Se₃ solar cells** `arXiv <https://arxiv.org/abs/2402.04434>`_ 2024
 - I\. Mosquera-Lois et al. **Machine-learning structural reconstructions for accelerated point defect calculations** `arXiv <https://doi.org/10.48550/arXiv.2401.12127>`_ 2024
-- K\. Li et al. **Computational Prediction of an Antimony-based n-type Transparent Conducting Oxide: F-doped Sb₂O₅** `ChemRxiv <https://chemrxiv.org/engage/chemrxiv/article-details/65846b8366c1381729bc5f23>`_ 2024
+- K\. Li et al. **Computational Prediction of an Antimony-based n-type Transparent Conducting Oxide: F-doped Sb₂O₅** `Chemistry of Materials <https://doi.org/10.1021/acs.chemmater.3c03257>`_ 2024
 - X\. Wang et al. **Four-electron negative-U vacancy defects in antimony selenide** `Physical Review B <https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102>`_ 2023
 - Y\. Kumagai et al. **Alkali Mono-Pnictides: A New Class of Photovoltaic Materials by Element Mutation** `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
 - J\. Willis, K. B. Spooner, D. O. Scanlon. **On the possibility of p-type doping in barium stannate** `Applied Physics Letters <https://doi.org/10.1063/5.0170552>`__ 2023
