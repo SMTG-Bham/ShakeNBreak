@@ -857,16 +857,27 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     default="vasp",
     show_default=True,
 )
-def parse(defect, all, path, code):
+@click.option(
+    "--verbose",
+    "-v",
+    help="Print information about renamed/saved-over files.",
+    default=False,
+    is_flag=True,
+    show_default=True,
+)
+def parse(defect, all, path, code, verbose):
     """
     Parse final energies of defect structures from relaxation output files.
     Parsed energies are written to a `yaml` file in the corresponding defect directory.
     """
     if defect:
-        _ = io.parse_energies(defect, path, code)
+        _ = io.parse_energies(defect, path, code, verbose=verbose)
     elif all:
         defect_dirs = _parse_defect_dirs(path)
-        _ = [io.parse_energies(defect, path, code) for defect in defect_dirs]
+        _ = [
+            io.parse_energies(defect, path, code, verbose=verbose)
+            for defect in defect_dirs
+        ]
     else:
         # assume current directory is the defect folder
         try:
@@ -878,7 +889,7 @@ def parse(defect, all, path, code):
             cwd = os.getcwd()
             defect = cwd.split("/")[-1]
             path = cwd.rsplit("/", 1)[0]
-            _ = io.parse_energies(defect, path, code)
+            _ = io.parse_energies(defect, path, code, verbose=verbose)
         except Exception:
             raise Exception(
                 f"Could not parse defect '{defect}' in directory '{path}'. Please either specify "
@@ -939,7 +950,7 @@ def parse(defect, all, path, code):
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified energy lowering distortions.",
+    help="Print information about identified energy lowering distortions and renamed/saved-over files.",
     default=False,
     is_flag=True,
     show_default=True,
@@ -960,7 +971,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
                     f"Could not find {orig_defect_name} in the directory {path}."
                 )
 
-        _ = io.parse_energies(defect, path, code)
+        _ = io.parse_energies(defect, path, code, verbose=verbose)
         defect_energies_dict = analysis.get_energies(
             defect_species=defect, output_path=path, verbose=verbose
         )
@@ -1123,7 +1134,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--verbose",
     "-v",
-    help="Print information about identified energy lowering distortions.",
+    help="Print information about identified energy lowering distortions and renamed/saved-over files.",
     default=False,
     is_flag=True,
     show_default=True,
@@ -1156,7 +1167,7 @@ def plot(
         for defect in defect_dirs:
             if verbose:
                 print(f"Parsing {defect}...")
-            _ = io.parse_energies(defect, path, code)
+            _ = io.parse_energies(defect, path, code, verbose=verbose)
         # Create defects_dict (matching defect name to charge states)
         defects_wout_charge = [defect.rsplit("_", 1)[0] for defect in defect_dirs]
         defects_dict = {
@@ -1200,7 +1211,7 @@ def plot(
     else:
         orig_path = None
     try:
-        energies_file = io.parse_energies(defect, path, code)
+        energies_file = io.parse_energies(defect, path, code, verbose=verbose)
         defect_species = energies_file.rsplit("/", 1)[-1].replace(
             ".yaml", ""
         )  # in case '+' removed
@@ -1223,7 +1234,7 @@ def plot(
         )
     except Exception:
         try:
-            energies_file = io.parse_energies(defect, orig_path, code)
+            energies_file = io.parse_energies(defect, orig_path, code, verbose=verbose)
             defect_species = energies_file.rsplit("/", 1)[-1].replace(
                 ".yaml", ""
             )  # in case '+' removed
