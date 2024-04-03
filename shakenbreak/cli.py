@@ -1176,7 +1176,7 @@ def plot(
         for defect in defect_dirs:
             defects_dict[defect.rsplit("_", 1)[0]].append(int(defect.rsplit("_", 1)[1]))
         return plotting.plot_all_defects(
-            defects_dict=defects_dict,
+            defect_charges_dict=defects_dict,
             output_path=path,
             add_colorbar=colorbar,
             metric=metric,
@@ -1186,6 +1186,7 @@ def plot(
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
             verbose=verbose,
+            close_figures=True,  # reduce memory usage with snb-plot with many defects at once
         )
 
     elif defect is None:

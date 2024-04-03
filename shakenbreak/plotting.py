@@ -763,7 +763,7 @@ def _format_colorbar(
 
 # Main plotting functions:
 def plot_all_defects(
-    defects_dict: dict,
+    defect_charges_dict: dict,
     output_path: str = ".",
     add_colorbar: bool = False,
     metric: str = "max_dist",
@@ -775,13 +775,14 @@ def plot_all_defects(
     save_plot: bool = True,
     save_format: str = "png",
     verbose: bool = False,
+    close_figures: bool = False,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
     which undergo energy-lowering distortions.
 
     Args:
-        defects_dict (:obj:`dict`):
+        defect_charges_dict (:obj:`dict`):
             Dictionary matching defect names to lists of their charge states.
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
@@ -824,6 +825,11 @@ def plot_all_defects(
             (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plots (warnings and where they're saved).
+        close_figures (:obj:`bool`):
+            Whether to close matplotlib figures after saving them, to reduce memory usage.
+            Recommended to use if plotting many defects at once, in which case figures will
+            be saved to disk and not displayed.
+            (Default: False)
 
     Returns:
         :obj:`dict`:
@@ -841,8 +847,8 @@ def plot_all_defects(
         # check if any defect_species folders have distortion_metadata.json files
         defect_species_list = [
             f"{defect}_{format_charge}"
-            for defect in defects_dict
-            for charge in defects_dict[defect]
+            for defect in defect_charges_dict
+            for charge in defect_charges_dict[defect]
             for format_charge in [charge, f"+{charge}"]
         ]  # allow for defect species names with "+" sign (in SnB > 3.1)
         distortion_metadata_list = [
@@ -866,8 +872,8 @@ def plot_all_defects(
                 )
             distortion_metadata = None
 
-    figures = {}
-    for defect, value in defects_dict.items():
+    defects_to_plot = {}
+    for defect, value in defect_charges_dict.items():
         for charge in value:
             defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
             # Parse energies
@@ -937,24 +943,32 @@ def plot_all_defects(
                     num_nearest_neighbours = None
                     neighbour_atom = None
 
-                figures[defect_species] = plot_defect(
-                    defect_species=defect_species,
-                    energies_dict=energies_dict,
-                    output_path=output_path,
-                    neighbour_atom=neighbour_atom,
-                    num_nearest_neighbours=num_nearest_neighbours,
-                    add_colorbar=add_colorbar,
-                    metric=metric,
-                    units=units,
-                    max_energy_above_unperturbed=max_energy_above_unperturbed,
-                    line_color=line_color,
-                    add_title=add_title,
-                    save_plot=save_plot,
-                    save_format=save_format,
-                    verbose=verbose,
-                )
+                defects_to_plot[defect_species] = {
+                    "energies_dict": energies_dict,
+                    "num_nearest_neighbours": num_nearest_neighbours,
+                    "neighbour_atom": neighbour_atom,
+                }
 
-    return figures
+    return {
+        defect_species: plot_defect(
+            defect_species=defect_species,
+            energies_dict=info_dict.get("energies_dict"),
+            output_path=output_path,
+            neighbour_atom=info_dict.get("neighbour_atom"),
+            num_nearest_neighbours=info_dict.get("num_nearest_neighbours"),
+            add_colorbar=add_colorbar,
+            metric=metric,
+            units=units,
+            max_energy_above_unperturbed=max_energy_above_unperturbed,
+            line_color=line_color,
+            add_title=add_title,
+            save_plot=save_plot,
+            save_format=save_format,
+            verbose=verbose,
+            close_figure=close_figures,
+        )
+        for defect_species, info_dict in defects_to_plot.items()
+    }
 
 
 def plot_defect(
@@ -974,6 +988,7 @@ def plot_defect(
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "png",
     verbose: bool = False,
+    close_figure: bool = False,
 ) -> Optional[Figure]:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -1037,6 +1052,11 @@ def plot_defect(
             (Default: "png")
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
+        close_figure (:obj:`bool`):
+            Whether to close matplotlib figure after saving, to reduce memory usage.
+            Recommended to use if plotting many defects at once, in which case figure will
+            be saved to disk and not displayed.
+            (Default: False)
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1176,6 +1196,9 @@ def plot_defect(
                 save_format=save_format,
                 verbose=verbose,
             )
+    if close_figure:
+        plt.close(fig)
+
     return fig
 
 
