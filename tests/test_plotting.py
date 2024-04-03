@@ -1176,7 +1176,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             FileNotFoundError,
             plotting.plot_all_defects,
             output_path="./fake_output_path",
-            defects_dict={
+            defect_charges_dict={
                 "vac_1_Cd": [
                     0,
                 ]
@@ -1189,7 +1189,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             plotting.plot_all_defects(
                 output_path=self.VASP_CDTE_DATA_DIR,
-                defects_dict={
+                defect_charges_dict={
                     "vac_1_Cd": [
                         -1,
                     ]
@@ -1212,7 +1212,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         distortion_metadata.json does not contain info for a given charge state"""
         fig_dict = plotting.plot_all_defects(
             output_path=self.VASP_CDTE_DATA_DIR,
-            defects_dict={"vac_1_Cd": [0, -2]},
+            defect_charges_dict={"vac_1_Cd": [0, -2]},
             save_plot=False,
             min_e_diff=0.05,
             add_title=False,
@@ -1230,7 +1230,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         """Test plot_all_defects() function with keyword min_e_diff set"""
         fig_dict = plotting.plot_all_defects(
             output_path=self.VASP_CDTE_DATA_DIR,
-            defects_dict={"vac_1_Cd": [0, -2]},
+            defect_charges_dict={"vac_1_Cd": [0, -2]},
             save_plot=False,
             min_e_diff=0.15,
         )

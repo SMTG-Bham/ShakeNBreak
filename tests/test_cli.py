@@ -324,9 +324,8 @@ class CLITestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert filecmp.cmp(
-                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
+            generated_incar = Incar.from_file(f"{V_Cd_Bond_Distortion_folder}/INCAR")
+            assert generated_incar == self.V_Cd_INCAR
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
@@ -1638,12 +1637,10 @@ POTCAR:
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(
-                f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file
-            )
+            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
+            assert v_Cd_INCAR != self.V_Cd_INCAR
             # NELECT has changed due to POTCARs
 
-            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
             v_Cd_INCAR.pop("NELECT")
             test_INCAR = self.V_Cd_INCAR.copy()
             test_INCAR.pop("NELECT")
