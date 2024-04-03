@@ -442,7 +442,9 @@ def get_energy_lowering_distortions(
                     # ignore parsing warnings in case energies already parsed and output files deleted,
                     # _only_ if energies file already exists
                     warnings.simplefilter("ignore", category=UserWarning)
-                energies_file = io.parse_energies(defect_species, output_path, code)
+                energies_file = io.parse_energies(
+                    defect_species, output_path, code, verbose=verbose
+                )
                 defect_species = energies_file.rsplit("/", 1)[-1].replace(
                     ".yaml", ""
                 )  # in case '+' removed
@@ -1280,7 +1282,9 @@ def write_groundstate_structure(
                 # ignore parsing warnings in case energies already parsed and output files deleted,
                 # _only_ if energies file already exists
                 warnings.simplefilter("ignore", category=UserWarning)
-            energies_file = io.parse_energies(defect_species, output_path)
+            energies_file = io.parse_energies(
+                defect_species, output_path, verbose=verbose
+            )
             defect_species = energies_file.rsplit("/", 1)[-1].replace(
                 ".yaml", ""
             )  # in case '+' removed
