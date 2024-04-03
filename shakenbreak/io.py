@@ -31,6 +31,7 @@ def parse_energies(
     path: Optional[str] = ".",
     code: Optional[str] = "vasp",
     filename: Optional[str] = "OUTCAR",
+    verbose: bool = False,
 ) -> None:
     """
     Parse final energy for all distortions present in the given defect
@@ -54,6 +55,9 @@ def parse_energies(
             (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
+        verbose (:obj:`bool`):
+            If True, print information about renamed/saved-over files.
+            Defaults to False.
 
     Returns: energies_file path.
     """
@@ -89,7 +93,7 @@ def parse_energies(
             sorted_energies_dict["Dimer"] = defect_energies_dict["Dimer"]
         return sorted_energies_dict
 
-    def save_file(energies, defect, path):
+    def save_file(energies, defect, path, verbose=False):
         """Save yaml file with final energies for each distortion."""
         # File to write energies to
         filename = f"{path}/{defect}/{defect}.yaml"
@@ -98,11 +102,12 @@ def parse_energies(
             old_file = loadfn(filename)
             if old_file != energies:
                 current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-                print(
-                    f"Moving old {filename} to "
-                    f"{filename.replace('.yaml', '')}_{current_datetime}.yaml "
-                    "to avoid overwriting"
-                )
+                if verbose:
+                    print(
+                        f"Moving old {filename} to "
+                        f"{filename.replace('.yaml', '')}_{current_datetime}.yaml "
+                        "to avoid overwriting"
+                    )
                 os.rename(
                     filename, f"{filename.replace('.yaml', '')}_{current_datetime}.yaml"
                 )  # Keep copy of old file
@@ -394,7 +399,7 @@ def parse_energies(
             if "Unperturbed" in energies:
                 # TODO: remove next two lines
                 energies = sort_energies(energies)
-                save_file(energies, defect, path)
+                save_file(energies, defect, path, verbose=verbose)
 
     # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
     # warn user about output files not being parsed for this entry
@@ -417,7 +422,7 @@ def parse_energies(
 
     energies = sort_energies(energies)
     if energies and energies != {"distortions": {}}:
-        save_file(energies, defect, path)
+        save_file(energies, defect, path, verbose=verbose)
 
     return energies_file
 
