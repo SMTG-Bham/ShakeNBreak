@@ -12,6 +12,7 @@ import os
 import shutil
 import warnings
 from importlib.metadata import version
+from multiprocessing import Queue
 from typing import Optional, Tuple, Type, Union
 
 import ase
@@ -20,7 +21,12 @@ from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
 from doped import _ignore_pmg_warnings
-from doped.core import Defect, DefectEntry
+from doped.core import (
+    Defect,
+    DefectEntry,
+    _guess_and_set_oxi_states_with_timeout,
+    _rough_oxi_state_cost_from_comp,
+)
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
     get_defect_site_idxs_and_unrelaxed_structure,
@@ -896,7 +902,11 @@ def _get_voronoi_multiplicity(site, structure):
 
 
 def identify_defect(
-    defect_structure, bulk_structure, defect_coords=None, defect_index=None
+    defect_structure,
+    bulk_structure,
+    defect_coords=None,
+    defect_index=None,
+    oxi_state=None,
 ) -> Defect:
     """
     By comparing the defect and bulk structures, identify the defect present and its site in
@@ -914,6 +924,9 @@ def identify_defect(
             Index of the defect site in the supercell. For vacancies, this
             should be the site index in the bulk structure, while for substitutions
             and interstitials it should be the site index in the defect structure.
+        oxi_state (:obj:`int`, :obj:`float`, :obj:`str`):
+            Oxidation state of the defect site. If not provided, will be
+            automatically determined from the defect structure.
 
     Returns: :obj:`Defect`
     """
@@ -936,6 +949,29 @@ def identify_defect(
     )  # copy to prevent overwriting original structures
     bulk_struc = bulk_structure.copy()
     defect_struc.remove_oxidation_states()
+
+    _bulk_oxi_states = False
+    if oxi_state is None:
+        if all(hasattr(site.specie, "oxi_state") for site in bulk_struc.sites) and all(
+            isinstance(site.specie.oxi_state, (int, float)) for site in bulk_struc.sites
+        ):
+            _bulk_oxi_states = {
+                el.symbol: el.oxi_state for el in bulk_struc.composition.elements
+            }
+        else:  # try guessing bulk oxi states now, before Defect initialisation:
+            if _rough_oxi_state_cost_from_comp(bulk_struc.composition) < 1e6:
+                # otherwise will take very long to guess oxi_state
+                queue = Queue()
+                _bulk_oxi_states = _guess_and_set_oxi_states_with_timeout(
+                    bulk_struc, queue=queue
+                )
+                if _bulk_oxi_states:
+                    bulk_struc = queue.get()  # oxi-state decorated structure
+                    _bulk_oxi_states = {
+                        el.symbol: el.oxi_state
+                        for el in bulk_struc.composition.elements
+                    }
+
     bulk_struc.remove_oxidation_states()
 
     bulk_site_index = None
@@ -1187,11 +1223,15 @@ def identify_defect(
                     f"Will use user-specified site: {_site_info(defect_site)}."
                 )
 
+    if _bulk_oxi_states:
+        bulk_structure.add_oxidation_state_by_element(_bulk_oxi_states)
+
     for_monty_defect = {
         "@module": "doped.core",
         "@class": defect_type.capitalize(),
         "structure": bulk_structure,
         "site": defect_site,
+        "oxi_state": oxi_state if _bulk_oxi_states else "Undetermined",
     }
     try:
         defect = MontyDecoder().process_decoded(for_monty_defect)

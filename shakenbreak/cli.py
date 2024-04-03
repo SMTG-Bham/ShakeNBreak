@@ -6,9 +6,14 @@ import os
 import sys
 import warnings
 from copy import deepcopy
+from multiprocessing import Queue
 from subprocess import call
 
 import click
+from doped.core import (
+    _guess_and_set_oxi_states_with_timeout,
+    _rough_oxi_state_cost_from_comp,
+)
 from doped.generation import get_defect_name_from_entry
 from doped.utils.parsing import get_outcar
 from doped.utils.plotting import format_defect_name
@@ -469,6 +474,21 @@ def generate_all(
     for all defects in a given directory.
     """
     bulk_struc = Structure.from_file(bulk)
+    # try parsing the bulk oxidation states first, for later assigning defect "oxi_state"s (i.e.
+    # fully ionised charge states):
+    if _rough_oxi_state_cost_from_comp(bulk_struc.composition) > 1e6:
+        _bulk_oxi_states = False  # will take very long to guess oxi_state
+    else:
+        queue = Queue()
+        _bulk_oxi_states = _guess_and_set_oxi_states_with_timeout(
+            bulk_struc, queue=queue
+        )
+        if _bulk_oxi_states:
+            bulk_struc = queue.get()  # oxi-state decorated structure
+            _bulk_oxi_states = {
+                el.symbol: el.oxi_state for el in bulk_struc.composition.elements
+            }
+
     defects_dirs = os.listdir(defects)
     if config is not None:
         # In the config file, user can specify index/frac_coords and charges for each defect
@@ -566,23 +586,21 @@ def generate_all(
 
     def parse_defect_charges(defect_name, defect_settings):
         charges = None
-        if isinstance(defect_settings, dict):
-            if defect_name in defect_settings:
-                charges = defect_settings.get(defect_name).get("charges", None)
-                if charges is None:
-                    charges = [
-                        defect_settings.get(defect_name).get("charge", None),
-                    ]
+        if isinstance(defect_settings, dict) and defect_name in defect_settings:
+            charges = defect_settings.get(defect_name).get("charges", None)
+            if charges is None:
+                charges = [
+                    defect_settings.get(defect_name).get("charge", None),
+                ]
         return charges  # determing using padding if not set in config file
 
     def parse_defect_position(defect_name, defect_settings):
-        if defect_settings:
-            if defect_name in defect_settings:
-                defect_index = defect_settings.get(defect_name).get("defect_index")
-                if defect_index:
-                    return int(defect_index), None
-                defect_coords = defect_settings.get(defect_name).get("defect_coords")
-                return None, defect_coords
+        if defect_settings and defect_name in defect_settings:
+            defect_index = defect_settings.get(defect_name).get("defect_index")
+            if defect_index:
+                return int(defect_index), None
+            defect_coords = defect_settings.get(defect_name).get("defect_coords")
+            return None, defect_coords
         return None, None
 
     defect_entries = []
@@ -637,6 +655,9 @@ def generate_all(
             bulk_structure=bulk_struc,
             defect_index=defect_index,
             defect_coords=defect_coords,
+            oxi_state=None
+            if _bulk_oxi_states
+            else "Undetermined",  # guess if bulk_oxi, else "Undetermined"
         )
         if verbose:
             site = defect_object.site
@@ -656,7 +677,7 @@ def generate_all(
         defect_object.user_charges = charges
 
         # Add defect entry to full defects_dict
-        # If charges were not specified by use, set them using padding
+        # If charges were not specified by user, set them using padding
         for charge in defect_object.get_charge_states(padding=padding):
             defect_entries.append(
                 input._get_defect_entry_from_defect(defect_object, charge)
