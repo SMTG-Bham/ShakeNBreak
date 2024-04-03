@@ -1353,12 +1353,16 @@ def plot_colorbar(
             im = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Rattled"],
-                c=disp_dict["Rattled"],
+                c=(
+                    disp_dict["Rattled"]
+                    if isinstance(disp_dict["Rattled"], float)
+                    else "k"
+                ),
                 label="Rattled",
                 s=50,
                 marker="o",
-                cmap=colormap,
-                norm=norm,
+                cmap=colormap if isinstance(disp_dict["Rattled"], float) else None,
+                norm=norm if isinstance(disp_dict["Rattled"], float) else None,
                 alpha=1,
             )
         # Plot Dimer
@@ -1369,12 +1373,12 @@ def plot_colorbar(
             im = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Dimer"],
-                c=disp_dict["Dimer"],
+                c=disp_dict["Dimer"] if isinstance(disp_dict["Dimer"], float) else "k",
                 s=50,
                 marker="s",  # default_style_settings["marker"],
                 label="Dimer",
-                cmap=colormap,
-                norm=norm,
+                cmap=colormap if isinstance(disp_dict["Dimer"], float) else None,
+                norm=norm if isinstance(disp_dict["Dimer"], float) else None,
                 alpha=1,
             )
 
@@ -1391,46 +1395,32 @@ def plot_colorbar(
                 non_imported_sorted_indices = range(len(sorted_distortions))
 
             # Plot non-imported distortions
-            im = ax.scatter(  # Points for each distortion
-                [
-                    sorted_distortions[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                [
-                    sorted_energies[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                c=[
-                    sorted_disp[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                ls="-",
-                s=50,
-                marker="o",
-                cmap=colormap,
-                norm=norm,
-                alpha=1,
-            )
-            ax.scatter(  # plot any datapoints where disp could not be determined as black
-                [
-                    sorted_distortions[i]
-                    for i in non_imported_sorted_indices
-                    if not isinstance(sorted_disp[i], float)
-                ],
-                [
-                    sorted_energies[i]
-                    for i in non_imported_sorted_indices
-                    if not isinstance(sorted_disp[i], float)
-                ],
-                c="k",
-                ls="-",
-                s=50,
-                marker="o",
-                alpha=1,
-            )
+            non_imported_distortion_indices_with_disp = [
+                i
+                for i in non_imported_sorted_indices
+                if isinstance(sorted_disp[i], float)
+            ]
+            non_imported_distortion_indices_without_disp = [
+                i
+                for i in non_imported_sorted_indices
+                if not isinstance(sorted_disp[i], float)
+            ]
+            for indices_list, color_map in [
+                (non_imported_distortion_indices_with_disp, True),
+                (non_imported_distortion_indices_without_disp, False),
+            ]:
+                if indices_list:
+                    im = ax.scatter(  # plot any datapoints where disp could not be determined as black
+                        [sorted_distortions[i] for i in indices_list],
+                        [sorted_energies[i] for i in indices_list],
+                        c=[sorted_disp[i] for i in indices_list] if color_map else "k",
+                        ls="-",
+                        s=50,
+                        marker="o",
+                        cmap=colormap if color_map else None,
+                        norm=norm if color_map else None,
+                        alpha=1,
+                    )
             if len(non_imported_sorted_indices) > 1:  # more than one point
                 # Plot line connecting points
                 (line,) = ax.plot(
@@ -1456,10 +1446,14 @@ def plot_colorbar(
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
                     )
                     sorted_i = imported_indices[i]  # index for the sorted dicts
-                    ax.scatter(
+                    ax.scatter(  # plot any datapoints where disp could not be determined as black
                         np.array(keys)[i],
                         sorted_energies[sorted_i],
-                        c=sorted_disp[sorted_i],
+                        c=(
+                            sorted_disp[sorted_i]
+                            if isinstance(sorted_disp[sorted_i], float)
+                            else "k"
+                        ),
                         edgecolors="k",
                         ls="-",
                         s=50,
@@ -1469,8 +1463,12 @@ def plot_colorbar(
                             j
                         ],  # different markers for different charge states
                         zorder=10,  # make sure it's on top of the other points
-                        cmap=colormap,
-                        norm=norm,
+                        cmap=(
+                            colormap
+                            if isinstance(sorted_disp[sorted_i], float)
+                            else None
+                        ),
+                        norm=norm if isinstance(sorted_disp[sorted_i], float) else None,
                         alpha=1,
                         label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
                         f"charge state",
