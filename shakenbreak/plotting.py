@@ -706,11 +706,12 @@ def _setup_colormap(
 def _format_colorbar(
     fig: mpl.figure.Figure,
     ax: mpl.axes.Axes,
-    im: mpl.collections.PathCollection,
     metric: str,
     vmin: float,
     vmax: float,
     vmedium: float,
+    norm: mpl.colors.Normalize,
+    cmap: mpl.colors.Colormap,
 ) -> mpl.figure.Figure.colorbar:
     """
     Format colorbar of plot.
@@ -720,7 +721,6 @@ def _format_colorbar(
             matplotlib.figure.Figure object
         ax (:obj:`mpl.axes.Axes`):
             current matplotlib.axes.Axes object
-        im (:obj:`mpl.collections.PathCollection`)
         metric (:obj:`str`):
             metric to be plotted: "disp" or "max_dist"
         vmin (:obj:`float`):
@@ -729,12 +729,16 @@ def _format_colorbar(
             tick label for the colorbar
         vmedium (:obj:`float`):
             tick label for the colorbar
+        norm (:obj:`mpl.colors.Normalize`):
+            normalization for the colorbar
+        cmap (:obj:`mpl.colors.Colormap`):
+            colormap for the colorbar
 
     Returns:
         cbar (:obj:`mpl.colorbar.Colorbar`)
     """
     cbar = fig.colorbar(
-        im,
+        mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
         boundaries=None,
         drawedges=False,
@@ -1350,7 +1354,7 @@ def plot_colorbar(
             and "Rattled" in disp_dict.keys()
         ):
             # Plot Rattled energy
-            im = ax.scatter(
+            path_col = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Rattled"],
                 c=(
@@ -1370,7 +1374,7 @@ def plot_colorbar(
             "Dimer" in energies_dict["distortions"].keys()
             and "Dimer" in disp_dict.keys()
         ):
-            im = ax.scatter(
+            path_col = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Dimer"],
                 c=disp_dict["Dimer"] if isinstance(disp_dict["Dimer"], float) else "k",
@@ -1406,11 +1410,11 @@ def plot_colorbar(
                 if not isinstance(sorted_disp[i], float)
             ]
             for indices_list, color_map in [
-                (non_imported_distortion_indices_with_disp, True),
                 (non_imported_distortion_indices_without_disp, False),
+                (non_imported_distortion_indices_with_disp, True),
             ]:
                 if indices_list:
-                    im = ax.scatter(  # plot any datapoints where disp could not be determined as black
+                    path_col = ax.scatter(  # plot any datapoints with undetermined disp as black
                         [sorted_distortions[i] for i in indices_list],
                         [sorted_energies[i] for i in indices_list],
                         c=[sorted_disp[i] for i in indices_list] if color_map else "k",
@@ -1515,7 +1519,7 @@ def plot_colorbar(
             ],
         )
 
-        # reformat 'line' legend handle to include 'im' datapoint handle
+        # reformat 'line' legend handle to include 'path_col' datapoint handle
         handles, labels = ax.get_legend_handles_labels()
         # get handle and label that corresponds to line, if line present:
         if line:
@@ -1528,7 +1532,7 @@ def plot_colorbar(
             handles = [handle for handle in handles if handle != line_handle]
             labels = [label for label in labels if label != line_label]
             # add line handle and label to handles and labels, with datapoint handle
-            handles = [(im, line_handle)] + handles
+            handles = [(path_col, line_handle)] + handles
             labels = [line_label] + labels
 
         plt.legend(
@@ -1538,7 +1542,14 @@ def plot_colorbar(
         )  # make sure it's on top of the other points
 
         _ = _format_colorbar(
-            fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
+            fig=fig,
+            ax=ax,
+            metric=metric,
+            vmin=vmin,
+            vmax=vmax,
+            vmedium=vmedium,
+            norm=norm,
+            cmap=colormap,
         )  # Colorbar formatting
 
     # Save plot?

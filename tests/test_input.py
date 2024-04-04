@@ -13,7 +13,7 @@ import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
 from ase.io import read
-from doped import _ignore_pmg_warnings
+from doped.utils.parsing import _reset_warnings
 from doped.generation import get_defect_name_from_entry
 from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
 from monty.serialization import dumpfn, loadfn
@@ -462,8 +462,8 @@ class InputTestCase(unittest.TestCase):
             ):
                 if_present_rm(i)
         for fname in os.listdir("./"):
-            if fname.endswith("json"):  # distortion_metadata and parsed_defects_dict
-                os.remove(f"./{fname}")
+            if fname.endswith("json") or fname.endswith("png"):
+                os.remove(f"./{fname}")  # distortion_metadata, parsed_defects_dict, left-over plots
         if_present_rm("test_path")  # remove test_path if present
 
         regen_defect_folder_names = [
@@ -1068,7 +1068,7 @@ class InputTestCase(unittest.TestCase):
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         with warnings.catch_warnings(record=True) as w:
-            _ignore_pmg_warnings()
+            _reset_warnings()
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
@@ -1080,9 +1080,8 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert filecmp.cmp(
-                "vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file
-            )
+            generated_INCAR = Incar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR")
+            assert generated_INCAR == self.V_Cd_INCAR
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/POTCAR")
@@ -1128,9 +1127,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                f"{V_Cd_kwarg_folder}/INCAR", self.V_Cd_INCAR_file
-            )
             assert self.V_Cd_INCAR != Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
             kwarged_INCAR = self.V_Cd_INCAR.copy()
             kwarged_INCAR.update(kwarg_incar_settings)
@@ -1164,10 +1160,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR",
-                self.V_Cd_INCAR_file,
-            )
             assert self.V_Cd_INCAR != Incar.from_file(
                 "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR"
             )
@@ -1652,9 +1644,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
             assert self.V_Cd_INCAR != Incar.from_file(
                 f"{V_Cd_Bond_Distortion_folder}/INCAR"
             )
@@ -1692,13 +1681,12 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
             kwarged_INCAR = self.V_Cd_INCAR.copy()
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            assert kwarged_INCAR != Int_Cd_2_INCAR
+
             kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
             kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
-            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
             Int_Cd_2_INCAR.pop("NELECT")
             assert kwarged_INCAR == Int_Cd_2_INCAR
 
@@ -2007,11 +1995,10 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                "Int_Cd_2_+1/Unperturbed/INCAR", self.V_Cd_INCAR_file
-            )
             int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
             v_Cd_INCAR = self.V_Cd_INCAR.copy()
+            assert v_Cd_INCAR != int_Cd_2_INCAR
+
             v_Cd_INCAR.pop("NELECT")  # NELECT and NUPDOWN differs for the two defects
             v_Cd_INCAR.pop("NUPDOWN")
             int_Cd_2_INCAR.pop("NELECT")
@@ -2222,9 +2209,6 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
             assert self.V_Cd_INCAR != Incar.from_file(
                 f"{V_Cd_Bond_Distortion_folder}/INCAR"
             )
@@ -2259,13 +2243,12 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(kpoints.kpts, [[1, 1, 1]])
 
         if _potcars_available():
-            assert not filecmp.cmp(  # INCAR settings changed now
-                f"{Int_Cd_2_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
             kwarged_INCAR = self.V_Cd_INCAR.copy()
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            assert kwarged_INCAR != Int_Cd_2_INCAR
+
             kwarged_INCAR.update({"IVDW": 12})
             kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
-            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
             Int_Cd_2_INCAR.pop("NELECT")
             assert kwarged_INCAR == Int_Cd_2_INCAR
 
