@@ -13,7 +13,6 @@ import numpy as np
 from ase.build import bulk, make_supercell
 from ase.calculators.aims import Aims
 from ase.io import read
-from doped.utils.parsing import _reset_warnings
 from doped.generation import get_defect_name_from_entry
 from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
 from monty.serialization import dumpfn, loadfn
@@ -1068,7 +1067,6 @@ class InputTestCase(unittest.TestCase):
         }
         self.assertFalse(os.path.exists("vac_1_Cd_0"))
         with warnings.catch_warnings(record=True) as w:
-            _reset_warnings()
             input._create_vasp_input(
                 "vac_1_Cd_0",
                 distorted_defect_dict=V_Cd_charged_defect_dict,
