@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v3.3.2
+----------
+- Add ``verbose`` options to ``io.parse_energies()`` and ``snb-parse``, also used in ``snb-plot`` and
+  ``snb-analyse``, and set to ``False`` by default to reduce verbosity of certain SnB CLI commands.
+- Use ``doped`` functions to make oxi-state guessing (and thus defect initialisation) more efficient.
+- Miscellaneous efficiency and robustness updates.
+
 v3.3.1
 ----------
 - ``distortion_metadata.json`` for each defect now saved to the individual defect folders (as well as the
