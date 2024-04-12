@@ -12,7 +12,7 @@ from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
 from shakenbreak import energy_lowering_distortions, input, io, plotting
 from test_energy_lowering_distortions import assert_not_called_with
-from tests_plotting import custom_mpl_image_compare
+from test_plotting import custom_mpl_image_compare
 
 Mock.assert_not_called_with = assert_not_called_with
 
