@@ -104,55 +104,58 @@ class InputTestCase(unittest.TestCase):
 
     def setUp(self):
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
-        self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-        self.VASP_DIR = os.path.join(self.DATA_DIR, "vasp")
-        self.VASP_CDTE_DATA_DIR = os.path.join(self.DATA_DIR, "vasp/CdTe")
-        self.CASTEP_DATA_DIR = os.path.join(self.DATA_DIR, "castep")
-        self.CP2K_DATA_DIR = os.path.join(self.DATA_DIR, "cp2k")
-        self.FHI_AIMS_DATA_DIR = os.path.join(self.DATA_DIR, "fhi_aims")
-        self.ESPRESSO_DATA_DIR = os.path.join(self.DATA_DIR, "quantum_espresso")
-        self.CdTe_bulk_struc = Structure.from_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Bulk_Supercell_POSCAR")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
+        cls.VASP_DIR = os.path.join(cls.DATA_DIR, "vasp")
+        cls.VASP_CDTE_DATA_DIR = os.path.join(cls.DATA_DIR, "vasp/CdTe")
+        cls.CASTEP_DATA_DIR = os.path.join(cls.DATA_DIR, "castep")
+        cls.CP2K_DATA_DIR = os.path.join(cls.DATA_DIR, "cp2k")
+        cls.FHI_AIMS_DATA_DIR = os.path.join(cls.DATA_DIR, "fhi_aims")
+        cls.ESPRESSO_DATA_DIR = os.path.join(cls.DATA_DIR, "quantum_espresso")
+        cls.CdTe_bulk_struc = Structure.from_file(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_Bulk_Supercell_POSCAR")
         )
 
-        self.cdte_doped_defect_dict = loadfn(  # old doped defects dict
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
+        cls.cdte_doped_defect_dict = loadfn(  # old doped defects dict
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_defects_dict.json")
         )
-        self.cdte_doped_reduced_defect_gen = loadfn(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "reduced_CdTe_defect_gen.json")
+        cls.cdte_doped_reduced_defect_gen = loadfn(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "reduced_CdTe_defect_gen.json")
         )
-        self.cdte_defects = {}
+        cls.cdte_defects = {}
         # Refactor to dict of DefectEntrys objects, with doped/PyCDT names
-        for defects_type, defect_dict_list in self.cdte_doped_defect_dict.items():
+        for defects_type, defect_dict_list in cls.cdte_doped_defect_dict.items():
             if "bulk" not in defects_type:
                 for defect_dict in defect_dict_list:
-                    self.cdte_defects[defect_dict["name"]] = [
+                    cls.cdte_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
                             defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
-                                bulk_dict=self.cdte_doped_defect_dict["bulk"],
+                                bulk_dict=cls.cdte_doped_defect_dict["bulk"],
                             ),
                             charge_state=charge,
                         )
                         for charge in defect_dict["charges"]
                     ]
 
-        self.cdte_doped_extrinsic_defects_dict = loadfn(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_extrinsic_defects_dict.json")
+        cls.cdte_doped_extrinsic_defects_dict = loadfn(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_extrinsic_defects_dict.json")
         )
         # Refactor to dict of DefectEntrys objects, with doped/PyCDT names
-        self.cdte_extrinsic_defects = {}
+        cls.cdte_extrinsic_defects = {}
         for (
             defects_type,
             defect_dict_list,
-        ) in self.cdte_doped_extrinsic_defects_dict.items():
+        ) in cls.cdte_doped_extrinsic_defects_dict.items():
             if "bulk" not in defects_type:
                 for defect_dict in defect_dict_list:
-                    self.cdte_extrinsic_defects[defect_dict["name"]] = [
+                    cls.cdte_extrinsic_defects[defect_dict["name"]] = [
                         input._get_defect_entry_from_defect(
                             defect=input.generate_defect_object(
                                 single_defect_dict=defect_dict,
-                                bulk_dict=self.cdte_doped_defect_dict["bulk"],
+                                bulk_dict=cls.cdte_doped_defect_dict["bulk"],
                             ),
                             charge_state=charge,
                         )
@@ -161,97 +164,97 @@ class InputTestCase(unittest.TestCase):
 
         # Refactor doped defect dict to list of list of DefectEntrys() objects
         # (there's a DefectEntry for each charge state)
-        self.cdte_defect_list = sum(list(self.cdte_defects.values()), [])
-        self.CdTe_extrinsic_defect_list = sum(
-            list(self.cdte_extrinsic_defects.values()), []
+        cls.cdte_defect_list = sum(list(cls.cdte_defects.values()), [])
+        cls.CdTe_extrinsic_defect_list = sum(
+            list(cls.cdte_extrinsic_defects.values()), []
         )
 
-        self.V_Cd_dict = self.cdte_doped_defect_dict["vacancies"][0]
-        self.Int_Cd_2_dict = self.cdte_doped_defect_dict["interstitials"][1]
+        cls.V_Cd_dict = cls.cdte_doped_defect_dict["vacancies"][0]
+        cls.Int_Cd_2_dict = cls.cdte_doped_defect_dict["interstitials"][1]
         # Refactor to Defect() objects
-        self.V_Cd = input.generate_defect_object(
-            self.V_Cd_dict, self.cdte_doped_defect_dict["bulk"]
+        cls.V_Cd = input.generate_defect_object(
+            cls.V_Cd_dict, cls.cdte_doped_defect_dict["bulk"]
         )
-        self.V_Cd.user_charges = self.V_Cd_dict["charges"]
-        self.V_Cd_entry = input._get_defect_entry_from_defect(
-            self.V_Cd, self.V_Cd.user_charges[0]
+        cls.V_Cd.user_charges = cls.V_Cd_dict["charges"]
+        cls.V_Cd_entry = input._get_defect_entry_from_defect(
+            cls.V_Cd, cls.V_Cd.user_charges[0]
         )
-        self.V_Cd_entry_neutral = input._get_defect_entry_from_defect(
-            self.V_Cd, 0
+        cls.V_Cd_entry_neutral = input._get_defect_entry_from_defect(
+            cls.V_Cd, 0
         )
-        self.V_Cd_entries = [
-            input._get_defect_entry_from_defect(self.V_Cd, c)
-            for c in self.V_Cd.user_charges
+        cls.V_Cd_entries = [
+            input._get_defect_entry_from_defect(cls.V_Cd, c)
+            for c in cls.V_Cd.user_charges
         ]
-        self.Int_Cd_2 = input.generate_defect_object(
-            self.Int_Cd_2_dict, self.cdte_doped_defect_dict["bulk"]
+        cls.Int_Cd_2 = input.generate_defect_object(
+            cls.Int_Cd_2_dict, cls.cdte_doped_defect_dict["bulk"]
         )
-        self.Int_Cd_2.user_charges = self.Int_Cd_2.user_charges
-        self.Int_Cd_2_entry = input._get_defect_entry_from_defect(
-            self.Int_Cd_2, self.Int_Cd_2.user_charges[0]
+        cls.Int_Cd_2.user_charges = cls.Int_Cd_2.user_charges
+        cls.Int_Cd_2_entry = input._get_defect_entry_from_defect(
+            cls.Int_Cd_2, cls.Int_Cd_2.user_charges[0]
         )
-        self.Int_Cd_2_entries = [
-            input._get_defect_entry_from_defect(self.Int_Cd_2, c)
-            for c in self.Int_Cd_2.user_charges
+        cls.Int_Cd_2_entries = [
+            input._get_defect_entry_from_defect(cls.Int_Cd_2, c)
+            for c in cls.Int_Cd_2.user_charges
         ]
         # Setup structures and add oxidation states (as pymatgen-analysis-defects does it)
-        self.V_Cd_struc = Structure.from_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
+        cls.V_Cd_struc = Structure.from_file(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
         )
-        self.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
+        cls.V_Cd_minus0pt5_struc_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
+                cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
             )
         )
-        self.V_Cd_dimer_struc_0pt25_rattled = Structure.from_file(
+        cls.V_Cd_dimer_struc_0pt25_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt25_POSCAR"
+                cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt25_POSCAR"
             )
         )
-        self.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
+        cls.V_Cd_minus0pt5_struc_0pt1_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR,
+                cls.VASP_CDTE_DATA_DIR,
                 "CdTe_V_Cd_-50%_Distortion_stdev0pt1_Rattled_POSCAR",
             )
         )
-        self.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+        cls.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
         )
-        self.Int_Cd_2_struc = Structure.from_file(
-            os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
+        cls.Int_Cd_2_struc = Structure.from_file(
+            os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
         )
-        self.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
+        cls.Int_Cd_2_minus0pt6_struc_rattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
+                cls.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR"
             )
         )
-        self.Int_Cd_2_minus0pt6_NN_10_struc_unrattled = Structure.from_file(
+        cls.Int_Cd_2_minus0pt6_NN_10_struc_unrattled = Structure.from_file(
             os.path.join(
-                self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
+                cls.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR"
             )
         )
 
         # get example INCAR:
-        self.V_Cd_INCAR_file = os.path.join(
-            self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
+        cls.V_Cd_INCAR_file = os.path.join(
+            cls.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR"
         )
-        self.V_Cd_INCAR = Incar.from_file(self.V_Cd_INCAR_file)
+        cls.V_Cd_INCAR = Incar.from_file(cls.V_Cd_INCAR_file)
 
         # Setup distortion parameters
-        self.V_Cd_distortion_parameters = {
+        cls.V_Cd_distortion_parameters = {
             "unique_site": np.array([0.0, 0.0, 0.0]),
             "num_distorted_neighbours": 2,
             "distorted_atoms": [(33, "Te"), (42, "Te")],
         }
-        self.Int_Cd_2_normal_distortion_parameters = {
-            "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
+        cls.Int_Cd_2_normal_distortion_parameters = {
+            "unique_site": cls.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 2,
             "distorted_atoms": [(10 + 1, "Cd"), (22 + 1, "Cd")],  # +1 because
             # interstitial is added at the beginning of the structure
             "defect_site_index": 1,
         }
-        self.Int_Cd_2_NN_10_distortion_parameters = {
-            "unique_site": self.Int_Cd_2_dict["unique_site"].frac_coords,
+        cls.Int_Cd_2_NN_10_distortion_parameters = {
+            "unique_site": cls.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 10,
             "distorted_atoms": [
                 (10 + 1, "Cd"),
@@ -274,7 +277,7 @@ class InputTestCase(unittest.TestCase):
         # also testing that the package correctly ignores these and uses the bulk bond length of
         # 2.8333... for d_min in the structure rattling functions.
 
-        self.cdte_defect_folders_old_names = [  # but with "+" for positive charges
+        cls.cdte_defect_folders_old_names = [  # but with "+" for positive charges
             "as_1_Cd_on_Te_-1",
             "as_1_Cd_on_Te_-2",
             "as_1_Cd_on_Te_0",
@@ -336,7 +339,7 @@ class InputTestCase(unittest.TestCase):
             "vac_2_Te_+1",
             "vac_2_Te_+2",
         ]
-        self.new_names_old_names_CdTe = {
+        cls.new_names_old_names_CdTe = {
             "v_Cd": "vac_1_Cd",
             "v_Te": "vac_2_Te",
             "Cd_Te": "as_1_Cd_on_Te",
@@ -348,7 +351,7 @@ class InputTestCase(unittest.TestCase):
             "Te_i_C3v": "Int_Te_2",
             "Te_i_Td_Te2.83": "Int_Te_3",
         }
-        self.new_full_names_old_names_CdTe = {
+        cls.new_full_names_old_names_CdTe = {
             "v_Cd_Td_Te2.83": "vac_1_Cd",
             "v_Te_Td_Cd2.83": "vac_2_Te",
             "Cd_Te_Td_Cd2.83": "as_1_Cd_on_Te",
@@ -360,7 +363,7 @@ class InputTestCase(unittest.TestCase):
             "Te_i_C3v_Cd2.71": "Int_Te_2",
             "Te_i_Td_Te2.83": "Int_Te_3",
         }
-        self.cdte_defect_folders = [  # different charge states!
+        cls.cdte_defect_folders = [  # different charge states!
             "Cd_Te_-2",
             "Cd_Te_-1",
             "Cd_Te_0",
@@ -427,14 +430,14 @@ class InputTestCase(unittest.TestCase):
         ]
 
         # Get the current locale setting
-        self.original_locale = locale.getlocale(locale.LC_CTYPE)  # should be UTF-8
+        cls.original_locale = locale.getlocale(locale.LC_CTYPE)  # should be UTF-8
 
-        self.Ag_Sb_AgSbTe2_m2_defect_entry = loadfn(
-            f"{self.DATA_DIR}/Ag_Sb_Cs_Te2.90_-2.json"
+        cls.Ag_Sb_AgSbTe2_m2_defect_entry = loadfn(
+            f"{cls.DATA_DIR}/Ag_Sb_Cs_Te2.90_-2.json"
         )
         # Generate defect entry for V_Cd in CdSeTe
         defect_structure = Structure.from_file(
-            os.path.join(self.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
+            os.path.join(cls.VASP_DIR, "CdSeTe_v_Cd.POSCAR")
         )
         coords = [0.986350003237154, 0.4992578370461876, 0.9995065238765345]
         bulk = defect_structure.copy()
@@ -444,7 +447,7 @@ class InputTestCase(unittest.TestCase):
             bulk_structure=bulk,
         )
         # Generate a defect entry for each charge state
-        self.V_Cd_in_CdSeTe_entry = input._get_defect_entry_from_defect(
+        cls.V_Cd_in_CdSeTe_entry = input._get_defect_entry_from_defect(
             defect=defect, charge_state=0
         )
 
@@ -860,7 +863,7 @@ class InputTestCase(unittest.TestCase):
             verbose=True,
             seed=42,  # old default
         )
-        V_Cd_3_neighbours_distortion_parameters = self.V_Cd_distortion_parameters.copy()
+        V_Cd_3_neighbours_distortion_parameters = copy.deepcopy(self.V_Cd_distortion_parameters)
         V_Cd_3_neighbours_distortion_parameters["num_distorted_neighbours"] = 3
         V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(52, "Te")]
         np.testing.assert_equal(
