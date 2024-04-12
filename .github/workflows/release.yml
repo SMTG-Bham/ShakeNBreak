@@ -18,9 +18,9 @@ jobs:
     # only run when tests have passed (or manually triggered)
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
