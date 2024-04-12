@@ -12,11 +12,12 @@ jobs:
     strategy:
       fail-fast: false
 
-      os: [ ubuntu-latest, macos-14 ]
-      python-version: [ '3.9', '3.10', '3.11' ]
-      exclude:
-        - os: macos-14
-          python-version: '3.9'  # Exclude Python 3.9 on macOS
+      matrix:
+        os: [ ubuntu-latest, macos-14 ]
+        python-version: [ '3.9', '3.10', '3.11' ]
+        exclude:
+          - os: macos-14
+            python-version: '3.9'  # Exclude Python 3.9 on macOS
         # macos-latest should be 14 according to link below, but still using 12?
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners/about-github-hosted-runners#standard-github-hosted-runners-for-public-repositories
 
