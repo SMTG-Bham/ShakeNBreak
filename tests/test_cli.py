@@ -1091,7 +1091,7 @@ class CLITestCase(unittest.TestCase):
         )
         # check print info message:
         # self.assertIn(
-        #     "Defect charge states will be set to the range: 0 – {Defect oxidation "
+        #     "Defect charge states will be set to the range: 0 - {Defect oxidation "
         #     "state}, with a `padding = 1` on either side of this range.",
         #     result.output,
         # )
@@ -1130,7 +1130,7 @@ class CLITestCase(unittest.TestCase):
         )
         # check print info message:
         self.assertIn(
-            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "Defect charge states will be set to the range: 0 - {Defect oxidation "
             "state}, with a `padding = 4` on either side of this range.",
             result.output,
         )
@@ -1520,7 +1520,7 @@ nonsense_key: nonsense_value"""
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             "Defect charges were specified using the CLI option, but `charges` "
-            "was also specified in the `--config` file – this will be ignored!",
+            "was also specified in the `--config` file -- this will be ignored!",
             str(w[0].message),
         )
         self.tearDown()
@@ -1949,7 +1949,7 @@ POTCAR:
         )
         # check print info message:
         self.assertIn(
-            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "Defect charge states will be set to the range: 0 - {Defect oxidation "
             "state}, with a `padding = 4` on either side of this range.",
             result.output,
         )
@@ -3237,8 +3237,8 @@ Chosen VASP error message: {error_string}
                     f"unreasonable charge state). If both checks pass, you likely need to adjust "
                     f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
                     f"materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
-                    f"– This often indicates a complex PES with multiple minima, "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
+                    f"This often indicates a complex PES with multiple minima, "
                     f"thus energy-lowering distortions particularly likely, so important to "
                     f"test with reduced `stdev`!" == str(i.message)
                     for i in w

@@ -1,4 +1,5 @@
-"""Module containing functions for applying distortions to defect structures"""
+"""Module containing functions for applying distortions to defect structures."""
+
 import os
 import sys
 import warnings
@@ -6,17 +7,14 @@ from typing import Optional
 
 import numpy as np
 from ase.neighborlist import NeighborList
-from hiphive.structure_generation.rattle import (
-    _probability_mc_rattle,
-    generate_mc_rattled_structures,
-)
+from hiphive.structure_generation.rattle import _probability_mc_rattle, generate_mc_rattled_structures
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.structure import Structure
 from pymatgen.io.ase import AseAtomsAdaptor
 
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
-    """Format warnings output"""
+    """Format warnings output."""
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
@@ -36,14 +34,14 @@ def distort(
     """
     Applies bond distortions to `num_nearest_neighbours` of the defect (specified
     by `site_index` (for substitutions or interstitials) or `frac_coords`
-    (for vacancies))
+    (for vacancies)).
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure as a pymatgen object
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
-        distortion factor (:obj:`float`):
+        distortion_factor (:obj:`float`):
             The distortion factor to apply to the bond distance between the
             defect and nearest neighbours. Typical choice is between 0.4 (-60%)
             and 1.6 (+60%).
@@ -73,9 +71,7 @@ def distort(
         atom_number = site_index - 1  # Align atom number with python 0-indexing
     elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy
-        input_structure_ase.positions[-1] = np.dot(
-            frac_coords, input_structure_ase.cell
-        )
+        input_structure_ase.positions[-1] = np.dot(frac_coords, input_structure_ase.cell)
         atom_number = len(input_structure_ase) - 1
     else:
         raise ValueError(
@@ -83,15 +79,11 @@ def distort(
             " or `frac_coords` provided."
         )
 
-    neighbours = (
-        num_nearest_neighbours + 1
-    )  # Prevent self-counting of the defect atom itself
+    neighbours = num_nearest_neighbours + 1  # Prevent self-counting of the defect atom itself
     if distorted_atoms and len(distorted_atoms) >= num_nearest_neighbours:
         nearest = [
             (
-                round(
-                    input_structure_ase.get_distance(atom_number, index, mic=True), 4
-                ),
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
                 index + 1,
                 input_structure_ase.get_chemical_symbols()[index],
             )
@@ -108,9 +100,7 @@ def distort(
             )
         distances = [  # Get all distances between the selected atom and all other atoms
             (
-                round(
-                    input_structure_ase.get_distance(atom_number, index, mic=True), 4
-                ),
+                round(input_structure_ase.get_distance(atom_number, index, mic=True), 4),
                 index + 1,  # Indices start from 1
                 symbol,
             )
@@ -119,34 +109,20 @@ def distort(
                 input_structure_ase.get_chemical_symbols(),
             )
         ]
-        distances = sorted(  # Sort the distances shortest->longest
-            distances, key=lambda tup: tup[0]
-        )
+        distances = sorted(distances, key=lambda tup: tup[0])  # Sort the distances shortest->longest
 
-        if (
-            distorted_element
-        ):  # filter the neighbours that match the element criteria and are
+        if distorted_element:  # filter the neighbours that match the element criteria and are
             # closer than 4.5 Angstroms
             nearest = []  # list of nearest neighbours
-            for dist, index, element in distances[
-                1:
-            ]:  # starting from 1 to exclude defect atom
-                if (
-                    element == distorted_element
-                    and dist < 4.5
-                    and len(nearest) < num_nearest_neighbours
-                ):
+            for dist, index, element in distances[1:]:  # starting from 1 to exclude defect atom
+                if element == distorted_element and dist < 4.5 and len(nearest) < num_nearest_neighbours:
                     nearest.append((dist, index, element))
 
             # if the number of nearest neighbours not reached, add other neighbouring
             # elements
             if len(nearest) < num_nearest_neighbours:
                 for i in distances[1:]:
-                    if (
-                        len(nearest) < num_nearest_neighbours
-                        and i not in nearest
-                        and i[0] < 4.5
-                    ):
+                    if len(nearest) < num_nearest_neighbours and i not in nearest and i[0] < 4.5:
                         nearest.append(i)
                 warnings.warn(
                     f"{distorted_element} was specified as the nearest neighbour "
@@ -159,9 +135,7 @@ def distort(
                 sys.stderr.flush()  # ensure warning message printed before distortion info
                 verbose = True
         else:
-            nearest = distances[
-                1:neighbours
-            ]  # Extract the nearest neighbours according to distance
+            nearest = distances[1:neighbours]  # Extract the nearest neighbours according to distance
 
     distorted = [
         (i[0] * distortion_factor, i[1], i[2]) for i in nearest
@@ -236,9 +210,7 @@ def apply_dimer_distortion(
         atom_number = site_index - 1  # Align atom number with python 0-indexing
     elif type(frac_coords) in [list, tuple, np.ndarray]:  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy
-        input_structure_ase.positions[-1] = np.dot(
-            frac_coords, input_structure_ase.cell
-        )
+        input_structure_ase.positions[-1] = np.dot(frac_coords, input_structure_ase.cell)
         atom_number = len(input_structure_ase) - 1
     else:
         raise ValueError(
@@ -257,9 +229,7 @@ def apply_dimer_distortion(
         for other_site in sites[i + 1 :]:
             distances[(site.index, other_site.index)] = site.distance(other_site)
     # Get defect NN with smallest distance and lowest indices:
-    site_indexes = min(
-        distances, key=lambda k: (round(distances.get(k, 10), 3), k[0], k[1])
-    )
+    site_indexes = min(distances, key=lambda k: (round(distances.get(k, 10), 3), k[0], k[1]))
     site_indexes.sort()
     # Set their distance to 2 A
     input_structure_ase.set_distance(
@@ -423,8 +393,8 @@ def rattle(
                 except Exception as ex:
                     if "attempts" in str(ex):
                         continue
-                    else:
-                        raise ex
+
+                    raise ex
 
             if verbose:
                 warnings.warn(
@@ -436,9 +406,7 @@ def rattle(
         else:
             raise ex
 
-    rattled_structure = aaa.get_structure(rattled_ase_struct)
-
-    return rattled_structure
+    return aaa.get_structure(rattled_ase_struct)
 
 
 def _local_mc_rattle_displacements(
@@ -462,7 +430,7 @@ def _local_mc_rattle_displacements(
     Args:
         atoms (:obj:`ase.Atoms`):
             prototype structure
-        site (:obj:`int`):
+        site_index (:obj:`int`):
             index of defect, starting from 0
         rattle_std (:obj:`float`):
             rattle amplitude (standard deviation in normal distribution)
@@ -539,7 +507,7 @@ def _local_mc_rattle_displacements(
             # Distance between defect and site i
             dist_defect_to_i = atoms.get_distance(site_index, i, mic=True)
 
-            for n in range(max_attempts):
+            for _ in range(max_attempts):
                 # generate displacement
                 delta_disp = rs.normal(
                     0.0,
@@ -559,21 +527,19 @@ def _local_mc_rattle_displacements(
                 if len(i_nbrs) == 0:
                     min_distance = np.inf
                 else:
-                    min_distance = np.min(
-                        atoms_rattle.get_distances(i, i_nbrs, mic=True)
-                    )
+                    min_distance = np.min(atoms_rattle.get_distances(i, i_nbrs, mic=True))
 
                 # accept or reject delta_disp
                 if _probability_mc_rattle(min_distance, d_min, width) > rs.rand():
                     # accept delta_disp
                     break
-                else:
-                    # revert delta_disp
-                    atoms_rattle[i].position -= delta_disp
+
+                # revert delta_disp
+                atoms_rattle[i].position -= delta_disp
             else:
-                raise Exception(f"Maxmium attempts ({n}) for atom {i}")
-    displacements = atoms_rattle.positions - reference_positions
-    return displacements
+                raise Exception(f"Maximum attempts ({max_attempts}) for atom {i}")
+
+    return atoms_rattle.positions - reference_positions
 
 
 def _generate_local_mc_rattled_structures(
@@ -610,24 +576,26 @@ def _generate_local_mc_rattled_structures(
 
     Args:
         atoms (:obj:`ase.Atoms`):
-            prototype structure
+            Prototype structure
         site_index (:obj:`int`):
             Index of defect site in structure (for substitutions or
             interstitials), counting from 1.
-        n_structures (:obj:`int`):
-            number of structures to generate
+        n_configs (:obj:`int`):
+            Number of structures to generate
         rattle_std (:obj:`float`):
-            rattle amplitude (standard deviation in normal distribution);
+            Rattle amplitude (standard deviation in normal distribution);
             note this value is not connected to the final
             average displacement for the structures
         d_min (:obj:`float`):
-            interatomic distance used for computing the probability for each rattle
+            Interatomic distance used for computing the probability for each rattle
             move
         seed (:obj:`int`):
             Seed for NumPy random state from which random rattle displacements
             are generated. (Default: 42)
         n_iter (:obj:`int`):
-            number of Monte Carlo cycles
+            Number of Monte Carlo cycles
+        **kwargs:
+            Additional keyword arguments to be passed to `mc_rattle`
 
     Returns:
         :obj:`list`:
@@ -736,8 +704,7 @@ def local_mc_rattle(
         atom_number = len(ase_struct) - 1
     else:
         raise ValueError(
-            "Insufficient information to apply local rattle, no `site_index`"
-            " or `frac_coords` provided."
+            "Insufficient information to apply local rattle, no `site_index` or `frac_coords` provided."
         )
 
     if stdev is None:
@@ -808,6 +775,4 @@ def local_mc_rattle(
 
     if isinstance(frac_coords, np.ndarray):
         local_rattled_ase_struct.pop(-1)  # remove fake V from vacancy structure
-    local_rattled_structure = aaa.get_structure(local_rattled_ase_struct)
-
-    return local_rattled_structure
+    return aaa.get_structure(local_rattled_ase_struct)

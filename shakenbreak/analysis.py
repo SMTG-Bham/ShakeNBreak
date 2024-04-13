@@ -1,11 +1,10 @@
 """
 Module containing functions to analyse rattled and bond-distorted defect
-structure relaxations
+structure relaxations.
 """
 
 import json
 import os
-import sys
 import warnings
 from copy import deepcopy
 from typing import Optional, Union
@@ -22,9 +21,7 @@ from pymatgen.io.vasp.outputs import Outcar
 
 from shakenbreak import input, io
 
-crystalNN = CrystalNN(
-    distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0
-)
+crystalNN = CrystalNN(distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0)
 
 
 def _warning_on_one_line(
@@ -47,7 +44,7 @@ def _isipython():
     # Using stackoverflow.com/questions/15411967/
     # how-can-i-check-if-code-is-executed-in-the-ipython-notebook
     try:
-        get_ipython().__class__.__name__
+        _ = get_ipython().__class__.__name__
         return True
     except NameError:
         return False  # Probably standard Python interpreter
@@ -57,23 +54,10 @@ if _isipython():
     from IPython.display import display
 
 
-class _HiddenPrints:
-    """Block calls to print."""
-
-    # https://stackoverflow.com/questions/8391411/how-to-block-calls-to-print
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, "w")
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
-
-
 # Helper functions
 def _read_distortion_metadata(output_path: str) -> dict:
     """
-    Parse distortion_metadata.json file
+    Parse ``distortion_metadata.json`` file.
 
     Args:
         output_path (:obj:`str`):
@@ -88,17 +72,15 @@ def _read_distortion_metadata(output_path: str) -> dict:
     try:  # Read distortion parameters from distortion_metadata.json
         with open(f"{output_path}/distortion_metadata.json") as json_file:
             distortion_metadata = json.load(json_file)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"No `distortion_metadata.json` file found in {output_path}."
-        )
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"No `distortion_metadata.json` file found in {output_path}.") from exc
     return distortion_metadata
 
 
 def _get_distortion_filename(distortion) -> str:
     """
-    Format distortion names for file naming. (e.g. from 0.5 to
-    'Bond_Distortion_50.0%')
+    Format distortion names for file naming (e.g. from 0.5 to
+    'Bond_Distortion_50.0%').
 
     Args:
         distortion (float or str):
@@ -116,9 +98,7 @@ def _get_distortion_filename(distortion) -> str:
         else:
             distortion_label = f"Bond_Distortion_{distortion:.1f}%"
     elif isinstance(distortion, str):
-        if "_from_" in distortion and (
-            "Rattled" not in distortion and "Dimer" not in distortion
-        ):
+        if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
             distortion_label = f"Bond_Distortion_{distortion}"
             # runs from other charge states
         elif (
@@ -132,11 +112,7 @@ def _get_distortion_filename(distortion) -> str:
             ]
         ):
             distortion_label = distortion
-        elif (
-            distortion == "Unperturbed"
-            or distortion == "Rattled"
-            or distortion == "Dimer"
-        ):
+        elif distortion == "Unperturbed" or distortion == "Rattled" or distortion == "Dimer":
             distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"/"Dimer"
         else:
             try:  # try converting to float, in case user entered '0.5'
@@ -154,7 +130,7 @@ def _format_distortion_names(
 ) -> str:
     """
     Formats the distortion filename to the names used internally and for
-    analysis. (i.e. 'Bond_Distortion_-50.0%' -> -0.5)
+    analysis (i.e. 'Bond_Distortion_-50.0%' -> -0.5).
 
     Args:
         distortion_label (:obj:`str`):
@@ -167,38 +143,32 @@ def _format_distortion_names(
     """
     distortion_label = distortion_label.strip()  # remove any whitespace
     if (
-        "Unperturbed" in distortion_label
-        or "Rattled" in distortion_label
-        or "Dimer" in distortion_label
+        "Unperturbed" in distortion_label or "Rattled" in distortion_label or "Dimer" in distortion_label
     ) and "from" not in distortion_label:
         return distortion_label
-    elif distortion_label.startswith("Bond_Distortion") and distortion_label.endswith(
-        "%"
-    ):
+    if distortion_label.startswith("Bond_Distortion") and distortion_label.endswith("%"):
         return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
     # From other charge states
-    elif distortion_label.startswith("Bond_Distortion") and (
-        "_from_" in distortion_label
-    ):
+    if distortion_label.startswith("Bond_Distortion") and ("_from_" in distortion_label):
         # distortions from other charge state of the defect
         return distortion_label.split("Bond_Distortion_")[-1]
-    elif "Rattled" in distortion_label and "_from_" in distortion_label:
-        return distortion_label
-    elif "Dimer" in distortion_label and "_from_" in distortion_label:
+    if (
+        "Rattled" in distortion_label
+        and "_from_" in distortion_label
+        or "Dimer" in distortion_label
+        and "_from_" in distortion_label
+    ):
         return distortion_label
     # detected as High_Energy - normally wouldn't be parsed, but for debugging purposes
     # TODO: remove this
-    elif (
-        distortion_label.startswith("Bond_Distortion")
-        and "High_Energy" in distortion_label
-    ):
+    if distortion_label.startswith("Bond_Distortion") and "High_Energy" in distortion_label:
         return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
-    elif (
+    if (
         "Dimer" in distortion_label or "Rattled" in distortion_label
     ) and "High_Energy" in distortion_label:
         return distortion_label
-    else:
-        return "Label_not_recognized"
+
+    return "Label_not_recognized"
 
 
 def get_gs_distortion(defect_energies_dict: dict) -> tuple:
@@ -218,20 +188,16 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
         :obj:`tuple`:
             (Energy difference, ground state bond distortion)
     """
-    if not defect_energies_dict["distortions"]:
-        if "Unperturbed" in defect_energies_dict:
-            return 0, "Unperturbed"
+    if not defect_energies_dict["distortions"] and "Unperturbed" in defect_energies_dict:
+        return 0, "Unperturbed"
 
     lowest_E_distortion = min(
         defect_energies_dict["distortions"].values()
     )  # lowest energy obtained with bond distortions
     if "Unperturbed" in defect_energies_dict:
-        if list(defect_energies_dict["distortions"].keys()) == [
-            "Rattled"
-        ]:  # If only Rattled
+        if list(defect_energies_dict["distortions"].keys()) == ["Rattled"]:  # If only Rattled
             energy_diff = (
-                defect_energies_dict["distortions"]["Rattled"]
-                - defect_energies_dict["Unperturbed"]
+                defect_energies_dict["distortions"]["Rattled"] - defect_energies_dict["Unperturbed"]
             )
             gs_distortion = "Rattled" if energy_diff < 0 else "Unperturbed"
         else:
@@ -240,26 +206,20 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
                 lowest_E_distortion < defect_energies_dict["Unperturbed"]
             ):  # if energy lower than Unperturbed
                 gs_distortion = list(defect_energies_dict["distortions"].keys())[
-                    list(defect_energies_dict["distortions"].values()).index(
-                        lowest_E_distortion
-                    )
+                    list(defect_energies_dict["distortions"].values()).index(lowest_E_distortion)
                 ]  # bond distortion that led to ground-state
             else:
                 gs_distortion = "Unperturbed"
     else:
         energy_diff = None
         gs_distortion = list(defect_energies_dict["distortions"].keys())[
-            list(defect_energies_dict["distortions"].values()).index(
-                lowest_E_distortion
-            )
+            list(defect_energies_dict["distortions"].values()).index(lowest_E_distortion)
         ]
 
     return energy_diff, gs_distortion
 
 
-def _sort_data(
-    energies_file: str, verbose: bool = True, min_e_diff: float = 0.05
-) -> tuple:
+def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.05) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
     of ground-state defect structure relative to `Unperturbed` structure
@@ -302,10 +262,7 @@ def _sort_data(
     if defect_energies_dict == {"distortions": {}}:  # no parsed data
         warnings.warn(f"No data parsed from {energies_file}, returning None")
         return None, None, None
-    if (
-        len(defect_energies_dict["distortions"]) == 0
-        and "Unperturbed" in defect_energies_dict
-    ):
+    if len(defect_energies_dict["distortions"]) == 0 and "Unperturbed" in defect_energies_dict:
         # no parsed distortion results but Unperturbed present
         warnings.warn(f"No distortion results parsed from {energies_file}")
 
@@ -361,12 +318,8 @@ def analyse_defect_site(
     if site_num:
         isite = site_num - 1  # python/pymatgen indexing (starts counting from zero!)
     elif vac_site:
-        struct.append(
-            "V", vac_site
-        )  # Have to add a fake element for coordination analysis
-        isite = (
-            len(struct.sites) - 1
-        )  # python/pymatgen indexing (starts counting from zero!)
+        struct.append("V", vac_site)  # Have to add a fake element for coordination analysis
+        isite = len(struct.sites) - 1  # python/pymatgen indexing (starts counting from zero!)
     else:
         raise ValueError("Either site_num or vac_site must be specified")
 
@@ -379,10 +332,7 @@ def analyse_defect_site(
         for coord, value in coordination.items():
             coordination_dict = {"Coordination": coord, "Factor": round(value, 2)}
             coord_list.append(coordination_dict)
-        print(
-            "Local order parameters (i.e. resemblance to given structural motif, "
-            "via CrystalNN):"
-        )
+        print("Local order parameters (i.e. resemblance to given structural motif, via CrystalNN):")
         if _isipython():
             display(pd.DataFrame(coord_list))  # display in Jupyter notebook
     bond_lengths = [
@@ -399,8 +349,8 @@ def analyse_defect_site(
         print()  # spacing
     if coordination is not None:
         return pd.DataFrame(coord_list), bond_length_df
-    else:
-        return None, bond_length_df
+
+    return None, bond_length_df
 
 
 def analyse_structure(
@@ -444,12 +394,8 @@ def analyse_structure(
         "defect_site_index"
     )  # VASP indexing (starts counting from 1)
     if defect_site is None:  # for vacancies, get fractional coordinates
-        defect_frac_coords = distortion_metadata["defects"][defect_name_without_charge][
-            "unique_site"
-        ]
-        return analyse_defect_site(
-            structure, name=defect_species, vac_site=defect_frac_coords
-        )
+        defect_frac_coords = distortion_metadata["defects"][defect_name_without_charge]["unique_site"]
+        return analyse_defect_site(structure, name=defect_species, vac_site=defect_frac_coords)
     return analyse_defect_site(structure, name=defect_species, site_num=defect_site)
 
 
@@ -492,27 +438,17 @@ def get_structures(
             Dictionary of bond distortions and corresponding final structures.
     """
     defect_structures_dict = {}
-    if (
-        not bond_distortions
-    ):  # if the user didn't specify any set of distortions, loop over subdirectories
-        if not os.path.isdir(
-            f"{output_path}/{defect_species}"
-        ):  # check if defect folder exists
-            raise FileNotFoundError(
-                f"Path f'{output_path}/{defect_species}' does not exist!"
-            )
+    if not bond_distortions:  # if the user didn't specify any set of distortions, loop over subdirectories
+        if not os.path.isdir(f"{output_path}/{defect_species}"):  # check if defect folder exists
+            raise FileNotFoundError(f"Path f'{output_path}/{defect_species}' does not exist!")
         distortion_subdirectories = [
             i
             for i in next(os.walk(f"{output_path}/{defect_species}"))[1]
-            if ("Bond_Distortion" in i)
-            or ("Unperturbed" in i)
-            or ("Rattled" in i)
-            or ("Dimer" in i)
+            if ("Bond_Distortion" in i) or ("Unperturbed" in i) or ("Rattled" in i) or ("Dimer" in i)
         ]  # distortion subdirectories
         if not distortion_subdirectories:
             raise FileNotFoundError(
-                f"No distortion subdirectories found in {output_path}/"
-                f"{defect_species}"
+                f"No distortion subdirectories found in {output_path}/{defect_species}"
             )
         for distortion_subdirectory in distortion_subdirectories:
             if "High_Energy" not in distortion_subdirectory:
@@ -520,9 +456,7 @@ def get_structures(
                     distortion_label=distortion_subdirectory
                 )  # From subdirectory name, get the distortion label used for analysis
                 # e.g. from 'Bond_Distortion_-10.0% -> -0.1
-                if (
-                    distortion != "Label_not_recognized"
-                ):  # If the subdirectory name is recognised
+                if distortion != "Label_not_recognized":  # If the subdirectory name is recognised
                     try:
                         defect_structures_dict[distortion] = io.parse_structure(
                             code=code,
@@ -538,9 +472,7 @@ def get_structures(
                         defect_structures_dict[distortion] = "Not converged"
     else:
         if "Unperturbed" not in bond_distortions:
-            bond_distortions.append(
-                "Unperturbed"
-            )  # always include unperturbed structure
+            bond_distortions.append("Unperturbed")  # always include unperturbed structure
         for distortion in bond_distortions:
             if not (isinstance(distortion, str) and "High_Energy" in distortion):
                 distortion_label = _get_distortion_filename(distortion)  # get filename
@@ -560,9 +492,7 @@ def get_structures(
                         )
                         defect_structures_dict[distortion] = "Not converged"
 
-    return (
-        defect_structures_dict  # now contains the distortions from other charge states
-    )
+    return defect_structures_dict  # now contains the distortions from other charge states
 
 
 def get_energies(
@@ -600,14 +530,10 @@ def get_energies(
     energy_file_path = f"{output_path}/{defect_species}/{defect_species}.yaml"
     if not os.path.isfile(energy_file_path):
         raise FileNotFoundError(f"File {energy_file_path} not found!")
-    defect_energies_dict, _e_diff, gs_distortion = _sort_data(
-        energy_file_path, verbose=verbose
-    )
+    defect_energies_dict, _e_diff, gs_distortion = _sort_data(energy_file_path, verbose=verbose)
     if "Unperturbed" in defect_energies_dict:
         for distortion, energy in defect_energies_dict["distortions"].items():
-            defect_energies_dict["distortions"][distortion] = (
-                energy - defect_energies_dict["Unperturbed"]
-            )
+            defect_energies_dict["distortions"][distortion] = energy - defect_energies_dict["Unperturbed"]
         defect_energies_dict["Unperturbed"] = 0.0
     else:
         warnings.warn(
@@ -616,9 +542,7 @@ def get_energies(
         )
         lowest_E_distortion = defect_energies_dict["distortions"][gs_distortion]
         for distortion, energy in defect_energies_dict["distortions"].items():
-            defect_energies_dict["distortions"][distortion] = (
-                energy - lowest_E_distortion
-            )
+            defect_energies_dict["distortions"][distortion] = energy - lowest_E_distortion
     if units == "meV":
         defect_energies_dict["distortions"] = {
             k: v * 1000 for k, v in defect_energies_dict["distortions"].items()
@@ -651,20 +575,24 @@ def _calculate_atomic_disp(
             output contains too many 'NaN' values, this likely needs to
             be increased.
             (Default: 0.5)
+        ltol (:obj:`float`):
+            Length tolerance used for structural comparison (via
+            `pymatgen`'s `StructureMatcher`).
+            (Default: 0.3)
+        angle_tol (:obj:`float`):
+            Angle tolerance used for structural comparison (via
+            `pymatgen`'s `StructureMatcher`).
+            (Default: 5)
 
     Returns:
         :obj:`tuple`:
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
-    sm = StructureMatcher(
-        ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True
-    )
+    sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True)
     struct1, struct2 = sm._process_species([struct1, struct2])
     struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
-    match = sm._match(
-        struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False
-    )
+    match = sm._match(struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False)
 
     return None if match is None else (match[0], match[1])
 
@@ -712,6 +640,14 @@ def calculate_struct_comparison(
             output contains too many 'NaN' values, this likely needs to
             be increased.
             (Default: 0.5)
+        ltol (:obj:`float`):
+            Length tolerance used for structural comparison (via
+            `pymatgen`'s `StructureMatcher`).
+            (Default: 0.3)
+        angle_tol (:obj:`float`):
+            Angle tolerance used for structural comparison (via
+            `pymatgen`'s `StructureMatcher`).
+            (Default: 5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
@@ -734,8 +670,7 @@ def calculate_struct_comparison(
             ref_structure = defect_structures_dict[ref_structure]
         except KeyError as e:
             raise KeyError(
-                f"Reference structure key '{ref_structure}' not found in "
-                f"defect_structures_dict."
+                f"Reference structure key '{ref_structure}' not found in defect_structures_dict."
             ) from e
         if ref_structure == "Not converged":
             raise ValueError(
@@ -769,23 +704,15 @@ def calculate_struct_comparison(
                 )
                 if metric == "disp":
                     disp_dict[distortion] = (
-                        np.sum(norm_dist[norm_dist > min_dist * normalization])
-                        / normalization
+                        np.sum(norm_dist[norm_dist > min_dist * normalization]) / normalization
                     )  # Only include displacements above min_dist threshold,
                     # and remove normalization
                 elif metric == "max_dist":
-                    disp_dict[distortion] = (
-                        max(norm_dist) / normalization
-                    )  # Remove normalization
+                    disp_dict[distortion] = max(norm_dist) / normalization  # Remove normalization
                 else:
-                    raise ValueError(
-                        f"Invalid metric '{metric}'. Must be one of 'disp' or "
-                        f"'max_dist'."
-                    )
+                    raise ValueError(f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'.")
             except TypeError:
-                disp_dict[
-                    distortion
-                ] = None  # algorithm couldn't match lattices. Set comparison
+                disp_dict[distortion] = None  # algorithm couldn't match lattices. Set comparison
                 # metric to None
                 # warnings.warn(
                 #     f"pymatgen StructureMatcher could not match lattices between "
@@ -851,16 +778,8 @@ def compare_structures(
             normalised atomic displacement and maximum distance between
             matched atomic sites), and relative energies.
     """
-    if all(
-        [
-            structure == "Not converged"
-            for key, structure in defect_structures_dict.items()
-        ]
-    ):
-        warnings.warn(
-            "All structures in defect_structures_dict are not converged. "
-            "Returning None."
-        )
+    if all(structure == "Not converged" for key, structure in defect_structures_dict.items()):
+        warnings.warn("All structures in defect_structures_dict are not converged. Returning None.")
         return None
     df_list = []
     disp_dict = calculate_struct_comparison(
@@ -871,37 +790,36 @@ def compare_structures(
         min_dist=min_dist,
         verbose=verbose,
     )
-    with _HiddenPrints():  # only print "Comparing to..." once
+    max_dist_dict = calculate_struct_comparison(
+        defect_structures_dict,
+        metric="max_dist",
+        ref_structure=ref_structure,
+        stol=stol,
+        verbose=False,  # only print "Comparing to..." once
+    )
+    # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
+    number_of_nan = len([value for value in disp_dict.values() if value is None])
+    if number_of_nan > len(disp_dict.values()) // 3:
+        warnings.warn(
+            f"The specified tolerance {stol} seems to be too tight as"
+            " too many lattices could not be matched. Will retry with"
+            f" larger tolerance ({stol+0.4})."
+        )
         max_dist_dict = calculate_struct_comparison(
             defect_structures_dict,
             metric="max_dist",
             ref_structure=ref_structure,
-            stol=stol,
-            verbose=verbose,
+            stol=stol + 0.4,
+            verbose=False,
         )
-        # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
-        number_of_nan = len([value for value in disp_dict.values() if value is None])
-        if number_of_nan > len(disp_dict.values()) // 3:
-            warnings.warn(
-                f"The specified tolerance {stol} seems to be too tight as"
-                " too many lattices could not be matched. Will retry with"
-                f" larger tolerance ({stol+0.4})."
-            )
-            max_dist_dict = calculate_struct_comparison(
-                defect_structures_dict,
-                metric="max_dist",
-                ref_structure=ref_structure,
-                stol=stol + 0.4,
-                verbose=verbose,
-            )
-            disp_dict = calculate_struct_comparison(
-                defect_structures_dict,
-                metric="disp",
-                ref_structure=ref_structure,
-                stol=stol + 0.4,
-                min_dist=min_dist,
-                verbose=verbose,
-            )
+        disp_dict = calculate_struct_comparison(
+            defect_structures_dict,
+            metric="disp",
+            ref_structure=ref_structure,
+            stol=stol + 0.4,
+            min_dist=min_dist,
+            verbose=False,
+        )
 
     for distortion in defect_energies_dict["distortions"]:
         try:
@@ -913,12 +831,16 @@ def compare_structures(
             df_list.append(
                 [
                     distortion,
-                    round(disp_dict[distortion], 3) + 0
-                    if isinstance(disp_dict[distortion], float)
-                    else None,
-                    round(max_dist_dict[distortion], 3) + 0
-                    if isinstance(max_dist_dict[distortion], float)
-                    else None,
+                    (
+                        round(disp_dict[distortion], 3) + 0
+                        if isinstance(disp_dict[distortion], float)
+                        else None
+                    ),
+                    (
+                        round(max_dist_dict[distortion], 3) + 0
+                        if isinstance(max_dist_dict[distortion], float)
+                        else None
+                    ),
                     round(rel_energy, 2) + 0,
                 ]
             )
@@ -934,12 +856,16 @@ def compare_structures(
             df_list.append(
                 [
                     "Unperturbed",
-                    round(disp_dict["Unperturbed"], 3) + 0
-                    if isinstance(disp_dict["Unperturbed"], float)
-                    else None,
-                    round(max_dist_dict["Unperturbed"], 3) + 0
-                    if isinstance(max_dist_dict["Unperturbed"], float)
-                    else None,
+                    (
+                        round(disp_dict["Unperturbed"], 3) + 0
+                        if isinstance(disp_dict["Unperturbed"], float)
+                        else None
+                    ),
+                    (
+                        round(max_dist_dict["Unperturbed"], 3) + 0
+                        if isinstance(max_dist_dict["Unperturbed"], float)
+                        else None
+                    ),
                     round(defect_energies_dict["Unperturbed"], 2) + 0,
                 ]
             )
@@ -1036,7 +962,7 @@ def get_homoionic_bonds(
                     for neighbour in neighbours
                 ]
                 if f"{site.species_string}({site_index})" not in [
-                    list(element.keys())[0] for element in homoionic_bonds.values()
+                    next(iter(element.keys())) for element in homoionic_bonds.values()
                 ]:  # avoid duplicates
                     homoionic_neighbours = {
                         f"{neighbour[0]}({neighbour[1]})": f"{neighbour[2]} A"
@@ -1048,13 +974,10 @@ def get_homoionic_bonds(
                             homoionic_neighbours
                         )
                     else:
-                        homoionic_bonds[
-                            f"{site.species_string}({site_index})"
-                        ] = homoionic_neighbours
+                        homoionic_bonds[f"{site.species_string}({site_index})"] = homoionic_neighbours
                     if verbose:
                         print(
-                            f"{site.species_string}({site_index}): "
-                            f"{homoionic_neighbours}",
+                            f"{site.species_string}({site_index}): {homoionic_neighbours}",
                             "\n",
                         )
     if not homoionic_bonds and verbose:
@@ -1098,19 +1021,13 @@ def _site_magnetizations(
         mag_array = np.array(list(element.values()))
         total_mag = np.sum(mag_array[np.abs(mag_array) > 0.01])
         if np.abs(total_mag) > threshold:
-            significant_magnetizations[
-                f"{structure[index].species_string}({index})"
-            ] = {
+            significant_magnetizations[f"{structure[index].species_string}({index})"] = {
                 "Site": f"{structure[index].species_string}({index})",
-                "Frac coords": [
-                    round(coord, 3) for coord in structure[index].frac_coords
-                ],
+                "Frac coords": [round(coord, 3) for coord in structure[index].frac_coords],
                 "Site mag": round(total_mag, 3),
             }
             if isinstance(defect_site, int):
-                significant_magnetizations[
-                    f"{structure[index].species_string}({index})"
-                ].update(
+                significant_magnetizations[f"{structure[index].species_string}({index})"].update(
                     {
                         "Dist. (\u212B)": round(
                             structure.get_distance(i=defect_site, j=index),
@@ -1119,15 +1036,12 @@ def _site_magnetizations(
                     }
                 )
             if orbital_projections:
-                significant_magnetizations[
-                    f"{structure[index].species_string}({index})"
-                ].update(
+                significant_magnetizations[f"{structure[index].species_string}({index})"].update(
                     {k: round(v, 3) for k, v in element.items() if k != "tot"}
                     # include site magnetization of each orbital
                     # but dont include total site magnetization again
                 )
-    df = pd.DataFrame.from_dict(significant_magnetizations, orient="index")
-    return df
+    return pd.DataFrame.from_dict(significant_magnetizations, orient="index")
 
 
 def get_site_magnetizations(
@@ -1182,25 +1096,21 @@ def get_site_magnetizations(
     defect_site_coords = None
     if isinstance(defect_site, (list, np.ndarray)):
         defect_site_coords = defect_site
-    elif not defect_site:  # look for defect site, in order to include the distance
-        # between sites with significant magnetization and the defect
-        if os.path.exists(f"{output_path}/distortion_metadata.json"):
-            with open(f"{output_path}/distortion_metadata.json", "r") as f:
-                try:
-                    defect_species_without_charge = "_".join(
-                        defect_species.split("_")[:-1]
-                    )
-                    defect_site_coords = json.load(f)["defects"][
-                        defect_species_without_charge
-                    ]["unique_site"]
-                except KeyError:
-                    warnings.warn(
-                        f"Could not find defect {defect_species} in "
-                        f"distortion_metadata.json file. Will not include "
-                        f"distance between defect and sites with significant "
-                        f"magnetization."
-                    )
-                    defect_site = None
+    elif not defect_site and os.path.exists(f"{output_path}/distortion_metadata.json"):
+        # look for defect site, in order to include the distance between sites with significant
+        # magnetization and the defect
+        with open(f"{output_path}/distortion_metadata.json") as f:
+            try:
+                defect_species_without_charge = "_".join(defect_species.split("_")[:-1])
+                defect_site_coords = json.load(f)["defects"][defect_species_without_charge]["unique_site"]
+            except KeyError:
+                warnings.warn(
+                    f"Could not find defect {defect_species} in "
+                    f"distortion_metadata.json file. Will not include "
+                    f"distance between defect and sites with significant "
+                    f"magnetization."
+                )
+                defect_site = None
 
     for distortion in distortions:
         dist_label = _get_distortion_filename(distortion)  # get filename
@@ -1213,9 +1123,7 @@ def get_site_magnetizations(
                 "Unperturbed/Rattled name."
             )
             continue
-        structure = io.read_vasp_structure(
-            f"{output_path}/{defect_species}/{dist_label}/CONTCAR"
-        )
+        structure = io.read_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
             warnings.warn(
                 f"Structure for {defect_species} either not converged or not "
@@ -1224,9 +1132,7 @@ def get_site_magnetizations(
             continue
         if isinstance(defect_site_coords, (list, np.ndarray)):
             # for vacancies, append fake atom
-            structure.append(
-                species="V", coords=defect_site_coords, coords_are_cartesian=False
-            )
+            structure.append(species="V", coords=defect_site_coords, coords_are_cartesian=False)
             defect_site = -1  # index of the added fake atom
 
         try:
@@ -1245,22 +1151,16 @@ def get_site_magnetizations(
             )
             continue
         if verbose:
-            print(
-                f"Analysing distortion {distortion}. "
-                f"Total magnetization: {round(outcar.total_mag, 2)}"
-            )
-        df = _site_magnetizations(
+            print(f"Analysing distortion {distortion}. Total magnetization: {round(outcar.total_mag, 2)}")
+        mag_df = _site_magnetizations(
             outcar=outcar,
             structure=structure,
             threshold=threshold,
             defect_site=defect_site,
             orbital_projections=orbital_projections,
         )
-        if not df.empty:
-            magnetizations[distortion] = df
+        if not mag_df.empty:
+            magnetizations[distortion] = mag_df
         elif verbose:
-            print(
-                f"No significant magnetizations found for distortion: "
-                f"{distortion} \n"
-            )
+            print(f"No significant magnetizations found for distortion: {distortion} \n")
     return magnetizations
