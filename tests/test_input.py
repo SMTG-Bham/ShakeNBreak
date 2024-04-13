@@ -3652,7 +3652,7 @@ class InputTestCase(unittest.TestCase):
                 bulk=self.cdte_doped_defect_dict["bulk"]["supercell"]["structure"],
             )
         # mock_print.assert_any_call(
-        #     "Defect charge states will be set to the range: 0 – {Defect "
+        #     "Defect charge states will be set to the range: 0 - {Defect "
         #     "oxidation state}, with a `padding = 1` on either side of this "
         #     "range."
         # )
