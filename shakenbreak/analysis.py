@@ -159,14 +159,6 @@ def _format_distortion_names(
         and "_from_" in distortion_label
     ):
         return distortion_label
-    # detected as High_Energy - normally wouldn't be parsed, but for debugging purposes
-    # TODO: remove this
-    if distortion_label.startswith("Bond_Distortion") and "High_Energy" in distortion_label:
-        return float(distortion_label.split("Bond_Distortion_")[-1].split("%")[0]) / 100
-    if (
-        "Dimer" in distortion_label or "Rattled" in distortion_label
-    ) and "High_Energy" in distortion_label:
-        return distortion_label
 
     return "Label_not_recognized"
 
