@@ -1629,12 +1629,12 @@ def apply_snb_distortions(
                         bond_distorted_defect["defect_site_index"]
                     )
 
-            elif isinstance(distortion, str) and distortion.lower() == "dimer":
+            elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
                 # Apply dimer distortion, with rattling
                 bond_distorted_defect = _apply_rattle_bond_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=2,
-                    distortion_factor=distortion,
+                    distortion_factor=raw_distortion,
                     local_rattle=local_rattle,
                     stdev=stdev,
                     d_min=d_min,
@@ -2697,7 +2697,7 @@ class Distortions:
             struct,
             charge,
         ) in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path, include_additional_info=True
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             atoms = aaa.get_atoms(struct)
 
@@ -2838,7 +2838,7 @@ class Distortions:
             struct,
             charge,
         ) in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path, include_additional_info=True
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             atoms = aaa.get_atoms(struct)
 
@@ -2938,7 +2938,7 @@ class Distortions:
             struct,
             charge,
         ) in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path, include_additional_info=True
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             if isinstance(ase_calculator, Aims) and not write_structures_only:
                 ase_calculator.set(charge=charge)  # Defect charge state

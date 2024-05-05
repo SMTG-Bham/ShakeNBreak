@@ -6,7 +6,6 @@ import os
 import sys
 import warnings
 from copy import deepcopy
-from multiprocessing import Queue
 from subprocess import call
 
 import click
@@ -468,12 +467,17 @@ def generate_all(
     bulk_struc = Structure.from_file(bulk)
     # try parsing the bulk oxidation states first, for later assigning defect "oxi_state"s (i.e.
     # fully ionised charge states):
+    # First check if the cost of guessing oxidation states is too high:
     if _rough_oxi_state_cost_from_comp(bulk_struc.composition) > 1e6:
+        # If the cost is too high, avoid setting oxidation states as it will take too long
         _bulk_oxi_states = False  # will take very long to guess oxi_state
     else:
+        # Otherwise, proceed with setting oxidation states using a separate process to allow timeouts
+        from multiprocessing import Queue  # only import when necessary
+
         queue = Queue()
         _bulk_oxi_states = _guess_and_set_oxi_states_with_timeout(bulk_struc, queue=queue)
-        if _bulk_oxi_states:
+        if _bulk_oxi_states:  # Retrieve the oxidation states if successfully guessed and set
             bulk_struc = queue.get()  # oxi-state decorated structure
             _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struc.composition.elements}
 
