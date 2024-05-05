@@ -64,8 +64,7 @@ def read_defects_directories(output_path: str = "./") -> dict:
             Dictionary mapping defect names to a list of its charge states.
     """
     list_subdirectories = list(next(os.walk(output_path))[1])  # Only subdirectories in current directory
-    for i in list(list_subdirectories):  # need to make copy of list when iterating over and
-        # removing elements
+    for i in list_subdirectories.copy():  # make copy of list for iterating over and removing elements
         try:
             formatted_name = format_defect_name(i, include_site_info_in_name=False)
             if formatted_name is None:  # defect folder name not recognised, remove from list
@@ -136,6 +135,7 @@ def _compare_distortion(
             order to consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+            (Default: False)
 
     Returns:
         :obj:`dict`
@@ -248,14 +248,15 @@ def _prune_dict_across_charges(
         verbose (:obj:`bool`):
             Whether to print verbose information about parsed defect
             structures for energy-lowering distortions, if found.
-            (Default: True)
+            (Default: False)
 
     Returns:
         :obj:`dict`
     """
     for defect, distortion_list in low_energy_defects.items():
         for distortion_dict in distortion_list:
-            for charge in list(set(defect_pruning_dict[defect]) - set(distortion_dict["charges"])):
+            charges_set = set(distortion_dict["charges"])
+            for charge in set(defect_pruning_dict[defect]) - charges_set:
                 imported_groundstates = [
                     gs_distortion
                     for gs_distortion in distortion_dict["bond_distortions"]
@@ -370,7 +371,7 @@ def get_energy_lowering_distortions(
         verbose (:obj:`bool`):
             Whether to print verbose information about parsed defect
             structures for energy-lowering distortions, if found.
-            (Default: True)
+            (Default: False)
         write_input_files (:obj:`bool`):
             Whether to write input files for the identified distortions
             (Default: False)
@@ -671,6 +672,7 @@ def compare_struct_to_distortions(
             orderto consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+            (Default: False)
 
     Returns:
         :obj:`tuple`:
@@ -1214,6 +1216,7 @@ def write_groundstate_structure(
             (Default: "CONTCAR")
         verbose (:obj:`bool`):
             Whether to print additional information about the generated folders.
+            (Default: False)
 
     Returns:
         None

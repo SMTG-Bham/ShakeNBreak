@@ -321,7 +321,7 @@ class CLITestCase(unittest.TestCase):
         )
 
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             generated_incar = Incar.from_file(f"{V_Cd_Bond_Distortion_folder}/INCAR")
@@ -1190,7 +1190,7 @@ POTCAR:
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
         kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert filecmp.cmp(
@@ -1634,7 +1634,7 @@ POTCAR:
             self.V_Cd_0pt3_local_rattled,
         )
         kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")

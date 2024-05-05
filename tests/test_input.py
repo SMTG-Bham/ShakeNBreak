@@ -1,7 +1,6 @@
 import contextlib
 import copy
 import datetime
-import filecmp
 import locale
 import os
 import shutil
@@ -18,7 +17,7 @@ from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
-from pymatgen.core.periodic_table import DummySpecies, Species
+from pymatgen.core.periodic_table import DummySpecies
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -736,7 +735,6 @@ class InputTestCase(unittest.TestCase):
 
         # test all possible rattling kwargs with V_Cd
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
 
         V_Cd_kwarg_distorted_dict = input._apply_rattle_bond_distortions(
             self.V_Cd_entry,
@@ -765,6 +763,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(V_Cd_kwarg_distorted_dict["num_distorted_neighbours"], 2)
         self.assertEqual(V_Cd_kwarg_distorted_dict.get("defect_site_index"), None)
+        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         np.testing.assert_array_equal(
             V_Cd_kwarg_distorted_dict.get("defect_frac_coords"), vac_coords
         )
@@ -964,7 +963,6 @@ class InputTestCase(unittest.TestCase):
 
         # test all possible rattling kwargs with V_Cd
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
-        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
 
         V_Cd_kwarg_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
@@ -1078,7 +1076,7 @@ class InputTestCase(unittest.TestCase):
             "vac_1_Cd_0/Bond_Distortion_-50.0%"
         )
         kpoints = Kpoints.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             generated_INCAR = Incar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR")
@@ -1125,7 +1123,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_kwarg_folder = "vac_1_Cdb_0/Bond_Distortion_-50.0%"
         V_Cd_POSCAR = self._check_V_Cd_rattled_poscar(V_Cd_kwarg_folder)
         kpoints = Kpoints.from_file(f"{V_Cd_kwarg_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert self.V_Cd_INCAR != Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
@@ -1158,7 +1156,7 @@ class InputTestCase(unittest.TestCase):
         kpoints = Kpoints.from_file(
             "test_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS"
         )
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert self.V_Cd_INCAR != Incar.from_file(
@@ -1642,7 +1640,7 @@ class InputTestCase(unittest.TestCase):
         )  # default
         self.assertEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert self.V_Cd_INCAR != Incar.from_file(
@@ -1679,7 +1677,7 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
         kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             kwarged_INCAR = self.V_Cd_INCAR.copy()
@@ -1993,7 +1991,7 @@ class InputTestCase(unittest.TestCase):
             len(_int_Cd_2_POSCAR.site_symbols), len(set(_int_Cd_2_POSCAR.site_symbols))
         )  # no duplicates
         kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
@@ -2115,15 +2113,14 @@ class InputTestCase(unittest.TestCase):
             d_min=d_min,
         )
         with patch("builtins.print") as mock_print:
-            with warnings.catch_warnings(record=True) as w:
-                dist.write_vasp_files()
-                # check expected info printing:
-                mock_print.assert_any_call(
-                    "Applying ShakeNBreak...",
-                    "Will apply the following bond distortions:",
-                    "['Dimer'].",
-                    "Then, will rattle with a std dev of 0.25 Å \n",
-                )
+            dist.write_vasp_files()
+            # check expected info printing:
+            mock_print.assert_any_call(
+                "Applying ShakeNBreak...",
+                "Will apply the following bond distortions:",
+                "['Dimer'].",
+                "Then, will rattle with a std dev of 0.25 Å \n",
+            )
         V_Cd_dimer_POSCAR = Structure.from_file(
             "v_Cd_Td_Te2.83_0/Dimer/POSCAR"
         )
@@ -2207,7 +2204,7 @@ class InputTestCase(unittest.TestCase):
             "-50.0% N(Distort)=2 ~[0.5,0.5,0.5]",  # closest to middle
         )  # default
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert self.V_Cd_INCAR != Incar.from_file(
@@ -2241,7 +2238,7 @@ class InputTestCase(unittest.TestCase):
             "-60.0% N(Distort)=2 ~[0.3,0.4,0.4]",  # closest to middle
         )
         kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             kwarged_INCAR = self.V_Cd_INCAR.copy()
@@ -2315,7 +2312,7 @@ class InputTestCase(unittest.TestCase):
         )  # no duplicates
 
         kpoints = Kpoints.from_file(f"{folder_name}/{distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             # check if POTCARs have been written:

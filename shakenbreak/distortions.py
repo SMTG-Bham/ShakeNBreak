@@ -229,8 +229,9 @@ def apply_dimer_distortion(
         for other_site in sites[i + 1 :]:
             distances[(site.index, other_site.index)] = site.distance(other_site)
     # Get defect NN with smallest distance and lowest indices:
-    site_indexes = min(distances, key=lambda k: (round(distances.get(k, 10), 3), k[0], k[1]))
-    site_indexes.sort()
+    site_indexes = tuple(
+        sorted(min(distances, key=lambda k: (round(distances.get(k, 10), 3), k[0], k[1])))
+    )
     # Set their distance to 2 A
     input_structure_ase.set_distance(
         a0=site_indexes[0], a1=site_indexes[1], distance=2.0, fix=0.5, mic=True
