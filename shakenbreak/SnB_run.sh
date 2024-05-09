@@ -100,6 +100,7 @@ SnB_run_loop() {
             echo "Positive energies or forces error encountered for ${i%/}. "
             echo "This typically indicates the initial defect structure supplied to ShakeNBreak is highly unstable, often with bond lengths smaller than the ionic radii."
             echo "Please check this defect structure and/or the relaxation output files."
+            builtin cd .. || return
             continue
           else
             echo "Positive energies or forces error encountered for ${i%/}, ignoring and renaming to ${i%/}_High_Energy"
