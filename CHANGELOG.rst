@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v3.3.3
+----------
+- Add ``verbose`` option to more parsing/plotting functions for better control of output detail.
+- Improve effiency & robustness of oxidation state handling.
+- Miscellaneous efficiency (e.g. memory reduction) and robustness updates.
+- Improved GitHub Actions test efficiency.
+
 v3.3.2
 ----------
 - Add ``verbose`` options to ``io.parse_energies()`` and ``snb-parse``, also used in ``snb-plot`` and
