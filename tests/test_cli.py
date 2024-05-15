@@ -261,7 +261,9 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
-        non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
+        non_potcar_warnings = [
+            warning for warning in w if "POTCAR" not in str(warning.message)
+        ]
         assert not non_potcar_warnings  # no warnings other than POTCAR warnings
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
@@ -319,12 +321,11 @@ class CLITestCase(unittest.TestCase):
         )
 
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
-            assert filecmp.cmp(
-                f"{V_Cd_Bond_Distortion_folder}/INCAR", self.V_Cd_INCAR_file
-            )
+            generated_incar = Incar.from_file(f"{V_Cd_Bond_Distortion_folder}/INCAR")
+            assert generated_incar == self.V_Cd_INCAR
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
@@ -440,9 +441,13 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
-        non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
+        non_potcar_warnings = [
+            warning for warning in w if "POTCAR" not in str(warning.message)
+        ]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
-        assert "has the same Unperturbed defect structure" in str(non_potcar_warnings[0].message)
+        assert "has the same Unperturbed defect structure" in str(
+            non_potcar_warnings[0].message
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
@@ -491,9 +496,13 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
-        non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
+        non_potcar_warnings = [
+            warning for warning in w if "POTCAR" not in str(warning.message)
+        ]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
-        assert "has the same Unperturbed defect structure" in str(non_potcar_warnings[0].message)
+        assert "has the same Unperturbed defect structure" in str(
+            non_potcar_warnings[0].message
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
@@ -551,9 +560,13 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
-        non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
+        non_potcar_warnings = [
+            warning for warning in w if "POTCAR" not in str(warning.message)
+        ]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
-        assert "has the same Unperturbed defect structure" in str(non_potcar_warnings[0].message)
+        assert "has the same Unperturbed defect structure" in str(
+            non_potcar_warnings[0].message
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
@@ -607,9 +620,13 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
-        non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
+        non_potcar_warnings = [
+            warning for warning in w if "POTCAR" not in str(warning.message)
+        ]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
-        assert "has the same Unperturbed defect structure" in str(non_potcar_warnings[0].message)
+        assert "has the same Unperturbed defect structure" in str(
+            non_potcar_warnings[0].message
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(f"Defect: {defect_name}", result.output)
         self.assertIn("Number of missing electrons in neutral state: 2", result.output)
@@ -630,14 +647,18 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertEqual(
             len(
-                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"]["0"][
-                    "distortion_parameters"
-                ]["bond_distortions"]
+                reloaded_distortion_metadata["defects"]["v_Cd_Td_Te2.83"]["charges"][
+                    "0"
+                ]["distortion_parameters"]["bond_distortions"]
             ),
             25,
         )  # no duplication of bond distortions
-        defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
-        self.assertNotEqual(reloaded_distortion_metadata, defect_folder_distortion_metadata)
+        defect_folder_distortion_metadata = loadfn(
+            "v_Cd_Td_Te2.83_0/distortion_metadata.json"
+        )
+        self.assertNotEqual(
+            reloaded_distortion_metadata, defect_folder_distortion_metadata
+        )
 
         # test defect_index option:
         self.tearDown()
@@ -1070,7 +1091,7 @@ class CLITestCase(unittest.TestCase):
         )
         # check print info message:
         # self.assertIn(
-        #     "Defect charge states will be set to the range: 0 – {Defect oxidation "
+        #     "Defect charge states will be set to the range: 0 - {Defect oxidation "
         #     "state}, with a `padding = 1` on either side of this range.",
         #     result.output,
         # )
@@ -1109,7 +1130,7 @@ class CLITestCase(unittest.TestCase):
         )
         # check print info message:
         self.assertIn(
-            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "Defect charge states will be set to the range: 0 - {Defect oxidation "
             "state}, with a `padding = 4` on either side of this range.",
             result.output,
         )
@@ -1169,7 +1190,7 @@ POTCAR:
             V_Cd_kwarged_POSCAR.structure, self.V_Cd_minus0pt5_struc_kwarged
         )
         kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             assert filecmp.cmp(
@@ -1499,7 +1520,7 @@ nonsense_key: nonsense_value"""
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             "Defect charges were specified using the CLI option, but `charges` "
-            "was also specified in the `--config` file – this will be ignored!",
+            "was also specified in the `--config` file -- this will be ignored!",
             str(w[0].message),
         )
         self.tearDown()
@@ -1613,15 +1634,13 @@ POTCAR:
             self.V_Cd_0pt3_local_rattled,
         )
         kpoints = Kpoints.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/KPOINTS")
-        self.assertEqual(kpoints.kpts, [[1, 1, 1]])
+        self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
-            assert not filecmp.cmp(
-                f"{defect_name}_0/Bond_Distortion_30.0%/INCAR", self.V_Cd_INCAR_file
-            )
+            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
+            assert v_Cd_INCAR != self.V_Cd_INCAR
             # NELECT has changed due to POTCARs
 
-            v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
             v_Cd_INCAR.pop("NELECT")
             test_INCAR = self.V_Cd_INCAR.copy()
             test_INCAR.pop("NELECT")
@@ -1930,7 +1949,7 @@ POTCAR:
         )
         # check print info message:
         self.assertIn(
-            "Defect charge states will be set to the range: 0 – {Defect oxidation "
+            "Defect charge states will be set to the range: 0 - {Defect oxidation "
             "state}, with a `padding = 4` on either side of this range.",
             result.output,
         )
@@ -2798,39 +2817,52 @@ Chosen VASP error message: {error_string}
         )  # new files as calc being rerun, but without changing ISPIN
 
     def test_parse(self):
-        """Test parse() function.
-        Implicitly, this also tests the io.parse_energies() function"""
+        """
+        Test parse() function.
+        Implicitly, this also tests the io.parse_energies() function.
+        """
         # Specifying defect to parse
         # All OUTCAR's present in distortion directories
         # Energies file already present
         defect = "v_Ti_0"
-        with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
-            f.write("")
         runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
-                "parse",
-                "-d",
-                defect,
-                "-p",
-                self.EXAMPLE_RESULTS,
-            ],
-            catch_exceptions=False,
-        )
-        self.assertIn(
-            f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml to ",
-            result.output,
-        )
-        energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
-        test_energies = {
-            "distortions": {
-                -0.4: -1176.28458753,
-            },
-            "Unperturbed": -1173.02056574,
-        }  # Using dictionary here (rather than file/string), because parsing order
-        # is difference on github actions
-        self.assertEqual(test_energies, energies)
+
+        def _parse_v_Ti_and_check_output(verbose=False):
+            with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
+                f.write(
+                    ""
+                )  # write empty energies file, otherwise no verbose print because detects
+                # that it already exists with the same energies
+            args = ["parse", "-d", defect, "-p", self.EXAMPLE_RESULTS]
+            if verbose:
+                args.append("-v")
+            result = runner.invoke(snb, args, catch_exceptions=True)
+            print(f"Output: {result.output}")
+            if verbose:
+                self.assertIn(
+                    f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml to ",
+                    result.output,
+                )
+            else:
+                self.assertNotIn(
+                    f"Moving old {self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml to ",
+                    result.output,
+                )
+            energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
+            test_energies = {
+                "distortions": {
+                    -0.4: -1176.28458753,
+                },
+                "Unperturbed": -1173.02056574,
+            }  # Using dictionary here (rather than file/string), because parsing order
+            # is difference on GitHub actions
+            self.assertEqual(test_energies, energies)
+
+        print("Testing snb-parse non verbose")
+        _parse_v_Ti_and_check_output()
+        print("Testing snb-parse, -v")
+        _parse_v_Ti_and_check_output(verbose=True)
+
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
@@ -3205,8 +3237,8 @@ Chosen VASP error message: {error_string}
                     f"unreasonable charge state). If both checks pass, you likely need to adjust "
                     f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
                     f"materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. "
-                    f"– This often indicates a complex PES with multiple minima, "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
+                    f"This often indicates a complex PES with multiple minima, "
                     f"thus energy-lowering distortions particularly likely, so important to "
                     f"test with reduced `stdev`!" == str(i.message)
                     for i in w
@@ -3941,8 +3973,10 @@ Chosen VASP error message: {error_string}
 
         # test distortion_metadata parsed fine when in defect folder (not above):
         with open(
-                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/"
-                f"distortion_metadata.json", "w") as f:
+            f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/"
+            f"distortion_metadata.json",
+            "w",
+        ) as f:
             f.write(json.dumps(fake_distortion_metadata, indent=4))
         with warnings.catch_warnings(record=True) as w:
             result = runner.invoke(

@@ -38,9 +38,7 @@ def _install_custom_font():
         try:
             # Copy the font file to matplotlib's True Type font directory
             fonts_dir = MODULE_DIR
-            ttf_fonts = [
-                file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name
-            ]
+            ttf_fonts = [file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name]
             try:
                 for font in ttf_fonts:  # must be in ttf format for matplotlib
                     old_path = os.path.join(fonts_dir, font)
@@ -61,9 +59,7 @@ def _install_custom_font():
                     if os.path.exists(fontList_path):
                         os.remove(fontList_path)
                         print("Deleted the matplotlib fontList cache.")
-            if not any(
-                "fontlist" in file_name.lower() for file_name in mpl_cache_dir_ls
-            ):
+            if not any("fontlist" in file_name.lower() for file_name in mpl_cache_dir_ls):
                 print("Couldn't find matplotlib cache, so will continue.")
 
             # Add font to MAtplotlib Fontmanager
@@ -90,7 +86,7 @@ def _get_backend(save_format: str) -> Optional[str]:
         except ImportError:
             warnings.warn(
                 "pycairo not installed. Defaulting to matplotlib's pdf backend, so default "
-                "ShakeNBreak fonts may not be used – try setting `save_format` to 'png' or "
+                "ShakeNBreak fonts may not be used -- try setting `save_format` to 'png' or "
                 "`pip install pycairo` if you want ShakeNBreak's default font."
             )
     return backend
@@ -104,15 +100,10 @@ def _verify_data_directories_exist(
     """Check top-level directory (e.g. `output_path`) and defect folders exist."""
     # Check directories and input
     if not os.path.isdir(output_path):  # if output_path does not exist, raise error
+        raise FileNotFoundError(f"Path {output_path} does not exist! Skipping {defect_species}.")
+    if not os.path.isdir(f"{output_path}/{defect_species}"):  # check if defect directory exists
         raise FileNotFoundError(
-            f"Path {output_path} does not exist! Skipping {defect_species}."
-        )
-    if not os.path.isdir(
-        f"{output_path}/{defect_species}"
-    ):  # check if defect directory exists
-        raise FileNotFoundError(
-            f"Path {output_path}/{defect_species} does not exist! "
-            f"Skipping {defect_species}."
+            f"Path {output_path}/{defect_species} does not exist! Skipping {defect_species}."
         )
 
 
@@ -121,12 +112,10 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
     Parse the number and type of distorted nearest neighbours for a
     given defect from the distortion_metadata dictionary.
     """
-    if defect in distortion_metadata["defects"].keys():
+    if defect in distortion_metadata["defects"]:
         try:
             # Get number and element symbol of the distorted site(s)
-            num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][
-                str(charge)
-            ][
+            num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][str(charge)][
                 "num_nearest_neighbours"
             ]  # get number of distorted neighbours
         except KeyError:
@@ -134,9 +123,7 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
         try:
             neighbour_atoms = [  # get element of the distorted site
                 i[1]  # element symbol
-                for i in distortion_metadata["defects"][defect]["charges"][str(charge)][
-                    "distorted_atoms"
-                ]
+                for i in distortion_metadata["defects"][defect]["charges"][str(charge)]["distorted_atoms"]
             ]
 
             if all(element == neighbour_atoms[0] for element in neighbour_atoms):
@@ -176,19 +163,16 @@ def _cast_energies_to_floats(
             values as floats.
     """
     if not all(
-        isinstance(energy, float)
-        for energy in list(energies_dict["distortions"].values())
+        isinstance(energy, float) for energy in list(energies_dict["distortions"].values())
     ) or not isinstance(energies_dict["Unperturbed"], float):
         # check energies_dict values are floats
         try:
-            energies_dict["distortions"] = {
-                k: float(v) for k, v in energies_dict["distortions"].items()
-            }
+            energies_dict["distortions"] = {k: float(v) for k, v in energies_dict["distortions"].items()}
             energies_dict["Unperturbed"] = float(energies_dict["Unperturbed"])
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 f"Values of energies_dict are not floats! Skipping {defect_species}."
-            )
+            ) from exc
     return energies_dict
 
 
@@ -215,10 +199,8 @@ def _change_energy_units_to_meV(
     if "meV" not in y_label:
         y_label = y_label.replace("eV", "meV")
     if max_energy_above_unperturbed < 4:  # assume eV
-        max_energy_above_unperturbed = (
-            max_energy_above_unperturbed * 1000
-        )  # convert to meV
-    for key in energies_dict["distortions"].keys():  # convert to meV
+        max_energy_above_unperturbed = max_energy_above_unperturbed * 1000  # convert to meV
+    for key in energies_dict["distortions"]:  # convert to meV
         energies_dict["distortions"][key] = energies_dict["distortions"][key] * 1000
     energies_dict["Unperturbed"] = energies_dict["Unperturbed"] * 1000
     return energies_dict, max_energy_above_unperturbed, y_label
@@ -250,12 +232,12 @@ def _purge_data_dicts(
     """
     for key in list(disp_dict.keys()):
         if (
-            (key not in energies_dict["distortions"].keys() and key != "Unperturbed")
+            (key not in energies_dict["distortions"] and key != "Unperturbed")
             or disp_dict[key] == "Not converged"
             or disp_dict[key] is None
         ) and key not in energies_dict[
             "distortions"
-        ].keys():  # remove it from disp and energy dicts
+        ]:  # remove it from disp and energy dicts
             disp_dict.pop(key)
 
     return disp_dict, energies_dict
@@ -287,14 +269,9 @@ def _remove_high_energy_points(
     """
     for key in list(energies_dict["distortions"].keys()):
         # remove high energy points
-        if (
-            energies_dict["distortions"][key] - energies_dict["Unperturbed"]
-            > max_energy_above_unperturbed
-        ):
+        if energies_dict["distortions"][key] - energies_dict["Unperturbed"] > max_energy_above_unperturbed:
             energies_dict["distortions"].pop(key)
-            if (
-                disp_dict and key in disp_dict
-            ):  # only exists if user selected `add_colorbar=True`
+            if disp_dict and key in disp_dict:  # only exists if user selected `add_colorbar=True`
                 disp_dict.pop(key)
     return energies_dict, disp_dict
 
@@ -353,9 +330,7 @@ def _get_displacement_dict(
         disp_dict = analysis.calculate_struct_comparison(
             defect_structs, metric=metric
         )  # calculate sum of atomic displacements and maximum displacement between paired sites
-        if (
-            disp_dict
-        ):  # if struct_comparison algorithms worked (sometimes struggles matching lattices)
+        if disp_dict:  # if struct_comparison algorithms worked (sometimes struggles matching lattices)
             disp_dict, energies_dict = _purge_data_dicts(
                 disp_dict=disp_dict,
                 energies_dict=energies_dict,
@@ -409,17 +384,12 @@ def _format_datapoints_from_other_chargestates(
     # Reformat any "X%_from_Y" or "Rattled_from_Y" distortions to corresponding
     # (X) distortion factor or 0.0 for "Rattled"
     keys = []
-    for entry in energies_dict["distortions"].keys():
+    for entry in energies_dict["distortions"]:
         if isinstance(entry, str) and "%_from_" in entry:
             keys.append(float(entry.split("%")[0]) / 100)
-        elif isinstance(entry, str) and (
-            "Rattled_from_" in entry or "Dimer_from_" in entry
-        ):
+        elif isinstance(entry, str) and ("Rattled_from_" in entry or "Dimer_from_" in entry):
             keys.append(0.0)  # Rattled and Dimer will be plotted at x = 0.0
-        elif entry == "Rattled":  # add 0.0 for Rattled
-            # (to avoid problems when sorting distortions)
-            keys.append(0.0)
-        elif entry == "Dimer":  # add 0.0 for Dimer
+        elif entry == "Rattled" or entry == "Dimer":  # add 0.0 for Rattled
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
@@ -428,11 +398,7 @@ def _format_datapoints_from_other_chargestates(
     if disp_dict:
         # Sort displacements in same order as distortions and energies,
         # for proper color mapping
-        sorted_disp = [
-            disp_dict[k]
-            for k in energies_dict["distortions"].keys()
-            if k in disp_dict.keys()
-        ]
+        sorted_disp = [disp_dict[k] for k in energies_dict["distortions"] if k in disp_dict]
         # Save the values of the displacements from *other charge states*
         # As the displacements will be re-sorted -> we'll need to
         # find the index of t
@@ -511,9 +477,7 @@ def _save_plot(
     plot_filepath = f"{os.path.join(defect_dir, defect_name)}.{save_format}"
     # If plot already exists, rename to <defect>_<datetime>.<format>
     if os.path.exists(plot_filepath):
-        current_datetime = datetime.datetime.now().strftime(
-            "%Y-%m-%d-%H-%M"
-        )  # keep copy of old plot file
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")  # keep copy of old plot file
         os.rename(
             plot_filepath,
             f"{os.path.join(defect_dir, defect_name)}_{current_datetime}.{save_format}",
@@ -581,9 +545,7 @@ def _format_ticks(
         loc = mpl.ticker.MultipleLocator(base=tick_interval)
         # want the bottom tick to be no more thant (5%)*energy_range above the minimum energy to
         # allow easy visual estimation of energy lowering and scale:
-        if (
-            min(energies_list) + 0.05 * energy_range
-        ) // tick_interval == ylim_lower // tick_interval:
+        if (min(energies_list) + 0.05 * energy_range) // tick_interval == ylim_lower // tick_interval:
             # means bottom tick is at or above the minimum energy
             ylim_lower = min(energies_list) - tick_interval
 
@@ -633,10 +595,7 @@ def _format_axis(
             f"{neighbour_atom} near {defect_name})"
         )
     elif num_nearest_neighbours and defect_name:
-        x_label = (
-            f"Bond Distortion Factor (for {num_nearest_neighbours} NN near"
-            f" {defect_name})"
-        )
+        x_label = f"Bond Distortion Factor (for {num_nearest_neighbours} NN near {defect_name})"
     else:
         x_label = "Bond Distortion Factor"
     ax.set_xlabel(x_label)
@@ -692,9 +651,7 @@ def _setup_colormap(
     array_disp = np.array(
         [val for val in disp_dict.values() if isinstance(val, float)]
     )  # ignore "Not converged" or None values
-    colormap = sns.cubehelix_palette(
-        start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True
-    )
+    colormap = sns.cubehelix_palette(start=0.65, rot=-0.992075, dark=0.2755, light=0.7205, as_cmap=True)
     # colormap extremes, mapped to min and max displacements
     vmin = round(min(array_disp), 1)
     vmax = round(max(array_disp), 1)
@@ -706,11 +663,12 @@ def _setup_colormap(
 def _format_colorbar(
     fig: mpl.figure.Figure,
     ax: mpl.axes.Axes,
-    im: mpl.collections.PathCollection,
     metric: str,
     vmin: float,
     vmax: float,
     vmedium: float,
+    norm: mpl.colors.Normalize,
+    cmap: mpl.colors.Colormap,
 ) -> mpl.figure.Figure.colorbar:
     """
     Format colorbar of plot.
@@ -720,7 +678,6 @@ def _format_colorbar(
             matplotlib.figure.Figure object
         ax (:obj:`mpl.axes.Axes`):
             current matplotlib.axes.Axes object
-        im (:obj:`mpl.collections.PathCollection`)
         metric (:obj:`str`):
             metric to be plotted: "disp" or "max_dist"
         vmin (:obj:`float`):
@@ -729,12 +686,16 @@ def _format_colorbar(
             tick label for the colorbar
         vmedium (:obj:`float`):
             tick label for the colorbar
+        norm (:obj:`mpl.colors.Normalize`):
+            normalization for the colorbar
+        cmap (:obj:`mpl.colors.Colormap`):
+            colormap for the colorbar
 
     Returns:
         cbar (:obj:`mpl.colorbar.Colorbar`)
     """
     cbar = fig.colorbar(
-        im,
+        mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
         ax=ax,
         boundaries=None,
         drawedges=False,
@@ -749,9 +710,7 @@ def _format_colorbar(
         cmap_label = r"$\Sigma$ Disp $(\AA)$"
     elif metric == "max_dist":
         cmap_label = r"$d_{max}$ $(\AA)$"
-    cbar.ax.set_title(
-        cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5
-    )
+    cbar.ax.set_title(cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5)
     if vmin != vmax:
         cbar.set_ticks([vmin, vmedium, vmax])
         cbar.set_ticklabels([vmin, vmedium, vmax])
@@ -763,7 +722,7 @@ def _format_colorbar(
 
 # Main plotting functions:
 def plot_all_defects(
-    defects_dict: dict,
+    defect_charges_dict: dict,
     output_path: str = ".",
     add_colorbar: bool = False,
     metric: str = "max_dist",
@@ -775,13 +734,14 @@ def plot_all_defects(
     save_plot: bool = True,
     save_format: str = "png",
     verbose: bool = False,
+    close_figures: bool = False,
 ) -> dict:
     """
     Convenience function to quickly analyse a range of defects and identify those
     which undergo energy-lowering distortions.
 
     Args:
-        defects_dict (:obj:`dict`):
+        defect_charges_dict (:obj:`dict`):
             Dictionary matching defect names to lists of their charge states.
             (e.g {"Int_Sb_1": [0,+1,+2]} etc)
         output_path (:obj:`str`):
@@ -824,6 +784,11 @@ def plot_all_defects(
             (Default: 'png')
         verbose (:obj:`bool`):
             Whether to print information about the plots (warnings and where they're saved).
+        close_figures (:obj:`bool`):
+            Whether to close matplotlib figures after saving them, to reduce memory usage.
+            Recommended to use if plotting many defects at once, in which case figures will
+            be saved to disk and not displayed.
+            (Default: False)
 
     Returns:
         :obj:`dict`:
@@ -834,25 +799,19 @@ def plot_all_defects(
         raise FileNotFoundError(f"Path {output_path} does not exist!")
 
     try:
-        distortion_metadata = analysis._read_distortion_metadata(
-            output_path=output_path
-        )
+        distortion_metadata = analysis._read_distortion_metadata(output_path=output_path)
     except FileNotFoundError:
         # check if any defect_species folders have distortion_metadata.json files
         defect_species_list = [
             f"{defect}_{format_charge}"
-            for defect in defects_dict
-            for charge in defects_dict[defect]
+            for defect in defect_charges_dict
+            for charge in defect_charges_dict[defect]
             for format_charge in [charge, f"+{charge}"]
         ]  # allow for defect species names with "+" sign (in SnB > 3.1)
         distortion_metadata_list = [
-            analysis._read_distortion_metadata(
-                output_path=os.path.join(output_path, defect_species)
-            )
+            analysis._read_distortion_metadata(output_path=os.path.join(output_path, defect_species))
             for defect_species in defect_species_list
-            if os.path.isfile(
-                os.path.join(output_path, defect_species, "distortion_metadata.json")
-            )
+            if os.path.isfile(os.path.join(output_path, defect_species, "distortion_metadata.json"))
         ]
         if distortion_metadata_list:
             distortion_metadata = distortion_metadata_list
@@ -866,8 +825,8 @@ def plot_all_defects(
                 )
             distortion_metadata = None
 
-    figures = {}
-    for defect, value in defects_dict.items():
+    defects_to_plot = {}
+    for defect, value in defect_charges_dict.items():
         for charge in value:
             defect_species = f"{defect}_{'+' if charge > 0 else ''}{charge}"
             # Parse energies
@@ -886,9 +845,7 @@ def plot_all_defects(
                     f"Path {energies_file} does not exist. Skipping {defect_species}."
                 )  # skip defect
                 continue
-            energies_dict, energy_diff, gs_distortion = analysis._sort_data(
-                energies_file, verbose=False
-            )
+            energies_dict, energy_diff, gs_distortion = analysis._sort_data(energies_file, verbose=False)
 
             if not energy_diff:  # if Unperturbed calc is not converged, warn user
                 warnings.warn(
@@ -913,19 +870,13 @@ def plot_all_defects(
                         (
                             num_nearest_neighbours,
                             neighbour_atom,
-                        ) = _parse_distortion_metadata(
-                            single_distortion_metadata, defect, charge
-                        )
-                        if (
-                            num_nearest_neighbours is None
-                        ):  # try pull from one of distortion_metadata_list
+                        ) = _parse_distortion_metadata(single_distortion_metadata, defect, charge)
+                        if num_nearest_neighbours is None:  # try pull from one of distortion_metadata_list
                             for distortion_metadata_dict in distortion_metadata:
                                 (
                                     num_nearest_neighbours,
                                     neighbour_atom,
-                                ) = _parse_distortion_metadata(
-                                    distortion_metadata_dict, defect, charge
-                                )
+                                ) = _parse_distortion_metadata(distortion_metadata_dict, defect, charge)
                                 if num_nearest_neighbours:
                                     break
 
@@ -937,24 +888,32 @@ def plot_all_defects(
                     num_nearest_neighbours = None
                     neighbour_atom = None
 
-                figures[defect_species] = plot_defect(
-                    defect_species=defect_species,
-                    energies_dict=energies_dict,
-                    output_path=output_path,
-                    neighbour_atom=neighbour_atom,
-                    num_nearest_neighbours=num_nearest_neighbours,
-                    add_colorbar=add_colorbar,
-                    metric=metric,
-                    units=units,
-                    max_energy_above_unperturbed=max_energy_above_unperturbed,
-                    line_color=line_color,
-                    add_title=add_title,
-                    save_plot=save_plot,
-                    save_format=save_format,
-                    verbose=verbose,
-                )
+                defects_to_plot[defect_species] = {
+                    "energies_dict": energies_dict,
+                    "num_nearest_neighbours": num_nearest_neighbours,
+                    "neighbour_atom": neighbour_atom,
+                }
 
-    return figures
+    return {
+        defect_species: plot_defect(
+            defect_species=defect_species,
+            energies_dict=info_dict.get("energies_dict"),
+            output_path=output_path,
+            neighbour_atom=info_dict.get("neighbour_atom"),
+            num_nearest_neighbours=info_dict.get("num_nearest_neighbours"),
+            add_colorbar=add_colorbar,
+            metric=metric,
+            units=units,
+            max_energy_above_unperturbed=max_energy_above_unperturbed,
+            line_color=line_color,
+            add_title=add_title,
+            save_plot=save_plot,
+            save_format=save_format,
+            verbose=verbose,
+            close_figure=close_figures,
+        )
+        for defect_species, info_dict in defects_to_plot.items()
+    }
 
 
 def plot_defect(
@@ -974,6 +933,7 @@ def plot_defect(
     save_plot: Optional[bool] = True,
     save_format: Optional[str] = "png",
     verbose: bool = False,
+    close_figure: bool = False,
 ) -> Optional[Figure]:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
@@ -1037,6 +997,11 @@ def plot_defect(
             (Default: "png")
         verbose (:obj:`bool`):
             Whether to print information about the plot (warnings and where it's saved).
+        close_figure (:obj:`bool`):
+            Whether to close matplotlib figure after saving, to reduce memory usage.
+            Recommended to use if plotting many defects at once, in which case figure will
+            be saved to disk and not displayed.
+            (Default: False)
 
     Returns:
         :obj:`mpl.figure.Figure`:
@@ -1044,9 +1009,7 @@ def plot_defect(
     """
     # Ensure necessary directories exist, and raise error if not
     try:
-        _verify_data_directories_exist(
-            output_path=output_path, defect_species=defect_species
-        )
+        _verify_data_directories_exist(output_path=output_path, defect_species=defect_species)
     except FileNotFoundError:
         if add_colorbar:
             warnings.warn(
@@ -1055,11 +1018,10 @@ def plot_defect(
             )
             add_colorbar = False
 
-    if "Unperturbed" not in energies_dict.keys():
+    if "Unperturbed" not in energies_dict:
         # check if unperturbed energies exist
         warnings.warn(
-            f"Unperturbed energy not present in energies_dict of {defect_species}! "
-            f"Skipping plot."
+            f"Unperturbed energy not present in energies_dict of {defect_species}! Skipping plot."
         )
         return None
 
@@ -1067,9 +1029,7 @@ def plot_defect(
     if not neighbour_atom and not num_nearest_neighbours:
         try:
             try:
-                distortion_metadata = analysis._read_distortion_metadata(
-                    output_path=output_path
-                )
+                distortion_metadata = analysis._read_distortion_metadata(output_path=output_path)
             except FileNotFoundError:
                 distortion_metadata = analysis._read_distortion_metadata(
                     output_path=f"{output_path}/{defect_species}"  # if user moved file
@@ -1176,6 +1136,9 @@ def plot_defect(
                 save_format=save_format,
                 verbose=verbose,
             )
+    if close_figure:
+        plt.close(fig)
+
     return fig
 
 
@@ -1184,7 +1147,7 @@ def plot_colorbar(
     disp_dict: dict,
     defect_species: str,
     include_site_info_in_name: Optional[bool] = False,
-    num_nearest_neighbours: int = None,
+    num_nearest_neighbours: Optional[int] = None,
     neighbour_atom: str = "NN",
     title: Optional[str] = None,
     legend_label: str = "SnB",
@@ -1315,43 +1278,35 @@ def plot_colorbar(
         sorted_distortions,
         sorted_energies,
         sorted_disp,
-    ) = _format_datapoints_from_other_chargestates(
-        energies_dict=energies_dict, disp_dict=disp_dict
-    )
+    ) = _format_datapoints_from_other_chargestates(energies_dict=energies_dict, disp_dict=disp_dict)
 
     # Plotting
     line = None  # to later check if line was plotted, for legend formatting
     with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
-        if (
-            "Rattled" in energies_dict["distortions"].keys()
-            and "Rattled" in disp_dict.keys()
-        ):
+        if "Rattled" in energies_dict["distortions"] and "Rattled" in disp_dict:
             # Plot Rattled energy
-            im = ax.scatter(
+            path_col = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Rattled"],
-                c=disp_dict["Rattled"],
+                c=(disp_dict["Rattled"] if isinstance(disp_dict["Rattled"], float) else "k"),
                 label="Rattled",
                 s=50,
                 marker="o",
-                cmap=colormap,
-                norm=norm,
+                cmap=colormap if isinstance(disp_dict["Rattled"], float) else None,
+                norm=norm if isinstance(disp_dict["Rattled"], float) else None,
                 alpha=1,
             )
         # Plot Dimer
-        if (
-            "Dimer" in energies_dict["distortions"].keys()
-            and "Dimer" in disp_dict.keys()
-        ):
-            im = ax.scatter(
+        if "Dimer" in energies_dict["distortions"] and "Dimer" in disp_dict:
+            path_col = ax.scatter(
                 0.0,
                 energies_dict["distortions"]["Dimer"],
-                c=disp_dict["Dimer"],
+                c=disp_dict["Dimer"] if isinstance(disp_dict["Dimer"], float) else "k",
                 s=50,
                 marker="s",  # default_style_settings["marker"],
                 label="Dimer",
-                cmap=colormap,
-                norm=norm,
+                cmap=colormap if isinstance(disp_dict["Dimer"], float) else None,
+                norm=norm if isinstance(disp_dict["Dimer"], float) else None,
                 alpha=1,
             )
 
@@ -1360,54 +1315,34 @@ def plot_colorbar(
         ]:  # more than just Rattled
             if imported_indices:  # Exclude datapoints from other charge states
                 non_imported_sorted_indices = [
-                    i
-                    for i in range(len(sorted_distortions))
-                    if i not in imported_indices.values()
+                    i for i in range(len(sorted_distortions)) if i not in imported_indices.values()
                 ]
             else:
                 non_imported_sorted_indices = range(len(sorted_distortions))
 
             # Plot non-imported distortions
-            im = ax.scatter(  # Points for each distortion
-                [
-                    sorted_distortions[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                [
-                    sorted_energies[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                c=[
-                    sorted_disp[i]
-                    for i in non_imported_sorted_indices
-                    if isinstance(sorted_disp[i], float)
-                ],
-                ls="-",
-                s=50,
-                marker="o",
-                cmap=colormap,
-                norm=norm,
-                alpha=1,
-            )
-            ax.scatter(  # plot any datapoints where disp could not be determined as black
-                [
-                    sorted_distortions[i]
-                    for i in non_imported_sorted_indices
-                    if not isinstance(sorted_disp[i], float)
-                ],
-                [
-                    sorted_energies[i]
-                    for i in non_imported_sorted_indices
-                    if not isinstance(sorted_disp[i], float)
-                ],
-                c="k",
-                ls="-",
-                s=50,
-                marker="o",
-                alpha=1,
-            )
+            non_imported_distortion_indices_with_disp = [
+                i for i in non_imported_sorted_indices if isinstance(sorted_disp[i], float)
+            ]
+            non_imported_distortion_indices_without_disp = [
+                i for i in non_imported_sorted_indices if not isinstance(sorted_disp[i], float)
+            ]
+            for indices_list, color_map in [
+                (non_imported_distortion_indices_without_disp, False),
+                (non_imported_distortion_indices_with_disp, True),
+            ]:
+                if indices_list:
+                    path_col = ax.scatter(  # plot any datapoints with undetermined disp as black
+                        [sorted_distortions[i] for i in indices_list],
+                        [sorted_energies[i] for i in indices_list],
+                        c=[sorted_disp[i] for i in indices_list] if color_map else "k",
+                        ls="-",
+                        s=50,
+                        marker="o",
+                        cmap=colormap if color_map else None,
+                        norm=norm if color_map else None,
+                        alpha=1,
+                    )
             if len(non_imported_sorted_indices) > 1:  # more than one point
                 # Plot line connecting points
                 (line,) = ax.plot(
@@ -1425,18 +1360,16 @@ def plot_colorbar(
                 other_charges = len(
                     [  # number of other charge states whose distortions have been imported
                         list(energies_dict["distortions"].keys())[i].split("_")[-1]
-                        for i in imported_indices.keys()
+                        for i in imported_indices
                     ]
                 )
                 for i, j in zip(imported_indices.keys(), range(other_charges)):
-                    other_charge_state = int(
-                        list(energies_dict["distortions"].keys())[i].split("_")[-1]
-                    )
+                    other_charge_state = int(list(energies_dict["distortions"].keys())[i].split("_")[-1])
                     sorted_i = imported_indices[i]  # index for the sorted dicts
-                    ax.scatter(
+                    ax.scatter(  # plot any datapoints where disp could not be determined as black
                         np.array(keys)[i],
                         sorted_energies[sorted_i],
-                        c=sorted_disp[sorted_i],
+                        c=(sorted_disp[sorted_i] if isinstance(sorted_disp[sorted_i], float) else "k"),
                         edgecolors="k",
                         ls="-",
                         s=50,
@@ -1446,8 +1379,8 @@ def plot_colorbar(
                             j
                         ],  # different markers for different charge states
                         zorder=10,  # make sure it's on top of the other points
-                        cmap=colormap,
-                        norm=norm,
+                        cmap=(colormap if isinstance(sorted_disp[sorted_i], float) else None),
+                        norm=norm if isinstance(sorted_disp[sorted_i], float) else None,
                         alpha=1,
                         label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
                         f"charge state",
@@ -1470,17 +1403,15 @@ def plot_colorbar(
 
         # distortion_range is sorted_distortions range, including 0 if above/below this range
         distortion_range = (
-            min(sorted_distortions + (0,)),
-            max(sorted_distortions + (0,)),
+            min((*sorted_distortions, 0)),
+            max((*sorted_distortions, 0)),
         )
         # set xlim to distortion_range + 5% (matplotlib default padding), if distortion_range is
         # not zero (only rattled and unperturbed)
         if distortion_range[1] - distortion_range[0] > 0:
             ax.set_xlim(
-                distortion_range[0]
-                - 0.05 * (distortion_range[1] - distortion_range[0]),
-                distortion_range[1]
-                + 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[0] - 0.05 * (distortion_range[1] - distortion_range[0]),
+                distortion_range[1] + 0.05 * (distortion_range[1] - distortion_range[0]),
             )
 
         # Formatting of tick labels.
@@ -1488,36 +1419,39 @@ def plot_colorbar(
         # 2 if deltaE > 0.1 eV, otherwise 3.
         ax = _format_ticks(
             ax=ax,
-            energies_list=list(energies_dict["distortions"].values())
-            + [
+            energies_list=[
+                *list(energies_dict["distortions"].values()),
                 energies_dict["Unperturbed"],
             ],
         )
 
-        # reformat 'line' legend handle to include 'im' datapoint handle
+        # reformat 'line' legend handle to include 'path_col' datapoint handle
         handles, labels = ax.get_legend_handles_labels()
         # get handle and label that corresponds to line, if line present:
         if line:
-            line_handle, line_label = [
-                (handle, label)
-                for handle, label in zip(handles, labels)
-                if label == legend_label
-            ][0]
+            line_handle, line_label = next(
+                (handle, label) for handle, label in zip(handles, labels) if label == legend_label
+            )
             # remove line handle and label from handles and labels
             handles = [handle for handle in handles if handle != line_handle]
             labels = [label for label in labels if label != line_label]
             # add line handle and label to handles and labels, with datapoint handle
-            handles = [(im, line_handle)] + handles
-            labels = [line_label] + labels
+            handles = [(path_col, line_handle), *handles]
+            labels = [line_label, *labels]
 
-        plt.legend(
-            handles, labels, scatteryoffsets=[0.5], frameon=True, framealpha=0.3
-        ).set_zorder(
+        plt.legend(handles, labels, scatteryoffsets=[0.5], frameon=True, framealpha=0.3).set_zorder(
             100
         )  # make sure it's on top of the other points
 
         _ = _format_colorbar(
-            fig=fig, ax=ax, im=im, metric=metric, vmin=vmin, vmax=vmax, vmedium=vmedium
+            fig=fig,
+            ax=ax,
+            metric=metric,
+            vmin=vmin,
+            vmax=vmax,
+            vmedium=vmedium,
+            norm=norm,
+            cmap=colormap,
         )  # Colorbar formatting
 
     # Save plot?
@@ -1640,8 +1574,7 @@ def plot_datasets(
         elif len(colors) < len(datasets):
             if verbose:
                 warnings.warn(
-                    f"Insufficient colors provided for {len(datasets)} datasets. "
-                    "Using default colors."
+                    f"Insufficient colors provided for {len(datasets)} datasets. Using default colors."
                 )
             colors = _get_line_colors(number_of_colors=len(datasets))
         # Title and labels of axis
@@ -1664,9 +1597,7 @@ def plot_datasets(
     )
 
     # Plot data points for each dataset
-    unperturbed_energies = (
-        {}
-    )  # energies for unperturbed structure obtained with different methods
+    unperturbed_energies = {}  # energies for unperturbed structure obtained with different methods
 
     # all energies relative to the unperturbed energy of first dataset
     for dataset_number, dataset in enumerate(datasets):
@@ -1699,9 +1630,7 @@ def plot_datasets(
             if optional_style_settings:  # if set by user
                 if isinstance(optional_style_settings, list):
                     try:
-                        default_style_settings[key] = optional_style_settings[
-                            dataset_number
-                        ]
+                        default_style_settings[key] = optional_style_settings[dataset_number]
                     except IndexError:
                         default_style_settings[key] = optional_style_settings[
                             0
@@ -1715,11 +1644,9 @@ def plot_datasets(
             keys,
             sorted_distortions,
             sorted_energies,
-        ) = _format_datapoints_from_other_chargestates(
-            energies_dict=dataset, disp_dict=None
-        )
+        ) = _format_datapoints_from_other_chargestates(energies_dict=dataset, disp_dict=None)
         with plt.style.context(f"{MODULE_DIR}/shakenbreak.mplstyle"):
-            if "Rattled" in dataset["distortions"].keys():
+            if "Rattled" in dataset["distortions"]:
                 ax.scatter(  # Scatter plot for Rattled (1 datapoint)
                     0.0,
                     dataset["distortions"]["Rattled"],
@@ -1730,7 +1657,7 @@ def plot_datasets(
                 )
 
             # Plot Dimer
-            if "Dimer" in dataset["distortions"].keys():
+            if "Dimer" in dataset["distortions"]:
                 ax.scatter(  # Scatter plot for Rattled (1 datapoint)
                     0.0,
                     dataset["distortions"]["Dimer"],
@@ -1741,15 +1668,11 @@ def plot_datasets(
                 )
 
             if len(sorted_distortions) > 0 and [
-                key
-                for key in dataset["distortions"]
-                if (key != "Rattled" and key != "Dimer")
+                key for key in dataset["distortions"] if (key != "Rattled" and key != "Dimer")
             ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
-                        i
-                        for i in range(len(sorted_distortions))
-                        if i not in imported_indices.values()
+                        i for i in range(len(sorted_distortions)) if i not in imported_indices.values()
                     ]
                 else:
                     non_imported_sorted_indices = range(len(sorted_distortions))
@@ -1770,14 +1693,11 @@ def plot_datasets(
             if imported_indices:
                 other_charges = len(
                     [
-                        list(dataset["distortions"].keys())[i].split("_")[-1]
-                        for i in imported_indices
+                        list(dataset["distortions"].keys())[i].split("_")[-1] for i in imported_indices
                     ]  # number of other charge states whose distortions have been imported
                 )
                 for i, j in zip(imported_indices, range(other_charges)):
-                    other_charge_state = int(
-                        list(dataset["distortions"].keys())[i].split("_")[-1]
-                    )
+                    other_charge_state = int(list(dataset["distortions"].keys())[i].split("_")[-1])
                     ax.scatter(  # distortions from other charge states
                         np.array(keys)[i],
                         list(dataset["distortions"].values())[i],
@@ -1796,15 +1716,11 @@ def plot_datasets(
                         f"charge state",
                     )
 
-    datasets[0][
-        "Unperturbed"
-    ] = 0.0  # unperturbed energy of first dataset (our reference energy)
+    datasets[0]["Unperturbed"] = 0.0  # unperturbed energy of first dataset (our reference energy)
 
     # Plot Unperturbed point for every dataset, relative to the unperturbed energy of first dataset
     for key, value in unperturbed_energies.items():
-        if (
-            abs(value) > 0.1
-        ):  # Only plot if different energy from the reference Unperturbed
+        if abs(value) > 0.1:  # Only plot if different energy from the reference Unperturbed
             print(
                 f"Energies for unperturbed structures obtained with different methods "
                 f"({dataset_labels[key]}) differ by {value:.2f}. If testing different "
@@ -1832,7 +1748,15 @@ def plot_datasets(
         )
 
     # distortion_range is sorted_distortions range, including 0 if above/below this range
-    distortion_range = (min(sorted_distortions + (0,)), max(sorted_distortions + (0,)))
+    distortion_range = (
+        min((*sorted_distortions, 0)),
+        max(
+            (
+                *sorted_distortions,
+                0,
+            )
+        ),
+    )
     # set xlim to distortion_range + 5% (matplotlib default padding)
     if distortion_range[1] - distortion_range[0] > 0:
         ax.set_xlim(
@@ -1845,27 +1769,21 @@ def plot_datasets(
     # > 0.4 eV, 3 if E < 0.1 eV, 2 otherwise
     ax = _format_ticks(
         ax=ax,
-        energies_list=list(datasets[0]["distortions"].values())
-        + [
+        energies_list=[
+            *list(datasets[0]["distortions"].values()),
             datasets[0]["Unperturbed"],
         ],
     )
     # If several datasets, check min & max energy are included
     if len(datasets) > 1:
-        min_energy = min(
-            min(list(dataset["distortions"].values())) for dataset in datasets
-        )
-        max_energy = max(
-            max(list(dataset["distortions"].values())) for dataset in datasets
-        )
+        min_energy = min(min(list(dataset["distortions"].values())) for dataset in datasets)
+        max_energy = max(max(list(dataset["distortions"].values())) for dataset in datasets)
         ax.set_ylim(
             min_energy - 0.1 * (max_energy - min_energy),
             max_energy + 0.1 * (max_energy - min_energy),
         )
 
-    ax.legend(frameon=True, framealpha=0.3).set_zorder(
-        100
-    )  # show legend on top of all other datapoints
+    ax.legend(frameon=True, framealpha=0.3).set_zorder(100)  # show legend on top of all other datapoints
 
     if save_plot:  # Save plot?
         _save_plot(

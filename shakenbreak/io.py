@@ -7,7 +7,7 @@ import contextlib
 import datetime
 import os
 import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
 import ase
 from ase.atoms import Atoms
@@ -16,10 +16,6 @@ from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
 from pymatgen.core.units import Energy
 from pymatgen.io.ase import AseAtomsAdaptor
-
-if TYPE_CHECKING:
-    import pymatgen.core.periodic_table
-    import pymatgen.core.structure
 
 from shakenbreak import analysis
 
@@ -31,6 +27,7 @@ def parse_energies(
     path: Optional[str] = ".",
     code: Optional[str] = "vasp",
     filename: Optional[str] = "OUTCAR",
+    verbose: bool = False,
 ) -> None:
     """
     Parse final energy for all distortions present in the given defect
@@ -54,6 +51,9 @@ def parse_energies(
             (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
             Default to the ShakeNBreak default filenames.
+        verbose (:obj:`bool`):
+            If True, print information about renamed/saved-over files.
+            Defaults to False.
 
     Returns: energies_file path.
     """
@@ -71,7 +71,7 @@ def parse_energies(
             return None
 
     def sort_energies(defect_energies_dict):
-        """Order dict items by key (e.g. from -0.6 to 0 to +0.6)"""
+        """Order dict items by key (e.g. from -0.6 to 0 to +0.6)."""
         # sort distortions
         sorted_energies_dict = {
             "distortions": dict(
@@ -89,7 +89,7 @@ def parse_energies(
             sorted_energies_dict["Dimer"] = defect_energies_dict["Dimer"]
         return sorted_energies_dict
 
-    def save_file(energies, defect, path):
+    def save_file(energies, defect, path, verbose=False):
         """Save yaml file with final energies for each distortion."""
         # File to write energies to
         filename = f"{path}/{defect}/{defect}.yaml"
@@ -98,11 +98,12 @@ def parse_energies(
             old_file = loadfn(filename)
             if old_file != energies:
                 current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-                print(
-                    f"Moving old {filename} to "
-                    f"{filename.replace('.yaml', '')}_{current_datetime}.yaml "
-                    "to avoid overwriting"
-                )
+                if verbose:
+                    print(
+                        f"Moving old {filename} to "
+                        f"{filename.replace('.yaml', '')}_{current_datetime}.yaml "
+                        "to avoid overwriting"
+                    )
                 os.rename(
                     filename, f"{filename.replace('.yaml', '')}_{current_datetime}.yaml"
                 )  # Keep copy of old file
@@ -117,23 +118,17 @@ def parse_energies(
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
         if outcar:  # regrep faster than using Outcar/vasprun class
             with contextlib.suppress(IndexError):
-                energy = _match(
-                    outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)"
-                )[0][0][
+                energy = _match(outcar, r"entropy=.*energy\(sigma->0\)\s+=\s+([\d\-\.]+)")[0][0][
                     0
                 ]  # Energy of first match
-                converged = _match(
-                    outcar, "required accuracy"
-                )  # check if ionic relaxation converged
+                converged = _match(outcar, "required accuracy")  # check if ionic relaxation converged
             if not converged:
                 converged = _match(outcar, "considering this converged")
         return converged, energy, outcar
 
     def parse_espresso_energy(defect_dir, dist, energy, espresso_out):
         """Parse Quantum Espresso energy from espresso.out file."""
-        if os.path.join(
-            defect_dir, dist, "espresso.out"
-        ):  # Default SnB output filename
+        if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
             espresso_out = os.path.join(defect_dir, dist, "espresso.out")
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
             espresso_out = os.path.join(defect_dir, dist, filename)
@@ -152,13 +147,9 @@ def parse_energies(
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
             cp2k_out = os.path.join(defect_dir, dist, filename)
         if cp2k_out:
-            converged = _match(
-                cp2k_out, "GEOMETRY OPTIMIZATION COMPLETED"
-            )  # check if ionic
+            converged = _match(cp2k_out, "GEOMETRY OPTIMIZATION COMPLETED")  # check if ionic
             # relaxation is converged
-            energy_in_Ha = _match(
-                cp2k_out, r"Total energy:\s+([\d\-\.]+)"
-            )  # Energy of first
+            energy_in_Ha = _match(cp2k_out, r"Total energy:\s+([\d\-\.]+)")  # Energy of first
             # match in Hartree
             energy = float(Energy(energy_in_Ha[0][0][0], "Ha").to("eV"))
         return converged, energy, cp2k_out
@@ -166,9 +157,7 @@ def parse_energies(
     def parse_castep_energy(defect_dir, dist, energy, castep_out):
         """Parse CASTEP energy from .castep file."""
         converged = False
-        output_files = [
-            file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file
-        ]
+        output_files = [file for file in os.listdir(f"{defect_dir}/{dist}") if ".castep" in file]
         if output_files and os.path.exists(f"{defect_dir}/{dist}/{output_files[0]}"):
             castep_out = f"{defect_dir}/{dist}/{output_files[0]}"
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -179,9 +168,7 @@ def parse_energies(
             # https://www.tcm.phy.cam.ac.uk/castep/Geom_Opt/node20.html
             # and https://gitlab.mpcdf.mpg.de/nomad-lab/parser-castep/-/
             # blob/master/test/examples/TiO2-geom.castep
-            converged = _match(
-                castep_out, "Geometry optimization completed successfully."
-            )
+            converged = _match(castep_out, "Geometry optimization completed successfully.")
             energy = _match(castep_out, r"Final Total Energy\s+([\d\-\.]+)")[0][0][
                 0
             ]  # Energy of first match in eV
@@ -195,9 +182,7 @@ def parse_energies(
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
             aims_out = os.path.join(defect_dir, dist, filename)
         if aims_out:
-            converged = _match(
-                aims_out, "converged."
-            )  # check if ionic relaxation is converged
+            converged = _match(aims_out, "converged.")  # check if ionic relaxation is converged
             # Convergence string deduced from:
             # https://fhi-aims-club.gitlab.io/tutorials/basics-of-running-fhi-aims/3-Periodic-Systems/
             # and https://gitlab.com/fhi-aims-club/tutorials/basics-of-running-fhi-aims/-/
@@ -210,14 +195,10 @@ def parse_energies(
                 energy = energy[0][0][0]  # Energy of first match in eV
         return converged, energy, aims_out
 
-    energies = {
-        "distortions": {}
-    }  # maps each distortion to the energy of the optimised structure
+    energies = {"distortions": {}}  # maps each distortion to the energy of the optimised structure
 
     if defect == os.path.basename(os.path.normpath(path)) and not [
-        dir
-        for dir in path
-        if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
+        dir for dir in path if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
     ]:  # if `defect` is in end of `path` and `path` doesn't have a subdirectory called `defect`
         # then remove defect from end of path
         path = os.path.dirname(path)
@@ -225,9 +206,7 @@ def parse_energies(
     defect_dir = f"{path}/{defect}"
     if not os.path.isdir(defect_dir):
         orig_defect_name = defect
-        defect = defect.replace(
-            "+", ""
-        )  # try removing '+' from defect name, old format
+        defect = defect.replace("+", "")  # try removing '+' from defect name, old format
         defect_dir = f"{path}/{defect}"  # try removing '+' from defect name, old format
 
         if not os.path.isdir(defect_dir):
@@ -235,7 +214,7 @@ def parse_energies(
                 f"Defect folder '{orig_defect_name}' not found in '{path}'. Please check these folders "
                 f"and paths."
             )
-            return
+            return None
 
     dist_dirs = [
         dir
@@ -269,30 +248,20 @@ def parse_energies(
         energy = None
         converged = False
         if code.lower() == "vasp":
-            converged, energy, outcar = parse_vasp_energy(
-                defect_dir, dist, energy, outcar
-            )
+            converged, energy, outcar = parse_vasp_energy(defect_dir, dist, energy, outcar)
         elif code.lower() in [
             "espresso",
             "quantum_espresso",
             "quantum-espresso",
             "quantumespresso",
         ]:
-            converged, energy, outcar = parse_espresso_energy(
-                defect_dir, dist, energy, outcar
-            )
+            converged, energy, outcar = parse_espresso_energy(defect_dir, dist, energy, outcar)
         elif code.lower() == "cp2k":
-            converged, energy, outcar = parse_cp2k_energy(
-                defect_dir, dist, energy, outcar
-            )
+            converged, energy, outcar = parse_cp2k_energy(defect_dir, dist, energy, outcar)
         elif code.lower() == "castep":
-            converged, energy, outcar = parse_castep_energy(
-                defect_dir, dist, energy, outcar
-            )
+            converged, energy, outcar = parse_castep_energy(defect_dir, dist, energy, outcar)
         elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
-            converged, energy, outcar = parse_fhi_aims_energy(
-                defect_dir, dist, energy, outcar
-            )
+            converged, energy, outcar = parse_fhi_aims_energy(defect_dir, dist, energy, outcar)
 
         if analysis._format_distortion_names(dist) != "Label_not_recognized":
             dist_name = analysis._format_distortion_names(dist)
@@ -312,20 +281,14 @@ def parse_energies(
             # check if energy not found, but was previously parsed, then add to dict
             if dist_name in prev_energies_dict:
                 energies[dist_name] = prev_energies_dict[dist_name]
-            elif (
-                "distortions" in prev_energies_dict
-                and dist_name in prev_energies_dict["distortions"]
-            ):
-                energies["distortions"][dist_name] = prev_energies_dict["distortions"][
-                    dist_name
-                ]
+            elif "distortions" in prev_energies_dict and dist_name in prev_energies_dict["distortions"]:
+                energies["distortions"][dist_name] = prev_energies_dict["distortions"][dist_name]
             else:
                 warnings.warn(f"No output file in {dist} directory")
 
     if energies["distortions"]:
         if "Unperturbed" in energies and all(
-            value - energies["Unperturbed"] > 0.1
-            for value in energies["distortions"].values()
+            value - energies["Unperturbed"] > 0.1 for value in energies["distortions"].values()
         ):
             warnings.warn(
                 f"All distortions parsed for {defect} are >0.1 eV higher energy than unperturbed, "
@@ -334,17 +297,14 @@ def parse_energies(
                 f"often this is the result of an unreasonable charge state). If both checks pass, "
                 f"you likely need to adjust the `stdev` rattling parameter (can occur for "
                 f"hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials. – This "
-                f"often indicates a complex PES with multiple minima, thus energy-lowering distortions "
-                f"particularly likely, so important to test with reduced `stdev`!"
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
+                f"This often indicates a complex PES with multiple minima, thus energy-lowering "
+                f"distortions particularly likely, so important to test with reduced `stdev`!"
             )
 
         elif (
             "Unperturbed" in energies
-            and all(
-                value - energies["Unperturbed"] < -0.1
-                for value in energies["distortions"].values()
-            )
+            and all(value - energies["Unperturbed"] < -0.1 for value in energies["distortions"].values())
             and len(energies["distortions"]) > 2
         ):
             warnings.warn(
@@ -391,10 +351,6 @@ def parse_energies(
                 f"are correct, check calculations have converged, and that distortion subfolders match "
                 f"ShakeNBreak naming (e.g. Bond_Distortion_xxx, Rattled, Unperturbed)"
             )
-            if "Unperturbed" in energies:
-                # TODO: remove next two lines
-                energies = sort_energies(energies)
-                save_file(energies, defect, path)
 
     # if any entries in prev_energies_dict not in energies_dict, add to energies_dict and
     # warn user about output files not being parsed for this entry
@@ -417,7 +373,7 @@ def parse_energies(
 
     energies = sort_energies(energies)
     if energies and energies != {"distortions": {}}:
-        save_file(energies, defect, path)
+        save_file(energies, defect, path, verbose=verbose)
 
     return energies_file
 
@@ -474,23 +430,18 @@ def read_espresso_structure(
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
-        with open(filename, "r", encoding="utf-8") as f:
+        with open(filename, encoding="utf-8") as f:
             file_content = f.read()
     else:
         warnings.warn(
-            f"{filename} file doesn't exist, storing as 'Not converged'. "
-            f"Check path & relaxation"
+            f"{filename} file doesn't exist, storing as 'Not converged'. Check path & relaxation"
         )
         structure = "Not converged"
     try:
         if "Begin final coordinates" in file_content:
-            file_content = file_content.split("Begin final coordinates")[
-                -1
-            ]  # last geometry
+            file_content = file_content.split("Begin final coordinates")[-1]  # last geometry
         if "End final coordinates" in file_content:
-            file_content = file_content.split("End final coordinates")[
-                0
-            ]  # last geometry
+            file_content = file_content.split("End final coordinates")[0]  # last geometry
         # Parse cell parameters and atomic positions
         cell_lines = [
             line
@@ -502,29 +453,17 @@ def read_espresso_structure(
         atomic_positions = file_content.split("ATOMIC_POSITIONS (angstrom)")[1]
         # Cell parameters
         cell_lines_processed = [
-            [float(number) for number in line.split()]
-            for line in cell_lines
-            if len(line.split()) == 3
+            [float(number) for number in line.split()] for line in cell_lines if len(line.split()) == 3
         ]
         # Atomic positions
         atomic_positions_processed = [
-            [entry for entry in line.split()]
-            for line in atomic_positions.split("\n")
-            if len(line.split()) >= 4
+            line.split() for line in atomic_positions.split("\n") if len(line.split()) >= 4
         ]
-        coordinates = [
-            [float(entry) for entry in line[1:4]] for line in atomic_positions_processed
-        ]
-        symbols = [
-            entry[0]
-            for entry in atomic_positions_processed
-            if entry != "" and entry != " " and entry != "  "
-        ]
+        coordinates = [[float(entry) for entry in line[1:4]] for line in atomic_positions_processed]
+        symbols = [entry[0] for entry in atomic_positions_processed if entry not in ["", " ", "  "]]
         # Check parsing is ok
         for entry in coordinates:
-            assert (
-                len(entry) == 3
-            )  # Encure 3 numbers (xyz) are parsed from coordinates section
+            assert len(entry) == 3  # Encure 3 numbers (xyz) are parsed from coordinates section
         assert len(symbols) == len(coordinates)  # Same number of atoms and coordinates
         atoms = Atoms(
             symbols=symbols,
@@ -559,21 +498,20 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, st
         :obj:`Structure`:
             `pymatgen` Structure object
     """
-    if os.path.exists(filename):
-        try:
-            aaa = AseAtomsAdaptor()
-            atoms = ase.io.read(filename=filename, format=format)
-            structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure()  # Sort sites by
-            # electronegativity
-        except Exception:
-            warnings.warn(
-                f"Problem parsing structure from: {filename}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            structure = "Not converged"
-    else:
+    if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
+    try:
+        aaa = AseAtomsAdaptor()
+        atoms = ase.io.read(filename=filename, format=format)
+        structure = aaa.get_structure(atoms)
+        structure = structure.get_sorted_structure()  # Sort sites by
+        # electronegativity
+    except Exception:
+        warnings.warn(
+            f"Problem parsing structure from: {filename}, storing as 'Not "
+            f"converged'. Check file & relaxation"
+        )
+        structure = "Not converged"
     return structure
 
 
@@ -592,24 +530,23 @@ def read_cp2k_structure(
         :obj:`Structure`:
             `pymatgen` Structure object
     """
-    if os.path.exists(filename):
-        try:
-            aaa = AseAtomsAdaptor()
-            atoms = ase.io.read(
-                filename=filename,
-                format="cp2k-restart",
-            )
-            structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure()  # Sort sites by
-            # electronegativity
-        except Exception:
-            warnings.warn(
-                f"Problem parsing structure from: {filename}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            structure = "Not converged"
-    else:
+    if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
+    try:
+        aaa = AseAtomsAdaptor()
+        atoms = ase.io.read(
+            filename=filename,
+            format="cp2k-restart",
+        )
+        structure = aaa.get_structure(atoms)
+        structure = structure.get_sorted_structure()  # Sort sites by
+        # electronegativity
+    except Exception:
+        warnings.warn(
+            f"Problem parsing structure from: {filename}, storing as 'Not "
+            f"converged'. Check file & relaxation"
+        )
+        structure = "Not converged"
     return structure
 
 
@@ -628,24 +565,23 @@ def read_castep_structure(
         :obj:`Structure`:
             `pymatgen` Structure object
     """
-    if os.path.exists(filename):
-        try:
-            aaa = AseAtomsAdaptor()
-            atoms = ase.io.read(
-                filename=filename,
-                format="castep-castep",
-            )
-            structure = aaa.get_structure(atoms)
-            structure = structure.get_sorted_structure()  # Sort sites by
-            # electronegativity
-        except Exception:
-            warnings.warn(
-                f"Problem parsing structure from: {filename}, storing as 'Not "
-                f"converged'. Check file & relaxation"
-            )
-            structure = "Not converged"
-    else:
+    if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
+    try:
+        aaa = AseAtomsAdaptor()
+        atoms = ase.io.read(
+            filename=filename,
+            format="castep-castep",
+        )
+        structure = aaa.get_structure(atoms)
+        structure = structure.get_sorted_structure()  # Sort sites by
+        # electronegativity
+    except Exception:
+        warnings.warn(
+            f"Problem parsing structure from: {filename}, storing as 'Not "
+            f"converged'. Check file & relaxation"
+        )
+        structure = "Not converged"
     return structure
 
 
@@ -734,15 +670,15 @@ def parse_qe_input(path: str) -> dict:
         "ATOMIC_FORCES",
         "SOLVENTS",
     ]
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
-    for line in lines:
-        line = line.strip().partition("#")[0]  # ignore in-line comments
-        if line.startswith("&") or any([sec in line for sec in sections]):
+    for raw_line in lines:
+        line = raw_line.strip().partition("#")[0]  # ignore in-line comments
+        if line.startswith("&") or any(sec in line for sec in sections):
             section = line.split()[0].replace("&", "")
             params[section] = {}
-        elif line.startswith("#") or line.startswith("!") or line.startswith("/"):
+        elif line.startswith(("#", "!", "/")):
             continue
         elif "=" in line:
             key, value = line.split("=")
@@ -758,9 +694,7 @@ def parse_qe_input(path: str) -> dict:
                 value.replace('"', "")
             params[section][key.strip()] = value
         elif len(line.split()) > 1:
-            key, value = line.split()[0], " ".join(
-                [str(val) for val in line.split()[1:]]
-            )
+            key, value = line.split()[0], " ".join([str(val) for val in line.split()[1:]])
             params[section][key.strip()] = value
     # Remove structure info (if present), as will be re-written with distorted structures
     for section in [
@@ -770,7 +704,7 @@ def parse_qe_input(path: str) -> dict:
         "CELL_PARAMETERS",
     ]:
         params.pop(section, None)
-    if "SYSTEM" in params.keys():
+    if "SYSTEM" in params:
         for key in ["celldm(1)", "nat", "ntyp", "ibrav"]:
             params["SYSTEM"].pop(key, None)
     return params
@@ -789,12 +723,12 @@ def parse_fhi_aims_input(path: str) -> dict:
     """
     if not os.path.exists(path):
         raise FileNotFoundError(f"File {path} does not exist!")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         lines = f.readlines()
     params = {}
-    for line in lines:
-        line = line.strip().partition("#")[0]  # ignore in-line comments
-        if line.startswith("#") or line.startswith("!") or line.startswith("/"):
+    for raw_line in lines:
+        line = raw_line.strip().partition("#")[0]  # ignore in-line comments
+        if line.startswith(("#", "!", "/")):
             continue
         if len(line.split()) > 1:
             if len(line.split()) > 2:
@@ -802,9 +736,7 @@ def parse_fhi_aims_input(path: str) -> dict:
                 # Convent numeric values to float
                 # (necessary when feeding into the ASE calculator)
                 for i in range(len(values)):
-                    with contextlib.suppress(
-                        Exception
-                    ):  # Convent numeric values to float
+                    with contextlib.suppress(Exception):  # Convent numeric values to float
                         values[i] = float(values[i])
             else:
                 key, values = line.split()[0], line.split()[1]

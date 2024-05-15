@@ -27,12 +27,12 @@ workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ sty
 
     .. NOTE::
         Alternatively, if you prefer not to use ``pre-commit hooks``, you can manually run the following in the **correct sequence**
-        on your local machine. From the ``shakenbreak`` top directory, run `isort <https://pycqa.github.io/isort/>`_ to sort and format your imports, followed by
+        on your local machine. From the ``shakenbreak`` top directory, run `ruff --fix <https://docs.astral.sh/ruff/>`_ to lint and format, followed by
         `black <https://black.readthedocs.io/en/stable/index.html>`_, which will automatically reformat the code to ``PEP8`` conventions:
 
         .. code:: bash
 
-            $ isort . --profile black
+            $ ruff --fix
             $ black  --diff --color shakenbreak
 
         Then run `pycodestyle <https://pycodestyle.pycqa.org/en/latest/>`_ to check the docstrings,
