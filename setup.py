@@ -1,4 +1,4 @@
-"""This is a setup.py script to install ShakeNBreak"""
+"""This is a setup.py script to install ShakeNBreak."""
 
 import os
 import warnings
@@ -32,9 +32,7 @@ def _install_custom_font():
 
         # Copy the font file to matplotlib's True Type font directory
         fonts_dir = f"{path_to_file}/shakenbreak/"
-        ttf_fonts = [
-            file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name
-        ]
+        ttf_fonts = [file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name]
         try:
             for font in ttf_fonts:  # must be in ttf format for matplotlib
                 old_path = os.path.join(fonts_dir, font)
@@ -104,7 +102,7 @@ class PostDevelopCommand(develop):
 
 
 class CustomEggInfoCommand(egg_info):
-    """Post-installation"""
+    """Post-installation."""
 
     def run(self):
         """
@@ -120,20 +118,20 @@ class CustomEggInfoCommand(egg_info):
 def package_files(directory):
     """Include package data."""
     paths = []
-    for path, directories, filenames in os.walk(directory):
+    for path, _dir, filenames in os.walk(directory):
         paths.extend(os.path.join("..", path, filename) for filename in filenames)
     return paths
 
 
 input_files = package_files("SnB_input_files/")
 
-with open("README.md", "r", encoding="utf-8") as file:
+with open("README.md", encoding="utf-8") as file:
     long_description = file.read()
 
 
 setup(
     name="shakenbreak",
-    version="3.3.1",
+    version="3.3.3",
     description="Package to generate and analyse distorted defect structures, in order to "
     "identify ground-state and metastable defect configurations.",
     long_description=long_description,
@@ -194,7 +192,7 @@ setup(
     },
     # Specify any non-python files to be distributed with the package
     package_data={
-        "shakenbreak": ["shakenbreak/*"] + input_files,
+        "shakenbreak": ["shakenbreak/*", *input_files],
     },
     include_package_data=True,
     # Specify the custom installation class

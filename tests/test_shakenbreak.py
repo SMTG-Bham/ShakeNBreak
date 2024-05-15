@@ -12,6 +12,7 @@ from pymatgen.io.vasp.inputs import UnknownPotcarWarning
 
 from shakenbreak import energy_lowering_distortions, input, io, plotting
 from test_energy_lowering_distortions import assert_not_called_with
+from test_plotting import custom_mpl_image_compare
 
 Mock.assert_not_called_with = assert_not_called_with
 
@@ -523,12 +524,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict[defect_dir]
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir="data/remote_baseline_plots",
-        filename="vac_1_Cd_-2.png",
-        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-    )
+    @custom_mpl_image_compare("vac_1_Cd_-2.png")
     def test_plot_fake_vac_1_Cd_m2(self):
         return self.parse_and_generate_defect_plot("vac_1_Cd_-2")
 
@@ -552,12 +548,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
     def test_plot_fake_vac_1_Cd_plus2_old_SnB_naming(self):
         return self.parse_and_generate_defect_plot("vac_1_Cd_2")
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir="data/remote_baseline_plots",
-        filename="vac_1_Cd_-1.png",
-        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-    )
+    @custom_mpl_image_compare("vac_1_Cd_-1.png")
     def test_plot_fake_vac_1_Cd_m1(self):
         defect_dir = "vac_1_Cd_-1"
         if_present_rm(defect_dir)
@@ -597,12 +588,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_-1"]
 
-    @pytest.mark.mpl_image_compare(
-        baseline_dir="data/remote_baseline_plots",
-        filename="vac_1_Cd_0.png",
-        style=f"{file_path}/../shakenbreak/shakenbreak.mplstyle",
-        savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-    )
+    @custom_mpl_image_compare("vac_1_Cd_0.png")
     def test_plot_fake_vac_1_Cd_0(self):
         defect_dir = "vac_1_Cd_0"
         if_present_rm(defect_dir)

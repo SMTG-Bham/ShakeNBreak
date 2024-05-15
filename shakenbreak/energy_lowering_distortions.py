@@ -35,20 +35,18 @@ def _format_distortion_directory_name(
         # if a string but not Unperturbed or Rattled, add "Bond_Distortion_" to the start
         distorted_distortion = f"Bond_Distortion_{distorted_distortion}"
 
-    formatted_distorted_charge = (
-        f"{'+' if distorted_charge > 0 else ''}{distorted_charge}"
-    )
+    formatted_distorted_charge = f"{'+' if distorted_charge > 0 else ''}{distorted_charge}"
 
     if isinstance(distorted_distortion, str) and "_from_" not in distorted_distortion:
         return f"{output_path}/{defect_species}/{distorted_distortion}_from_{formatted_distorted_charge}"
         # don't add "Bond_Distortion_" for "Unperturbed" or "Rattled"
-    elif isinstance(distorted_distortion, str):
+    if isinstance(distorted_distortion, str):
         return f"{output_path}/{defect_species}/{distorted_distortion}"
-    else:
-        return (
-            f"{output_path}/{defect_species}/Bond_Distortion_"
-            f"{round(distorted_distortion * 100, 1) + 0}%_from_{formatted_distorted_charge}"
-        )
+
+    return (
+        f"{output_path}/{defect_species}/Bond_Distortion_"
+        f"{round(distorted_distortion * 100, 1) + 0}%_from_{formatted_distorted_charge}"
+    )
 
 
 def read_defects_directories(output_path: str = "./") -> dict:
@@ -65,18 +63,11 @@ def read_defects_directories(output_path: str = "./") -> dict:
         :obj:`dict`:
             Dictionary mapping defect names to a list of its charge states.
     """
-    list_subdirectories = list(
-        next(os.walk(output_path))[1]
-    )  # Only subdirectories in current directory
-    for i in list(
-        list_subdirectories
-    ):  # need to make copy of list when iterating over and
-        # removing elements
+    list_subdirectories = list(next(os.walk(output_path))[1])  # Only subdirectories in current directory
+    for i in list_subdirectories.copy():  # make copy of list for iterating over and removing elements
         try:
             formatted_name = format_defect_name(i, include_site_info_in_name=False)
-            if (
-                formatted_name is None
-            ):  # defect folder name not recognised, remove from list
+            if formatted_name is None:  # defect folder name not recognised, remove from list
                 list_subdirectories.remove(i)
         except ValueError:  # defect folder name not recognised, remove from list
             list_subdirectories.remove(i)
@@ -144,6 +135,7 @@ def _compare_distortion(
             order to consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+            (Default: False)
 
     Returns:
         :obj:`dict`
@@ -174,7 +166,7 @@ def _compare_distortion(
     }
 
     if matching_distortion_dict:  # if it matches _any_ other distortion
-        index = list(matching_distortion_dict.keys())[0]  # should only be one
+        index = next(iter(matching_distortion_dict.keys()))  # should only be one
         if charge not in low_energy_defects[defect][index]["charges"]:
             # only print message if charge state not already stored (this can happen when using
             # the --metastable option with small noise in the energies)
@@ -226,7 +218,7 @@ def _prune_dict_across_charges(
     Screen through defects to check if any lower-energy distorted structures
     were already found with/without bond distortions for other charge states
     (i.e. found but higher energy, found but also with unperturbed, found
-    but with energy lowering less than min_e_diff etc)
+    but with energy lowering less than min_e_diff etc).
 
     Args:
         low_energy_defects (dict):
@@ -253,36 +245,34 @@ def _prune_dict_across_charges(
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
+        verbose (:obj:`bool`):
+            Whether to print verbose information about parsed defect
+            structures for energy-lowering distortions, if found.
+            (Default: False)
 
     Returns:
         :obj:`dict`
     """
     for defect, distortion_list in low_energy_defects.items():
         for distortion_dict in distortion_list:
-            for charge in list(
-                set(defect_pruning_dict[defect]) - set(distortion_dict["charges"])
-            ):
+            charges_set = set(distortion_dict["charges"])
+            for charge in set(defect_pruning_dict[defect]) - charges_set:
                 imported_groundstates = [
                     gs_distortion
                     for gs_distortion in distortion_dict["bond_distortions"]
                     if isinstance(gs_distortion, str) and "_from_" in gs_distortion
                 ]
                 orig_charges_from_imported_groundstates = [
-                    int(gs_distortion.split("_from_")[-1])
-                    for gs_distortion in imported_groundstates
+                    int(gs_distortion.split("_from_")[-1]) for gs_distortion in imported_groundstates
                 ]
                 # skip if groundstate is from an imported distortion, from this charge state
                 if charge in orig_charges_from_imported_groundstates:
                     continue
 
                 # charges in defect_pruning_dict that aren't already in this distortion entry
-                defect_species_snb_name = (
-                    f"{defect}_{'+' if charge > 0 else ''}{charge}"
-                )
+                defect_species_snb_name = f"{defect}_{'+' if charge > 0 else ''}{charge}"
                 for i in ["+", "", "+"]:  # back to SnB name with "+" if all fail
-                    defect_species = defect_species_snb_name.replace(
-                        "+", i
-                    )  # try with and without '+'
+                    defect_species = defect_species_snb_name.replace("+", i)  # try with and without '+'
                     comparison_results = compare_struct_to_distortions(
                         distortion_dict["structures"][0],
                         defect_species,
@@ -381,7 +371,7 @@ def get_energy_lowering_distortions(
         verbose (:obj:`bool`):
             Whether to print verbose information about parsed defect
             structures for energy-lowering distortions, if found.
-            (Default: True)
+            (Default: False)
         write_input_files (:obj:`bool`):
             Whether to write input files for the identified distortions
             (Default: False)
@@ -420,9 +410,7 @@ def get_energy_lowering_distortions(
     if not defect_charges_dict:
         # defect_charges_dict maps defect_name to list of charge states
         defect_charges_dict = read_defects_directories(output_path=output_path)
-    defect_pruning_dict = copy.deepcopy(
-        defect_charges_dict
-    )  # defects and charge states to analyse
+    defect_pruning_dict = copy.deepcopy(defect_charges_dict)  # defects and charge states to analyse
 
     # later comparison and pruning against other charge states
     for defect in defect_charges_dict:
@@ -436,13 +424,11 @@ def get_energy_lowering_distortions(
 
             energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
             with warnings.catch_warnings():
-                if os.path.exists(energies_file) or os.path.exists(
-                    energies_file.replace("+", "")
-                ):
+                if os.path.exists(energies_file) or os.path.exists(energies_file.replace("+", "")):
                     # ignore parsing warnings in case energies already parsed and output files deleted,
                     # _only_ if energies file already exists
                     warnings.simplefilter("ignore", category=UserWarning)
-                energies_file = io.parse_energies(defect_species, output_path, code)
+                energies_file = io.parse_energies(defect_species, output_path, code, verbose=verbose)
                 defect_species = energies_file.rsplit("/", 1)[-1].replace(
                     ".yaml", ""
                 )  # in case '+' removed
@@ -666,7 +652,7 @@ def compare_struct_to_distortions(
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
             Path to directory with your distorted defect calculations (to
-            calculate structure comparisons – needs code output/structure
+            calculate structure comparisons -- needs code output/structure
             files to parse the structures).
             (Default is current directory = "./")
         code (:obj:`str`, optional):
@@ -686,6 +672,7 @@ def compare_struct_to_distortions(
             orderto consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+            (Default: False)
 
     Returns:
         :obj:`tuple`:
@@ -729,8 +716,7 @@ def compare_struct_to_distortions(
 
     if not matching_sub_df.empty:  # if there are any matches
         unperturbed_df = matching_sub_df[
-            matching_sub_df["Bond Distortion"]
-            == "Unperturbed"  # if present, otherwise empty
+            matching_sub_df["Bond Distortion"] == "Unperturbed"  # if present, otherwise empty
         ]
         rattled_df = matching_sub_df[
             matching_sub_df["Bond Distortion"].apply(lambda x: "Rattled" in str(x))
@@ -750,9 +736,7 @@ def compare_struct_to_distortions(
             matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, str))
         ]
         imported_sorted_distorted_df = string_vals_sorted_distorted_df[
-            string_vals_sorted_distorted_df["Bond Distortion"].apply(
-                lambda x: "_from_" in x
-            )
+            string_vals_sorted_distorted_df["Bond Distortion"].apply(lambda x: "_from_" in x)
         ]
 
         imported_sorted_distorted_float_df = imported_sorted_distorted_df.copy()
@@ -761,15 +745,11 @@ def compare_struct_to_distortions(
             # needs to be done this way because 'key' in pd.sort_values()
             # needs to be vectorised...
             # if '%' in key then convert to float, else convert to 0 (for Rattled or Unperturbed)
-            imported_sorted_distorted_float_df[
+            imported_sorted_distorted_float_df["Bond Distortion"] = imported_sorted_distorted_df[
                 "Bond Distortion"
-            ] = imported_sorted_distorted_df["Bond Distortion"].apply(
-                lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0
-            )
-            imported_sorted_distorted_float_df = (
-                imported_sorted_distorted_float_df.sort_values(
-                    by="Bond Distortion", key=abs
-                )
+            ].apply(lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0)
+            imported_sorted_distorted_float_df = imported_sorted_distorted_float_df.sort_values(
+                by="Bond Distortion", key=abs
             )
 
         # first unperturbed, then rattled, then dimer, then distortions sorted by
@@ -784,9 +764,7 @@ def compare_struct_to_distortions(
             ]
         )
 
-        struc_key = sorted_matching_df["Bond Distortion"].iloc[
-            0
-        ]  # first matching structure
+        struc_key = sorted_matching_df["Bond Distortion"].iloc[0]  # first matching structure
 
         if struc_key == "Unperturbed":
             return (  # T/F, matching structure, energy_diff, distortion factor
@@ -795,23 +773,12 @@ def compare_struct_to_distortions(
                 defect_energies_dict[struc_key],
                 struc_key,
             )
-        else:
-            # check if struc_key is in defect_structures_dict (corresponding to match in
-            # unperturbed_df, rattled_df or sorted_distorted_df but not
-            # imported_sorted_distorted_df
-            # as keys have been reformatted to floats rather than strings for this)
-            if struc_key in defect_structures_dict:
-                return (  # T/F, matching structure, energy_diff, distortion factor
-                    True,
-                    defect_structures_dict[struc_key],
-                    defect_energies_dict["distortions"][struc_key],
-                    struc_key,
-                )
 
-            # else struc_key corresponds to reformatted float-from-string from imported distortion
-            struc_key = imported_sorted_distorted_df["Bond Distortion"].iloc[
-                0
-            ]  # first matching structure
+        # check if struc_key is in defect_structures_dict (corresponding to match in
+        # unperturbed_df, rattled_df or sorted_distorted_df but not
+        # imported_sorted_distorted_df
+        # as keys have been reformatted to floats rather than strings for this)
+        if struc_key in defect_structures_dict:
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
                 defect_structures_dict[struc_key],
@@ -819,20 +786,29 @@ def compare_struct_to_distortions(
                 struc_key,
             )
 
-    else:  # no matches
-        return (
-            False,
-            None,
-            None,
-            None,
-        )  # T/F, matching structure, energy_diff, distortion factor
+        # else struc_key corresponds to reformatted float-from-string from imported distortion
+        struc_key = imported_sorted_distorted_df["Bond Distortion"].iloc[0]  # first matching structure
+        return (  # T/F, matching structure, energy_diff, distortion factor
+            True,
+            defect_structures_dict[struc_key],
+            defect_energies_dict["distortions"][struc_key],
+            struc_key,
+        )
+
+    # no matches
+    return (
+        False,
+        None,
+        None,
+        None,
+    )  # T/F, matching structure, energy_diff, distortion factor
 
 
 def write_retest_inputs(
     low_energy_defects: dict,
     output_path: str = ".",
     code: str = "vasp",
-    input_filename: str = None,
+    input_filename: Optional[str] = None,
 ) -> None:
     """
     Create folders with relaxation input files for testing the low-energy
@@ -908,9 +884,7 @@ def write_retest_inputs(
                 print(f"Writing low-energy distorted structure to {distorted_dir}")
 
                 if not os.path.exists(f"{output_path}/{defect_species}"):
-                    print(
-                        f"Directory {output_path}/{defect_species} not found, creating..."
-                    )
+                    print(f"Directory {output_path}/{defect_species} not found, creating...")
                     os.mkdir(f"{output_path}/{defect_species}")
                 os.mkdir(distorted_dir)
 
@@ -984,9 +958,7 @@ def _copy_vasp_files(
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
             for filename in ["INCAR", "KPOINTS", "POTCAR"]:
                 if (
-                    os.path.exists(
-                        f"{output_path}/{defect_species}/{subfolder}/{filename}"
-                    )
+                    os.path.exists(f"{output_path}/{defect_species}/{subfolder}/{filename}")
                     and not file_dict[filename]
                 ):
                     shutil.copyfile(
@@ -1041,15 +1013,12 @@ def _copy_espresso_files(
     else:
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-            if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
-            ):
+            if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/{input_filename}"):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             with open(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/"
-                f"{input_filename}"
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}"
             ) as f:
                 params = f.read()  # Read input parameters
             # Write distorted structure in QE format, to then update input file
@@ -1104,15 +1073,12 @@ def _copy_cp2k_files(
     else:  # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-            if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
-            ):
+            if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/{input_filename}"):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}"
-                f"/{input_filename}",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
                 f"{distorted_dir}/{input_filename}",
             )
 
@@ -1150,15 +1116,12 @@ def _copy_castep_files(
     else:  # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-            if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
-            ):
+            if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/{input_filename}"):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}"
-                f"/{input_filename}",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
                 f"{distorted_dir}/{input_filename}",
             )
 
@@ -1198,15 +1161,12 @@ def _copy_fhi_aims_files(
     else:  # Check of input file present in the other distortion subfolders
         subfolders_with_input_files = []
         for subfolder in os.listdir(f"{output_path}/{defect_species}"):
-            if os.path.exists(
-                f"{output_path}/{defect_species}/{subfolder}/{input_filename}"
-            ):
+            if os.path.exists(f"{output_path}/{defect_species}/{subfolder}/{input_filename}"):
                 subfolders_with_input_files.append(subfolder)
                 break
         if len(subfolders_with_input_files) > 0:
             shutil.copyfile(
-                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}"
-                f"/{input_filename}",
+                f"{output_path}/{defect_species}/{subfolders_with_input_files[0]}/{input_filename}",
                 f"{distorted_dir}/{input_filename}",
             )
 
@@ -1222,7 +1182,7 @@ def _copy_fhi_aims_files(
 def write_groundstate_structure(
     all: bool = True,
     output_path: str = ".",
-    groundstate_folder: str = None,
+    groundstate_folder: Optional[str] = None,
     groundstate_filename: str = "groundstate_POSCAR",
     structure_filename: str = "CONTCAR",
     verbose: bool = False,
@@ -1256,6 +1216,7 @@ def write_groundstate_structure(
             (Default: "CONTCAR")
         verbose (:obj:`bool`):
             Whether to print additional information about the generated folders.
+            (Default: False)
 
     Returns:
         None
@@ -1274,16 +1235,12 @@ def write_groundstate_structure(
 
         energies_file = f"{output_path}/{defect_species}/{defect_species}.yaml"
         with warnings.catch_warnings():
-            if os.path.exists(energies_file) or os.path.exists(
-                energies_file.replace("+", "")
-            ):
+            if os.path.exists(energies_file) or os.path.exists(energies_file.replace("+", "")):
                 # ignore parsing warnings in case energies already parsed and output files deleted,
                 # _only_ if energies file already exists
                 warnings.simplefilter("ignore", category=UserWarning)
-            energies_file = io.parse_energies(defect_species, output_path)
-            defect_species = energies_file.rsplit("/", 1)[-1].replace(
-                ".yaml", ""
-            )  # in case '+' removed
+            energies_file = io.parse_energies(defect_species, output_path, verbose=verbose)
+            defect_species = energies_file.rsplit("/", 1)[-1].replace(".yaml", "")  # in case '+' removed
 
         if energies_file is None:
             warnings.warn(
@@ -1293,16 +1250,12 @@ def write_groundstate_structure(
             return
 
         # Get ground state distortion
-        _, _, gs_distortion = analysis._sort_data(
-            energies_file=energies_file, verbose=False
-        )
+        _, _, gs_distortion = analysis._sort_data(energies_file=energies_file, verbose=False)
 
         bond_distortion = analysis._get_distortion_filename(gs_distortion)
 
         # Origin path
-        origin_path = (
-            f"{output_path}/{defect_species}/{bond_distortion}/{structure_filename}"
-        )
+        origin_path = f"{output_path}/{defect_species}/{bond_distortion}/{structure_filename}"
         if not os.path.exists(origin_path):
             raise FileNotFoundError(
                 f"The structure file {structure_filename} is not present in the directory "
@@ -1311,9 +1264,7 @@ def write_groundstate_structure(
 
         # Destination path
         if groundstate_folder:
-            if not os.path.exists(
-                f"{output_path}/{defect_species}/{groundstate_folder}"
-            ):
+            if not os.path.exists(f"{output_path}/{defect_species}/{groundstate_folder}"):
                 os.mkdir(f"{output_path}/{defect_species}/{groundstate_folder}")
             destination_path = os.path.join(
                 f"{output_path}/{defect_species}/",

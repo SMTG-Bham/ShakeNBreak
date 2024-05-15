@@ -16,14 +16,14 @@ jobs:
       max-parallel: 1
 
       matrix:
-        python-version: ['3.10']
+        python-version: ['3.11']
 
     name: Python ${{ matrix.python-version }} Test Pop
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -31,19 +31,20 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install setuptools setuptools_scm wheel
-          pip install pydocstyle black flake8 isort
+          pip install pydocstyle black flake8 ruff
           pip install -e .[tests]
 
-      - name: sort imports
+      - name: ruff
         run:  |
-          isort . --atomic --profile black
+          ruff --version
+          ruff --fix shakenbreak
 
       - name: check docstrings
         run:  |
           pydocstyle --version
           pydocstyle -e --count --convention=google --add-ignore=D400,D415,D212,D205,D417,D107 shakenbreak
 
-      - name: black
+      - name: black  # max line length 107 specified in pyproject.toml
         run:  |
           black --version
           black --color shakenbreak
