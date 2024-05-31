@@ -43,7 +43,7 @@ from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
-from pymatgen.io.vasp.sets import BadInputSetWarning, UserPotcarFunctional
+from pymatgen.io.vasp.sets import BadInputSetWarning
 from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial import Voronoi
 from scipy.spatial.distance import squareform
@@ -293,7 +293,7 @@ def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
     user_incar_settings: Optional[dict] = None,
-    user_potcar_functional: Optional[UserPotcarFunctional] = "PBE",
+    user_potcar_functional: Optional[str] = "PBE",
     user_potcar_settings: Optional[dict] = None,
     output_path: str = ".",
     **kwargs,
@@ -2523,7 +2523,7 @@ class Distortions:
     def write_vasp_files(
         self,
         user_incar_settings: Optional[dict] = None,
-        user_potcar_functional: Optional[UserPotcarFunctional] = "PBE",
+        user_potcar_functional: Optional[str] = "PBE",
         user_potcar_settings: Optional[dict] = None,
         output_path: str = ".",
         verbose: bool = False,
