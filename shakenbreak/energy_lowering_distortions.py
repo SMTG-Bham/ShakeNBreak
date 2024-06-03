@@ -832,7 +832,7 @@ def write_retest_inputs(
         code (:obj:`str`):
             Code used for the geometry relaxations. The supported codes
             include "vasp", "cp2k", "espresso", "castep" and "fhi-aims"
-            (case insensitive).
+            (case-insensitive).
             (Default: "vasp")
         input_filename (:obj:`str`):
             Name of the code input file if different from `ShakeNBreak`

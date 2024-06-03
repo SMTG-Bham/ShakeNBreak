@@ -10,7 +10,10 @@ from ase.neighborlist import NeighborList
 from hiphive.structure_generation.rattle import _probability_mc_rattle, generate_mc_rattled_structures
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
+from pymatgen.io.ase import AseAtomsAdaptor  # could be removed to use the Structure.to/from_ase_atoms()
+
+# methods added in pymatgen 2024.5.31, but then not backwards compatible. Will refactor to this if/when
+# pymatgen>=2024.5.31 is a necessary requirement.
 
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):

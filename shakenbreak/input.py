@@ -12,7 +12,6 @@ import os
 import shutil
 import warnings
 from importlib.metadata import version
-from multiprocessing import Queue
 from typing import Optional, Tuple, Union
 
 import ase
@@ -21,12 +20,7 @@ from ase.calculators.aims import Aims
 from ase.calculators.castep import Castep
 from ase.calculators.espresso import Espresso
 from doped import _ignore_pmg_warnings
-from doped.core import (
-    Defect,
-    DefectEntry,
-    _guess_and_set_oxi_states_with_timeout,
-    _rough_oxi_state_cost_from_comp,
-)
+from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
     get_defect_site_idxs_and_unrelaxed_structure,
@@ -375,13 +369,15 @@ def _create_vasp_input(
             for dir in matching_dirs:
                 with contextlib.suppress(Exception):  # if Unperturbed structure could not be parsed /
                     # compared to distorted_defect_dict, then pass
-                    prev_unperturbed_struc = Structure.from_file(f"{output_path}/{dir}/Unperturbed/POSCAR")
-                    current_unperturbed_struc = distorted_defect_dict["Unperturbed"][
+                    prev_unperturbed_struct = Structure.from_file(
+                        f"{output_path}/{dir}/Unperturbed/POSCAR"
+                    )
+                    current_unperturbed_struct = distorted_defect_dict["Unperturbed"][
                         "Defect Structure"
                     ].copy()
-                    for i in [prev_unperturbed_struc, current_unperturbed_struc]:
+                    for i in [prev_unperturbed_struct, current_unperturbed_struct]:
                         i.remove_oxidation_states()
-                    if prev_unperturbed_struc == current_unperturbed_struc:
+                    if prev_unperturbed_struct == current_unperturbed_struct:
                         warnings.warn(
                             f"The previously-generated defect distortions folder {dir} in "
                             f"{os.path.basename(os.path.abspath(output_path))} "
@@ -779,17 +775,17 @@ def _get_voronoi_nodes(
     # map back to the supercell
     sm = StructureMatcher(primitive_cell=False, attempt_supercell=True)
     mapping = sm.get_supercell_matrix(structure, prim_structure)
-    voronoi_struc = Structure.from_sites(vnodes)  # Structure object with Voronoi nodes as sites
-    voronoi_struc.make_supercell(mapping)  # Map back to the supercell
+    voronoi_struct = Structure.from_sites(vnodes)  # Structure object with Voronoi nodes as sites
+    voronoi_struct.make_supercell(mapping)  # Map back to the supercell
 
     # check if there was an origin shift between primitive and supercell
     regenerated_supercell = prim_structure.copy()
     regenerated_supercell.make_supercell(mapping)
     fractional_shift = sm.get_transformation(structure, regenerated_supercell)[1]
     if not np.allclose(fractional_shift, 0):
-        voronoi_struc.translate_sites(range(len(voronoi_struc)), fractional_shift, frac_coords=True)
+        voronoi_struct.translate_sites(range(len(voronoi_struct)), fractional_shift, frac_coords=True)
 
-    return voronoi_struc.sites
+    return voronoi_struct.sites
 
 
 def _get_voronoi_multiplicity(site, structure):
@@ -868,38 +864,36 @@ def identify_defect(
         ) from exc
 
     # remove oxidation states before site-matching
-    defect_struc = defect_structure.copy()  # copy to prevent overwriting original structures
-    bulk_struc = bulk_structure.copy()
-    defect_struc.remove_oxidation_states()
+    defect_struct = defect_structure.copy()  # copy to prevent overwriting original structures
+    bulk_struct = bulk_structure.copy()
+    defect_struct.remove_oxidation_states()
+    bulk_struct.remove_oxidation_states()
 
     _bulk_oxi_states = False
     if oxi_state is None:
-        if all(hasattr(site.specie, "oxi_state") for site in bulk_struc.sites) and all(
-            isinstance(site.specie.oxi_state, (int, float)) for site in bulk_struc.sites
+        if all(hasattr(site.specie, "oxi_state") for site in bulk_struct.sites) and all(
+            isinstance(site.specie.oxi_state, (int, float)) for site in bulk_struct.sites
         ):
-            _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struc.composition.elements}
+            _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struct.composition.elements}
         else:  # try guessing bulk oxi states now, before Defect initialisation:
-            if _rough_oxi_state_cost_from_comp(bulk_struc.composition) < 1e6:
-                # otherwise will take very long to guess oxi_state
-                queue = Queue()
-                _bulk_oxi_states = _guess_and_set_oxi_states_with_timeout(bulk_struc, queue=queue)
-                if _bulk_oxi_states:
-                    bulk_struc = queue.get()  # oxi-state decorated structure
-                    _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struc.composition.elements}
-
-    bulk_struc.remove_oxidation_states()
+            if bulk_struct_w_oxi := guess_and_set_oxi_states_with_timeout(
+                bulk_struct, break_early_if_expensive=True
+            ):
+                _bulk_oxi_states = {
+                    el.symbol: el.oxi_state for el in bulk_struct_w_oxi.composition.elements
+                }
 
     bulk_site_index = None
     defect_site_index = None
 
-    if defect_type == "vacancy" and defect_index:  # defect_index should correspond to bulk struc
+    if defect_type == "vacancy" and defect_index:  # defect_index should correspond to bulk struct
         bulk_site_index = defect_index
-    elif defect_index:  # defect_index should correspond to defect struc
+    elif defect_index:  # defect_index should correspond to defect struct
         if defect_type == "interstitial":
             defect_site_index = defect_index
         if defect_type == "substitution":  # also want bulk site index for substitutions,
             # so use defect index coordinates
-            defect_coords = defect_struc[defect_index].frac_coords
+            defect_coords = defect_struct[defect_index].frac_coords
 
     if defect_coords is not None:
         if bulk_site_index is None and defect_site_index is None:
@@ -919,17 +913,17 @@ def identify_defect(
                     key=lambda x: x[1],
                 )
 
-            max_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_struc, defect_coords, 2.5
+            max_possible_defect_sites_in_bulk_struct = _possible_sites_in_sphere(
+                bulk_struct, defect_coords, 2.5
             )
-            max_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_struc, defect_coords, 2.5
+            max_possible_defect_sites_in_defect_struct = _possible_sites_in_sphere(
+                defect_struct, defect_coords, 2.5
             )
-            expanded_possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                bulk_struc, defect_coords, 3.0
+            expanded_possible_defect_sites_in_bulk_struct = _possible_sites_in_sphere(
+                bulk_struct, defect_coords, 3.0
             )
-            expanded_possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                defect_struc, defect_coords, 3.0
+            expanded_possible_defect_sites_in_defect_struct = _possible_sites_in_sphere(
+                defect_struct, defect_coords, 3.0
             )
 
             # there should be one site (including specie identity) which does not match between
@@ -951,12 +945,12 @@ def identify_defect(
                 return bulk_sites_list, defect_sites_list
 
             non_matching_bulk_sites, _ = _remove_matching_sites(
-                max_possible_defect_sites_in_bulk_struc,
-                expanded_possible_defect_sites_in_defect_struc,
+                max_possible_defect_sites_in_bulk_struct,
+                expanded_possible_defect_sites_in_defect_struct,
             )
             _, non_matching_defect_sites = _remove_matching_sites(
-                expanded_possible_defect_sites_in_bulk_struc,
-                max_possible_defect_sites_in_defect_struc,
+                expanded_possible_defect_sites_in_bulk_struct,
+                max_possible_defect_sites_in_defect_struct,
             )
 
             if len(non_matching_bulk_sites) == 0 and len(non_matching_defect_sites) == 0:
@@ -975,18 +969,18 @@ def identify_defect(
                 searched = "bulk or defect"
                 possible_defects = []
                 while site_displacement_tol < 5:  # loop over distance tolerances
-                    possible_defect_sites_in_bulk_struc = _possible_sites_in_sphere(
-                        bulk_struc, defect_coords, site_displacement_tol
+                    possible_defect_sites_in_bulk_struct = _possible_sites_in_sphere(
+                        bulk_struct, defect_coords, site_displacement_tol
                     )
-                    possible_defect_sites_in_defect_struc = _possible_sites_in_sphere(
-                        defect_struc, defect_coords, site_displacement_tol
+                    possible_defect_sites_in_defect_struct = _possible_sites_in_sphere(
+                        defect_struct, defect_coords, site_displacement_tol
                     )
                     if (
                         defect_type == "vacancy"
                     ):  # defect site should be in bulk structure but not defect structure
                         possible_defects, _ = _remove_matching_sites(
-                            possible_defect_sites_in_bulk_struc,
-                            expanded_possible_defect_sites_in_defect_struc,
+                            possible_defect_sites_in_bulk_struct,
+                            expanded_possible_defect_sites_in_defect_struct,
                         )
                         searched = "bulk"
                         if len(possible_defects) == 1:
@@ -996,15 +990,15 @@ def identify_defect(
                     else:  # interstitial or substitution
                         # defect site should be in defect structure but not bulk structure
                         _, possible_defects = _remove_matching_sites(
-                            expanded_possible_defect_sites_in_bulk_struc,
-                            possible_defect_sites_in_defect_struc,
+                            expanded_possible_defect_sites_in_bulk_struct,
+                            possible_defect_sites_in_defect_struct,
                         )
                         searched = "defect"
                         if len(possible_defects) == 1:
                             if defect_type == "substitution":
                                 possible_defects_in_bulk, _ = _remove_matching_sites(
-                                    possible_defect_sites_in_bulk_struc,
-                                    expanded_possible_defect_sites_in_defect_struc,
+                                    possible_defect_sites_in_bulk_struct,
+                                    expanded_possible_defect_sites_in_defect_struct,
                                 )
                                 if len(possible_defects_in_bulk) == 1:
                                     bulk_site_index = possible_defects_in_bulk[0][2]
@@ -1075,16 +1069,16 @@ def identify_defect(
             defect_site_index = auto_matching_defect_site_index
 
     if defect_type == "vacancy":
-        defect_site = bulk_struc[bulk_site_index]
+        defect_site = bulk_struct[bulk_site_index]
     elif defect_type == "substitution":
-        defect_site_in_bulk = bulk_struc[bulk_site_index]
+        defect_site_in_bulk = bulk_struct[bulk_site_index]
         defect_site = PeriodicSite(
-            defect_struc[defect_site_index].specie,
+            defect_struct[defect_site_index].specie,
             defect_site_in_bulk.frac_coords,
-            bulk_struc.lattice,
+            bulk_struct.lattice,
         )
     else:
-        defect_site = defect_struc[defect_site_index]
+        defect_site = defect_struct[defect_site_index]
 
     if (defect_index is not None or defect_coords is not None) and (
         auto_matching_defect_site_index is not None or auto_matching_bulk_site_index is not None
@@ -1098,9 +1092,9 @@ def identify_defect(
         )
         if user_index != auto_index:
             if defect_type == "vacancy":
-                auto_matching_defect_site = bulk_struc[auto_index]
+                auto_matching_defect_site = bulk_struct[auto_index]
             else:
-                auto_matching_defect_site = defect_struc[auto_index]
+                auto_matching_defect_site = defect_struct[auto_index]
 
             def _site_info(site):
                 return (
@@ -3106,10 +3100,10 @@ class Distortions:
                 ):
                     # Generate a defect entry for each charge state
                     defect.user_charges = defect.get_charge_states(padding=padding)
-                    for charge in defect.user_charges:
-                        defect_entries.append(
-                            _get_defect_entry_from_defect(defect=defect, charge_state=charge)
-                        )
+                    defect_entries.extend(
+                        _get_defect_entry_from_defect(defect=defect, charge_state=charge)
+                        for charge in defect.user_charges
+                    )
 
             # Check if user gives dict with structure and defect_coords/defect_index
             elif isinstance(defect_structure, (tuple, list)):
