@@ -9,7 +9,7 @@ from copy import deepcopy
 from subprocess import call
 
 import click
-from doped.core import _guess_and_set_oxi_states_with_timeout, _rough_oxi_state_cost_from_comp
+from doped.core import guess_and_set_oxi_states_with_timeout
 from doped.generation import get_defect_name_from_entry
 from doped.utils.parsing import get_outcar
 from doped.utils.plotting import format_defect_name
@@ -240,14 +240,14 @@ def generate(
             if key not in valid_args:
                 user_settings.pop(key)
 
-    defect_struc = Structure.from_file(defect)
-    bulk_struc = Structure.from_file(bulk)
+    defect_struct = Structure.from_file(defect)
+    bulk_struct = Structure.from_file(bulk)
 
     # Note that here the Defect.defect_structure is the defect `supercell`
     # structure, not the defect `primitive` structure.
     defect_object = input.identify_defect(
-        defect_structure=defect_struc,
-        bulk_structure=bulk_struc,
+        defect_structure=defect_struct,
+        bulk_structure=bulk_struct,
         defect_index=defect_index,
         defect_coords=defect_coords,
     )
@@ -464,22 +464,14 @@ def generate_all(
     Generate the trial distortions and input files for structure-searching
     for all defects in a given directory.
     """
-    bulk_struc = Structure.from_file(bulk)
+    bulk_struct = Structure.from_file(bulk)
     # try parsing the bulk oxidation states first, for later assigning defect "oxi_state"s (i.e.
     # fully ionised charge states):
-    # First check if the cost of guessing oxidation states is too high:
-    if _rough_oxi_state_cost_from_comp(bulk_struc.composition) > 1e6:
-        # If the cost is too high, avoid setting oxidation states as it will take too long
-        _bulk_oxi_states = False  # will take very long to guess oxi_state
-    else:
-        # Otherwise, proceed with setting oxidation states using a separate process to allow timeouts
-        from multiprocessing import Queue  # only import when necessary
-
-        queue = Queue()
-        _bulk_oxi_states = _guess_and_set_oxi_states_with_timeout(bulk_struc, queue=queue)
-        if _bulk_oxi_states:  # Retrieve the oxidation states if successfully guessed and set
-            bulk_struc = queue.get()  # oxi-state decorated structure
-            _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struc.composition.elements}
+    if bulk_struct_w_oxi := guess_and_set_oxi_states_with_timeout(
+        bulk_struct, break_early_if_expensive=True
+    ):
+        bulk_struct = bulk_struct_w_oxi
+        _bulk_oxi_states = {el.symbol: el.oxi_state for el in bulk_struct.composition.elements}
 
     defects_dirs = os.listdir(defects)
     if config is not None:
@@ -595,7 +587,7 @@ def generate_all(
     for defect in defects_dirs:  # file or directory
         if os.path.isfile(f"{defects}/{defect}"):
             try:  # try to parse structure from it
-                defect_struc = Structure.from_file(f"{defects}/{defect}")
+                defect_struct = Structure.from_file(f"{defects}/{defect}")
                 defect_name = parse_defect_name(defect, defect_settings)  # None if not recognised
 
             except Exception:
@@ -624,7 +616,7 @@ def generate_all(
                     )
                     continue
             if defect_file:
-                defect_struc = Structure.from_file(os.path.join(defects, defect, defect_file))
+                defect_struct = Structure.from_file(os.path.join(defects, defect, defect_file))
                 defect_name = parse_defect_name(defect, defect_settings)
         else:
             warnings.warn(f"Could not parse {defects}/{defect} as a defect, skipping.")
@@ -633,8 +625,8 @@ def generate_all(
         # Check if indices are provided in config file
         defect_index, defect_coords = parse_defect_position(defect_name, defect_settings)
         defect_object = input.identify_defect(
-            defect_structure=defect_struc,
-            bulk_structure=bulk_struc,
+            defect_structure=defect_struct,
+            bulk_structure=bulk_struct,
             defect_index=defect_index,
             defect_coords=defect_coords,
             oxi_state=(
