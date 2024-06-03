@@ -8,7 +8,6 @@ import ase
 import numpy as np
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
 
 from shakenbreak import analysis, distortions, energy_lowering_distortions, io
 
@@ -1063,8 +1062,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "r",
         ) as f:
             atoms = ase.io.espresso.read_espresso_in(f)
-        aaa = AseAtomsAdaptor()
-        struct = aaa.get_structure(atoms)
+        struct = Structure.from_ase_atoms(atoms)
         self.assertTrue(analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test copying over FHI-aims input files when the input files are only

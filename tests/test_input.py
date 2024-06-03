@@ -2830,8 +2830,7 @@ class InputTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists("v_Te_Td_Cd2.83_+4"))
         self.tearDown()
 
-    @patch("builtins.print")
-    def test_write_espresso_files(self, mock_print):
+    def test_write_espresso_files(self):
         """Test method write_espresso_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = [
@@ -2909,8 +2908,7 @@ class InputTestCase(unittest.TestCase):
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
 
-    @patch("builtins.print")
-    def test_write_cp2k_files(self, mock_print):
+    def test_write_cp2k_files(self):
         """Test method write_cp2k_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = [
@@ -2984,8 +2982,7 @@ class InputTestCase(unittest.TestCase):
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
 
-    @patch("builtins.print")
-    def test_write_castep_files(self, mock_print):
+    def test_write_castep_files(self):
         """Test method write_castep_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = [
@@ -3057,8 +3054,7 @@ class InputTestCase(unittest.TestCase):
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
 
-    @patch("builtins.print")
-    def test_write_fhi_aims_files(self, mock_print):
+    def test_write_fhi_aims_files(self):
         """Test method write_fhi_aims_files"""
         oxidation_states = {"Cd": +2, "Te": -2}
         bond_distortions = [
