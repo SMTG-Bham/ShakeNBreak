@@ -1158,7 +1158,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         # Check structure
-        struct = aaa.get_structure(
+        struct = Structure.from_ase_atoms(
             ase.io.read(
                 os.path.join(
                     self.CASTEP_DATA_DIR,
