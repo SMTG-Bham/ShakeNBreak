@@ -173,7 +173,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=2.3.1",
+        "doped>=2.4.4",
     ],
     extras_require={
         "tests": [
