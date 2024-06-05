@@ -832,7 +832,7 @@ def write_retest_inputs(
         code (:obj:`str`):
             Code used for the geometry relaxations. The supported codes
             include "vasp", "cp2k", "espresso", "castep" and "fhi-aims"
-            (case insensitive).
+            (case-insensitive).
             (Default: "vasp")
         input_filename (:obj:`str`):
             Name of the code input file if different from `ShakeNBreak`
@@ -1000,6 +1000,9 @@ def _copy_espresso_files(
             filename=f"{distorted_dir}/{input_filename}",
             images=atoms,
             format="espresso-in",
+            pseudopotentials={  # doesn't matter, is rewritten below to use same as before
+                atom: "N/A" for atom in set(atoms.get_chemical_symbols())
+            },
         )
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
@@ -1027,6 +1030,9 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
+                pseudopotentials={  # doesn't matter, is rewritten below to use same as before
+                    atom: "N/A" for atom in set(atoms.get_chemical_symbols())
+                },
             )
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
@@ -1048,6 +1054,9 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
+                pseudopotentials={
+                    atom: "Pseudopotentials not specified" for atom in set(atoms.get_chemical_symbols())
+                },
             )
 
 

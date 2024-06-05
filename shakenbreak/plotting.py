@@ -213,7 +213,7 @@ def _purge_data_dicts(
     """
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
-    To achieve this, it removes any data point from disp_dict if its energy is not
+    To achieve this, it removes any data point from ``disp_dict`` if its energy is not
     in the energy dict (this may be due to relaxation not converged).
 
     Args:
@@ -334,8 +334,8 @@ def _get_displacement_dict(
             disp_dict, energies_dict = _purge_data_dicts(
                 disp_dict=disp_dict,
                 energies_dict=energies_dict,
-            )  # make disp and energies dict consistent by removing any data point
-            # if its energy is not in the energy dict and viceversa
+            )  # make disp and energies dict consistent by removing any data point from disp_dict
+            # if its energy is not in the energy dict (this may be due to relaxation not converged etc)
         else:
             warnings.warn(
                 "Structure comparison algorithm struggled matching lattices. "
@@ -389,7 +389,7 @@ def _format_datapoints_from_other_chargestates(
             keys.append(float(entry.split("%")[0]) / 100)
         elif isinstance(entry, str) and ("Rattled_from_" in entry or "Dimer_from_" in entry):
             keys.append(0.0)  # Rattled and Dimer will be plotted at x = 0.0
-        elif entry == "Rattled" or entry == "Dimer":  # add 0.0 for Rattled
+        elif entry in ["Rattled", "Dimer"]:  # add 0.0 for Rattled
             # (to avoid problems when sorting distortions)
             keys.append(0.0)
         else:
@@ -398,7 +398,7 @@ def _format_datapoints_from_other_chargestates(
     if disp_dict:
         # Sort displacements in same order as distortions and energies,
         # for proper color mapping
-        sorted_disp = [disp_dict[k] for k in energies_dict["distortions"] if k in disp_dict]
+        sorted_disp = [disp_dict.get(k, None) for k in energies_dict["distortions"]]
         # Save the values of the displacements from *other charge states*
         # As the displacements will be re-sorted -> we'll need to
         # find the index of t
@@ -718,6 +718,17 @@ def _format_colorbar(
         cbar.set_ticks([vmedium])
         cbar.set_ticklabels([vmedium])
     return cbar
+
+
+def _parse_other_charge_state_label(distortion_key: str) -> tuple:
+    try:
+        other_charge_state = int(distortion_key.split("_")[-1])
+        label = f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} charge state"
+    except ValueError:
+        other_charge_state = distortion_key.split("_")[-1]
+        label = f"From {other_charge_state}"
+
+    return label
 
 
 # Main plotting functions:
@@ -1364,7 +1375,6 @@ def plot_colorbar(
                     ]
                 )
                 for i, j in zip(imported_indices.keys(), range(other_charges)):
-                    other_charge_state = int(list(energies_dict["distortions"].keys())[i].split("_")[-1])
                     sorted_i = imported_indices[i]  # index for the sorted dicts
                     ax.scatter(  # plot any datapoints where disp could not be determined as black
                         np.array(keys)[i],
@@ -1382,8 +1392,9 @@ def plot_colorbar(
                         cmap=(colormap if isinstance(sorted_disp[sorted_i], float) else None),
                         norm=norm if isinstance(sorted_disp[sorted_i], float) else None,
                         alpha=1,
-                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
-                        f"charge state",
+                        label=_parse_other_charge_state_label(
+                            list(energies_dict["distortions"].keys())[i]
+                        ),
                     )
 
         # Plot reference energy
@@ -1668,7 +1679,7 @@ def plot_datasets(
                 )
 
             if len(sorted_distortions) > 0 and [
-                key for key in dataset["distortions"] if (key != "Rattled" and key != "Dimer")
+                key for key in dataset["distortions"] if key not in ["Rattled", "Dimer"]
             ]:  # more than just Rattled
                 if imported_indices:  # Exclude datapoints from other charge states
                     non_imported_sorted_indices = [
@@ -1697,7 +1708,6 @@ def plot_datasets(
                     ]  # number of other charge states whose distortions have been imported
                 )
                 for i, j in zip(imported_indices, range(other_charges)):
-                    other_charge_state = int(list(dataset["distortions"].keys())[i].split("_")[-1])
                     ax.scatter(  # distortions from other charge states
                         np.array(keys)[i],
                         list(dataset["distortions"].values())[i],
@@ -1712,8 +1722,7 @@ def plot_datasets(
                             j
                         ],  # different markers for different charge states
                         alpha=1,
-                        label=f"From {'+' if other_charge_state > 0 else ''}{other_charge_state} "
-                        f"charge state",
+                        label=_parse_other_charge_state_label(list(dataset["distortions"].keys())[i]),
                     )
 
     datasets[0]["Unperturbed"] = 0.0  # unperturbed energy of first dataset (our reference energy)

@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 from monty.serialization import loadfn
 
-from shakenbreak import analysis, plotting
+from shakenbreak import analysis, plotting, io
 from test_energy_lowering_distortions import assert_not_called_with
 
 Mock.assert_not_called_with = assert_not_called_with
@@ -32,6 +32,7 @@ _file_path = os.path.dirname(__file__)
 _DATA_DIR = os.path.join(_file_path, "data")
 BASELINE_DIR = os.path.join(_DATA_DIR, "remote_baseline_plots")
 STYLE = os.path.join(_file_path, "../shakenbreak/shakenbreak.mplstyle")
+
 
 def custom_mpl_image_compare(filename):
     """
@@ -52,6 +53,7 @@ def custom_mpl_image_compare(filename):
         return wrapper
 
     return decorator
+
 
 class PlottingDefectsTestCase(unittest.TestCase):
     def setUp(self):
@@ -151,17 +153,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
             formatted_ax.xaxis.get_label().get_text(),
             "Bond Distortion Factor (for 2 Te near $V_{Cd}^{0}$)",
         )
-        self.assertEqual(
-            len(formatted_ax.yaxis.get_ticklabels()), 6 + 2
-        )  # +2 bc MaxNLocator adds ticks
+        self.assertEqual(len(formatted_ax.yaxis.get_ticklabels()), 6 + 2)  # +2 bc MaxNLocator adds ticks
         # beyond axis limits for autoscaling reasons
         self.assertTrue(
             [
-                float(
-                    tick.get_text().replace("−", "-")
-                )  # weird mpl ticker reformatting
-                % 0.3
-                == 0.0
+                float(tick.get_text().replace("−", "-")) % 0.3 == 0.0  # weird mpl ticker reformatting
                 for tick in formatted_ax.xaxis.get_ticklabels()
             ]
         )  # x ticks should be multiples of 0.3
@@ -193,9 +189,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        self.assertEqual(
-            formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor"
-        )
+        self.assertEqual(formatted_ax.xaxis.get_label().get_text(), "Bond Distortion Factor")
 
     def test_format_ticks(self):
         "Test format_ticks() function."
@@ -212,9 +206,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
         )
-        semi_formatted_ax.set_ylim(
-            -0.2, 0.4
-        )  # set incorrect y limits (-0.2 rather than ~-0.8)
+        semi_formatted_ax.set_ylim(-0.2, 0.4)  # set incorrect y limits (-0.2 rather than ~-0.8)
         semi_formatted_ax.set_yticks(
             ticks=[
                 -0.804,
@@ -304,10 +296,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         casted_energies_dict = plotting._cast_energies_to_floats(
             energies_dict=energies_dict, defect_species="vac_1_Cd_0"
         )
-        [
-            self.assertIsInstance(energy, float)
-            for energy in casted_energies_dict["distortions"].values()
-        ]
+        [self.assertIsInstance(energy, float) for energy in casted_energies_dict["distortions"].values()]
         self.assertIsInstance(casted_energies_dict["Unperturbed"], float)
 
         # Check str letters are not converted to floats, and exception is raised
@@ -332,10 +321,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.assertEqual(
             energies_dict["distortions"],
-            {
-                k: 1000 * v
-                for k, v in self.organized_V_Cd_distortion_data["distortions"].items()
-            },
+            {k: 1000 * v for k, v in self.organized_V_Cd_distortion_data["distortions"].items()},
         )
         self.assertEqual(
             energies_dict["Unperturbed"],
@@ -354,8 +340,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             disp_dict=deepcopy(disp_dict),
         )
         self.assertEqual(
-            set(list(disp_dict.keys()))
-            - set(list(energies_dict["distortions"].keys())),
+            set(list(disp_dict.keys())) - set(list(energies_dict["distortions"].keys())),
             {"Unperturbed"},
         )  # only difference should be Unperturbed
         # Test behaviour when energy dict is incomplete
@@ -366,8 +351,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             disp_dict=deepcopy(disp_dict),
         )
         self.assertEqual(
-            set(list(disp_dict.keys()))
-            - set(list(energies_dict["distortions"].keys())),
+            set(list(disp_dict.keys())) - set(list(energies_dict["distortions"].keys())),
             {"Unperturbed"},
         )  # only difference should be Unperturbed
 
@@ -406,9 +390,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 add_colorbar=True,
             )
             warning_message = f"Could not find structures for {self.VASP_CDTE_DATA_DIR}/fake_defect_species. Colorbar will not be added to plot."
-            user_warnings = [
-                warning for warning in w if warning.category == UserWarning
-            ]
+            user_warnings = [warning for warning in w if warning.category == UserWarning]
             self.assertEqual(len(user_warnings), 1)
             self.assertIn(warning_message, str(user_warnings[0].message))
 
@@ -435,12 +417,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
         # Saving to defect_dir subfolder in output_path
         fig, ax = plt.subplots(1, 1)
         defect_name = "vac_1_Cd_0"
-        if_present_rm(
-            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-        )
-        with patch("builtins.print") as mock_print, warnings.catch_warnings(
-            record=True
-        ) as w:
+        if_present_rm(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(record=True) as w:
             plotting._save_plot(
                 fig=fig,
                 defect_name=defect_name,
@@ -448,21 +426,15 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 save_format="png",
             )
         self.assertTrue(
-            os.path.exists(
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-            )
+            os.path.exists(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
         )
         mock_print.assert_not_called_with(f"Plot saved to {defect_name}/{defect_name}.png")
         user_warnings = [warning for warning in w if warning.category == UserWarning]
         self.assertEqual(len(user_warnings), 0)  # No warnings in this case
-        if_present_rm(
-            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-        )
+        if_present_rm(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
 
         # test verbose:
-        with patch("builtins.print") as mock_print, warnings.catch_warnings(
-            record=True
-        ) as w:
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(record=True) as w:
             plotting._save_plot(
                 fig=fig,
                 defect_name=defect_name,
@@ -471,63 +443,52 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 verbose=True,
             )
         self.assertTrue(
-            os.path.exists(
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-            )
+            os.path.exists(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
         )
         mock_print.assert_called_once_with(f"Plot saved to {defect_name}/{defect_name}.png")
         user_warnings = [warning for warning in w if warning.category == UserWarning]
         self.assertEqual(len(user_warnings), 0)  # No warnings in this case
 
         # test verbose overwriting info:
-        with patch("builtins.print") as mock_print, warnings.catch_warnings(
-                record=True
-        ) as w:
+        with patch("builtins.print") as mock_print, warnings.catch_warnings(record=True) as w:
             plotting._save_plot(
                 fig=fig,
                 defect_name=defect_name,
                 output_path=self.VASP_CDTE_DATA_DIR,
                 save_format="png",
-                verbose=True
+                verbose=True,
             )
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-        current_datetime_minus1min = (
-                datetime.datetime.now() - datetime.timedelta(minutes=1)
-        ).strftime(
+        current_datetime_minus1min = (datetime.datetime.now() - datetime.timedelta(minutes=1)).strftime(
             "%Y-%m-%d-%H-%M"
         )  # in case delay between writing and testing plot generation
         self.assertTrue(
-            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime}.png"
-                           ) or
-            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime_minus1min}.png")
+            os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime}.png")
+            or os.path.exists(
+                f"{self.VASP_CDTE_DATA_DIR}/{defect_name}/{defect_name}_{current_datetime_minus1min}.png"
+            )
         )
         self.assertTrue(
             f"Previous version of {defect_name}.png found" in mock_print.call_args_list[0][0][0]
         )
         mock_print.assert_any_call(f"Plot saved to {defect_name}/{defect_name}.png")
         self.assertTrue(
-            os.path.exists(
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-            )
+            os.path.exists(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
         )
         user_warnings = [warning for warning in w if warning.category == UserWarning]
         self.assertEqual(len(user_warnings), 0)  # No warnings in this case
-        if_present_rm(
-            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png"
-        )
+        if_present_rm(f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}.png")
         if_present_rm(
             f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}_{current_datetime}.png"
         )
         if_present_rm(
-        f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}_{current_datetime_minus1min}.png"
+            f"{os.path.join(self.VASP_CDTE_DATA_DIR, defect_name, defect_name)}_{current_datetime_minus1min}.png"
         )
 
         # Saving to output_path where defect_dir is not in output_path and output_path is not cwd
         if_present_rm(f"./{defect_name}.svg")
         with patch("builtins.print") as mock_print:
-            plotting._save_plot(
-                fig=fig, defect_name=defect_name, output_path=".", save_format="svg"
-            )
+            plotting._save_plot(fig=fig, defect_name=defect_name, output_path=".", save_format="svg")
         self.assertTrue(os.path.exists(f"./{defect_name}.svg"))
         mock_print.assert_not_called()  # non-verbose, no print call
         if_present_rm(f"./{defect_name}.svg")
@@ -539,9 +500,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             plotting._save_plot(
                 fig=fig, defect_name=defect_name, output_path=".", save_format="svg", verbose=True
             )
-        self.assertFalse(
-            os.path.exists(f"./{defect_name}.svg")
-        )  # not in cwd, in defect directory
+        self.assertFalse(os.path.exists(f"./{defect_name}.svg"))  # not in cwd, in defect directory
         self.assertTrue(os.path.exists(f"{defect_name}/{defect_name}.svg"))
         mock_print.assert_called_once_with(  # verbose is True
             f"Plot saved to {defect_name}/{defect_name}.svg"
@@ -550,18 +509,14 @@ class PlottingDefectsTestCase(unittest.TestCase):
         os.chdir(_file_path)
 
         # test previously saved plot renaming and print statement
-        plotting._save_plot(
-            fig=fig, defect_name=defect_name, output_path=".", save_format="png"
-        )
+        plotting._save_plot(fig=fig, defect_name=defect_name, output_path=".", save_format="png")
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
                 fig=fig, defect_name=defect_name, output_path=".", save_format="png", verbose=True
             )
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-        current_datetime_minus1min = (
-            datetime.datetime.now() - datetime.timedelta(minutes=1)
-        ).strftime(
+        current_datetime_minus1min = (datetime.datetime.now() - datetime.timedelta(minutes=1)).strftime(
             "%Y-%m-%d-%H-%M"
         )  # in case delay between writing and testing plot generation
 
@@ -573,19 +528,14 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         self.assertTrue(
             f"Previous version of {defect_name}.png found in output_path: './'. Will rename "
-            f"old plot to {defect_name}_{current_datetime}.png."
-            in mock_print.call_args_list[0][0][0]
+            f"old plot to {defect_name}_{current_datetime}.png." in mock_print.call_args_list[0][0][0]
             or f"Previous version of {defect_name}.png found in output_path: './'. Will rename "
             f"old plot to {defect_name}_{current_datetime_minus1min}.png."
             in mock_print.call_args_list[0][0][0]
         )
-        self._remove_current_and_saved_plots(
-            defect_name, current_datetime, current_datetime_minus1min
-        )
+        self._remove_current_and_saved_plots(defect_name, current_datetime, current_datetime_minus1min)
         # test no print statements with verbose = False (default)
-        plotting._save_plot(
-            fig=fig, defect_name=defect_name, output_path=".", save_format="png"
-        )
+        plotting._save_plot(fig=fig, defect_name=defect_name, output_path=".", save_format="png")
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         with patch("builtins.print") as mock_print:
             plotting._save_plot(
@@ -596,9 +546,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             )
         self.assertTrue(os.path.exists(f"./{defect_name}.png"))
         mock_print.assert_not_called()
-        self._remove_current_and_saved_plots(
-            defect_name, current_datetime, current_datetime_minus1min
-        )
+        self._remove_current_and_saved_plots(defect_name, current_datetime, current_datetime_minus1min)
 
     def _remove_current_and_saved_plots(self, defect_name, current_datetime, current_datetime_minus1min):
         if_present_rm(f"./{defect_name}.png")
@@ -788,11 +736,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             save_format="png",
             colors=["green", "orange"],
         )
-        self.assertTrue(
-            os.path.exists(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.png")
-            )
-        )
+        self.assertTrue(os.path.exists(os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/vac_1_Cd_0.png")))
         return fig
 
     @custom_mpl_image_compare("vac_1_Cd_0_notitle.png")
@@ -919,9 +863,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
     @custom_mpl_image_compare("v_Ca_s0_0_plot_defect_without_colorbar.png")
     def test_plot_defect_dimer(self):
         defect_species = "v_Ca_s0_0"
-        defect_energies = analysis.get_energies(
-            defect_species=defect_species, output_path=self.VASP_DIR
-        )
+        defect_energies = analysis.get_energies(defect_species=defect_species, output_path=self.VASP_DIR)
         fig = plotting.plot_defect(
             defect_species=defect_species,
             energies_dict=defect_energies,
@@ -930,9 +872,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
         )
         # Check Dimer label
         ax = fig.gca()
-        self.assertEqual(
-            ax.get_legend_handles_labels()[1][0], "Dimer"
-        )
+        self.assertEqual(ax.get_legend_handles_labels()[1][0], "Dimer")
         return fig
 
     # @pytest.mark.mpl_image_compare(
@@ -994,8 +934,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
 
     @custom_mpl_image_compare("vac_1_Cd_0_plot_defect_with_unrecognised_name.png")
     def test_plot_defect_unrecognised_name(self):
-        """Test plot_defect() function when the name cannot be formatted (e.g. if parsing and
-        plotting from a renamed folder)"""
+        """
+        Test plot_defect() function when the name cannot be formatted (e.g.
+        if parsing and plotting from a renamed folder)
+        """
         with warnings.catch_warnings(record=True) as w:
             fig = plotting.plot_defect(  # note this also implicitly tests that we can use
                 # `plot_defect` with a `defect_species` that is not found in the `output_path` (but
@@ -1010,12 +952,46 @@ class PlottingDefectsTestCase(unittest.TestCase):
         self.assertTrue(
             any(
                 f"Cannot add colorbar to plot for vac_1_Cd_no_charge as"
-                f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_no_charge cannot be found."
-                in str(warning.message)
+                f" {self.VASP_CDTE_DATA_DIR}/vac_1_Cd_no_charge cannot be found." in str(warning.message)
                 for warning in w
             )
         )
         return fig
+
+    @custom_mpl_image_compare("Va_O1_1_plot_defect_with_unrecognised_distortion.png")
+    def test_plot_defect_unrecognised_distortion(self):
+        """
+        Test plot_defect() function when the distortion name cannot be formatted
+        (e.g. if parsing and plotting from a renamed folder)
+        """
+        with warnings.catch_warnings(record=True) as w:
+            energies_file = io.parse_energies(defect="Va_O1_1", path=self.VASP_DIR, verbose=True)
+            defect_species = energies_file.rsplit("/", 1)[-1].replace(".yaml", "")  # in case '+' removed
+            defect_energies_dict = analysis.get_energies(
+                defect_species=defect_species,
+                output_path=self.VASP_DIR,
+                verbose=True,
+            )
+            fig = plotting.plot_defect(  # note this also implicitly tests that we can use
+                # `plot_defect` with a distortion that is not found in the `output_path` (but
+                # is present in the energies file)
+                output_path=self.VASP_DIR,
+                defect_species="Va_O1_1",
+                energies_dict=defect_energies_dict,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+
+        with warnings.catch_warnings(record=True) as w:
+            fig_cb = plotting.plot_defect(  # note this also implicitly tests that we can use
+                # `plot_defect` with a distortion that is not found in the `output_path` (but
+                # is present in the energies file)
+                output_path=self.VASP_DIR,
+                defect_species="Va_O1_1",
+                energies_dict=defect_energies_dict,
+                add_colorbar=True,
+            )
+        print([str(warning.message) for warning in w])  # for debugging
+        return fig_cb
 
     @custom_mpl_image_compare("Te_i_Td_Te2.83_+2.png")
     def test_plot_defect_doped_v2(self):
@@ -1103,10 +1079,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 },
                 save_plot=False,
             )
-            self.assertTrue(
-                "vac_1_Cd_-1 does not exist! Skipping vac_1_Cd_-1."
-                in str(w[-1].message)
-            )
+            self.assertTrue("vac_1_Cd_-1 does not exist! Skipping vac_1_Cd_-1." in str(w[-1].message))
 
     @custom_mpl_image_compare("vac_1_Cd_-2_only_rattled.png")
     def test_plot_defects_output(self):
@@ -1119,10 +1092,7 @@ class PlottingDefectsTestCase(unittest.TestCase):
             min_e_diff=0.05,
             add_title=False,
         )
-        [
-            self.assertIsInstance(figure, mpl.figure.Figure)
-            for figure in fig_dict.values()
-        ]
+        [self.assertIsInstance(figure, mpl.figure.Figure) for figure in fig_dict.values()]
         self.assertEqual(list(fig_dict.keys()), ["vac_1_Cd_0", "vac_1_Cd_-2"])
         # No info on distortion_metadata.json for charge state -2, so its x label should be 'Bond
         # Distortion Factor'

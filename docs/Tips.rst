@@ -207,6 +207,21 @@ see `docs here <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.energy_
 Troubleshooting
 -------------------
 
+For most error cases, ``ShakeNBreak`` has been designed to try and give informative error messages about
+why the functions are failing.
+In the majority of cases, if you encounter an error using ``ShakeNBreak`` which does not have a clear error
+message about the origin of the problem, it is likely to be an issue with your version of ``pymatgen``
+(and/or ``ShakeNBreak``/``doped``), and may be fixed by doing:
+
+.. code:: bash
+
+  pip install pymatgen pymatgen-analysis-defects monty --upgrade
+  pip install ShakeNBreak doped --upgrade
+
+If this does not solve your issue, please check the specific cases noted below. If your issue still isn't
+solved, then please contact the developers through the ``GitHub``
+`Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page, or by email.
+
 - A current known issue with ``numpy``/``pymatgen`` is that it might give an error similar to this:
 
   .. code:: python
