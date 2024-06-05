@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v3.3.4
+----------
+- Make oxidation state guessing more efficient.
+- Update Quantum Espresso and FHI-aims IO functions to work with new (and old) ASE release.
+- Minor updates to ensure compatibility with recent ``pymatgen`` release.
+- Allow unrecognised defect names when plotting.
+
 v3.3.3
 ----------
 - Add ``verbose`` option to more parsing/plotting functions for better control of output detail.
