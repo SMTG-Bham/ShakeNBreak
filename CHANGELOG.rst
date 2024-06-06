@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+v3.3.5
+----------
+- Enforce ``doped>=2.4.4`` requirement.
+
 v3.3.4
 ----------
 - Make oxidation state guessing more efficient.
