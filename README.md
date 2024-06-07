@@ -102,7 +102,7 @@ pip install --upgrade pymatgen shakenbreak
 `ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures),
 **_but also_** can take in `pymatgen` `Structure` objects, `doped` defects or structure files
 (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code
-(such as [`doped`](https://doped.readthedocs.io/en/latest/index.html), [`pydefect`](https://github.com/kumagai-group/pydefect),
+(such as [`doped`](https://doped.readthedocs.io), [`pydefect`](https://github.com/kumagai-group/pydefect),
 [`PyCDT`](https://github.com/mbkumar/pycdt), [`PyLada`](https://github.com/pylada/pylada-defects),
 [`DASP`](http://hzwtech.com/files/software/DASP/htmlEnglish/index.html), [`Spinney`](https://gitlab.com/Marrigoni/spinney/-/tree/master),
 [`DefAP`](https://github.com/DefAP/defap), [`PyDEF`](https://github.com/PyDEF2/PyDEF-2.0)...) that generates these files.
