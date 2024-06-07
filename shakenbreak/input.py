@@ -1740,7 +1740,7 @@ class Distortions:
                 folder names will be set equal to `DefectEntry.name` if the `name`
                 attribute is set for all input `DefectEntry`s, otherwise generated
                 according to the `doped` convention
-                (see: https://doped.readthedocs.io/en/latest/dope_workflow_example.html).
+                (see: https://doped.readthedocs.io/en/latest/generation_tutorial.html).
 
                 Defect charge states (from which bond distortions are determined) are
                 taken from the `DefectEntry.charge_state` property.

@@ -248,11 +248,11 @@ Further Defect Analysis
 -------------------------
 Once the ground state (and metastable) defect structures have been identified, we will want to compute
 their formation energies using our final fully-converged calculation parameters (i.e. plane-wave cutoff
-and k-point sampling). This can be done using `doped <https://doped.readthedocs.io/en/latest/index.html>`_,
+and k-point sampling). This can be done using `doped <https://doped.readthedocs.io>`_,
 manually (not recommended) or using the other defect codes listed on the
 `Code Compatibility <https://shakenbreak.readthedocs.io/en/latest/Code_Compatibility.html>`_ page.
 
-As shown in the `doped <https://doped.readthedocs.io/en/latest/index.html>`_ tutorials and docs, you may
+As shown in the `doped <https://doped.readthedocs.io>`_ tutorials and docs, you may
 want to further analyse the behaviour and impact on material properties of your defects using advanced
 defect analysis codes such as `easyunfold <https://smtg-bham.github.io/easyunfold/>`_ (to analyse the
 electronic structure of defects in your material),
