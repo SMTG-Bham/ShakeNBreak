@@ -218,8 +218,8 @@ SnB_run_loop() {
             rm *_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
           fi
         fi
-      else
-        rm *_"${current_time}"  # only save over files if job successfully submitted
+      elif ! [ "$current_time" == false ]; then
+        rm *_"${current_time}" 2>/dev/null # only save over files if job successfully submitted
       fi
       builtin cd .. || return
     else
