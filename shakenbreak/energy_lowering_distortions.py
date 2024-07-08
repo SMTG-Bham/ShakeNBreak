@@ -460,7 +460,7 @@ def get_energy_lowering_distortions(
                         structure_filename=structure_filename,
                     )  # get the final structure of the
                     # energy lowering distortion
-                    if any(warning.category == UserWarning for warning in w):
+                    if any(isinstance(warning.category, UserWarning) for warning in w):
                         # problem parsing structure, user will have received appropriate
                         # warning from io.read_vasp_structure()
                         print(
@@ -532,7 +532,7 @@ def get_energy_lowering_distortions(
                             structure_path=f"{output_path}/{defect_species}/{bond_distortion}",
                             structure_filename=structure_filename,
                         )
-                        if any(warning.category == UserWarning for warning in w):
+                        if any(isinstance(warning.category, UserWarning) for warning in w):
                             # problem parsing structure, user will have received appropriate
                             # warning from io.read_vasp_structure()
                             print(
