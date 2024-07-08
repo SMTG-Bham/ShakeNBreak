@@ -37,7 +37,7 @@ jobs:
       - name: ruff
         run:  |
           ruff --version
-          ruff --fix shakenbreak
+          ruff check --fix shakenbreak
 
       - name: check docstrings
         run:  |
