@@ -101,7 +101,7 @@ SnB_run_loop() {
         errors=$(grep -Ec "(EDDDAV|ZHEGV|CNORMN|ZPOTRF|ZTRTRI|FEXC)" OUTCAR)
         last_energy=$(grep entropy= OUTCAR | awk '{print $NF}' | tail -1)
         energy_diff_to_unperturbed=$(echo "$last_energy - $unperturbed_energy" | bc)
-        if ( ((pos_energies > 0)) || ((errors > 0)) ) && ( (($(echo "$energy_diff_to_unperturbed > 1" | bc -l))) || [[ "$i" == *"Unperturbed"* ]] ); then # if there are positive energies or errors in OUTCAR, and at least 1 eV higher than Unperturbed
+        if ((errors > 0)) || ( ((pos_energies > 0)) && ( (($(echo "$energy_diff_to_unperturbed > 1" | bc -l))) || [[ "$i" == *"Unperturbed"* ]] ) ); then # if there are positive energies or errors in OUTCAR, and at least 1 eV higher than Unperturbed
           if [[ "$i" == *"Unperturbed"* ]]; then
             # positive energies / errors for Unperturbed structure, indicates pathological defect structure
             echo "Positive energies or forces error encountered for ${i%/}. "
@@ -149,7 +149,7 @@ SnB_run_loop() {
         fi
 
         # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR
-        if check_multiple_single_step_outcars && { ( [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] ) || ( [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null ) || [[ ! -f "CONTCAR" ]]; }; then
+        if check_multiple_single_step_outcars && { { [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] ;} || ( [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null ) || [[ ! -f "CONTCAR" ]]; }; then
             echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic "
             echo "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
         fi
@@ -159,7 +159,7 @@ SnB_run_loop() {
           # echo "More than 2 OUTCARs present for ${i%?}, suggesting tricky relaxation. "
           #sed -i.bak 's/IBRION.*/IBRION = 1/g' INCAR  && rm -f INCAR.bak # sometimes helps to change IBRION if relaxation taking long
           # Check total number of ionic steps in all OUTCARs
-          num_ionic_steps=$(grep entropy= OUTCAR* | wc -l)
+          num_ionic_steps=$(grep -c entropy= OUTCAR*)
           if [ -f ../Unperturbed/OUTCAR ]; then  # only compare if Unperturbed folder present
             # If equal or higher than 150, compare to final energy in Unperturbed OUTCAR
             if ((num_ionic_steps >= 150)); then
@@ -193,9 +193,9 @@ SnB_run_loop() {
         # save_vasp_files:
         current_time=$(date +%H_%M_%Son%d_%m_%y)
         for vasp_file in {CONTCAR,OUTCAR,XDATCAR,POSCAR,INCAR,OSZICAR,vasprun.xml}; do
-          cp ${vasp_file} ${vasp_file}_${current_time}
+          cp "${vasp_file}" "${vasp_file}_${current_time}" 2>/dev/null
         done
-        gzip vasprun.xml_${current_time} # gzip to save file space
+        gzip "vasprun.xml_${current_time}" # gzip to save file space
 
         if [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -ge 9 ]]; then # CONTCAR exists and greater than 9 lines
           "cp" CONTCAR POSCAR
@@ -216,11 +216,11 @@ SnB_run_loop() {
         if ! ( "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%?}" "${job_filename}" 2>/dev/null || \
            "${job_submit_command}" "${job_name_option}" "${defect_name%?}"_"${folder_shortname%??}" "${job_filename}" ); then
           if ! [ "$current_time" == false ]; then
-            rm *_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
+            rm ./*_"${current_time}"  # only save over files if job submit command is successful (to prevent unwanted duplication of files)
           fi
         fi
       elif ! [ "$current_time" == false ]; then
-        rm *_"${current_time}" 2>/dev/null # only save over files if job successfully submitted
+        rm ./*_"${current_time}" 2>/dev/null # only save over files if job successfully submitted
       fi
       builtin cd .. || return
     else
