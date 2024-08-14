@@ -41,7 +41,7 @@ check_multiple_single_step_outcars() {
     counter=0
 
     # Iterate over all OUTCAR*on* files in the current directory
-    for file in OUTCAR*on*
+    for file in OUTCAR*
     do
         # Check if file is a regular file
         if [[ -f $file ]]; then
@@ -149,7 +149,7 @@ SnB_run_loop() {
         fi
 
         # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR
-        if check_multiple_single_step_outcars && { { [[ -f "CONTCAR" ]] && [[ $(wc -l < "CONTCAR") -le 9 ]] ;} || { [[ -f "CONTCAR" ]] && diff -q "POSCAR" "CONTCAR" >/dev/null; } || [[ ! -f "CONTCAR" ]]; }; then
+        if check_multiple_single_step_outcars && { [[ ! -f "CONTCAR" ]] || { [[ -f "CONTCAR" ]] && { [[ $(wc -l < "CONTCAR") -le 9 ]] || diff -q "POSCAR" "CONTCAR" >/dev/null; }; }; }; then
             echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic "
             echo "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
         fi
