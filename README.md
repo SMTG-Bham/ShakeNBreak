@@ -102,7 +102,7 @@ pip install --upgrade pymatgen shakenbreak
 `ShakeNBreak` can take `pymatgen` `Defect` objects as input (to then generate the trial distorted structures),
 **_but also_** can take in `pymatgen` `Structure` objects, `doped` defects or structure files
 (e.g. `POSCAR`s for `VASP`) as inputs. As such, it should be compatible with any defect code
-(such as [`doped`](https://doped.readthedocs.io/en/latest/index.html), [`pydefect`](https://github.com/kumagai-group/pydefect),
+(such as [`doped`](https://doped.readthedocs.io), [`pydefect`](https://github.com/kumagai-group/pydefect),
 [`PyCDT`](https://github.com/mbkumar/pycdt), [`PyLada`](https://github.com/pylada/pylada-defects),
 [`DASP`](http://hzwtech.com/files/software/DASP/htmlEnglish/index.html), [`Spinney`](https://gitlab.com/Marrigoni/spinney/-/tree/master),
 [`DefAP`](https://github.com/DefAP/defap), [`PyDEF`](https://github.com/PyDEF2/PyDEF-2.0)...) that generates these files.
@@ -128,10 +128,15 @@ Automatic testing is run on the master and develop branches using Github Actions
 
 ## Studies using `ShakeNBreak`
 
+- Z. Yuan & G. Hautier **_First-principles study of defects and doping limits in CaO_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0211707) 2024
 - B. E. Murdock et al. **_Li-Site Defects Induce Formation of Li-Rich Impurity Phases: Implications for Charge Distribution and Performance of LiNi<sub>0.5-x</sub>M<sub>x</sub>Mn<sub>1.5</sub>O<sub>4</sub> Cathodes (M = Fe and Mg; x = 0.05–0.2)_** [_Advanced Materials_](https://doi.org/10.1002/adma.202400343) 2024
-- A. G. Squires et al. **_Oxygen dimerization as a defect-driven process in bulk LiNiO2<sub>2</sub>_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-lcmkj) 2024
+- Y. Fu & H. Lohan et al. **_Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based
+Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_arXiv_](https://doi.org/10.48550/arXiv.2401.02257) 2024
+- S. Hachmioune et al. **_Exploring the Thermoelectric Potential of MgB4: Electronic Band Structure, Transport Properties, and Defect Chemistry_** [_Chemistry of Materials_](https://doi.org/10.1021/acs.chemmater.4c00584) 2024
+- J. Hu et al. **_Enabling ionic transport in Li3AlP2 the roles of defects and disorder_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-3s0kh) 2024
+- A. G. Squires et al. **_Oxygen dimerization as a defect-driven process in bulk LiNiO2<sub>2</sub>_** [_ACS Energy Letters_](https://pubs.acs.org/doi/10.1021/acsenergylett.4c01307) 2024
 - X. Wang et al. **_Upper efficiency limit of Sb<sub>2</sub>Se<sub>3</sub> solar cells_** [_Joule_](https://doi.org/10.1016/j.joule.2024.05.004) 2024
-- I. Mosquera-Lois et al. **_Machine-learning structural reconstructions for accelerated point defect calculations_** [_arXiv_](https://doi.org/10.48550/arXiv.2401.12127) 2024
+- I. Mosquera-Lois et al. **_Machine-learning structural reconstructions for accelerated point defect calculations_** [_npj Computational Materials_](https://doi.org/10.1038/s41524-024-01303-9) 2024
 - S. R. Kavanagh et al. **_doped: Python toolkit for robust and repeatable charged defect supercell calculations_** [_Journal of Open Source Software_](https://doi.org/10.21105/joss.06433) 2024
 - K. Li et al. **_Computational Prediction of an Antimony-based n-type Transparent Conducting Oxide: F-doped Sb<sub>2</sub>O<sub>5</sub>_** [_Chemistry of Materials_](https://doi.org/10.1021/acs.chemmater.3c03257) 2024
 - X. Wang et al. **_Four-electron negative-U vacancy defects in antimony selenide_** [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023

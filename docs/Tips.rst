@@ -220,7 +220,7 @@ message about the origin of the problem, it is likely to be an issue with your v
 
 If this does not solve your issue, please check the specific cases noted below. If your issue still isn't
 solved, then please contact the developers through the ``GitHub``
-`Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page, or by email.
+`Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page.
 
 - A current known issue with ``numpy``/``pymatgen`` is that it might give an error similar to this:
 
