@@ -273,6 +273,13 @@ def _prune_dict_across_charges(
                 defect_species_snb_name = f"{defect}_{'+' if charge > 0 else ''}{charge}"
                 for i in ["+", "", "+"]:  # back to SnB name with "+" if all fail
                     defect_species = defect_species_snb_name.replace("+", i)  # try with and without '+'
+                    distorted_struct = distortion_dict["structures"][0]
+                    if not isinstance(distorted_struct, Structure):
+                        raise ValueError(
+                            f"Distorted structure for {defect_species} was not correctly parsed. Instead "
+                            f"of a pymatgen Structure object, got: {type(distorted_struct)}; "
+                            f"{distorted_struct}"
+                        )
                     comparison_results = compare_struct_to_distortions(
                         distortion_dict["structures"][0],
                         defect_species,
@@ -460,7 +467,7 @@ def get_energy_lowering_distortions(
                         structure_filename=structure_filename,
                     )  # get the final structure of the
                     # energy lowering distortion
-                    if any(warning.category == UserWarning for warning in w):
+                    if any(issubclass(warning.category, UserWarning) for warning in w):
                         # problem parsing structure, user will have received appropriate
                         # warning from io.read_vasp_structure()
                         print(
@@ -532,7 +539,7 @@ def get_energy_lowering_distortions(
                             structure_path=f"{output_path}/{defect_species}/{bond_distortion}",
                             structure_filename=structure_filename,
                         )
-                        if any(warning.category == UserWarning for warning in w):
+                        if any(issubclass(warning.category, UserWarning) for warning in w):
                             # problem parsing structure, user will have received appropriate
                             # warning from io.read_vasp_structure()
                             print(

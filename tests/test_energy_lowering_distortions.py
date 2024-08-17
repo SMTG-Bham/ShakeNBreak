@@ -45,13 +45,13 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         self.FHI_AIMS_DATA_DIR = os.path.join(self.DATA_DIR, "fhi_aims")
         self.ESPRESSO_DATA_DIR = os.path.join(self.DATA_DIR, "quantum_espresso")
         self.V_Cd_minus_0pt55_structure = Structure.from_file(
-            self.VASP_CDTE_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
+            f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-55.0%/CONTCAR"
         )
 
         # create fake distortion folders for testing functionality:
         for defect_dir in ["Int_Cd_2_+1", "vac_1_Cd_-1", "vac_1_Cd_-2"]:
             if not os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect_dir}"):
-                os.mkdir(self.VASP_CDTE_DATA_DIR + f"/{defect_dir}")
+                os.mkdir(f"{self.VASP_CDTE_DATA_DIR}/{defect_dir}")
         # Int_Cd_2_+1 without data, to test warnings
         V_Cd_1_dict = {"distortions": {-0.075: -205.740}, "Unperturbed": -205.800}
         dumpfn(
@@ -79,16 +79,10 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             "sub_1_In_on_Cd_+1",
         ]
 
-        self.orig_castep_0pt3_files = os.listdir(
-            self.CASTEP_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
-        )
-        self.orig_cp2k_0pt3_files = os.listdir(self.CP2K_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%")
-        self.orig_fhi_aims_0pt3_files = os.listdir(
-            self.FHI_AIMS_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
-        )
-        self.orig_espresso_0pt3_files = os.listdir(
-            self.ESPRESSO_DATA_DIR + "/vac_1_Cd_0/Bond_Distortion_30.0%"
-        )
+        self.orig_castep_0pt3_files = os.listdir(f"{self.CASTEP_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_30.0%")
+        self.orig_cp2k_0pt3_files = os.listdir(f"{self.CP2K_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_30.0%")
+        self.orig_fhi_aims_0pt3_files = os.listdir(f"{self.FHI_AIMS_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_30.0%")
+        self.orig_espresso_0pt3_files = os.listdir(f"{self.ESPRESSO_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_30.0%")
 
     def tearDown(self):
         # removed generated folders
@@ -228,6 +222,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             low_energy_defects_dict = energy_lowering_distortions.get_energy_lowering_distortions(
                 self.defect_charges_dict, self.VASP_CDTE_DATA_DIR
             )
+        print([str(warning.message) for warning in w])  # for debugging
         mock_print.assert_any_call("\nvac_1_Cd")
         mock_print.assert_any_call(
             "vac_1_Cd_0: Energy difference between minimum, found with -0.55 bond distortion, "
