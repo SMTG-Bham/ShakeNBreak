@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+v3.3.6
+----------
+- Add `py.typed` to properly detect type hints by @Andrew-S-Rosen
+- `snb-run` updates to improve efficiency
+
 v3.3.5
 ----------
 - Enforce ``doped>=2.4.4`` requirement.
