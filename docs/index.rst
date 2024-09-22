@@ -225,16 +225,16 @@ Studies using ``ShakeNBreak``
 - Y\. Kumagai et al. **Alkali Mono-Pnictides: A New Class of Photovoltaic Materials by Element Mutation** `PRX Energy <http://dx.doi.org/10.1103/PRXEnergy.2.043002>`__ 2023
 - J\. Willis, K. B. Spooner, D. O. Scanlon. **On the possibility of p-type doping in barium stannate** `Applied Physics Letters <https://doi.org/10.1063/5.0170552>`__ 2023
 - A\. T. J. Nicolson et al. **Cu₂SiSe₃ as a promising solar absorber: harnessing cation dissimilarity to avoid killer antisites** `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA02429F>`__ 2023
-- J\. Cen et al. **Cation disorder dominates the defect chemistry of high-voltage LiMn** :sub:`1.5` **Ni** :sub:`0.5` **O₄ (LMNO) spinel cathodes** `Journal of Materials Chemistry A`_ 2023
+- J\. Cen et al. **Cation disorder dominates the defect chemistry of high-voltage LiMn** :sub:`1.5` **Ni** :sub:`0.5` **O₄ (LMNO) spinel cathodes** `Journal of Materials Chemistry A <https://doi.org/10.1039/D3TA00532A>`__ 2023
 - J\. Willis & R. Claes et al. **Limits to Hole Mobility and Doping in Copper Iodide** `Chemistry of Materials <https://doi.org/10.1021/acs.chemmater.3c01628>`__ 2023
-- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon **Identifying the ground state structures of point defects in solids** `npj Computational Materials`_ 2023
+- I\. Mosquera-Lois & S. R. Kavanagh, A. Walsh, D. O. Scanlon **Identifying the ground state structures of point defects in solids** `npj Computational Materials <https://www.nature.com/articles/s41524-023-00973-1>`__ 2023
 - B\. Peng et al. **Advancing understanding of structural, electronic, and magnetic properties in 3d-transition-metal TM-doped α-Ga₂O₃ (TM = V, Cr, Mn, and Fe)** `Journal of Applied Physics <https://doi.org/10.1063/5.0173544>`__ 2023
-- Y\. T. Huang & S. R. Kavanagh et al. **Strong absorption and ultrafast localisation in NaBiS₂ nanocrystals with slow charge-carrier recombination** `Nature Communications`_ 2022
-- S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt **Impact of metastable defect structures on carrier recombination in solar cells** `Faraday Discussions`_ 2022
+- Y\. T. Huang & S. R. Kavanagh et al. **Strong absorption and ultrafast localisation in NaBiS₂ nanocrystals with slow charge-carrier recombination** `Nature Communications <https://www.nature.com/articles/s41467-022-32669-3>`__ 2022
+- S\. R. Kavanagh, D. O. Scanlon, A. Walsh, C. Freysoldt **Impact of metastable defect structures on carrier recombination in solar cells** `Faraday Discussions <https://doi.org/10.1039/D2FD00043A>`__ 2022
 - Y-S\. Choi et al. **Intrinsic Defects and Their Role in the Phase Transition of Na-Ion Anode Na₂Ti₃O₇** `ACS Applied Energy Materials <https://doi.org/10.1021/acsaem.2c03466>`__ 2022 (Early version)
 - S\. R. Kavanagh, D. O. Scanlon, A. Walsh **Rapid Recombination by Cadmium Vacancies in CdTe** `ACS Energy Letters <https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380>`__ 2021
-- C\. J. Krajewska et al. **Enhanced visible light absorption in layered Cs₃Bi₂Br₉ through mixed-valence Sn(II)/Sn(IV) doping** `Chemical Science`_ 2021 (Early version)
-- (News & Views): A. Mannodi-Kanakkithodi **The devil is in the defects** `Nature Physics`_ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
+- C\. J. Krajewska et al. **Enhanced visible light absorption in layered Cs₃Bi₂Br₉ through mixed-valence Sn(II)/Sn(IV) doping** `Chemical Science <https://doi.org/10.1039/D1SC03775G>`__ 2021 (Early version)
+- (News & Views): A. Mannodi-Kanakkithodi **The devil is in the defects** `Nature Physics <https://doi.org/10.1038/s41567-023-02049-9>`__ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
 .. Se
 .. Wenzhen paper
@@ -245,14 +245,6 @@ Studies using ``ShakeNBreak``
 .. Sykes Magnetic oxide polarons
 .. Kat YTOS
 .. Squires (and mention benchmark test against AIRSS? See Slack message)
-
-.. _Journal of Materials Chemistry A: https://doi.org/10.1039/D3TA00532A
-.. _npj Computational Materials: https://www.nature.com/articles/s41524-023-00973-1
-.. _Nature Communications: https://www.nature.com/articles/s41467-022-32669-3
-.. _Faraday Discussions: https://doi.org/10.1039/D2FD00043A
-.. _ACS Energy Letters: https://pubs.acs.org/doi/full/10.1021/acsenergylett.1c00380
-.. _Nature Physics: https://doi.org/10.1038/s41567-023-02049-9
-.. _Chemical Science: https://doi.org/10.1039/D1SC03775G
 
 License and Citation
 ========================
