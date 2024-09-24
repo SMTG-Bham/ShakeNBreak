@@ -24,15 +24,11 @@ Where ``defects_folder`` is the path to the top level directory containing the d
 different from the current directory.
 
 Instead of a single defect, we can parse the results for **all** defects present
-in a given/current directory using the ``-a``/``--all`` flag:
-
-.. code:: bash
-
-    $ snb-parse -a
-
-This generates a ``yaml`` file for each defect, mapping each distortion to the
-final energy of the relaxed structures (in eV). These files are saved to the
-corresponding defect directory (e.g. ``defects_folder/v_Cd_0/v_Cd_0.yaml``).
+in a given/current directory by running ``snb-parse`` from the top-level directory
+containing our defect folders. This generates a ``yaml`` file for each defect,
+mapping each distortion to the final energy of the relaxed structures (in eV).
+These files are saved to the corresponding defect directory
+(e.g. ``defects_folder/v_Cd_0/v_Cd_0.yaml``).
 
 .. code:: yaml
 
@@ -63,12 +59,8 @@ was used (if not :code:`VASP`) and which reference structure to use (default = `
 
     $ snb-analyse --defect v_Cd_0 --code FHI-aims --path defects_folder --ref_struct -0.4 --verbose
 
-Again if we want to analyse the results for **all** defects present in a given/current directory, we can use the
-``-a``/``--all`` flag:
-
-.. code:: bash
-
-    $ snb-analyse -a
+Again if we want to analyse the results for **all** defects present in a given/current directory,
+we can just run ``snb-analyse`` from the top-level directory containing the defect folders.
 
 .. NOTE::
     Further analysis tools are provided through the python API. These are documented in
@@ -116,12 +108,8 @@ was used (if not :code:`VASP`) and other options (what ``metric`` to use for col
 
     $ snb-plot --defect v_Cd_0 --code FHI-aims --path defects_folder --colorbar -0.4 --metric disp --units meV --verbose
 
-Again if we want to plot the results for **all** defects present in a given/current directory, we can use the
-``-a``/``--all`` flag:
-
-.. code:: bash
-
-    $ snb-plot -a
+Again if we want to plot the results for **all** defects present in a given/current directory, we can
+just run ``snb-plot`` from the top-level directory containing the defect folders.
 
 .. TIP::
     See ``snb-plot -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_

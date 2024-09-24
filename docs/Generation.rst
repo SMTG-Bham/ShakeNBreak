@@ -198,12 +198,16 @@ Submitting the geometry optimisations
 =======================================
 
 Once the input files have been generated, we can submit the geometry optimisations
-for a single or all defects using the ``snb-run`` command.
-To submit all defects present in the current directory:
+for a single or all defects using the ``snb-run`` command:
 
 .. code:: bash
 
-    $ snb-run -a
+    $ snb-run
+
+If ``snb-run`` is run in the top-level directory (i.e. the directory containing the defect folders),
+it will loop through all defect folders present and attempt to submit the distortion calculations for
+each. Alternatively, it can be run within a single defect folder to just submit the calculations for
+that defect.
 
 This assumes the ``SGE`` queuing system (i.e. ``qsub`` = job submission command) for the HPC and a job script name of
 ``job`` by default, but again can be controlled with the ``--submit-command`` and ``--job-script`` flags
@@ -212,14 +216,7 @@ script file name of ``my_job_script.sh``, we would use:
 
 .. code:: bash
 
-    $ snb-run --submit-command sbatch --job-script my_job_script.sh --all
-
-
-To submit a single defect, we can simply run the command :code:`snb-run` within the defect folder:
-
-.. code:: bash
-
-    $ snb-run
+    $ snb-run --submit-command sbatch --job-script my_job_script.sh
 
 ``snb-run`` can be used to submit the initial geometry optimisation calculations, as well as automatically continuing
 and resubmitting calculations that have not yet converged (and handle calculations which have failed) as discussed in
