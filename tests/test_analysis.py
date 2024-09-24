@@ -75,6 +75,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
         if_present_rm("v_Ca_s0_0.png")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
 
     def copy_v_Ti_OUTCARs(self):
         """
@@ -1121,7 +1122,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR") as f:
             outcar_string = f.read()
         ispin1_outcar_string = re.sub(
-            "ISPIN  =      2    spin polarized calculation?", "ISPIN = 1", outcar_string
+            r"ISPIN\s*=\s*2", "ISPIN = 1", outcar_string
         )
         with open(
             f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR", "w"
@@ -1140,8 +1141,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertTrue(
             any(
                 f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR is "
-                f"from a "
-                "non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
+                f"from a non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
                 "is not possible. Skipping." in str(warning.message)
                 for warning in w
             )
