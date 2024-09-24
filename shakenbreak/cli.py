@@ -1121,6 +1121,14 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     is_flag=True,
     show_default=True,
 )
+@click.option(
+    "--style-file",
+    "-s",
+    help="Path to a mplstyle file to use for the plot(s).",
+    default="shakenbreak.mplstyle",
+    type=click.Path(exists=True, dir_okay=False),
+    show_default=True,
+)
 def plot(
     defect,
     all,
@@ -1134,11 +1142,15 @@ def plot(
     max_energy,
     no_title,
     verbose,
+    style_file,
 ):
     """
     Generate energy vs distortion plots. Optionally, the structural
     similarity between configurations can be illustrated with a colorbar.
     """
+    if style_file == "shakenbreak":
+        style_file = f"{os.path.dirname(os.path.abspath(__file__))}/shakenbreak.mplstyle"
+
     if all:
         if defect is not None:
             warnings.warn(
@@ -1166,6 +1178,7 @@ def plot(
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
             verbose=verbose,
+            style_file=style_file,
             close_figures=True,  # reduce memory usage with snb-plot with many defects at once
         )
 
@@ -1207,6 +1220,7 @@ def plot(
             units=units,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            style_file=style_file,
             verbose=verbose,
         )
     except Exception:
@@ -1228,6 +1242,7 @@ def plot(
                 units=units,
                 add_title=not no_title,
                 max_energy_above_unperturbed=max_energy,
+                style_file=style_file,
                 verbose=verbose,
             )
         except Exception as exc:
