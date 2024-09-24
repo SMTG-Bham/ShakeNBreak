@@ -764,7 +764,7 @@ def _format_legend(
 
     # set handlelength to max length of unique_labels value, divided by 2 (so enough spacing for all
     # handles that are included in the legend):
-    handlelength = max(len(handle) for handle in unique_labels.values()) / 2
+    handlelength = max(max(len(handle) for handle in unique_labels.values()) / 2, 1)
 
     # Prepare the legend entries, creating a handler_map excluding 'legend_label'
     handler_map = {}
@@ -1759,7 +1759,6 @@ def plot_datasets(
             ) = _format_datapoints_from_other_chargestates(energies_dict=dataset, disp_dict=None)
             min_max_distortions.extend([min(sorted_distortions), max(sorted_distortions)])
 
-            colors = colors if len(datasets) == 1 else [colors[dataset_number]] * 1000
             _path_col, _line = _plot_distortions(
                 ax=ax,
                 energies_dict=dataset,
@@ -1768,7 +1767,7 @@ def plot_datasets(
                 sorted_energies=sorted_energies,
                 keys=keys,
                 disp_dict=None,
-                colors=colors,
+                colors=colors if len(datasets) == 1 else [colors[dataset_number]] * 1000,
                 style_settings=default_style_settings,
                 label=dataset_labels[dataset_number],
             )

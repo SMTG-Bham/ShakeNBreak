@@ -50,6 +50,5 @@ ytick.left           : True
 ytick.labelsize      : 11.5
 
 # Legend
-legend.handlelength  : 1.2
-legend.fontsize      : 13
+legend.fontsize      : 12
 legend.frameon       : False
