@@ -762,9 +762,9 @@ def _format_legend(
         else:
             unique_labels[label] += (handle,)
 
-    # set handlelength to max length of unique_labels value, divided by 2 (so enough spacing for all
+    # set handlelength to max length of unique_labels value, divided by 1.5 (so enough spacing for all
     # handles that are included in the legend):
-    handlelength = max(max(len(handle) for handle in unique_labels.values()) / 2, 1)
+    handlelength = max(max(len(handle) for handle in unique_labels.values()) / 1.5, 1)
 
     # Prepare the legend entries, creating a handler_map excluding 'legend_label'
     handler_map = {}
@@ -939,6 +939,8 @@ def plot_all_defects(
                         f"Energy lowering distortion found for {defect} with "
                         f"charge {'+' if charge > 0 else ''}{charge}. Generating distortion plot..."
                     )
+                num_nearest_neighbours = None
+                neighbour_atom = None
                 if distortion_metadata and isinstance(distortion_metadata, list):
                     # try load directly from defect folder first:
                     with contextlib.suppress(FileNotFoundError):
@@ -962,9 +964,6 @@ def plot_all_defects(
                     num_nearest_neighbours, neighbour_atom = _parse_distortion_metadata(
                         distortion_metadata, defect, charge
                     )
-                elif distortion_metadata is None:
-                    num_nearest_neighbours = None
-                    neighbour_atom = None
 
                 defects_to_plot[defect_species] = {
                     "energies_dict": energies_dict,
@@ -1300,7 +1299,7 @@ def _plot_distortions(
             path_col = ax.scatter(
                 0.0,
                 energies_dict["distortions"][special_entry],
-                c=_get_color_from_colormap(disp_dict.get(special_entry, colors[0]), colormap, norm),
+                color=_get_color_from_colormap(disp_dict.get(special_entry, colors[0]), colormap, norm),
                 label=special_entry,
                 s=50,
                 marker=style_settings.get("marker", "s" if special_entry == "Dimer" else "o"),
@@ -1374,7 +1373,7 @@ def _plot_distortions(
             ax.scatter(  # distortions from other charge states
                 np.array(keys)[i],
                 sorted_energies[sorted_i],
-                c=(colors * 100)[  # repeat colours in case many imported charge states
+                color=(colors * 100)[  # repeat colours in case many imported charge states
                     j + 1
                 ],  # different colors for different imported charge states, if only one dataset
                 edgecolors="k",
