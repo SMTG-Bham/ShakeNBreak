@@ -1586,7 +1586,7 @@ def apply_snb_distortions(
     seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
         for raw_distortion in bond_distortions:
-            if isinstance(raw_distortion, float):
+            if not isinstance(raw_distortion, str):
                 distortion = round(raw_distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
                 if verbose:
                     print(f"--Distortion {distortion:.1%}")
@@ -2092,6 +2092,7 @@ class Distortions:
         oxidation_states: dict,
         dict_number_electrons_user: dict,
         defect_entry: DefectEntry,
+        verbose: bool = True,
     ) -> int:
         """
         Parse or calculate the number of extra/missing electrons
@@ -2113,6 +2114,10 @@ class Distortions:
             defect_entry (:obj:`DefectEntry`):
                 DefectEntry in dictionary of defect_entries. Must be a
                 `doped` or `pymatgen` DefectEntry object.
+            verbose (:obj:`bool`):
+                Whether to print the number of extra/missing electrons for
+                the defect.
+                (Default: True)
 
         Returns:
             :obj:`int`:
@@ -2124,11 +2129,12 @@ class Distortions:
         else:
             number_electrons = _calc_number_electrons(defect_entry, defect_name, oxidation_states)
 
-        _bold_print(f"\nDefect: {defect_name}")
-        if number_electrons < 0:
-            _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
-        else:
-            _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
+        if verbose:
+            _bold_print(f"\nDefect: {defect_name}")
+            if number_electrons < 0:
+                _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
+            else:
+                _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
         return number_electrons
 
     def _get_number_distorted_neighbours(
@@ -2136,6 +2142,7 @@ class Distortions:
         defect_name: str,
         number_electrons: int,
         charge: int,
+        verbose: bool = True,
     ) -> int:
         """
         Calculate extra/missing electrons accounting for the charge state of
@@ -2147,10 +2154,11 @@ class Distortions:
         num_nearest_neighbours = _calc_number_neighbours(
             num_electrons_charged_defect
         )  # Number of distorted neighbours for each charge state
-        print(
-            f"\nDefect {defect_name} in charge state: {'+' if charge > 0 else ''}{charge}. "
-            f"Number of distorted neighbours: {num_nearest_neighbours}"
-        )
+        if verbose:
+            print(
+                f"\nDefect {defect_name} in charge state: {'+' if charge > 0 else ''}{charge}. "
+                f"Number of distorted neighbours: {num_nearest_neighbours}"
+            )
         return num_nearest_neighbours
 
     def _print_distortion_info(
@@ -2356,10 +2364,11 @@ class Distortions:
                             'structures': {...},
                         },
                     },
-                }
+                }}
                 and dictionary with distortion parameters for each defect.
         """
-        self._print_distortion_info(bond_distortions=self.bond_distortions, stdev=self.stdev)
+        if verbose:
+            self._print_distortion_info(bond_distortions=self.bond_distortions, stdev=self.stdev)
 
         distorted_defects_dict = {}  # Store distorted & undistorted structures
 
@@ -2390,6 +2399,7 @@ class Distortions:
                 oxidation_states=self.oxidation_states,
                 dict_number_electrons_user=self.dict_number_electrons_user,
                 defect_entry=defect_entry,
+                verbose=verbose,
             )
 
             self.distortion_metadata["defects"][defect_name] = {
@@ -2408,6 +2418,7 @@ class Distortions:
                     defect_name=defect_name,
                     number_electrons=number_electrons,
                     charge=charge,
+                    verbose=verbose,
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
