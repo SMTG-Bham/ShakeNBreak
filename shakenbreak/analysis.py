@@ -91,38 +91,35 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, (float, int)):
-        if distortion != 0:
-            distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-            # as percentage with 1 decimal place (e.g. 50.0%)
-        else:
-            distortion_label = f"Bond_Distortion_{distortion:.1f}%"
-    elif isinstance(distortion, str):
-        if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
-            distortion_label = f"Bond_Distortion_{distortion}"
-            # runs from other charge states
-        elif (
-            "Rattled_from_" in distortion
-            or "Dimer_from" in distortion
-            or distortion
-            in [
-                "Unperturbed",
-                "Rattled",
-                "Dimer",
-            ]
-        ):
-            distortion_label = distortion
-        elif distortion == "Unperturbed" or distortion == "Rattled" or distortion == "Dimer":
-            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"/"Dimer"
-        else:
-            try:  # try converting to float, in case user entered '0.5'
-                distortion = float(distortion)
-                distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-            except Exception:
-                distortion_label = "Distortion_not_recognized"
-    else:
-        distortion_label = "Distortion_not_recognized"
-    return distortion_label
+    if not isinstance(distortion, str):
+        try:
+            if distortion != 0:  # as percentage with 1 decimal place (e.g. 50.0%)
+                return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+
+            return f"Bond_Distortion_{distortion:.1f}%"
+        except Exception:
+            return "Distortion_not_recognized"
+
+    # otherwise is string:
+    if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
+        return f"Bond_Distortion_{distortion}"  # runs from other charge states
+    if (
+        "Rattled_from_" in distortion
+        or "Dimer_from" in distortion
+        or distortion
+        in [
+            "Unperturbed",
+            "Rattled",
+            "Dimer",
+        ]
+    ):
+        return distortion
+
+    try:  # try converting to float, in case user entered '0.5'
+        distortion = float(distortion)
+        return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+    except Exception:
+        return "Distortion_not_recognized"
 
 
 def _format_distortion_names(
