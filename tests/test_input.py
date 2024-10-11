@@ -2434,7 +2434,7 @@ class InputTestCase(unittest.TestCase):
         (i.e. if doped defect folder already generated).
         """
         drs = DefectRelaxSet(self.Ag_Sb_AgSbTe2_m2_defect_entry)
-        drs.write_all(unperturbed_poscar=True)
+        drs.write_all(poscar=True, rattle=False)
 
         self.assertTrue(os.path.exists(f"{self.Ag_Sb_AgSbTe2_m2_defect_entry.name}"))
         self.assertTrue(
