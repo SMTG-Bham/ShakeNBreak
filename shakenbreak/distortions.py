@@ -296,7 +296,7 @@ def rattle(
             structure. Monte Carlo rattle moves that put atoms at
             distances less than this will be heavily penalised.
             Default is to set this to 80% of the nearest neighbour
-            distance in the defect supercell (ignoring interstitials).
+            distance in the defect supercell.
         verbose (:obj:`bool`):
             Whether to print information about the rattling process.
         n_iter (:obj:`int`):
