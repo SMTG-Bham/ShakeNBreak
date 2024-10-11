@@ -283,7 +283,7 @@ def parse_energies(
                 energies[dist_name] = prev_energies_dict[dist_name]
             elif "distortions" in prev_energies_dict and dist_name in prev_energies_dict["distortions"]:
                 energies["distortions"][dist_name] = prev_energies_dict["distortions"][dist_name]
-            else:
+            elif f"{dist}_High_Energy" not in dist_dirs:  # don't warn if was renamed to High_Energy
                 warnings.warn(f"No output file in {dist} directory")
 
     if energies["distortions"]:
@@ -396,21 +396,22 @@ def read_vasp_structure(
     """
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
-        warnings.warn(
-            f"{abs_path_formatted} file doesn't exist, storing as "
-            f"'Not converged'. Check path & relaxation"
-        )
-        struct = "Not converged"
-    else:
-        try:
-            struct = Structure.from_file(abs_path_formatted)
-        except Exception:
+        # check if there's an equivalent high-energy folder, and if so don't warn
+        if not os.path.exists(abs_path_formatted.rsplit("/", 1)[0] + "_High_Energy"):
             warnings.warn(
-                f"Problem obtaining structure from: {abs_path_formatted}, "
-                f"storing as 'Not converged'. Check file & relaxation"
+                f"{abs_path_formatted} file doesn't exist, storing as "
+                f"'Not converged'. Check path & relaxation"
             )
-            struct = "Not converged"
-    return struct
+        return "Not converged"
+
+    try:
+        return Structure.from_file(abs_path_formatted)
+    except Exception:
+        warnings.warn(
+            f"Problem obtaining structure from: {abs_path_formatted}, "
+            f"storing as 'Not converged'. Check file & relaxation"
+        )
+        return "Not converged"
 
 
 def read_espresso_structure(
