@@ -211,6 +211,7 @@ run tests and add new tests for any new features whenever submitting pull reques
 Studies using ``ShakeNBreak``
 =============================
 
+- S\. R. Kavanagh et al. **Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2024-91h02>`__ 2024
 - Z\. Yuan & G. Hautier **First-principles study of defects and doping limits in CaO** `Applied Physics Letters <https://doi.org/10.1063/5.0211707>`_ 2024
 - B\. E. Murdock et al. **Li-Site Defects Induce Formation of Li-Rich Impurity Phases: Implications for Charge Distribution and Performance of LiNi** :sub:`0.5-x` **M** :sub:`x` **Mn** :sub:`1.5` **O** :sub:`4`  **Cathodes (M = Fe and Mg; x = 0.05–0.2)** `Advanced Materials <https://doi.org/10.1002/adma.202400343>`_ 2024
 - A\. G. Squires et al. **Oxygen dimerization as a defect-driven process in bulk LiNiO₂** `ACS Energy Letters <https://pubs.acs.org/doi/10.1021/acsenergylett.4c01307>`__ 2024
