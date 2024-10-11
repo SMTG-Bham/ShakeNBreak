@@ -166,12 +166,11 @@ def snb():
     show_default=True,
 )
 @click.option(
-    "--verbose",
-    "-v",
-    help="Print information about identified defects and generated distortions",
-    default=False,
-    is_flag=True,
-    show_default=True,
+    "--verbose/--non-verbose",
+    "-v/-nv",
+    help="Print information about identified defects and generated distortions. "
+    "Default (None) gives medium level verbosity.",
+    default=None,
 )
 def generate(
     defect,
@@ -251,7 +250,7 @@ def generate(
         defect_index=defect_index,
         defect_coords=defect_coords,
     )
-    if verbose and defect_index is None and defect_coords is None:
+    if verbose is not False and defect_index is None and defect_coords is None:  # medium level verbosity
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -297,9 +296,8 @@ def generate(
     if name is None:
         name = get_defect_name_from_entry(defect_entries[0], relaxed=False)
 
-    # if user_charges not set for all defects, print info about how charge states will be
-    # determined
-    if not defect_object.user_charges:
+    # if user_charges not set for all defects, print info about how charge states will be determined
+    if not defect_object.user_charges and verbose is not False:  # medium level verbosity
         print(
             "Defect charge states will be set to the range: 0 - {Defect oxidation state}, "
             f"with a `padding = {padding}` on either side of this range."
@@ -443,12 +441,11 @@ def generate(
     show_default=True,
 )
 @click.option(
-    "--verbose",
-    "-v",
-    help="Print information about identified defects and generated distortions",
-    default=False,
-    is_flag=True,
-    show_default=True,
+    "--verbose/--non-verbose",
+    "-v/-nv",
+    help="Print information about identified defects and generated distortions. "
+    "Default (None) gives medium level verbosity.",
+    default=None,
 )
 def generate_all(
     defects,
@@ -633,7 +630,7 @@ def generate_all(
                 None if _bulk_oxi_states else "Undetermined"
             ),  # guess if bulk_oxi, else "Undetermined"
         )
-        if verbose:
+        if verbose is not False:  # medium level verbosity
             site = defect_object.site
             site_info = (
                 f"{site.species_string} at [{site._frac_coords[0]:.3f},"

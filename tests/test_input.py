@@ -1573,7 +1573,6 @@ class InputTestCase(unittest.TestCase):
             with warnings.catch_warnings(record=True) as w:
                 _, distortion_metadata = dist.write_vasp_files(
                     user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
-                    verbose=False,
                 )
 
         # check if expected folders were created:
@@ -1696,6 +1695,12 @@ class InputTestCase(unittest.TestCase):
                 input.default_potcar_dict["POTCAR"][el_symbol]
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
             }
+
+        # check quiet output with verbose=False
+        self.tearDown()
+        with patch("builtins.print") as mock_print:
+            dist.write_vasp_files(verbose=False)
+            mock_print.assert_not_called()
 
         # Test `Rattled` folder not generated for non-fully-ionised defects,
         # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
@@ -2138,10 +2143,7 @@ class InputTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_print:
             with warnings.catch_warnings(record=True) as w:
-                _, distortion_metadata = dist.write_vasp_files(
-                    user_incar_settings={"IVDW": 12},
-                    verbose=False,
-                )
+                _, distortion_metadata = dist.write_vasp_files(user_incar_settings={"IVDW": 12})
 
         # check if expected folders were created:
         for key in self.cdte_doped_reduced_defect_gen.keys():

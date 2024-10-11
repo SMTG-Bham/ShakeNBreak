@@ -1094,6 +1094,7 @@ def generate_defect_object(
             List of charge states for the defect.
         verbose (:obj:`bool`):
             Whether to print information about the defect object being parsed.
+            (Default is False).
 
     Returns: :obj:`Defect`
     """
@@ -2262,7 +2263,7 @@ class Distortions:
 
     def apply_distortions(
         self,
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
     ) -> Tuple[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in `defect_entries`.
@@ -2274,7 +2275,7 @@ class Distortions:
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and distances)
                 for each charged defect.
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2290,7 +2291,7 @@ class Distortions:
                 }}
                 and dictionary with distortion parameters for each defect.
         """
-        if verbose:
+        if verbose is not False:  # medium level verbosity
             self._print_distortion_info(bond_distortions=self.bond_distortions, stdev=self.stdev)
 
         distorted_defects_dict = {}  # Store distorted & undistorted structures
@@ -2322,7 +2323,7 @@ class Distortions:
                 oxidation_states=self.oxidation_states,
                 dict_number_electrons_user=self.dict_number_electrons_user,
                 defect_entry=defect_entry,
-                verbose=verbose,
+                verbose=verbose is not False,  # medium level verbosity,
             )
 
             self.distortion_metadata["defects"][defect_name] = {
@@ -2341,7 +2342,7 @@ class Distortions:
                     defect_name=defect_name,
                     number_electrons=number_electrons,
                     charge=charge,
-                    verbose=verbose,
+                    verbose=verbose is not False,  # medium level verbosity,
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
@@ -2352,7 +2353,7 @@ class Distortions:
                     stdev=self.stdev,
                     distorted_element=distorted_element,
                     distorted_atoms=self.distorted_atoms,
-                    verbose=verbose,
+                    verbose=verbose is True,  # high level verbosity,
                     oxidation_states=self.oxidation_states,
                     **self._mc_rattle_kwargs,
                 )
@@ -2365,7 +2366,7 @@ class Distortions:
                     if shortest_interatomic_distance < 1.0 and all(
                         el.symbol != "H" for el in struct.composition.elements
                     ):
-                        if verbose:
+                        if verbose is True:  # high level verbosity
                             warnings.warn(
                                 f"{dist} for defect {defect_name} gives an interatomic distance "
                                 f"less than 1.0 Å ({shortest_interatomic_distance:.2} Å), "
@@ -2453,7 +2454,7 @@ class Distortions:
         user_potcar_functional: Optional[str] = "PBE",
         user_potcar_settings: Optional[dict] = None,
         output_path: str = ".",
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
         **kwargs,
     ) -> Tuple[dict, dict]:
         """
@@ -2486,7 +2487,7 @@ class Distortions:
                 (Default is current directory = ".")
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and
-                distances). (Default: False)
+                distances). (Default: None -- medium level verbosity)
             kwargs:
                 Additional keyword arguments to pass to `_create_vasp_input()`
                 (Mainly for testing purposes).
@@ -2560,7 +2561,7 @@ class Distortions:
         input_file: Optional[str] = None,
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
         profile=None,
     ) -> Tuple[dict, dict]:
         """
@@ -2593,7 +2594,7 @@ class Distortions:
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
             profile (:obj:`BaseProfile`, optional):
                 ASE profile object to use for the ``Espresso()`` calculator
                 class, if using ase>=3.23. If ``None`` (default), set to
@@ -2695,7 +2696,7 @@ class Distortions:
         input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
     ) -> Tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output structures.
@@ -2715,7 +2716,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2759,7 +2760,7 @@ class Distortions:
         input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/castep.param",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
     ) -> Tuple[dict, dict]:
         """
         Generates input `.cell` and `.param` files for CASTEP relaxations of
@@ -2780,7 +2781,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2835,7 +2836,7 @@ class Distortions:
         ase_calculator=None,  # Aims or AimsTemplate
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
         profile=None,
     ) -> Tuple[dict, dict]:
         """
@@ -2867,7 +2868,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
             profile (:obj:`BaseProfile`, optional):
                 ASE profile object to use for the ``Aims()`` calculator
                 class, if using ase>=3.23. If ``None`` (default), set to
