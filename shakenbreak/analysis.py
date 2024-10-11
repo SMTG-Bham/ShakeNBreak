@@ -7,6 +7,7 @@ import json
 import os
 import warnings
 from copy import deepcopy
+from functools import lru_cache
 from typing import Optional, Union
 
 import numpy as np
@@ -540,6 +541,26 @@ def get_energies(
     return defect_energies_dict
 
 
+@lru_cache(maxsize=int(1e4))
+def _cached_calculate_atomic_disp(
+    struct1: Structure,
+    struct2: Structure,
+    stol: float = 0.5,
+    ltol: float = 0.3,
+    angle_tol: float = 5,
+) -> tuple:
+    """
+    ``_calculate_atomic_disp`` but with lru-caching.
+
+    Should only really be used internally in ``ShakeNBreak``
+    as it relies on the ``Structure`` hashes, which in ``pymatgen``
+    is just the composition which is unusable here, but this is
+    monkey-patched in ``calculate_struct_comparison`` below for
+    fast internal usage.
+    """
+    return _calculate_atomic_disp(struct1, struct2, stol, ltol, angle_tol)
+
+
 def _calculate_atomic_disp(
     struct1: Structure,
     struct2: Structure,
@@ -548,7 +569,7 @@ def _calculate_atomic_disp(
     angle_tol: float = 5,
 ) -> tuple:
     """
-    Calculate root mean square displacement and atomic displacements,
+    Calculate root-mean-square displacement and atomic displacements,
     normalized by the free length per atom ((Vol/Nsites)^(1/3)) between
     two structures.
 
@@ -578,6 +599,20 @@ def _calculate_atomic_disp(
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
+    # use doped modifiers for Composition and PeriodicSite comparisons (speeds up structure matching
+    # dramatically):
+    from doped.utils.efficiency import Composition as doped_Composition
+    from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
+    from pymatgen.core.composition import Composition
+    from pymatgen.core.sites import PeriodicSite
+
+    Composition.__instances__ = {}
+    Composition.__eq__ = doped_Composition.__eq__
+    PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
+
+    # StructureMatcher._cart_dists() is the performance bottleneck for large supercells here. It could
+    # likely be made faster using Cython/numba (see
+    # https://github.com/materialsproject/pymatgen/issues/2593), caching and/or multiprocessing
     sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True)
     struct1, struct2 = sm._process_species([struct1, struct2])
     struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
@@ -679,12 +714,19 @@ def calculate_struct_comparison(
 
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
+
+    # hash structure info to avoid recalculating
+    def struct_hash(struct):
+        return hash(str(struct.lattice.matrix) + str(np.round(struct.frac_coords, 4)))
+
+    Structure.__hash__ = struct_hash
+
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] == "Not converged":
             disp_dict[distortion] = "Not converged"  # Structure not converged
         else:
             try:
-                _, norm_dist = _calculate_atomic_disp(
+                _, norm_dist = _cached_calculate_atomic_disp(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
                     stol=stol,
@@ -888,21 +930,22 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    elements: list,
+    elements: Union[list, str],
     radius: Optional[float] = 3.3,
     verbose: bool = True,
 ) -> dict:
     """
-    Returns a list of homoionic bonds for the given element. These bonds
-    are often formed by the defect neighbouts to accomodate charge
+    Returns a list of homo-ionic bonds for the given element. These bonds
+    are often formed by the defect neighbours to accommodate charge
     deficiency.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
         elements (:obj:`list`):
-            List of element symbols (wihout oxidation state) for which
-            to find the homoionic bonds (e.g. ["Te", "Se"]).
+            List or single string of element symbols (wihout
+            oxidation state) for which to find the homoionic
+            bonds (e.g. ["Te", "Se"]).
         radius (:obj:`float`, optional):
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
