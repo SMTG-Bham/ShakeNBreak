@@ -118,6 +118,9 @@ class PlottingDefectsTestCase(unittest.TestCase):
         if_present_rm("as_2_O_on_I_1.png")
         if_present_rm("vac_1_Cd_0.png")
         if_present_rm("v_Ca_s0_0.png")
+        for file in os.listdir((f"{self.VASP_DIR}/Va_O1_1")):
+            if file.endswith(".png"):
+                os.remove(f"{self.VASP_DIR}/Va_O1_1/{file}")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""

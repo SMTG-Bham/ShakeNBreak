@@ -329,7 +329,7 @@ class CLITestCase(unittest.TestCase):
                 catch_exceptions=False,
             )  # non-verbose this time
         self.assertEqual(result.exit_code, 0)
-        self.assertNotIn(
+        self.assertIn(  # printed with medium-level verbosity
             "Auto site-matching identified "
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR "
             f"to be type Vacancy with site Cd at [0.000, 0.000, 0.000]",
@@ -1072,6 +1072,30 @@ class CLITestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(f"{defect_name}_+5"))
         self.assertFalse(os.path.exists(f"{defect_name}_-7"))
 
+        # test no printed output when verbose=False  (need to provide oxidation states for no output)
+        test_yml = """oxidation_states:
+          Cd: 2
+          Te: -2
+        """
+        with open("test_config.yml", "w+") as fp:
+            fp.write(test_yml)
+        result = runner.invoke(
+            snb,
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-nv",  # non-verbose
+                "--config",
+                "test_config.yml",  # to give oxi states for no output
+            ],
+            catch_exceptions=False,
+        )
+        print(result.output)  # for debugging
+        assert not result.output  # no printed output
+
     def test_snb_generate_config(self):
         # test config file:
         test_yml = """
@@ -1142,7 +1166,7 @@ oxidation_states:
             ],
         )
         self.assertEqual(result.exit_code, 0)
-        self.assertNotIn("Auto site-matching identified", result.output)
+        self.assertIn("Auto site-matching identified", result.output)  # medium verbosity
         self.assertNotIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
@@ -1191,7 +1215,7 @@ local_rattle: False
         )
         defect_name = "Int_Cd_2"
         self.assertEqual(result.exit_code, 0)
-        self.assertNotIn("Auto site-matching identified", result.output)
+        self.assertIn("Auto site-matching identified", result.output)  # medium verbosity
         self.assertIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', "
@@ -1279,7 +1303,7 @@ local_rattle: False
             ],
         )
         self.assertEqual(result.exit_code, 0)
-        self.assertNotIn("Auto site-matching identified", result.output)
+        self.assertIn("Auto site-matching identified", result.output)  # medium verbosity
         self.assertIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', '-0.25', "
@@ -1857,6 +1881,7 @@ POTCAR:
                 "4",
             ],
         )
+        print(result.output)
         # check print info message:
         self.assertIn(
             "Defect charge states will be set to the range: 0 - {Defect oxidation "
