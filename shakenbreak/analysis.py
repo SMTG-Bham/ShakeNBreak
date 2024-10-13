@@ -16,8 +16,8 @@ from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
 from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core.periodic_table import Element
-from pymatgen.core.structure import Structure
+from pymatgen.core.composition import Composition, Element
+from pymatgen.core.structure import IStructure, PeriodicSite, Structure
 from pymatgen.io.vasp.outputs import Outcar
 
 from shakenbreak import input, io
@@ -599,17 +599,6 @@ def _calculate_atomic_disp(
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
-    # use doped modifiers for Composition and PeriodicSite comparisons (speeds up structure matching
-    # dramatically):
-    from doped.utils.efficiency import Composition as doped_Composition
-    from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
-    from pymatgen.core.composition import Composition
-    from pymatgen.core.sites import PeriodicSite
-
-    Composition.__instances__ = {}
-    Composition.__eq__ = doped_Composition.__eq__
-    PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
-
     # StructureMatcher._cart_dists() is the performance bottleneck for large supercells here. It could
     # likely be made faster using Cython/numba (see
     # https://github.com/materialsproject/pymatgen/issues/2593), caching and/or multiprocessing
@@ -715,11 +704,17 @@ def calculate_struct_comparison(
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
 
-    # hash structure info to avoid recalculating
-    def struct_hash(struct):
-        return hash(str(struct.lattice.matrix) + str(np.round(struct.frac_coords, 4)))
+    # use doped efficiency functions for speed (speeds up structure matching dramatically):
+    from doped.utils.efficiency import Composition as doped_Composition
+    from doped.utils.efficiency import IStructure as doped_IStructure
+    from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
 
-    Structure.__hash__ = struct_hash
+    Composition.__instances__ = {}
+    Composition.__eq__ = doped_Composition.__eq__
+    PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
+    PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
+    IStructure.__instances__ = {}
+    IStructure.__eq__ = doped_IStructure.__eq__
 
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] == "Not converged":
