@@ -1,17 +1,27 @@
 Installation
 =====================
 
-ShakeNBreak can be installed using ``pip``:
-
-.. code:: bash
-
-    pip install --user shakenbreak
-
-Alternatively if needed, it can also be installed from ``conda`` with:
+``ShakeNBreak`` can be installed using ``conda``:
 
 .. code:: bash
 
     conda install -c conda-forge shakenbreak
+
+or ``pip``:
+
+.. code:: bash
+
+    pip install shakenbreak
+
+.. NOTE::
+   Due to a recent change in the python build procedure for ``phonopy`` (an indirect dependency of
+   ``ShakeNBreak``), in version ``2.26``, ``pip install shakenbreak`` can fail on some older systems (with
+   older versions of ``gcc``). This can be resolved by either (1) installing ``ShakeNBreak`` from ``conda``
+   (as above), (2) installing ``phonopy`` from ``conda`` (see
+   `here <https://phonopy.github.io/phonopy/install.html>`__) and then ``ShakeNBreak`` with ``pip``,
+   (3) installing ``phonopy<=2.25``  (``pip install phonopy<=2.25``) and then ``ShakeNBreak`` with ``pip``,
+   or (4) upgrading your system's ``gcc`` to a more recent version if possible.
+
 
 If using ``VASP``, in order for ``ShakeNBreak`` to automatically generate the pseudopotential
 input files (``POTCARs``), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``

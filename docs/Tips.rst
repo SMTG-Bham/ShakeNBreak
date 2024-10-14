@@ -222,6 +222,8 @@ If this does not solve your issue, please check the specific cases noted below. 
 solved, then please contact the developers through the ``GitHub``
 `Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page.
 
+- For any issues relating to installation, please see the `Installation`_ page.
+
 - A current known issue with ``numpy``/``pymatgen`` is that it might give an error similar to this:
 
   .. code:: python
@@ -238,3 +240,6 @@ solved, then please contact the developers through the ``GitHub``
 
 
 Have any tips for users from using `ShakeNBreak`? Please share it with the developers and we'll add them here!
+
+
+.. _Installation: https://shakenbreak.readthedocs.io/en/latest/Installation.html
