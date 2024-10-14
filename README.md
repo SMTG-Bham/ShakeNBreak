@@ -31,19 +31,20 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 - News & Views: Mannodi-Kanakkithodi, A. [The Devil is in the Defects](https://doi.org/10.1038/s41567-023-02049-9), _Nature Physics_ **2023** ([Free-to-read link](https://t.co/EetpnRgjzh))
 
 ## Installation
-`ShakeNBreak` can be installed using `pip`:
+`ShakeNBreak` can be installed using `conda`:
 ```bash
-  pip install shakenbreak
+conda install -c conda-forge shakenbreak
+```
+or `pip`:
+```bash
+pip install shakenbreak
 ```
 
-Alternatively if needed, it can also be installed from `conda` with:
-```bash
-  conda install -c conda-forge shakenbreak
-```
+See the [Installation docs](https://shakenbreak.readthedocs.io/en/latest/Installation.html) if you encounter any issues (e.g. known issue with `phonopy` `CMake` build).
 
 If using `VASP`, in order for `ShakeNBreak` to automatically generate the pseudopotential input files (`POTCAR`s), your local `VASP` pseudopotential directory must be set in the `pymatgen` configuration file `$HOME/.pmgrc.yaml` as follows:
 ```bash
-  PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
+PMG_VASP_PSP_DIR: <Path to VASP pseudopotential top directory>
 ```
    Within your `VASP` pseudopotential top directory, you should have a folder named `POT_GGA_PAW_PBE`
    which contains the `POTCAR.X(.gz)` files (in this case for PBE `POTCAR`s). Please refer to the [`doped` Installation docs](https://doped.readthedocs.io/en/latest/Installation.html) if you have
@@ -56,15 +57,15 @@ For development work, ShakeNBreak can also be installed from a copy of the sourc
 
 1. Download `ShakeNBreak` source code using the command:
 ```bash
-  git clone https://github.com/SMTG-Bham/ShakeNBreak
+git clone https://github.com/SMTG-Bham/ShakeNBreak
 ```
 2. Navigate to root directory:
 ```bash
-  cd ShakeNBreak
+cd ShakeNBreak
 ```
 3. Install the code, using the command:
 ```bash
-  pip install -e .
+pip install -e .
 ```
    This command tries to obtain the required packages and their dependencies and install them automatically.
 

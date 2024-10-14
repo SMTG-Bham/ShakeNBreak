@@ -71,18 +71,20 @@ Literature
 Installation
 ========================
 
-``ShakeNBreak`` can be installed using ``pip``:
+``ShakeNBreak`` can be installed using ``conda``:
 
 .. code:: bash
 
-  pip install shakenbreak
+    conda install -c conda-forge shakenbreak
 
-Alternatively if needed, it can also be installed from ``conda`` with:
+or ``pip``:
 
 .. code:: bash
 
-  conda install -c conda-forge shakenbreak
+    pip install shakenbreak
 
+See the `Installation docs <https://shakenbreak.readthedocs.io/en/latest/Installation.html>`__ if you
+encounter any issues (e.g. known issue with ``phonopy`` ``CMake`` build).
 
 If using ``VASP``, in order for ``ShakeNBreak`` to automatically generate the pseudopotential
 input files (``POTCARs``), your local ``VASP`` pseudopotential directory must be set in the ``pymatgen``
