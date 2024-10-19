@@ -130,6 +130,7 @@ Automatic testing is run on the master and develop branches using Github Actions
 ## Studies using `ShakeNBreak`
 
 - S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-91h02) 2024
+- X. Wang et al. **_Sulfur Vacancies Limit the Open-circuit Voltage of Sb<sub>2</sub>S<sub>3</sub> Solar Cells_** [_arXiv_](https://doi.org/10.48550/arXiv.2410.10560) 2024
 - Z. Yuan & G. Hautier **_First-principles study of defects and doping limits in CaO_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0211707) 2024
 - B. E. Murdock et al. **_Li-Site Defects Induce Formation of Li-Rich Impurity Phases: Implications for Charge Distribution and Performance of LiNi<sub>0.5-x</sub>M<sub>x</sub>Mn<sub>1.5</sub>O<sub>4</sub> Cathodes (M = Fe and Mg; x = 0.05–0.2)_** [_Advanced Materials_](https://doi.org/10.1002/adma.202400343) 2024
 - Y. Fu & H. Lohan et al. **_Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based
