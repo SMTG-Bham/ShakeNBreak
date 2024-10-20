@@ -150,8 +150,8 @@ def snb():
 @click.option(
     "--config",
     "-conf",
-    help="Config file for advanced distortion settings. See example in"
-    " SnB_input_files/example_generate_config.yaml",
+    help="Config file for advanced distortion settings. See example in "
+    "shakenbreak/SnB_input_files/example_generate_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
     show_default=True,
@@ -426,7 +426,7 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "/SnB_input_files/example_generate_all_config.yaml",
+    "shakenbreak/SnB_input_files/example_generate_all_config.yaml",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
