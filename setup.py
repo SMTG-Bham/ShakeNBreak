@@ -114,17 +114,6 @@ class CustomEggInfoCommand(egg_info):
         _install_custom_font()
 
 
-# https://stackoverflow.com/questions/27664504/how-to-add-package-data-recursively-in-python-setup-py
-def package_files(directory):
-    """Include package data."""
-    paths = []
-    for path, _dir, filenames in os.walk(directory):
-        paths.extend(os.path.join("..", path, filename) for filename in filenames)
-    return paths
-
-
-input_files = package_files("SnB_input_files/")
-
 with open("README.md", encoding="utf-8") as file:
     long_description = file.read()
 
@@ -192,7 +181,7 @@ setup(
     },
     # Specify any non-python files to be distributed with the package
     package_data={
-        "shakenbreak": ["shakenbreak/*", *input_files],
+        "shakenbreak": ["shakenbreak/*"],
     },
     include_package_data=True,
     # Specify the custom installation class

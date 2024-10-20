@@ -32,7 +32,7 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     To specify additional distortion parameters, we can use a
-    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/shakenbreak/SnB_input_files/example_generate_config.yaml>`_
     file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
     A detailed description of all the parameters is available in the Python API section
     (:ref:`shakenbreak.input.Distortions class <api_input>`).
@@ -122,7 +122,7 @@ the following directory structures will be parsed correctly:
 
 .. NOTE::
     To specify the charge state range for each defect, as well as other optional arguments, we can use a
-    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/shakenbreak/SnB_input_files/example_generate_all_config.yaml>`_ file
     like the one below. A detailed description of all the parameters is available in the
     Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
 

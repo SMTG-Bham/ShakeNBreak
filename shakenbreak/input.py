@@ -40,9 +40,9 @@ from pymatgen.io.vasp.sets import BadInputSetWarning
 from shakenbreak import analysis, distortions, io
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
+default_potcar_dict = loadfn(f"{MODULE_DIR}/SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakeNBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml"))
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/incar.yaml"))
 
 
 _ignore_pmg_warnings()  # Ignore pymatgen POTCAR warnings
@@ -305,7 +305,7 @@ def _create_vasp_input(
             Dictionary of user VASP POTCAR settings, to overwrite/update
             the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
             recommended to look at output `POTCAR`s, or `shakenbreak`
-            `SnB_input_files/default_POTCARs.yaml`, to see what the default
+            `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
             `POTCAR` settings are. (Default: None)
         output_path (:obj:`str`):
             Path to directory in which to write distorted defect structures and
@@ -2466,7 +2466,7 @@ class Distortions:
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
                 for those tags. Highly recommended to look at output `INCAR`s,
-                or `SnB_input_files/incar.yaml` to see what the default `INCAR`
+                or `shakenbreak/SnB_input_files/incar.yaml` to see what the default `INCAR`
                 settings are. Note that any flags that aren't numbers or
                 True/False need to be input as strings with quotation marks
                 (e.g. `{"ALGO": "All"}`). (Default: None)
@@ -2477,7 +2477,7 @@ class Distortions:
                 Dictionary of user VASP POTCAR settings, to overwrite/update
                 the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
                 recommended to look at output `POTCAR`s, or `shakenbreak`
-                `SnB_input_files/default_POTCARs.yaml`, to see what the default
+                `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
                 `POTCAR` settings are. (Default: None)
             write_files (:obj:`bool`):
                 Whether to write output files (Default: True)
@@ -2575,11 +2575,11 @@ class Distortions:
             input_parameters (:obj:`dict`, optional):
                 Dictionary of user Quantum Espresso input parameters, to
                 overwrite/update `shakenbreak` default ones (see
-                `SnB_input_files/qe_input.yaml`).
+                `shakenbreak/SnB_input_files/qe_input.yaml`).
                 (Default: None)
             input_file (:obj:`str`, optional):
                 Path to Quantum Espresso input file, to overwrite/update
-                `shakenbreak` default ones (see `SnB_input_files/qe_input.yaml`).
+                `shakenbreak` default ones (see `shakenbreak/SnB_input_files/qe_input.yaml`).
                 If both `input_parameters` and `input_file` are provided,
                 the input_parameters will be used.
                 (Default: None)
@@ -2619,7 +2619,7 @@ class Distortions:
 
         # Update default parameters with user defined values
         if pseudopotentials and not write_structures_only:
-            default_input_parameters = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/qe_input.yaml"))
+            default_input_parameters = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/qe_input.yaml"))
             if input_file and not input_parameters:
                 input_parameters = io.parse_qe_input(input_file)
             if input_parameters:
@@ -2693,7 +2693,7 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp",
+        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
@@ -2725,15 +2725,13 @@ class Distortions:
         """
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
-        elif (
-            os.path.exists(f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp") and not write_structures_only
-        ):
+        elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
             warnings.warn(
                 f"Specified input file {input_file} does not exist! Using"
                 " default CP2K input file "
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
-            cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp")
+            cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp")
 
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -2757,7 +2755,7 @@ class Distortions:
 
     def write_castep_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/castep.param",
+        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/castep.param",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
