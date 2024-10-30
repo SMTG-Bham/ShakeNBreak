@@ -97,7 +97,7 @@ SnB_run_loop() {
       if [ -f "../Unperturbed/OUTCAR" ] && (($(grep -c entropy= ../Unperturbed/OUTCAR) > 0)); then
         unperturbed_energy=$(grep entropy= ../Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
       else
-        unperturbed_energy=-10000
+        unperturbed_energy=10000
       fi
       if [ -f OUTCAR ]; then # if OUTCAR exists so rerunning rather than 1st run
         # count number of ionic steps with positive energies, after the first 5 ionic steps
@@ -166,24 +166,22 @@ SnB_run_loop() {
           num_ionic_steps=$(grep entropy= OUTCAR* | wc -l)  # use wc -l rather than grep -c because multiple files
           if [ -f ../Unperturbed/OUTCAR ]; then  # only compare if Unperturbed folder present
             # If equal or higher than 150, compare to final energy in Unperturbed OUTCAR
-            if ((num_ionic_steps >= 150)); then
+            if ((num_ionic_steps >= 150)) && (($(echo "$energy_diff_to_unperturbed > 2" | bc -l))); then
               # If energy difference to Unperturbed is higher than 2 eV, rename to _High_Energy and continue
-              if (($(echo "$energy_diff_to_unperturbed > 1" | bc -l))); then
-                echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation"
-                echo "is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
-                echo "Renaming to ${i%?}_High_Energy and continuing."
-                builtin cd .. || return
-                mv "${i%/}" "${i%/}_High_Energy"
-                continue
-              # If higher than 500 and energy similar to Unperturbed, rename to _High_Energy and continue
-              elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))); then
-                echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, "
-                echo "indicating that ${i%?} won't lead to an energy-lowering structure. "
-                echo "Renaming to ${i%?}_High_Energy and continuing."
-                builtin cd .. || return
-                mv "${i%/}" "${i%/}_High_Energy"
-                continue
-              fi
+              echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation"
+              echo "is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
+              echo "Renaming to ${i%?}_High_Energy and continuing."
+              builtin cd .. || return
+              mv "${i%/}" "${i%/}_High_Energy"
+              continue
+            # If higher than 500 ionic steps, energy not changing significantly and higher energy than Unperturbed, rename to _High_Energy and continue
+            elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))) && (($(echo "$energy_diff_to_unperturbed > 0.5" | bc -l))); then
+              echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, "
+              echo "indicating that ${i%?} won't lead to an energy-lowering structure. "
+              echo "Renaming to ${i%?}_High_Energy and continuing."
+              builtin cd .. || return
+              mv "${i%/}" "${i%/}_High_Energy"
+              continue
             fi
           fi
           # else if more than 300 ionic steps taken (and not moved to High_Energy), warn user to check this manually
