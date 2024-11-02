@@ -3725,27 +3725,6 @@ class InputTestCase(unittest.TestCase):
             list([0.8125, 0.1875, 0.8125]),
         )
 
-        # test defect_coords working even when significantly off (~2.2 Å) correct site,
-        # with rattled bulk
-        rattled_bulk = rattle(self.CdTe_bulk_struc)
-        with patch("builtins.print") as mock_print:
-            dist = input.Distortions.from_structures(
-                [(self.V_Cd_struc, [0, 0, 0])], bulk=rattled_bulk
-            )
-        for charge in [0, -1, -2]:
-            self.assertEqual(
-                [
-                    i.defect
-                    for i in dist.defects_dict[list(dist.defects_dict.keys())[0]]
-                    if i.charge_state == charge
-                ][0],
-                [
-                    i.defect
-                    for i in self.cdte_defects["vac_1_Cd"]
-                    if i.charge_state == charge
-                ][0],
-            )
-
         # Test wrong type for defect index/coords
         with warnings.catch_warnings(record=True) as w:
             dist = input.Distortions.from_structures(

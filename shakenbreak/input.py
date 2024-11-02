@@ -21,8 +21,8 @@ from doped import _ignore_pmg_warnings
 from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
-    get_defect_site_idxs_and_unrelaxed_structure,
     get_defect_type_and_composition_diff,
+    get_defect_type_site_idxs_and_unrelaxed_structure,
 )
 from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
@@ -959,12 +959,11 @@ def identify_defect(
 
     try:
         (
+            _defect_type,
             auto_matching_bulk_site_index,
             auto_matching_defect_site_index,
             unrelaxed_defect_structure,
-        ) = get_defect_site_idxs_and_unrelaxed_structure(
-            bulk_structure, defect_structure, defect_type, comp_diff
-        )
+        ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
 
     except Exception as exc:
         # failed auto-site matching, rely on user input or raise error if no user input

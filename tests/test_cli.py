@@ -209,6 +209,18 @@ class CLITestCase(unittest.TestCase):
         if os.path.exists(f"{v_Ti_0_distortion_10pct_dir}_High_Energy"):
             os.rename(f"{v_Ti_0_distortion_10pct_dir}_High_Energy", v_Ti_0_distortion_10pct_dir)
 
+        if_present_rm(f"{self.VASP_DIR}/vac_1_Ti_1")
+        if os.path.exists(f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/prev_otcr"):
+            shutil.move(
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/prev_otcr",
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/OUTCAR"
+            )
+        if os.path.exists(f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy"):
+            os.rename(
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy",
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%"
+            )
+
     def copy_v_Ti_OUTCARs(self):
         """
         Copy the OUTCAR files from the `v_Ti_0` `example_results` directory to the `vac_1_Ti_0` `vasp`
@@ -1139,7 +1151,9 @@ POTCAR:
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
-            assert filecmp.cmp(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR", self.V_Cd_INCAR_file)
+            assert Incar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/INCAR") == Incar.from_file(
+                self.V_Cd_INCAR_file
+            )
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_-50.0%/POTCAR")
