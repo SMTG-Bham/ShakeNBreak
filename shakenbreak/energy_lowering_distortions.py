@@ -99,9 +99,9 @@ def _compare_distortion(
     gs_distortion: float,
     gs_struct: Structure,
     low_energy_defects: dict,
-    stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = False,
+    **sm_kwargs,
 ) -> dict:
     """
     Compare the ground state distortion (`gs_distortion`) to the other
@@ -125,17 +125,16 @@ def _compare_distortion(
             pymatgen Structure object of the ground state configuration.
         low_energy_defects (:obj:`dict):
             Dictionary storing all unique, energy-lowering distortions.
-        stol (:obj:`float`):
-            Site-matching tolerance for structure matching. Site
-            tolerance defined as the fraction of the average free length
-            per atom := ( V / Nsites ) ** (1/3).
-            (Default: 0.5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
             (Default: False)
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`
@@ -153,9 +152,9 @@ def _compare_distortion(
             ],  # just select the first structure in
             # each list as these structures have already been
             # found to match
-            stol=stol,
             min_dist=min_dist,
             verbose=verbose,
+            **sm_kwargs,
         )
         comparison_dicts_dict[i] = struct_comparison_dict
 
@@ -210,9 +209,9 @@ def _prune_dict_across_charges(
     code: str = "VASP",
     structure_filename: str = "CONTCAR",
     output_path: str = ".",
-    stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = False,
+    **sm_kwargs,
 ) -> dict:
     """
     Screen through defects to check if any lower-energy distorted structures
@@ -237,11 +236,6 @@ def _prune_dict_across_charges(
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
-        stol (:obj:`float`):
-            Site-matching tolerance for structure matching. Site
-            tolerance defined as the fraction of the average free length
-            per atom := ( V / Nsites ) ** (1/3).
-            (Default: 0.5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
@@ -249,6 +243,10 @@ def _prune_dict_across_charges(
             Whether to print verbose information about parsed defect
             structures for energy-lowering distortions, if found.
             (Default: False)
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`
@@ -286,9 +284,9 @@ def _prune_dict_across_charges(
                         output_path,
                         code=code,
                         structure_filename=structure_filename,
-                        stol=stol,
                         min_dist=min_dist,
                         verbose=verbose,
+                        **sm_kwargs,
                     )
                     if comparison_results[0] is not None:
                         break
@@ -329,11 +327,11 @@ def get_energy_lowering_distortions(
     code: str = "vasp",
     structure_filename: str = "CONTCAR",
     min_e_diff: float = 0.05,
-    stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = False,
     write_input_files: bool = False,
     metastable: bool = False,
+    **sm_kwargs,
 ) -> dict:
     """
     Convenience function to identify defect species undergoing
@@ -367,11 +365,6 @@ def get_energy_lowering_distortions(
             defect structure, relative to the `Unperturbed` structure,
             to consider it as having found a new energy-lowering
             distortion. Default is 0.05 eV.
-        stol (:obj:`float`):
-            Site-matching tolerance for structure matching. Site
-            tolerance defined as the fraction of the average free length
-            per atom := ( V / Nsites ) ** (1/3).
-            (Default: 0.5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             order to consider them not matching (in Å, default = 0.2 Å).
@@ -387,6 +380,10 @@ def get_energy_lowering_distortions(
             energy-lowering distortions, as these can become ground-state
             distortions for other charge states.
             (Default: False)
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`:
@@ -493,9 +490,9 @@ def get_energy_lowering_distortions(
                         gs_distortion=gs_distortion,
                         gs_struct=gs_struct,
                         low_energy_defects=low_energy_defects,
-                        stol=stol,
                         min_dist=min_dist,
                         verbose=verbose,
+                        **sm_kwargs,
                     )
 
                 else:  # if defect not in dict, add it
@@ -565,9 +562,9 @@ def get_energy_lowering_distortions(
                                 gs_distortion=distortion,
                                 gs_struct=struct,
                                 low_energy_defects=low_energy_defects,
-                                stol=stol,
                                 min_dist=min_dist,
                                 verbose=verbose,
+                                **sm_kwargs,
                             )
 
                         else:  # if defect not in dict, add it
@@ -621,8 +618,8 @@ def get_energy_lowering_distortions(
             code=code,
             structure_filename=structure_filename,
             output_path=output_path,
-            stol=stol,
             min_dist=min_dist,
+            **sm_kwargs,
         )
 
         # Write input files for the identified distortions
@@ -642,9 +639,9 @@ def compare_struct_to_distortions(
     output_path: str = ".",
     code: str = "vasp",
     structure_filename: str = "CONTCAR",
-    stol: float = 0.5,
     min_dist: float = 0.2,
     verbose: bool = False,
+    **sm_kwargs,
 ) -> tuple:
     """
     Compares the ground-state structure found for a certain defect charge
@@ -669,17 +666,16 @@ def compare_struct_to_distortions(
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
-        stol (:obj:`float`):
-            Site-matching tolerance for structure matching. Site
-            tolerance defined as thefraction of the average free length
-            per atom := ( V / Nsites ) ** (1/3).
-            (Default: 0.5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold between structures, in
             orderto consider them not matching (in Å, default = 0.2 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
             (Default: False)
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`tuple`:
@@ -708,10 +704,10 @@ def compare_struct_to_distortions(
         defect_structures_dict=defect_structures_dict,
         defect_energies_dict=defect_energies_dict,
         ref_structure=distorted_struct,
-        stol=stol,
         min_dist=min_dist,
         display_df=False,
         verbose=verbose,
+        **sm_kwargs,
     )
     if struct_comparison_df is None:  # no converged structures found for
         # defect_species
@@ -802,13 +798,8 @@ def compare_struct_to_distortions(
             struc_key,
         )
 
-    # no matches
-    return (
-        False,
-        None,
-        None,
-        None,
-    )  # T/F, matching structure, energy_diff, distortion factor
+    # no matches; T/F, matching structure, energy_diff, distortion factor
+    return (False, None, None, None)
 
 
 def write_retest_inputs(
