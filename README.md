@@ -129,6 +129,7 @@ Automatic testing is run on the master and develop branches using Github Actions
 
 ## Studies using `ShakeNBreak`
 
+- W. D. Neilson et al. **_Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO<sub>2±x</sub>: A Density Functional Theory Study_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.4c06580) 2024
 - S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-91h02) 2024
 - X. Wang et al. **_Sulfur Vacancies Limit the Open-circuit Voltage of Sb<sub>2</sub>S<sub>3</sub> Solar Cells_** [_arXiv_](https://doi.org/10.48550/arXiv.2410.10560) 2024
 - Z. Yuan & G. Hautier **_First-principles study of defects and doping limits in CaO_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0211707) 2024
