@@ -312,7 +312,7 @@ class CLITestCase(unittest.TestCase):
             V_Cd_minus0pt5_rattled_POSCAR.structure,
             self.V_Cd_minus0pt5_struc_rattled,
         )
-
+    
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 

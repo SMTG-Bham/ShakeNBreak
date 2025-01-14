@@ -909,7 +909,7 @@ class InputTestCase(unittest.TestCase):
                 # distortion
                 mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
             # Check Dimer added for vacancies
-            # mock_print.assert_any_call(f"--Distortion Dimer")
+            mock_print.assert_any_call(f"--Distortion Dimer")
 
         # plus some hard-coded checks
         self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["distortions"])
@@ -942,6 +942,8 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_distorted_dict["distortion_parameters"],
             self.Int_Cd_2_normal_distortion_parameters,
         )
+        # Check Dimer distortion only added to vacancies by default
+        self.assertNotIn("Dimer", Int_Cd_2_distorted_dict["distortions"].keys())
 
     @patch("builtins.print")
     def test_apply_snb_distortions_kwargs(self, mock_print):
