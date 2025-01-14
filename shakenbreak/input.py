@@ -12,7 +12,7 @@ import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union, Tuple
 
 import ase
 import numpy as np
@@ -1342,6 +1342,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1367,6 +1368,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1508,6 +1510,13 @@ def apply_snb_distortions(
 
     seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
+        # If vacancy, add "Dimer" to bond_distortions to ensure dimer reconstruction
+        # is found.
+        if defect_type == "vacancy" and (
+            "dimer" not in (str(item).lower() for item in bond_distortions)
+        ):
+            bond_distortions = list(bond_distortions) # in case provided as array
+            bond_distortions.append("Dimer")
         for raw_distortion in bond_distortions:
             if not isinstance(raw_distortion, str):
                 distortion = round(raw_distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
@@ -1547,6 +1556,8 @@ def apply_snb_distortions(
 
             elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
                 # Apply dimer distortion, with rattling
+                if verbose:
+                   print(f"--Distortion {raw_distortion}")
                 bond_distorted_defect = _apply_rattle_bond_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=2,
@@ -1620,6 +1631,7 @@ def apply_snb_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
             distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"].update(
@@ -2106,6 +2118,7 @@ class Distortions:
         defect_site_index: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
+        defect_type: str = "",
     ) -> dict:
         """
         Update distortion_metadata with distortion information for each
@@ -2133,6 +2146,11 @@ class Distortions:
                 }
             }
         )
+        # If vacancy, add "Dimer" to bond_distortions
+        if defect_type == "vacancy":
+            distortion_metadata["defects"][defect_name]["charges"][int(charge)][
+                "distortion_parameters"
+            ]["bond_distortions"] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
@@ -2394,6 +2412,7 @@ class Distortions:
                     defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
+                    defect_type=defect_entry.defect.defect_type.name.lower()
                 )
 
         return distorted_defects_dict, self.distortion_metadata
