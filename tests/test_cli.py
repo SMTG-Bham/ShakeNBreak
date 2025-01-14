@@ -2566,7 +2566,7 @@ Chosen VASP error message: {error_string}
         with open("Unperturbed/OUTCAR", "r") as f:
             outcar_string = f.read()
         final_mag_string = outcar_string[-5870:]
-        edited_final_mag_string = re.sub("[0-9]\.\d+", "0.000", final_mag_string)  # zero magnetisation
+        edited_final_mag_string = re.sub(r"[0-9]\.\d+", "0.000", final_mag_string)  # zero magnetisation
 
         with open("Unperturbed/OUTCAR", "w") as f:
             f.write(outcar_string[:-5870] + edited_final_mag_string)  # zero magnetisation

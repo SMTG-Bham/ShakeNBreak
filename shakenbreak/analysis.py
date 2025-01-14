@@ -692,8 +692,7 @@ def calculate_struct_comparison(
                     disp_dict[distortion] = max(norm_dist) / normalization  # Remove normalization
                 else:
                     raise ValueError(f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'.")
-            except TypeError as exc:
-                raise exc
+            except TypeError:
                 disp_dict[distortion] = None  # algorithm couldn't match lattices. Set metric to None
                 # warnings.warn(
                 #     f"pymatgen StructureMatcher could not match lattices between "
