@@ -106,7 +106,7 @@ was used (if not :code:`VASP`) and other options (what ``metric`` to use for col
 
 .. code:: bash
 
-    $ snb-plot --defect v_Cd_0 --code FHI-aims --path defects_folder --colorbar -0.4 --metric disp --units meV --verbose
+    $ snb-plot --defect v_Cd_0 --code FHI-aims --path defects_folder --colorbar --ref_struct -0.4 --metric disp --units meV --verbose
 
 Again if we want to plot the results for **all** defects present in a given/current directory, we can
 just run ``snb-plot`` from the top-level directory containing the defect folders.
