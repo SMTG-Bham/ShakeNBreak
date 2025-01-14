@@ -1342,6 +1342,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1367,6 +1368,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1554,8 +1556,8 @@ def apply_snb_distortions(
 
             elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
                 # Apply dimer distortion, with rattling
-                # if verbose:
-                #    print(f"--Distortion {raw_distortion}")
+                if verbose:
+                   print(f"--Distortion {raw_distortion}")
                 bond_distorted_defect = _apply_rattle_bond_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=2,
@@ -1629,6 +1631,7 @@ def apply_snb_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
             distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"].update(
