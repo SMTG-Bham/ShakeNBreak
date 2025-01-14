@@ -2150,7 +2150,7 @@ class Distortions:
         if defect_type == "vacancy":
             distortion_metadata["defects"][defect_name]["charges"][int(charge)][
                 "distortion_parameters"
-            ]["bond_distortions"] = self.bond_distortions + ["Dimer"]
+            ]["bond_distortions"] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
