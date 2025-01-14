@@ -8,7 +8,12 @@ import datetime
 import os
 import shutil
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
+import sys
+if sys.version_info >= (3, 9):
+    tuple_type = tuple
+else:
+    from typing import Tuple as tuple_type
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -182,7 +187,7 @@ def _change_energy_units_to_meV(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
     y_label: str,
-) -> Tuple[dict, float, str]:
+) -> tuple_type[dict, float, str]:
     """
     Converts energy values from eV to meV and format y label accordingly.
 
@@ -211,7 +216,7 @@ def _change_energy_units_to_meV(
 def _purge_data_dicts(
     disp_dict: dict,
     energies_dict: dict,
-) -> Tuple[dict, dict]:
+) -> tuple_type[dict, dict]:
     """
     Purges dictionaries of displacements and energies so that they are consistent
     (i.e. contain data for same distortions).
@@ -249,7 +254,7 @@ def _remove_high_energy_points(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
     disp_dict: Optional[dict] = None,
-) -> Tuple[dict, dict]:
+) -> tuple_type[dict, dict]:
     """
     Remove points whose energy is higher than the reference (Unperturbed) by
     more than `max_energy_above_unperturbed`.
@@ -285,7 +290,7 @@ def _get_displacement_dict(
     energies_dict: dict,
     add_colorbar: bool,
     code: Optional[str] = "vasp",
-) -> Tuple[bool, dict, dict]:
+) -> tuple_type[bool, dict, dict]:
     """
     Parses structures of `defect_species` to calculate displacements between each
     of them and the reference configuration (Unperturbed). These displacements
@@ -635,7 +640,7 @@ def _get_line_colors(number_of_colors: int) -> list:
 
 def _setup_colormap(
     disp_dict: dict,
-) -> Tuple[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
+) -> tuple_type[mpl.colors.Colormap, float, float, float, mpl.colors.Normalize]:
     """
     Setup colormap to measure structural similarity between structures.
 
@@ -1234,7 +1239,7 @@ def _setup_plot(
     num_nearest_neighbours: Optional[int],
     neighbour_atom: Optional[str],
     **fig_kwargs,
-) -> Tuple[plt.Figure, plt.Axes]:
+) -> tuple_type[plt.Figure, plt.Axes]:
     _install_custom_font()
     fig, ax = plt.subplots(1, 1, **fig_kwargs)
 
