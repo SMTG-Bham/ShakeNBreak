@@ -206,6 +206,11 @@ class InputTestCase(unittest.TestCase):
                 cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Distortion_Rattled_POSCAR"
             )
         )
+        cls.V_Cd_dimer_struc_0pt1_rattled = Structure.from_file(
+            os.path.join(
+                cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt1_POSCAR"
+            )
+        )
         cls.V_Cd_dimer_struc_0pt25_rattled = Structure.from_file(
             os.path.join(
                 cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt25_POSCAR"
@@ -219,6 +224,11 @@ class InputTestCase(unittest.TestCase):
         )
         cls.V_Cd_minus0pt5_struc_kwarged = Structure.from_file(
             os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-50%_Kwarged_POSCAR")
+        )
+        cls.V_Cd_dimer_struc_kwarged = Structure.from_file(
+            os.path.join(
+                cls.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_0p15_kwarged_POSCAR"
+            )
         )
         cls.Int_Cd_2_struc = Structure.from_file(
             os.path.join(cls.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_POSCAR")
@@ -245,6 +255,9 @@ class InputTestCase(unittest.TestCase):
             "unique_site": np.array([0.0, 0.0, 0.0]),
             "num_distorted_neighbours": 2,
             "distorted_atoms": [(33, "Te"), (42, "Te")],
+            # Add Dimer-related info:
+            'num_distorted_neighbours_in_dimer': 2,
+            'distorted_atoms_in_dimer': [[32, 'Te'], [41, 'Te']],
         }
         cls.Int_Cd_2_normal_distortion_parameters = {
             "unique_site": cls.Int_Cd_2_dict["unique_site"].frac_coords,
@@ -453,7 +466,10 @@ class InputTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         # reset locale:
-        locale.setlocale(locale.LC_CTYPE, self.original_locale)  # should be UTF-8
+        try:
+            locale.setlocale(locale.LC_CTYPE, self.original_locale)  # should be UTF-8
+        except locale.Error:
+            locale.setlocale(locale.LC_CTYPE, 'C')  # Fallback to a safe default
 
         # remove test-generated defect folders if present
         for i in self.cdte_defect_folders_old_names + self.cdte_defect_folders:
@@ -838,7 +854,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_0pt1_distorted_dict = input.apply_snb_distortions(
             self.V_Cd_entry,
             num_nearest_neighbours=2,
-            bond_distortions=[-0.5],
+            bond_distortions=[-0.5,],
             stdev=0.1,
             verbose=True,
             seed=42,  # old default
@@ -849,6 +865,9 @@ class InputTestCase(unittest.TestCase):
         distorted_V_Cd_struc.remove_oxidation_states()
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
+        distorted_V_Cd_dimer_struc = V_Cd_0pt1_distorted_dict["distortions"]["Dimer"]
+        distorted_V_Cd_dimer_struc.remove_oxidation_states()
+        self.assertEqual(self.V_Cd_dimer_struc_0pt1_rattled, distorted_V_Cd_dimer_struc)
 
         np.testing.assert_equal(
             V_Cd_distorted_dict["distortion_parameters"],
@@ -889,12 +908,16 @@ class InputTestCase(unittest.TestCase):
                 ]  # different structure for each
                 # distortion
                 mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
+            # Check Dimer added for vacancies
+            mock_print.assert_any_call(f"--Distortion Dimer")
 
         # plus some hard-coded checks
         self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["distortions"])
         self.assertIn("Bond_Distortion_60.0%", V_Cd_distorted_dict["distortions"])
         # test zero distortion is written as positive zero (not "-0.0%")
         self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
+        # Check Dimer added for vacancies
+        self.assertIn("Dimer", V_Cd_distorted_dict["distortions"])
 
     def test_apply_snb_distortions_Int_Cd_2(self):
         """Test apply_distortions function for Int_Cd_2"""
@@ -919,6 +942,8 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_distorted_dict["distortion_parameters"],
             self.Int_Cd_2_normal_distortion_parameters,
         )
+        # Check Dimer distortion only added to vacancies by default
+        self.assertNotIn("Dimer", Int_Cd_2_distorted_dict["distortions"].keys())
 
     @patch("builtins.print")
     def test_apply_snb_distortions_kwargs(self, mock_print):
@@ -994,6 +1019,9 @@ class InputTestCase(unittest.TestCase):
         distorted_V_Cd_struc.remove_oxidation_states()
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_kwarged, distorted_V_Cd_struc)
+        distorted_V_Cd_dimer_struc = V_Cd_kwarg_distorted_dict["distortions"]["Dimer"]
+        distorted_V_Cd_dimer_struc.remove_oxidation_states()
+        self.assertEqual(self.V_Cd_dimer_struc_kwarged, distorted_V_Cd_dimer_struc)
         np.testing.assert_equal(
             V_Cd_kwarg_distorted_dict["distortion_parameters"],
             self.V_Cd_distortion_parameters,
@@ -2869,7 +2897,7 @@ class InputTestCase(unittest.TestCase):
         generated_input = pathlib.Path(
             "vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi"
         ).read_text()
-        self.assertEqual(test_input, generated_input) 
+        self.assertEqual(test_input, generated_input)
 
         # Test parameter file is not written if write_structures_only = True
         for i in self.cdte_defect_folders_old_names:
@@ -2884,7 +2912,7 @@ class InputTestCase(unittest.TestCase):
         generated_input = pathlib.Path(
             "vac_1_Cd_0/Bond_Distortion_30.0%/espresso.pwi"
         ).read_text()
-        self.assertEqual(test_input, generated_input) 
+        self.assertEqual(test_input, generated_input)
 
         # Test user defined parameters
         _, _ = Dist.write_espresso_files(
@@ -3250,7 +3278,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
             "structures"
         ]["distortions"]
-        self.assertEqual(len(V_Cd_distortions_dict), 16)
+        self.assertEqual(len(V_Cd_distortions_dict), 17)  # 16 distortions and Dimer
         self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
@@ -3279,7 +3307,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
             "structures"
         ]["distortions"]
-        self.assertEqual(len(V_Cd_distortions_dict), 16)
+        self.assertEqual(len(V_Cd_distortions_dict), 17)
         self.assertFalse("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
@@ -3327,7 +3355,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_distortions_dict = distortion_defect_dict["vac_1_Cd"]["charges"][0][
             "structures"
         ]["distortions"]
-        self.assertEqual(len(V_Cd_distortions_dict), 21)  # 21 total distortions
+        self.assertEqual(len(V_Cd_distortions_dict), 22)  # 21 total distortions + Dimer
         self.assertTrue("Bond_Distortion_-80.0%" in V_Cd_distortions_dict)
         self.assertTrue("Bond_Distortion_-75.0%" in V_Cd_distortions_dict)
 
