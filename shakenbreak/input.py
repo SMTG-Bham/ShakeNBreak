@@ -12,7 +12,7 @@ import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
 
 import ase
 import numpy as np
@@ -1512,10 +1512,8 @@ def apply_snb_distortions(
     if num_nearest_neighbours != 0:
         # If vacancy, add "Dimer" to bond_distortions to ensure dimer reconstruction
         # is found.
-        if defect_type == "vacancy" and (
-            "dimer" not in (str(item).lower() for item in bond_distortions)
-        ):
-            bond_distortions = list(bond_distortions) # in case provided as array
+        if defect_type == "vacancy" and ("dimer" not in (str(item).lower() for item in bond_distortions)):
+            bond_distortions = list(bond_distortions)  # in case provided as array
             bond_distortions.append("Dimer")
         for raw_distortion in bond_distortions:
             if not isinstance(raw_distortion, str):
@@ -1557,7 +1555,7 @@ def apply_snb_distortions(
             elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
                 # Apply dimer distortion, with rattling
                 if verbose:
-                   print(f"--Distortion {raw_distortion}")
+                    print(f"--Distortion {raw_distortion}")
                 bond_distorted_defect = _apply_rattle_bond_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=2,
@@ -2148,9 +2146,9 @@ class Distortions:
         )
         # If vacancy, add "Dimer" to bond_distortions
         if defect_type == "vacancy":
-            distortion_metadata["defects"][defect_name]["charges"][int(charge)][
-                "distortion_parameters"
-            ]["bond_distortions"] = [*self.bond_distortions, "Dimer"]
+            distortion_metadata["defects"][defect_name]["charges"][int(charge)]["distortion_parameters"][
+                "bond_distortions"
+            ] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
@@ -2281,7 +2279,7 @@ class Distortions:
     def apply_distortions(
         self,
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in `defect_entries`.
         Returns a dictionary with the distorted (and undistorted) structures
@@ -2412,7 +2410,7 @@ class Distortions:
                     defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
-                    defect_type=defect_entry.defect.defect_type.name.lower()
+                    defect_type=defect_entry.defect.defect_type.name.lower(),
                 )
 
         return distorted_defects_dict, self.distortion_metadata
@@ -2474,7 +2472,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         **kwargs,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates the input files for `vasp_gam` relaxations of all output
         structures.
@@ -2581,7 +2579,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output
         structures.
@@ -2715,7 +2713,7 @@ class Distortions:
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output structures.
 
@@ -2777,7 +2775,7 @@ class Distortions:
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input `.cell` and `.param` files for CASTEP relaxations of
         all output structures.
@@ -2854,7 +2852,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input geometry and control files for FHI-aims relaxations
         of all output structures.
