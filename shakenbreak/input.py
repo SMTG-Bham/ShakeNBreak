@@ -12,7 +12,12 @@ import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
+import sys
+if sys.version_info >= (3, 9):
+    tuple_type = tuple
+else:
+    from typing import Tuple as tuple_type
 
 import ase
 import numpy as np
@@ -2281,7 +2286,7 @@ class Distortions:
     def apply_distortions(
         self,
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in `defect_entries`.
         Returns a dictionary with the distorted (and undistorted) structures
@@ -2474,7 +2479,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         **kwargs,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Generates the input files for `vasp_gam` relaxations of all output
         structures.
@@ -2581,7 +2586,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output
         structures.
@@ -2715,7 +2720,7 @@ class Distortions:
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output structures.
 
@@ -2777,7 +2782,7 @@ class Distortions:
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Generates input `.cell` and `.param` files for CASTEP relaxations of
         all output structures.
@@ -2854,7 +2859,7 @@ class Distortions:
         output_path: str = ".",
         verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple_type[dict, dict]:
         """
         Generates input geometry and control files for FHI-aims relaxations
         of all output structures.
