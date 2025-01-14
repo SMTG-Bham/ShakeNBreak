@@ -201,6 +201,9 @@ def apply_dimer_distortion(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
             Defaults to None.
+        verbose (Optional[bool], optional):
+            Print information about the dimer distortion.
+            Defaults to False.
 
     Returns:
         obj:`Structure`:
