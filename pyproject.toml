@@ -50,6 +50,7 @@ lint.ignore = [
   "PLR",     # pylint refactor
   "W605",    # Invalid escape sequence
   "PT011",   # too broad pytest.raises()
+  "UP006",   # Disable "Use `tuple` instead of `Tuple`"
 ]
 
 [tool.ruff.lint.per-file-ignores]
