@@ -1920,6 +1920,7 @@ class InputTestCase(unittest.TestCase):
                                     0.5,
                                     0.55,
                                     0.6,
+                                    "Dimer",  # now included by default
                                 ],
                                 "local_rattle": False,
                                 "mc_rattle_parameters": {
@@ -1988,9 +1989,9 @@ class InputTestCase(unittest.TestCase):
         for defect in kwarged_Int_Cd_2_dict["defects"]:
             for charge in kwarged_Int_Cd_2_dict["defects"][defect]["charges"]:
                 np.testing.assert_equal(
-            metadata["defects"][defect]["charges"][charge],  # check defect in distortion_defect_dict
-            kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge],
-        )
+                    metadata["defects"][defect]["charges"][charge],  # defect in distortion_defect_dict
+                    kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge],
+                )
 
         # check expected info printing:
         mock_Int_Cd_2_print.assert_any_call(
