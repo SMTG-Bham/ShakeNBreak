@@ -142,7 +142,7 @@ class CLITestCase(unittest.TestCase):
                 [
                     shutil.rmtree(f"{self.EXAMPLE_RESULTS}/{defect}/{dir}")
                     for dir in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
-                    if "_from_" in dir
+                    if "_from_" in dir or "_residual_" in dir
                 ]
                 [
                     os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
@@ -213,12 +213,12 @@ class CLITestCase(unittest.TestCase):
         if os.path.exists(f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/prev_otcr"):
             shutil.move(
                 f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/prev_otcr",
-                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/OUTCAR"
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_-60.0%/OUTCAR",
             )
         if os.path.exists(f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy"):
             os.rename(
                 f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%_High_Energy",
-                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%"
+                f"{self.VASP_DIR}/v_Ge_s16_0/Bond_Distortion_50.0%",
             )
 
     def copy_v_Ti_OUTCARs(self):
@@ -312,7 +312,7 @@ class CLITestCase(unittest.TestCase):
             V_Cd_minus0pt5_rattled_POSCAR.structure,
             self.V_Cd_minus0pt5_struc_rattled,
         )
-    
+
         kpoints = Kpoints.from_file(f"{V_Cd_Bond_Distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
@@ -2963,8 +2963,8 @@ Chosen VASP error message: {error_string}
                 """
                 * 70
             )
-            + """ShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this
-            defect, considering this converged."""
+            + "\nShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, "
+            "considering this converged."
         )
         with open(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces/OUTCAR",
@@ -2993,6 +2993,12 @@ Chosen VASP error message: {error_string}
             residual_forces_energies, energies
         )  # Bond_Distortion_-20.0%_residual_forces now included
         # test no print statement about not being fully relaxed
+        print(result.output)
+        with open(
+            f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces/OUTCAR",
+            "r+",
+        ) as f:
+            print(f.readlines())
         self.assertNotIn("not fully relaxed", result.output)
         [
             os.remove(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
@@ -3216,6 +3222,11 @@ Chosen VASP error message: {error_string}
         ) as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
+        # for updating file, due to small numerical updates etc:
+        # shutil.copyfile(
+        #     f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+        #     f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+        # )
         self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
@@ -3264,6 +3275,11 @@ Chosen VASP error message: {error_string}
         ) as new:
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
+        # for updating file, due to small numerical updates etc:
+        # shutil.copyfile(
+        #     f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml",
+        #     f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml",
+        # )
         self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
