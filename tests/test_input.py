@@ -2968,6 +2968,13 @@ class InputTestCase(unittest.TestCase):
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
             generated_input = f.read()
+        # shutil.copyfile(  # to update test input files (when pymatgen updates Cp2K input formats)
+        #     "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
+        #     os.path.join(
+        #         self.CP2K_DATA_DIR,
+        #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
+        #     )
+        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
         self.assertEqual(test_input, generated_input)
         # Test input structure file
         generated_input_struct = Structure.from_file(
@@ -3008,6 +3015,13 @@ class InputTestCase(unittest.TestCase):
             test_input = f.read()
         with open("vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp") as f:
             generated_input = f.read()
+        # shutil.copyfile(  # to update test input files (when pymatgen updates Cp2K input formats)
+        #     "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
+        #     os.path.join(
+        #         self.CP2K_DATA_DIR,
+        #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
+        #     )
+        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
         self.assertEqual(test_input, generated_input)
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
