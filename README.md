@@ -133,6 +133,7 @@ Automatic testing is run on the master and develop branches using Github Actions
 Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Communications_](https://doi.org/10.1038/s41467-024-55254-2) 2025
 - S. R. Kavanagh **_Identifying Split Vacancies with Foundation Models and Electrostatics_** [_arXiv_](https://doi.org/10.48550/arXiv.2412.19330) 2025
 - S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-91h02) 2025
+- J. Hu et al. **_Enabling ionic transport in Li<sub>3</sub>AlP<sub>2</sub> the roles of defects and disorder_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D4TA04347B) 2025
 - Z. Cai & C. Ma **_Origin of oxygen partial pressure-dependent conductivity in SrTiO<sub>3</sub>_** [_Applied Physics Letters_](doi.org/10.1063/5.0245820) 2025
 - W. D. Neilson et al. **_Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO<sub>2±x</sub>: A Density Functional Theory Study_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.4c06580) 2024
 - X. Wang et al. **_Sulfur Vacancies Limit the Open-circuit Voltage of Sb<sub>2</sub>S<sub>3</sub> Solar Cells_** [_ACS Energy Letters_](https://doi.org/10.1021/acsenergylett.4c02722) 2024
@@ -144,7 +145,6 @@ Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Comm
 - S. R. Kavanagh et al. **_doped: Python toolkit for robust and repeatable charged defect supercell calculations_** [_Journal of Open Source Software_](https://doi.org/10.21105/joss.06433) 2024
 - K. Li et al. **_Computational Prediction of an Antimony-based n-type Transparent Conducting Oxide: F-doped Sb<sub>2</sub>O<sub>5</sub>_** [_Chemistry of Materials_](https://doi.org/10.1021/acs.chemmater.3c03257) 2024
 - S. Hachmioune et al. **_Exploring the Thermoelectric Potential of MgB4: Electronic Band Structure, Transport Properties, and Defect Chemistry_** [_Chemistry of Materials_](https://doi.org/10.1021/acs.chemmater.4c00584) 2024
-- J. Hu et al. **_Enabling ionic transport in Li3AlP2 the roles of defects and disorder_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-3s0kh) 2024
 - X. Wang et al. **_Four-electron negative-U vacancy defects in antimony selenide_** [_Physical Review B_](https://journals.aps.org/prb/abstract/10.1103/PhysRevB.108.134102) 2023
 - Y. Kumagai et al. **_Alkali Mono-Pnictides: A New Class of Photovoltaic Materials by Element Mutation_** [_PRX Energy_](http://dx.doi.org/10.1103/PRXEnergy.2.043002) 2023
 - A. T. J. Nicolson et al. **_Cu<sub>2</sub>SiSe<sub>3</sub> as a promising solar absorber: harnessing cation dissimilarity to avoid killer antisites_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D3TA02429F) 2023
