@@ -450,7 +450,7 @@ class CLITestCase(unittest.TestCase):
                     "distortion_parameters"
                 ]["bond_distortions"]
             ),
-            13,
+            14,
         )  # no duplication of bond distortions
         defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
         self.assertDictEqual(reloaded_distortion_metadata, defect_folder_distortion_metadata)
@@ -498,7 +498,7 @@ class CLITestCase(unittest.TestCase):
                     "distortion_parameters"
                 ]["bond_distortions"]
             ),
-            13,
+            14,
         )  # no duplication of bond distortions
         defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
         self.assertNotEqual(reloaded_distortion_metadata, defect_folder_distortion_metadata)
@@ -551,7 +551,7 @@ class CLITestCase(unittest.TestCase):
                     "distortion_parameters"
                 ]["bond_distortions"]
             ),
-            13,
+            14,
         )  # no duplication of bond distortions
         defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
         self.assertNotEqual(  # combined metadata so has 5 charges, rather than just neutral
@@ -603,7 +603,7 @@ class CLITestCase(unittest.TestCase):
                     "distortion_parameters"
                 ]["bond_distortions"]
             ),
-            25,
+            26,
         )  # no duplication of bond distortions
         defect_folder_distortion_metadata = loadfn("v_Cd_Td_Te2.83_0/distortion_metadata.json")
         self.assertNotEqual(reloaded_distortion_metadata, defect_folder_distortion_metadata)
@@ -683,6 +683,7 @@ class CLITestCase(unittest.TestCase):
                                     0.4,
                                     0.5,
                                     0.6,
+                                    "Dimer",
                                 ],
                                 "local_rattle": False,
                                 "mc_rattle_parameters": {
@@ -691,12 +692,13 @@ class CLITestCase(unittest.TestCase):
                             },
                         },
                     },
-                }
+                'defect_site_index': 4,}
             },
         }
         # check defects from old metadata file are in new metadata file
         with open("distortion_metadata.json", "r") as metadata_file:
             metadata = json.load(metadata_file)
+        print(metadata, wrong_site_V_Cd_dict)  # for debugging
         np.testing.assert_equal(metadata, wrong_site_V_Cd_dict)
 
         # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
@@ -950,6 +952,7 @@ class CLITestCase(unittest.TestCase):
                                     0.4,
                                     0.5,
                                     0.6,
+                                    "Dimer",
                                 ],
                                 "local_rattle": False,
                                 "mc_rattle_parameters": {"stdev": 0.28333683853583164},
@@ -2791,37 +2794,6 @@ Chosen VASP error message: {error_string}
             os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
         )
         os.chdir(file_path)
-
-        # Test warning when setting path and parsing from inside the defect folder
-        defect = "v_Ti"
-        defect_name = "v_Ti_-1"
-        os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
-        os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1")
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
-                    "parse",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-                catch_exceptions=False,
-            )
-        print([str(warning.message) for warning in w])  # for debugging
-        self.assertTrue(any([warning.category == UserWarning for warning in w]))
-        self.assertTrue(
-            any(
-                [
-                    "`--path` option ignored when running from within defect folder"
-                    in str(warning.message)
-                    for warning in w
-                ]
-            )
-        )
-        self.assertTrue(
-            os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
-        )
-        os.chdir(file_path)
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
 
         # Test when `defect` is present higher up in `path`
@@ -2964,7 +2936,7 @@ Chosen VASP error message: {error_string}
                 * 70
             )
             + "\nShakeNBreak: At least 50 ionic steps and energy change < 2 meV for this defect, "
-            "considering this converged."
+            "considering this converged.\n"
         )
         with open(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_residual_forces/OUTCAR",
@@ -3458,40 +3430,6 @@ Chosen VASP error message: {error_string}
         self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
         os.remove(f"{defect_name}.csv")
         os.remove(f"{defect_name}.yaml")
-
-        # Test warning when setting path and analysing from inside the defect folder
-        # we are in self.VASP_TIO2_DATA_DIR
-        defect_name = "vac_1_Ti_0"
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
-                    "analyse",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-                catch_exceptions=True,
-            )
-        print([str(warning.message) for warning in w])  # for debugging
-        self.assertTrue(any([warning.category == UserWarning for warning in w]))
-        self.assertTrue(
-            any(
-                [
-                    "`--path` option ignored when running from within defect folder"
-                    in str(warning.message)
-                    for warning in w
-                ]
-            )
-        )
-        self.assertIn("Comparing structures to Unperturbed...", result.output)
-        self.assertIn(
-            f"Saved results to {os.path.join(os.getcwd(), defect_name)}.csv",
-            result.output,
-        )
-        self.assertTrue(os.path.exists(f"{defect_name}.csv"))
-        self.assertTrue(os.path.exists(f"{defect_name}.yaml"))
-        os.remove(f"{defect_name}.csv")
-        os.remove(f"{defect_name}.yaml")
         os.chdir(file_path)
 
         # Test no exception when run with no arguments in top-level folder
@@ -3767,52 +3705,6 @@ Chosen VASP error message: {error_string}
 
         self.tearDown()
 
-        # Test warning when setting path and plotting from inside the defect folder
-        os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
-                    "plot",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "-v",
-                ],
-                catch_exceptions=True,
-            )
-        self.assertTrue(any([warning.category == UserWarning for warning in w]))
-        self.assertTrue(
-            any(
-                [
-                    "`--path` option ignored when running from within defect folder"
-                    in str(warning.message)
-                    for warning in w
-                ]
-            )
-        )
-        self.assertIn(
-            f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
-            "and unperturbed: -3.26 eV.",
-            result.output,
-        )  # non-verbose output
-        self.assertIn("Plot saved to v_Ti_0/v_Ti_0.png", result.output)
-        self.assertTrue(
-            any(
-                [
-                    f"Path {self.EXAMPLE_RESULTS}/distortion_metadata.json or "
-                    f"{self.EXAMPLE_RESULTS}/"
-                    "v_Ti_0/distortion_metadata.json not found. Will not parse "
-                    "its contents (to specify which neighbour atoms were distorted in plot "
-                    "text)." == str(warning.message)
-                    for warning in w
-                ]
-            )
-        )
-        self.assertTrue(os.path.exists("./v_Ti_0.png"))
-        self.assertTrue(os.path.exists(os.getcwd() + "/v_Ti_0.yaml"))
-        if_present_rm(os.getcwd() + "/v_Ti_0.yaml")
-        self.tearDown()
-
         # Test no exception when run with no arguments in top-level folder
         os.chdir(self.EXAMPLE_RESULTS)
         result = runner.invoke(snb, ["plot", "-v"])
@@ -4070,38 +3962,6 @@ Chosen VASP error message: {error_string}
         # test running within a single defect directory and specifying no arguments
         os.chdir(f"{self.VASP_CDTE_DATA_DIR}/{defect}")  # vac_1_Cd_0
         result = runner.invoke(snb, ["groundstate"], catch_exceptions=False)
-        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
-        self.assertIn(
-            f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
-            f" {self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR",
-            result.output,
-        )
-        gs_structure = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
-        self.assertEqual(gs_structure, self.V_Cd_minus0pt55_CONTCAR_struc)
-        if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
-
-        # Test warning when setting path and parsing from inside the defect folder
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
-                    "groundstate",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-                catch_exceptions=False,
-            )
-        self.assertTrue(any([warning.category == UserWarning for warning in w]))
-        self.assertTrue(
-            any(
-                [
-                    str(warning.message)
-                    == "`--path` option ignored when running from within defect folder (assumed "
-                    "to be the case here as distortion folders found in current directory)."
-                    for warning in w
-                ]
-            )
-        )
         self.assertTrue(os.path.exists("Groundstate/POSCAR"))
         self.assertIn(
             f"{defect}: Ground state structure (found with -0.55 distortion) saved to"

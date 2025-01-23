@@ -848,9 +848,13 @@ def parse(defect, path, code, verbose):
     """
     if defect:
         _ = io.parse_energies(defect, path, code, verbose=verbose)
-    elif _running_in_defect_dir(
-        path=path,
-        warning_substring="calculations will only be parsed for the distortion folders in this directory.",
+    elif (
+        _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be parsed for the distortion folders in this "
+            "directory.",
+        )
+        and path == "."
     ):
         # assume current directory is the defect folder
         try:
@@ -951,10 +955,14 @@ def analyse(defect, path, code, ref_struct, verbose):
         dataframe.to_csv(f"{path}/{defect}/{defect}.csv")  # change name to results.csv?
         print(f"Saved results to {path}/{defect}/{defect}.csv")
 
-    if defect is None and _running_in_defect_dir(
-        path=path,
-        warning_substring="calculations will only be analysed for the distortion folders in this "
-        "directory.",
+    if (
+        defect is None
+        and _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be analysed for the distortion folders in this "
+            "directory.",
+        )
+        and path == "."
     ):
         # assume current directory is the defect folder
         cwd = os.getcwd()
@@ -1124,10 +1132,14 @@ def plot(
     if style_file is None:
         style_file = f"{os.path.dirname(os.path.abspath(__file__))}/shakenbreak.mplstyle"
 
-    if defect is None and _running_in_defect_dir(
-        path=path,
-        warning_substring="calculations will only be analysed and plotted for the distortion folders in "
-        "this directory.",
+    if (
+        defect is None
+        and _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be analysed and plotted for the distortion folders "
+            "in this directory.",
+        )
+        and path == "."
     ):
         # assume current directory is the defect folder
         cwd = os.getcwd()
@@ -1335,14 +1347,7 @@ def _running_in_defect_dir(path: str = ".", warning_substring: str = ""):
                 )
                 break
 
-        # assume current directory is the defect folder
-        if path != ".":
-            warnings.warn(
-                "`--path` option ignored when running from within defect folder (assumed to be "
-                "the case here as distortion folders found in current directory)."
-            )
-
-        return True
+        return True  # current directory is the defect folder
 
     return False
 
@@ -1409,11 +1414,15 @@ def groundstate(
     please specify the name of the structure/output files.
     """
     # determine if running from within a defect directory or from the top level directory
-    if _running_in_defect_dir(
-        path,
-        warning_substring=(
-            "the groundstate structure from the distortion folders in this directory will be generated."
-        ),
+    if (
+        _running_in_defect_dir(
+            path,
+            warning_substring=(
+                "the groundstate structure from the distortion folders in this directory will be "
+                "generated."
+            ),
+        )
+        and path == "."
     ):
         energy_lowering_distortions.write_groundstate_structure(
             all=False,
