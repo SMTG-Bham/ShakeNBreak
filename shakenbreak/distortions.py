@@ -266,9 +266,7 @@ def apply_dimer_distortion(
     elif type(frac_coords) in [np.ndarray, list]:
         bond_distorted_defect["defect_frac_coords"] = frac_coords
     if verbose:
-        original_distance = round(struct.get_distance(
-            site_indexes[0], site_indexes[1]
-        ), 2)
+        original_distance = round(struct.get_distance(site_indexes[0], site_indexes[1]), 2)
         print(
             f"""\tDefect Site Index / Frac Coords: {
             site_index or np.around(frac_coords, decimals=3)}
