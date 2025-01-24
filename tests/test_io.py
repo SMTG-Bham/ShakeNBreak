@@ -2,9 +2,9 @@ import os
 import unittest
 import warnings
 
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Composition, IStructure, PeriodicSite
 
-from shakenbreak.analysis import _calculate_atomic_disp
+from shakenbreak.analysis import _cached_calculate_atomic_disp
 from shakenbreak.io import (
     parse_fhi_aims_input,
     parse_qe_input,
@@ -15,9 +15,21 @@ from shakenbreak.io import (
     read_vasp_structure,
 )
 
+# use doped efficiency functions for speed (speeds up structure matching dramatically):
+from doped.utils.efficiency import Composition as doped_Composition
+from doped.utils.efficiency import IStructure as doped_IStructure
+from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
+
+Composition.__instances__ = {}
+Composition.__eq__ = doped_Composition.__eq__
+PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
+PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
+IStructure.__instances__ = {}
+IStructure.__eq__ = doped_IStructure.__eq__
+
 
 class IoTestCase(unittest.TestCase):
-    """ "Test functions in shakenbreak.io.
+    """Test functions in shakenbreak.io.
     Note that io.parse_energies is tested via test_cli.py"""
 
     def setUp(self):
@@ -80,7 +92,7 @@ class IoTestCase(unittest.TestCase):
             )
         )
         self.assertTrue(
-            _calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
+            _cached_calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
                 0
             ]
             < 0.01
@@ -100,7 +112,7 @@ class IoTestCase(unittest.TestCase):
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "castep/POSCAR")
         )
-        self.assertTrue(_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
 
     def test_read_fhi_aims_structure(self):
         "Test read_cp2k_structure() function."
@@ -110,14 +122,14 @@ class IoTestCase(unittest.TestCase):
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "fhi_aims/POSCAR")
         )
-        self.assertTrue(_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
         # Test parsing geometry.in file
         path = os.path.join(self.DATA_DIR, "fhi_aims/geometry.in")
         structure = read_fhi_aims_structure(path, format="aims")
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "fhi_aims/POSCAR_geom")
         )
-        self.assertTrue(_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
 
     def test_parse_qe_input(self):
         "Test parse_qe_input() function."

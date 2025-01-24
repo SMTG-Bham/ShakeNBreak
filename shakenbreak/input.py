@@ -7,13 +7,12 @@ as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
 import contextlib
 import copy
 import datetime
-import itertools
 import os
 import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import ase
 import numpy as np
@@ -22,31 +21,28 @@ from doped import _ignore_pmg_warnings
 from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.parsing import (
-    get_defect_site_idxs_and_unrelaxed_structure,
     get_defect_type_and_composition_diff,
+    get_defect_type_site_idxs_and_unrelaxed_structure,
 )
 from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects import thermo
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
-from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.analysis.structure_matcher import ElementComparator, StructureMatcher
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
 from pymatgen.io.vasp.sets import BadInputSetWarning
-from scipy.cluster.hierarchy import fcluster, linkage
-from scipy.spatial import Voronoi
-from scipy.spatial.distance import squareform
 
 from shakenbreak import analysis, distortions, io
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
-default_potcar_dict = loadfn(f"{MODULE_DIR}/../SnB_input_files/default_POTCARs.yaml")
+default_potcar_dict = loadfn(f"{MODULE_DIR}/SnB_input_files/default_POTCARs.yaml")
 # Load default INCAR settings for the ShakeNBreak geometry relaxations
-default_incar_settings = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/incar.yaml"))
+default_incar_settings = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/incar.yaml"))
 
 
 _ignore_pmg_warnings()  # Ignore pymatgen POTCAR warnings
@@ -290,7 +286,7 @@ def _create_vasp_input(
     user_potcar_settings: Optional[dict] = None,
     output_path: str = ".",
     **kwargs,
-) -> None:
+) -> str:
     """
     Creates folders for storing VASP ShakeNBreak files.
 
@@ -309,7 +305,7 @@ def _create_vasp_input(
             Dictionary of user VASP POTCAR settings, to overwrite/update
             the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
             recommended to look at output `POTCAR`s, or `shakenbreak`
-            `SnB_input_files/default_POTCARs.yaml`, to see what the default
+            `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
             `POTCAR` settings are. (Default: None)
         output_path (:obj:`str`):
             Path to directory in which to write distorted defect structures and
@@ -320,7 +316,9 @@ def _create_vasp_input(
             `potcar_spec`).
 
     Returns:
-        None
+        :obj:`str`:
+            The final defect folder name (in case it was renamed due to duplicate
+            folder names etc).
     """
     # create folder for defect
     defect_name_wout_charge, charge_state = defect_name.rsplit("_", 1)  # `defect_name` includes charge
@@ -374,9 +372,15 @@ def _create_vasp_input(
                     current_unperturbed_struct = distorted_defect_dict["Unperturbed"][
                         "Defect Structure"
                     ].copy()
-                    for i in [prev_unperturbed_struct, current_unperturbed_struct]:
-                        i.remove_oxidation_states()
-                    if prev_unperturbed_struct == current_unperturbed_struct:
+                    tight_sm = StructureMatcher(
+                        stol=0.02,
+                        ltol=0.02,
+                        angle_tol=0.5,
+                        primitive_cell=False,
+                        attempt_supercell=False,
+                        comparator=ElementComparator(),
+                    )
+                    if tight_sm.fit(prev_unperturbed_struct, current_unperturbed_struct):
                         warnings.warn(
                             f"The previously-generated defect distortions folder {dir} in "
                             f"{os.path.basename(os.path.abspath(output_path))} "
@@ -472,10 +476,13 @@ def _create_vasp_input(
 
         dds.write_input(
             f"{output_path}/{defect_name}/{distortion}",
-            unperturbed_poscar=True,
+            poscar=True,
+            rattle=False,  # way ahead of you pal
             snb=True,
             **kwargs,
         )
+
+    return defect_name
 
 
 def _get_bulk_comp(defect_object) -> Composition:
@@ -701,95 +708,11 @@ def _calc_number_neighbours(num_electrons: int) -> int:
     return abs(8 - abs(num_electrons)) if abs(num_electrons) > 4 else abs(num_electrons)
 
 
-def _get_voronoi_nodes(
-    structure,
-):
-    """
-    Get the Voronoi nodes of a structure.
-    Templated from the TopographyAnalyzer class, added to
-    pymatgen.analysis.defects.utils by Yiming Chen, but now deleted.
-    Modified to map down to primitive, do Voronoi analysis, then map
-    back to original supercell; much more efficient.
-
-    Args:
-        structure (:obj:`Structure`):
-            pymatgen `Structure` object.
-    """
-    # map all sites to the unit cell; 0 ≤ xyz < 1.
-    structure = Structure.from_sites(structure, to_unit_cell=True)
-    # get Voronoi nodes in primitive structure and then map back to the
-    # supercell
-    prim_structure = structure.get_primitive_structure()
-
-    # get all atom coords in a supercell of the structure because
-    # Voronoi polyhedra can extend beyond the standard unit cell.
-    coords = []
-    cell_range = list(range(-1, 2))
-    for shift in itertools.product(cell_range, cell_range, cell_range):
-        for site in prim_structure.sites:
-            shifted = site.frac_coords + shift
-            coords.append(prim_structure.lattice.get_cartesian_coords(shifted))
-
-    # Voronoi tessellation.
-    voro = Voronoi(coords)
-
-    # Only include voronoi polyhedra within the unit cell.
-    vnodes = []
-    tol = 1e-3
-    for vertex in voro.vertices:
-        frac_coords = prim_structure.lattice.get_fractional_coords(vertex)
-        vnode = PeriodicSite("V-", frac_coords, prim_structure.lattice)
-        if np.all([-tol <= coord < 1 + tol for coord in frac_coords]) and all(
-            p.distance(vnode) >= tol for p in vnodes
-        ):
-            vnodes.append(vnode)
-
-    # cluster nodes that are within a certain distance of each other
-    voronoi_coords = [v.frac_coords for v in vnodes]
-    dist_matrix = np.array(prim_structure.lattice.get_all_distances(voronoi_coords, voronoi_coords))
-    dist_matrix = (dist_matrix + dist_matrix.T) / 2
-    condensed_m = squareform(dist_matrix)
-    z = linkage(condensed_m)
-    cn = fcluster(z, 0.2, criterion="distance")  # cluster nodes with 0.2 Å
-    merged_vnodes = []
-    for n in set(cn):
-        frac_coords = []
-        for i, j in enumerate(np.where(cn == n)[0]):
-            if i == 0:
-                frac_coords.append(vnodes[j].frac_coords)
-            else:
-                fcoords = vnodes[j].frac_coords
-                d, image = prim_structure.lattice.get_distance_and_image(frac_coords[0], fcoords)
-                frac_coords.append(fcoords + image)
-        merged_vnodes.append(PeriodicSite("V-", np.average(frac_coords, axis=0), prim_structure.lattice))
-    vnodes = merged_vnodes
-
-    # remove nodes less than 0.5 Å from sites in the structure
-    vfcoords = [v.frac_coords for v in vnodes]
-    sfcoords = prim_structure.frac_coords
-    dist_matrix = prim_structure.lattice.get_all_distances(vfcoords, sfcoords)
-    all_dist = np.min(dist_matrix, axis=1)
-    vnodes = [v for i, v in enumerate(vnodes) if all_dist[i] > 0.5]
-
-    # map back to the supercell
-    sm = StructureMatcher(primitive_cell=False, attempt_supercell=True)
-    mapping = sm.get_supercell_matrix(structure, prim_structure)
-    voronoi_struct = Structure.from_sites(vnodes)  # Structure object with Voronoi nodes as sites
-    voronoi_struct.make_supercell(mapping)  # Map back to the supercell
-
-    # check if there was an origin shift between primitive and supercell
-    regenerated_supercell = prim_structure.copy()
-    regenerated_supercell.make_supercell(mapping)
-    fractional_shift = sm.get_transformation(structure, regenerated_supercell)[1]
-    if not np.allclose(fractional_shift, 0):
-        voronoi_struct.translate_sites(range(len(voronoi_struct)), fractional_shift, frac_coords=True)
-
-    return voronoi_struct.sites
-
-
 def _get_voronoi_multiplicity(site, structure):
     """Get the multiplicity of a Voronoi site in structure."""
-    vnodes = _get_voronoi_nodes(structure)
+    from doped.utils.efficiency import get_voronoi_nodes
+
+    vnodes = get_voronoi_nodes(structure)
 
     distances_and_species_list = []
     for vnode in vnodes:
@@ -1036,12 +959,11 @@ def identify_defect(
 
     try:
         (
+            _defect_type,
             auto_matching_bulk_site_index,
             auto_matching_defect_site_index,
             unrelaxed_defect_structure,
-        ) = get_defect_site_idxs_and_unrelaxed_structure(
-            bulk_structure, defect_structure, defect_type, comp_diff
-        )
+        ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
 
     except Exception as exc:
         # failed auto-site matching, rely on user input or raise error if no user input
@@ -1171,6 +1093,7 @@ def generate_defect_object(
             List of charge states for the defect.
         verbose (:obj:`bool`):
             Whether to print information about the defect object being parsed.
+            (Default is False).
 
     Returns: :obj:`Defect`
     """
@@ -1419,6 +1342,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1444,6 +1368,7 @@ def _apply_rattle_bond_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
         else:
             bond_distorted_defect = distortions.distort(
@@ -1585,8 +1510,13 @@ def apply_snb_distortions(
 
     seed = mc_rattle_kwargs.pop("seed", None)
     if num_nearest_neighbours != 0:
+        # If vacancy, add "Dimer" to bond_distortions to ensure dimer reconstruction
+        # is found.
+        if defect_type == "vacancy" and ("dimer" not in (str(item).lower() for item in bond_distortions)):
+            bond_distortions = list(bond_distortions)  # in case provided as array
+            bond_distortions.append("Dimer")
         for raw_distortion in bond_distortions:
-            if isinstance(raw_distortion, float):
+            if not isinstance(raw_distortion, str):
                 distortion = round(raw_distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
                 if verbose:
                     print(f"--Distortion {distortion:.1%}")
@@ -1624,6 +1554,8 @@ def apply_snb_distortions(
 
             elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
                 # Apply dimer distortion, with rattling
+                if verbose:
+                    print(f"--Distortion {raw_distortion}")
                 bond_distorted_defect = _apply_rattle_bond_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=2,
@@ -1697,6 +1629,7 @@ def apply_snb_distortions(
                 structure=defect_structure,
                 site_index=defect_site_index,
                 frac_coords=frac_coords,
+                verbose=verbose,
             )
             distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect["distorted_structure"]
             distorted_defect_dict["distortion_parameters"].update(
@@ -2092,6 +2025,7 @@ class Distortions:
         oxidation_states: dict,
         dict_number_electrons_user: dict,
         defect_entry: DefectEntry,
+        verbose: bool = True,
     ) -> int:
         """
         Parse or calculate the number of extra/missing electrons
@@ -2113,6 +2047,10 @@ class Distortions:
             defect_entry (:obj:`DefectEntry`):
                 DefectEntry in dictionary of defect_entries. Must be a
                 `doped` or `pymatgen` DefectEntry object.
+            verbose (:obj:`bool`):
+                Whether to print the number of extra/missing electrons for
+                the defect.
+                (Default: True)
 
         Returns:
             :obj:`int`:
@@ -2124,11 +2062,12 @@ class Distortions:
         else:
             number_electrons = _calc_number_electrons(defect_entry, defect_name, oxidation_states)
 
-        _bold_print(f"\nDefect: {defect_name}")
-        if number_electrons < 0:
-            _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
-        else:
-            _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
+        if verbose:
+            _bold_print(f"\nDefect: {defect_name}")
+            if number_electrons < 0:
+                _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
+            else:
+                _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
         return number_electrons
 
     def _get_number_distorted_neighbours(
@@ -2136,6 +2075,7 @@ class Distortions:
         defect_name: str,
         number_electrons: int,
         charge: int,
+        verbose: bool = True,
     ) -> int:
         """
         Calculate extra/missing electrons accounting for the charge state of
@@ -2147,10 +2087,11 @@ class Distortions:
         num_nearest_neighbours = _calc_number_neighbours(
             num_electrons_charged_defect
         )  # Number of distorted neighbours for each charge state
-        print(
-            f"\nDefect {defect_name} in charge state: {'+' if charge > 0 else ''}{charge}. "
-            f"Number of distorted neighbours: {num_nearest_neighbours}"
-        )
+        if verbose:
+            print(
+                f"\nDefect {defect_name} in charge state: {'+' if charge > 0 else ''}{charge}. "
+                f"Number of distorted neighbours: {num_nearest_neighbours}"
+            )
         return num_nearest_neighbours
 
     def _print_distortion_info(
@@ -2175,6 +2116,7 @@ class Distortions:
         defect_site_index: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
+        defect_type: str = "",
     ) -> dict:
         """
         Update distortion_metadata with distortion information for each
@@ -2202,6 +2144,11 @@ class Distortions:
                 }
             }
         )
+        # If vacancy, add "Dimer" to bond_distortions
+        if defect_type == "vacancy":
+            distortion_metadata["defects"][defect_name]["charges"][int(charge)]["distortion_parameters"][
+                "bond_distortions"
+            ] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
@@ -2331,8 +2278,8 @@ class Distortions:
 
     def apply_distortions(
         self,
-        verbose: bool = False,
-    ) -> Tuple[dict, dict]:
+        verbose: Optional[bool] = None,
+    ) -> tuple[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in `defect_entries`.
         Returns a dictionary with the distorted (and undistorted) structures
@@ -2343,7 +2290,7 @@ class Distortions:
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and distances)
                 for each charged defect.
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2356,10 +2303,11 @@ class Distortions:
                             'structures': {...},
                         },
                     },
-                }
+                }}
                 and dictionary with distortion parameters for each defect.
         """
-        self._print_distortion_info(bond_distortions=self.bond_distortions, stdev=self.stdev)
+        if verbose is not False:  # medium level verbosity
+            self._print_distortion_info(bond_distortions=self.bond_distortions, stdev=self.stdev)
 
         distorted_defects_dict = {}  # Store distorted & undistorted structures
 
@@ -2390,6 +2338,7 @@ class Distortions:
                 oxidation_states=self.oxidation_states,
                 dict_number_electrons_user=self.dict_number_electrons_user,
                 defect_entry=defect_entry,
+                verbose=verbose is not False,  # medium level verbosity,
             )
 
             self.distortion_metadata["defects"][defect_name] = {
@@ -2408,6 +2357,7 @@ class Distortions:
                     defect_name=defect_name,
                     number_electrons=number_electrons,
                     charge=charge,
+                    verbose=verbose is not False,  # medium level verbosity,
                 )
                 # Generate distorted structures
                 defect_distorted_structures = apply_snb_distortions(
@@ -2418,7 +2368,7 @@ class Distortions:
                     stdev=self.stdev,
                     distorted_element=distorted_element,
                     distorted_atoms=self.distorted_atoms,
-                    verbose=verbose,
+                    verbose=verbose is True,  # high level verbosity,
                     oxidation_states=self.oxidation_states,
                     **self._mc_rattle_kwargs,
                 )
@@ -2431,7 +2381,7 @@ class Distortions:
                     if shortest_interatomic_distance < 1.0 and all(
                         el.symbol != "H" for el in struct.composition.elements
                     ):
-                        if verbose:
+                        if verbose is True:  # high level verbosity
                             warnings.warn(
                                 f"{dist} for defect {defect_name} gives an interatomic distance "
                                 f"less than 1.0 Å ({shortest_interatomic_distance:.2} Å), "
@@ -2460,6 +2410,7 @@ class Distortions:
                     defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
+                    defect_type=defect_entry.defect.defect_type.name.lower(),
                 )
 
         return distorted_defects_dict, self.distortion_metadata
@@ -2519,9 +2470,9 @@ class Distortions:
         user_potcar_functional: Optional[str] = "PBE",
         user_potcar_settings: Optional[dict] = None,
         output_path: str = ".",
-        verbose: bool = False,
+        verbose: Optional[bool] = None,
         **kwargs,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates the input files for `vasp_gam` relaxations of all output
         structures.
@@ -2531,7 +2482,7 @@ class Distortions:
                 Dictionary of user VASP INCAR settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
                 for those tags. Highly recommended to look at output `INCAR`s,
-                or `SnB_input_files/incar.yaml` to see what the default `INCAR`
+                or `shakenbreak/SnB_input_files/incar.yaml` to see what the default `INCAR`
                 settings are. Note that any flags that aren't numbers or
                 True/False need to be input as strings with quotation marks
                 (e.g. `{"ALGO": "All"}`). (Default: None)
@@ -2542,7 +2493,7 @@ class Distortions:
                 Dictionary of user VASP POTCAR settings, to overwrite/update
                 the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
                 recommended to look at output `POTCAR`s, or `shakenbreak`
-                `SnB_input_files/default_POTCARs.yaml`, to see what the default
+                `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
                 `POTCAR` settings are. (Default: None)
             write_files (:obj:`bool`):
                 Whether to write output files (Default: True)
@@ -2552,7 +2503,7 @@ class Distortions:
                 (Default is current directory = ".")
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and
-                distances). (Default: False)
+                distances). (Default: None -- medium level verbosity)
             kwargs:
                 Additional keyword arguments to pass to `_create_vasp_input()`
                 (Mainly for testing purposes).
@@ -2601,7 +2552,7 @@ class Distortions:
                     }
 
                 defect_species = f"{defect_name}_{'+' if charge_state > 0 else ''}{charge_state}"
-                _create_vasp_input(
+                defect_folder_name = _create_vasp_input(  # folder name may change if any duplicates
                     defect_name=defect_species,
                     distorted_defect_dict=charged_defect_dict,
                     user_incar_settings=user_incar_settings,
@@ -2611,7 +2562,7 @@ class Distortions:
                     **kwargs,
                 )
                 self.write_distortion_metadata(
-                    output_path=f"{output_path}/{defect_species}",
+                    output_path=f"{output_path}/{defect_folder_name}",
                     defect=defect_name,
                     charge=charge_state,
                 )
@@ -2626,9 +2577,9 @@ class Distortions:
         input_file: Optional[str] = None,
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output
         structures.
@@ -2640,11 +2591,11 @@ class Distortions:
             input_parameters (:obj:`dict`, optional):
                 Dictionary of user Quantum Espresso input parameters, to
                 overwrite/update `shakenbreak` default ones (see
-                `SnB_input_files/qe_input.yaml`).
+                `shakenbreak/SnB_input_files/qe_input.yaml`).
                 (Default: None)
             input_file (:obj:`str`, optional):
                 Path to Quantum Espresso input file, to overwrite/update
-                `shakenbreak` default ones (see `SnB_input_files/qe_input.yaml`).
+                `shakenbreak` default ones (see `shakenbreak/SnB_input_files/qe_input.yaml`).
                 If both `input_parameters` and `input_file` are provided,
                 the input_parameters will be used.
                 (Default: None)
@@ -2659,7 +2610,7 @@ class Distortions:
             verbose (:obj:`bool`):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
             profile (:obj:`BaseProfile`, optional):
                 ASE profile object to use for the ``Espresso()`` calculator
                 class, if using ase>=3.23. If ``None`` (default), set to
@@ -2684,7 +2635,7 @@ class Distortions:
 
         # Update default parameters with user defined values
         if pseudopotentials and not write_structures_only:
-            default_input_parameters = loadfn(os.path.join(MODULE_DIR, "../SnB_input_files/qe_input.yaml"))
+            default_input_parameters = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/qe_input.yaml"))
             if input_file and not input_parameters:
                 input_parameters = io.parse_qe_input(input_file)
             if input_parameters:
@@ -2758,11 +2709,11 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp",
+        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
-    ) -> Tuple[dict, dict]:
+        verbose: Optional[bool] = None,
+    ) -> tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output structures.
 
@@ -2781,7 +2732,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2790,15 +2741,13 @@ class Distortions:
         """
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
-        elif (
-            os.path.exists(f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp") and not write_structures_only
-        ):
+        elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
             warnings.warn(
                 f"Specified input file {input_file} does not exist! Using"
                 " default CP2K input file "
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
-            cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/../SnB_input_files/cp2k_input.inp")
+            cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp")
 
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -2822,11 +2771,11 @@ class Distortions:
 
     def write_castep_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/../SnB_input_files/castep.param",
+        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/castep.param",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
-    ) -> Tuple[dict, dict]:
+        verbose: Optional[bool] = None,
+    ) -> tuple[dict, dict]:
         """
         Generates input `.cell` and `.param` files for CASTEP relaxations of
         all output structures.
@@ -2846,7 +2795,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
 
         Returns:
             :obj:`tuple`:
@@ -2901,9 +2850,9 @@ class Distortions:
         ase_calculator=None,  # Aims or AimsTemplate
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
-        verbose: Optional[bool] = False,
+        verbose: Optional[bool] = None,
         profile=None,
-    ) -> Tuple[dict, dict]:
+    ) -> tuple[dict, dict]:
         """
         Generates input geometry and control files for FHI-aims relaxations
         of all output structures.
@@ -2933,7 +2882,7 @@ class Distortions:
             verbose (:obj:`bool`, optional):
                 Whether to print distortion information (bond atoms and
                 distances).
-                (Default: False)
+                (Default: None -- medium level verbosity)
             profile (:obj:`BaseProfile`, optional):
                 ASE profile object to use for the ``Aims()`` calculator
                 class, if using ase>=3.23. If ``None`` (default), set to

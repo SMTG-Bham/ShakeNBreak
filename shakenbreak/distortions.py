@@ -183,6 +183,7 @@ def apply_dimer_distortion(
     structure: Structure,
     site_index: Optional[int] = None,
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    verbose: Optional[bool] = False,
 ) -> dict:
     """
     Apply a dimer distortion to a defect structure.
@@ -200,6 +201,9 @@ def apply_dimer_distortion(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
             Defaults to None.
+        verbose (Optional[bool], optional):
+            Print information about the dimer distortion.
+            Defaults to False.
 
     Returns:
         obj:`Structure`:
@@ -261,7 +265,15 @@ def apply_dimer_distortion(
         bond_distorted_defect["defect_site_index"] = site_index
     elif type(frac_coords) in [np.ndarray, list]:
         bond_distorted_defect["defect_frac_coords"] = frac_coords
-
+    if verbose:
+        original_distance = round(struct.get_distance(site_indexes[0], site_indexes[1]), 2)
+        print(
+            f"""\tDefect Site Index / Frac Coords: {
+            site_index or np.around(frac_coords, decimals=3)}
+            Dimer Distorted Neighbours: {distorted_atoms}
+            Original Distance: {original_distance}
+            Distorted Neighbour Distances: {2.0}"""
+        )
     return bond_distorted_defect
 
 
@@ -296,7 +308,7 @@ def rattle(
             structure. Monte Carlo rattle moves that put atoms at
             distances less than this will be heavily penalised.
             Default is to set this to 80% of the nearest neighbour
-            distance in the defect supercell (ignoring interstitials).
+            distance in the defect supercell.
         verbose (:obj:`bool`):
             Whether to print information about the rattling process.
         n_iter (:obj:`int`):

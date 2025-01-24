@@ -117,6 +117,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
         if_present_rm("Int_Se_1_6.png")
         if_present_rm("as_2_O_on_I_1.png")
         if_present_rm("vac_1_Cd_0.png")
+        if_present_rm("v_Ca_s0_0.png")
+        for file in os.listdir((f"{self.VASP_DIR}/Va_O1_1")):
+            if file.endswith(".png"):
+                os.remove(f"{self.VASP_DIR}/Va_O1_1/{file}")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
@@ -702,7 +706,8 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 "-30.0%_from_+5": -624.65113207,
                 "0.0%_from_+4": -624.65313207,
                 "-15.0%_from_+7": -624.06113207,
-                "30.0%_from_+5": -624.65513207,
+                "35.0%_from_+5": -624.65513207,
+                "40.0%_from_+5": -624.75513207,
                 "25.0%_from_+7": -624.06513207,
                 "10.0%_from_+2": -624.66110949,
                 "20.0%_from_+2": -624.65991904,

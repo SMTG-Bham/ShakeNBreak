@@ -7,16 +7,17 @@ import json
 import os
 import warnings
 from copy import deepcopy
+from functools import lru_cache
 from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
+from doped.utils.configurations import _scan_sm_stol_till_match
 from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
-from pymatgen.analysis.structure_matcher import StructureMatcher
-from pymatgen.core.periodic_table import Element
-from pymatgen.core.structure import Structure
+from pymatgen.core.composition import Composition, Element
+from pymatgen.core.structure import IStructure, PeriodicSite, Structure
 from pymatgen.io.vasp.outputs import Outcar
 
 from shakenbreak import input, io
@@ -91,38 +92,35 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, (float, int)):
-        if distortion != 0:
-            distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-            # as percentage with 1 decimal place (e.g. 50.0%)
-        else:
-            distortion_label = f"Bond_Distortion_{distortion:.1f}%"
-    elif isinstance(distortion, str):
-        if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
-            distortion_label = f"Bond_Distortion_{distortion}"
-            # runs from other charge states
-        elif (
-            "Rattled_from_" in distortion
-            or "Dimer_from" in distortion
-            or distortion
-            in [
-                "Unperturbed",
-                "Rattled",
-                "Dimer",
-            ]
-        ):
-            distortion_label = distortion
-        elif distortion == "Unperturbed" or distortion == "Rattled" or distortion == "Dimer":
-            distortion_label = distortion  # e.g. "Unperturbed"/"Rattled"/"Dimer"
-        else:
-            try:  # try converting to float, in case user entered '0.5'
-                distortion = float(distortion)
-                distortion_label = f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-            except Exception:
-                distortion_label = "Distortion_not_recognized"
-    else:
-        distortion_label = "Distortion_not_recognized"
-    return distortion_label
+    if not isinstance(distortion, str):
+        try:
+            if distortion != 0:  # as percentage with 1 decimal place (e.g. 50.0%)
+                return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+
+            return f"Bond_Distortion_{distortion:.1f}%"
+        except Exception:
+            return "Distortion_not_recognized"
+
+    # otherwise is string:
+    if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
+        return f"Bond_Distortion_{distortion}"  # runs from other charge states
+    if (
+        "Rattled_from_" in distortion
+        or "Dimer_from" in distortion
+        or distortion
+        in [
+            "Unperturbed",
+            "Rattled",
+            "Dimer",
+        ]
+    ):
+        return distortion
+
+    try:  # try converting to float, in case user entered '0.5'
+        distortion = float(distortion)
+        return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+    except Exception:
+        return "Distortion_not_recognized"
 
 
 def _format_distortion_names(
@@ -543,61 +541,52 @@ def get_energies(
     return defect_energies_dict
 
 
-def _calculate_atomic_disp(
+@lru_cache(maxsize=int(1e4))
+def _cached_calculate_atomic_disp(
     struct1: Structure,
     struct2: Structure,
-    stol: float = 0.5,
-    ltol: float = 0.3,
-    angle_tol: float = 5,
+    **sm_kwargs,
 ) -> tuple:
     """
-    Calculate root mean square displacement and atomic displacements,
+    Calculate root-mean-square displacement and atomic displacements,
     normalized by the free length per atom ((Vol/Nsites)^(1/3)) between
     two structures.
+
+    Should only really be used internally in ``ShakeNBreak``
+    as the caching in this function relies on the ``Structure`` hashes,
+    which in ``pymatgen`` is just the composition which is unusable here,
+    but this is monkey-patched in ``calculate_struct_comparison`` in
+    ``shakenbreak.analysis`` for fast internal usage.
 
     Args:
         struct1 (:obj:`Structure`):
             Structure to compare to struct2.
         struct2 (:obj:`Structure`):
             Structure to compare to struct1.
-        stol (:obj:`float`):
-            Site tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`), as a fraction of the
-            average free length per atom := ( V / Nsites ) ** (1/3). If
-            output contains too many 'NaN' values, this likely needs to
-            be increased.
-            (Default: 0.5)
-        ltol (:obj:`float`):
-            Length tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`).
-            (Default: 0.3)
-        angle_tol (:obj:`float`):
-            Angle tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`).
-            (Default: 5)
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`tuple`:
             Tuple of normalized root mean squared displacements and
             normalized displacements between the two structures.
     """
-    sm = StructureMatcher(ltol=ltol, stol=stol, angle_tol=angle_tol, primitive_cell=False, scale=True)
-    struct1, struct2 = sm._process_species([struct1, struct2])
-    struct1, struct2, fu, s1_supercell = sm._preprocess(struct1, struct2)
-    match = sm._match(struct1, struct2, fu, s1_supercell, use_rms=True, break_on_match=False)
-
-    return None if match is None else (match[0], match[1])
+    # ``StructureMatcher._cart_dists()`` is the performance bottleneck for large supercells here. It could
+    # likely be made faster using Cython/numba (see
+    # https://github.com/materialsproject/pymatgen/issues/2593), caching and/or multiprocessing, but
+    # ``doped`` efficiency improvements have made it multiple orders of magnitude faster:
+    return _scan_sm_stol_till_match(struct1, struct2, func_name="_get_atomic_disps", **sm_kwargs)
 
 
 def calculate_struct_comparison(
     defect_structures_dict: dict,
     metric: str = "max_dist",
     ref_structure: Union[str, float, Structure] = "Unperturbed",
-    stol: float = 0.5,
-    ltol: float = 0.3,
-    angle_tol: float = 5,
     min_dist: float = 0.1,
     verbose: bool = False,
+    **sm_kwargs,
 ) -> dict:
     """
     Calculate either the summed atomic displacement, with metric = "disp",
@@ -625,26 +614,15 @@ def calculate_struct_comparison(
             or a pymatgen Structure object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
-        stol (:obj:`float`):
-            Site tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`), as a fraction of the
-            average free length per atom := ( V / Nsites ) ** (1/3). If
-            output contains too many 'NaN' values, this likely needs to
-            be increased.
-            (Default: 0.5)
-        ltol (:obj:`float`):
-            Length tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`).
-            (Default: 0.3)
-        angle_tol (:obj:`float`):
-            Angle tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`).
-            (Default: 5)
         min_dist (:obj:`float`):
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`:
@@ -682,17 +660,28 @@ def calculate_struct_comparison(
 
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
+
+    # use doped efficiency functions for speed (speeds up structure matching dramatically):
+    from doped.utils.efficiency import Composition as doped_Composition
+    from doped.utils.efficiency import IStructure as doped_IStructure
+    from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
+
+    Composition.__instances__ = {}
+    Composition.__eq__ = doped_Composition.__eq__
+    PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
+    PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
+    IStructure.__instances__ = {}
+    IStructure.__eq__ = doped_IStructure.__eq__
+
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] == "Not converged":
             disp_dict[distortion] = "Not converged"  # Structure not converged
         else:
             try:
-                _, norm_dist = _calculate_atomic_disp(
+                _, norm_dist = _cached_calculate_atomic_disp(
                     struct1=ref_structure,
                     struct2=defect_structures_dict[distortion],
-                    stol=stol,
-                    ltol=ltol,
-                    angle_tol=angle_tol,
+                    **sm_kwargs,
                 )
                 if metric == "disp":
                     disp_dict[distortion] = (
@@ -704,8 +693,7 @@ def calculate_struct_comparison(
                 else:
                     raise ValueError(f"Invalid metric '{metric}'. Must be one of 'disp' or 'max_dist'.")
             except TypeError:
-                disp_dict[distortion] = None  # algorithm couldn't match lattices. Set comparison
-                # metric to None
+                disp_dict[distortion] = None  # algorithm couldn't match lattices. Set metric to None
                 # warnings.warn(
                 #     f"pymatgen StructureMatcher could not match lattices between "
                 #     f"{ref_name} and {distortion} structures."
@@ -718,11 +706,11 @@ def compare_structures(
     defect_structures_dict: dict,
     defect_energies_dict: dict,
     ref_structure: Union[str, float, Structure] = "Unperturbed",
-    stol: float = 0.5,
     units: str = "eV",
     min_dist: float = 0.1,
     display_df: bool = True,
     verbose: bool = True,
+    **sm_kwargs,
 ) -> Union[None, pd.DataFrame]:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
@@ -743,13 +731,6 @@ def compare_structures(
             or a pymatgen Structure object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
-        stol (:obj:`float`):
-            Site tolerance used for structural comparison (via
-            `pymatgen`'s `StructureMatcher`), as a fraction of the
-            average free length per atom := ( V / Nsites ) ** (1/3). If
-            structure comparison output contains too many 'NaN' values,
-            this likely needs to be increased.
-            (Default: 0.5)
         units (:obj:`str`):
             Energy units label for outputs (either 'eV' or 'meV').
             Should be the same as the units in `defect_energies_dict`,
@@ -763,6 +744,10 @@ def compare_structures(
             interactively in Jupyter/Ipython (Default: True).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
+        **sm_kwargs:
+            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
+            in ``doped`` (used for ultra-fast structure matching), such as
+            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
 
     Returns:
         :obj:`pd.DataFrame`:
@@ -774,44 +759,17 @@ def compare_structures(
         warnings.warn("All structures in defect_structures_dict are not converged. Returning None.")
         return None
     df_list = []
-    disp_dict = calculate_struct_comparison(
-        defect_structures_dict,
-        metric="disp",
-        ref_structure=ref_structure,
-        stol=stol,
-        min_dist=min_dist,
-        verbose=verbose,
-    )
-    max_dist_dict = calculate_struct_comparison(
-        defect_structures_dict,
-        metric="max_dist",
-        ref_structure=ref_structure,
-        stol=stol,
-        verbose=False,  # only print "Comparing to..." once
-    )
-    # Check if too many 'NaN' values in disp_dict, if so, try with higher stol
-    number_of_nan = len([value for value in disp_dict.values() if value is None])
-    if number_of_nan > len(disp_dict.values()) // 3:
-        warnings.warn(
-            f"The specified tolerance {stol} seems to be too tight as"
-            " too many lattices could not be matched. Will retry with"
-            f" larger tolerance ({stol+0.4})."
-        )
-        max_dist_dict = calculate_struct_comparison(
+    disp_dict, max_dist_dict = (
+        calculate_struct_comparison(  # cached to avoid redundant calculation time
             defect_structures_dict,
-            metric="max_dist",
+            metric=i,
             ref_structure=ref_structure,
-            stol=stol + 0.4,
-            verbose=False,
-        )
-        disp_dict = calculate_struct_comparison(
-            defect_structures_dict,
-            metric="disp",
-            ref_structure=ref_structure,
-            stol=stol + 0.4,
             min_dist=min_dist,
-            verbose=False,
+            verbose=verbose if i == "disp" else False,  # only print "Comparing to..." once
+            **sm_kwargs,
         )
+        for i in ["disp", "max_dist"]
+    )
 
     for distortion in defect_energies_dict["distortions"]:
         try:
@@ -891,21 +849,22 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    elements: list,
+    elements: Union[list, str],
     radius: Optional[float] = 3.3,
     verbose: bool = True,
 ) -> dict:
     """
-    Returns a list of homoionic bonds for the given element. These bonds
-    are often formed by the defect neighbouts to accomodate charge
+    Returns a list of homo-ionic bonds for the given element. These bonds
+    are often formed by the defect neighbours to accommodate charge
     deficiency.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             `pymatgen` Structure object to analyse
         elements (:obj:`list`):
-            List of element symbols (wihout oxidation state) for which
-            to find the homoionic bonds (e.g. ["Te", "Se"]).
+            List or single string of element symbols (wihout
+            oxidation state) for which to find the homoionic
+            bonds (e.g. ["Te", "Se"]).
         radius (:obj:`float`, optional):
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
