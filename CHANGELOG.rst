@@ -1,6 +1,24 @@
 Change Log
 ==========
 
+v3.4.0
+----------
+- Major efficiency updates:
+    - Uses ``_scan_sm_stol_till_match`` and turbo-charged ``StructureMatcher`` methods from ``doped``
+      ``v3``, speeding up structure matching (e.g. in ``snb-regenerate`` for identifying distinct defect
+      geometries) by >~3 orders of magnitude.
+    - Uses caching in atomic displacement calculations (for ``"disp"``/``"max_dist"`` metrics)
+    - Use efficient Voronoi analyzer from ``doped`` ``v3`` for multiplicity determination.
+    - More efficient (and cleaner) plotting with many defects/distortions
+- Add ``Dimer`` to default distortions grid output for vacancies, following discussions and testing for
+  cation vacancies in oxides.
+- Miscellaneous:
+    - All ``snb-xxx`` functions now auto-detect if running within a defect folder or in a top-level
+      directory (i.e. auto ``--all`` behaviour).
+    - Handling of gzipped ``OUTCAR.gz`` files for energy parsing.
+    - Greater verbosity control
+    - Some code cleanup and formatting, and robustness updates
+
 v3.3.6
 ----------
 - Add ``py.typed`` to properly detect type hints by @Andrew-S-Rosen
