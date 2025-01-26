@@ -3,6 +3,7 @@ Module containing functions to analyse rattled and bond-distorted defect
 structure relaxations.
 """
 
+import contextlib
 import json
 import os
 import warnings
@@ -92,35 +93,24 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if not isinstance(distortion, str):
-        try:
-            if distortion != 0:  # as percentage with 1 decimal place (e.g. 50.0%)
-                return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
+    if isinstance(distortion, float):
+        if distortion != 0:  # as percentage with 1 decimal place (e.g. 50.0%)
+            return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
 
-            return f"Bond_Distortion_{distortion:.1f}%"
-        except Exception:
-            return "Distortion_not_recognized"
+        return f"Bond_Distortion_{distortion:.1f}%"
 
     # otherwise is string:
     if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
         return f"Bond_Distortion_{distortion}"  # runs from other charge states
-    if (
-        "Rattled_from_" in distortion
-        or "Dimer_from" in distortion
-        or distortion
-        in [
-            "Unperturbed",
-            "Rattled",
-            "Dimer",
-        ]
-    ):
+
+    if any(distortion.startswith(i) for i in ["Unperturbed", "Rattled", "Dimer"]):
         return distortion
 
-    try:  # try converting to float, in case user entered '0.5'
+    with contextlib.suppress(Exception):  # try converting to float, in case user entered '0.5'
         distortion = float(distortion)
         return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
-    except Exception:
-        return "Distortion_not_recognized"
+
+    return "Distortion_not_recognized"
 
 
 def _format_distortion_names(
@@ -849,7 +839,7 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    elements: Union[list, str],
+    elements: Union[list[str], str],
     radius: Optional[float] = 3.3,
     verbose: bool = True,
 ) -> dict:
@@ -869,7 +859,7 @@ def get_homoionic_bonds(
             Distance cutoff to look for homoionic bonds.
             Defaults to 3.3 A.
         verbose (:obj:`bool`, optional):
-            Whether or not to print the list of homoionic bonds.
+            Whether to print the list of homoionic bonds.
 
     Returns:
         :obj:`dict`:

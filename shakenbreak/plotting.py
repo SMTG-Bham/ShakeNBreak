@@ -621,16 +621,16 @@ def _get_line_colors(number_of_colors: int) -> list:
         list
     """
     default_colors = sns.color_palette("deep", 10)
-    if 11 > number_of_colors > 1:
+    if number_of_colors <= 1:
+        return ["#59a590", *default_colors]  # Turquoise by default
+    if number_of_colors <= 10:
         # If user didn't specify colors and more than one color needed, use deep color palette
-        colors = default_colors
-    elif number_of_colors > 11:  # otherwise use colormap
-        colors = list(
-            mpl.cm.get_cmap("viridis", number_of_colors + 1).colors
-        )  # +1 to avoid yellow color (which is at the end of the colormap)
-    else:
-        colors = ["#59a590", *default_colors]  # Turquoise by default
-    return colors
+        return default_colors[:number_of_colors]
+
+    # otherwise use colormap
+    return list(
+        mpl.cm.get_cmap("viridis", number_of_colors + 1).colors
+    )  # +1 to avoid yellow color (which is at the end of the colormap)
 
 
 def _setup_colormap(
