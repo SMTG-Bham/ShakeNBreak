@@ -2100,7 +2100,7 @@ class Distortions:
         stdev: float,
     ) -> None:
         """Print applied bond distortions and rattle standard deviation."""
-        rounded_distortions = [f"{round(i,3)+0}" if isinstance(i, float) else i for i in bond_distortions]
+        rounded_distortions = [f"{round(i, 3)+0}" if isinstance(i, float) else i for i in bond_distortions]
         print(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
