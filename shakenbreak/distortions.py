@@ -170,8 +170,7 @@ def distort(
         distorted = [(round(i[0], 2), i[1], i[2]) for i in distorted]
         nearest = [(round(i[0], 2), i[1], i[2]) for i in nearest]  # round numbers
         print(
-            f"""\tDefect Site Index / Frac Coords: {
-            site_index or np.around(frac_coords, decimals=3)}
+            f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
             Original Neighbour Distances: {nearest}
             Distorted Neighbour Distances:\n\t{distorted}"""
         )
@@ -268,8 +267,7 @@ def apply_dimer_distortion(
     if verbose:
         original_distance = round(struct.get_distance(site_indexes[0], site_indexes[1]), 2)
         print(
-            f"""\tDefect Site Index / Frac Coords: {
-            site_index or np.around(frac_coords, decimals=3)}
+            f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
             Dimer Distorted Neighbours: {distorted_atoms}
             Original Distance: {original_distance}
             Distorted Neighbour Distances: {2.0}"""

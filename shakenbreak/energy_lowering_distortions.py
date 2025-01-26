@@ -966,9 +966,9 @@ def _copy_vasp_files(
 
     if not all(file_dict.values()):
         warnings.warn(
-            f"Subfolders with VASP input files ({[k for k,v in file_dict.items() if not v]} not found in "
+            f"Subfolders with VASP input files ({[k for k, v in file_dict.items() if not v]} not found in "
             f"{output_path}/{defect_species}, so just writing distorted POSCAR file"
-            f"{f' and {[k for k,v in file_dict.items() if v]}' if any(file_dict.values()) else ''} to "
+            f"{f' and {[k for k, v in file_dict.items() if v]}' if any(file_dict.values()) else ''} to "
             f"{distorted_dir} directory."
         )
 
