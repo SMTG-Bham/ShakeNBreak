@@ -165,8 +165,6 @@ class InputTestCase(unittest.TestCase):
         # Refactor doped defect dict to list of list of DefectEntrys() objects
         # (there's a DefectEntry for each charge state)
         cls.cdte_defect_list = sum(list(cls.cdte_defects.values()), [])
-        dumpfn(cls.cdte_defect_list, "cdte_defect_list.json")
-        return
         cls.CdTe_extrinsic_defect_list = sum(
             list(cls.cdte_extrinsic_defects.values()), []
         )
