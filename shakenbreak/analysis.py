@@ -93,7 +93,7 @@ def _get_distortion_filename(distortion) -> str:
         distortion (:obj:`str`):
             distortion label used for file names.
     """
-    if isinstance(distortion, float):
+    if isinstance(distortion, (int, float)):
         if distortion != 0:  # as percentage with 1 decimal place (e.g. 50.0%)
             return f"Bond_Distortion_{round(distortion * 100, 1)+0}%"
 
