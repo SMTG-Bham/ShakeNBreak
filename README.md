@@ -134,6 +134,7 @@ Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Comm
 - S. R. Kavanagh **_Identifying Split Vacancies with Foundation Models and Electrostatics_** [_arXiv_](https://doi.org/10.48550/arXiv.2412.19330) 2025
 - S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-91h02) 2025
 - J. Hu et al. **_Enabling ionic transport in Li<sub>3</sub>AlP<sub>2</sub> the roles of defects and disorder_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D4TA04347B) 2025
+- X. Zhao et al. **_Trace Yb doping-induced cationic vacancy clusters enhance thermoelectrics in p-type PbTe_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0249058) 2025
 - Z. Cai & C. Ma **_Origin of oxygen partial pressure-dependent conductivity in SrTiO<sub>3</sub>_** [_Applied Physics Letters_](doi.org/10.1063/5.0245820) 2025
 - W. D. Neilson et al. **_Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO<sub>2±x</sub>: A Density Functional Theory Study_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.4c06580) 2024
 - X. Wang et al. **_Sulfur Vacancies Limit the Open-circuit Voltage of Sb<sub>2</sub>S<sub>3</sub> Solar Cells_** [_ACS Energy Letters_](https://doi.org/10.1021/acsenergylett.4c02722) 2024
