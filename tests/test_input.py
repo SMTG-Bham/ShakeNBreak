@@ -11,7 +11,6 @@ from unittest.mock import patch
 
 import numpy as np
 from ase.build import bulk, make_supercell
-from ase.calculators.aims import Aims
 from ase.io import read
 from doped.generation import get_defect_name_from_entry
 from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
@@ -2990,6 +2989,7 @@ class InputTestCase(unittest.TestCase):
         # # User defined parameters
         # for i in self.cdte_defect_folders_old_names:
         #     if_present_rm(i)  # remove test-generated defect folders
+        # from ase.calculators.aims import Aims
         # ase_calculator = Aims(
         #     k_grid=(1, 1, 1),
         #     relax_geometry=("bfgs", 5e-4),

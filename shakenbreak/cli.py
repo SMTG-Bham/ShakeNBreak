@@ -242,7 +242,7 @@ def generate(
     defect_struct = Structure.from_file(defect)
     bulk_struct = Structure.from_file(bulk)
 
-    # Note that here the Defect.defect_structure is the defect ``supercell`
+    # Note that here the Defect.defect_structure is the defect ``supercell``
     # structure, not the defect ``primitive`` structure.
     defect_object = input.identify_defect(
         defect_structure=defect_struct,
@@ -926,7 +926,7 @@ def parse(defect, path, code, verbose):
 def analyse(defect, path, code, ref_struct, verbose):
     """
     Generate ``csv`` file mapping each distortion to its final energy (in eV) and its
-    mean displacement (in Angstrom and relative to ``ref_struct`).
+    mean displacement (in Angstrom and relative to ``ref_struct``).
 
     Can be run within a single defect folder, or in the top-level directory (either
     specifying ``defect`` or looping through all defect folders).
@@ -1406,10 +1406,10 @@ def groundstate(
 ):
     """
     Generate folders with the identified ground state structures. A folder (named
-    ``directory`) is created with the ground state structure (named
-    ``groundstate_filename`) for each defect present in the specified path (if ``path`` is
+    ``directory``) is created with the ground state structure (named
+    ``groundstate_filename``) for each defect present in the specified path (if ``path`` is
     the top-level directory) or for the current defect if run within a defect folder.
-    If the name of the structure/output files is not specified, the code assumes ``CONTCAR`
+    If the name of the structure/output files is not specified, the code assumes ``CONTCAR``
     (e.g. geometry optimisations performed with VASP). If using a different code,
     please specify the name of the structure/output files.
     """

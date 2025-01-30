@@ -63,7 +63,7 @@ def _read_distortion_metadata(output_path: str) -> dict:
 
     Args:
         output_path (:obj:`str`):
-            Path to directory containing ``distortion_metadata.json`
+            Path to directory containing ``distortion_metadata.json``
             (Default: '.', current directory)
 
     Returns:
@@ -155,14 +155,14 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     """
     Calculate energy difference between ``Unperturbed`` structure and
     lowest energy distortion. Returns the energy (in eV) and bond
-    distortion of the ground-state relative to ``Unperturbed`. If
+    distortion of the ground-state relative to ``Unperturbed``. If
     ``Unperturbed`` not present, returns (None, ground-state bond
     distortion).
 
     Args:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by ``get_energies()`` or ``_sort_data`.
+            produced by ``get_energies()`` or ``_sort_data``.
 
     Returns:
         :obj:`tuple`:
@@ -211,7 +211,7 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
         energies_file (:obj:`str`):
             Path to ``yaml`` file with bond distortions and final energies
             (in eV), obtained using the CLI command ``snb-parse`` or the
-            function ``parse_energies()`.
+            function ``parse_energies()``.
         verbose (:obj:`bool`):
             Whether to print information about energy lowering
             distortions, if found.
@@ -225,7 +225,7 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
     Returns:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by ``_organize_data()`
+            produced by ``_organize_data()``
         energy_diff (:obj:`float`):
             Energy difference between minimum energy structure and
             ``Unperturbed`` (in eV).
@@ -271,7 +271,7 @@ def analyse_defect_site(
     site_num: Optional[int] = None,
     vac_site: Optional[list] = None,
 ) -> tuple:
-    """
+    r"""
     Analyse coordination environment and bond distances to nearest
     neighbours of defect site.
 
@@ -290,7 +290,7 @@ def analyse_defect_site(
 
     Returns:
         :obj:`tuple`:
-            Tuple of coordination analysis and bond length DataFrames,
+            Tuple of coordination analysis and bond length ``DataFrame``\s,
             respectively.
     """
     # get defect site
@@ -338,11 +338,11 @@ def analyse_structure(
     structure: Structure,
     output_path: str = ".",
 ) -> tuple:
-    """
+    r"""
     Analyse the local distortion of the input defect structure. Requires
     access to the ``distortion_metadata.json`` file generated with
     ShakeNBreak to read info about defect site. If lacking this,
-    can alternatively use ``analyse_defect_site()`.
+    can alternatively use ``analyse_defect_site()``.
 
     Args:
         defect_species (:obj:`str`):
@@ -350,12 +350,12 @@ def analyse_structure(
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure to analyse
         output_path (:obj:`str`):
-            Path to directory containing ``distortion_metadata.json`
+            Path to directory containing ``distortion_metadata.json``
             (Default: '.', current directory)
 
     Returns:
         :obj:`tuple`:
-            Tuple of coordination analysis and bond length DataFrames,
+            Tuple of coordination analysis and bond length ``DataFrame``\s,
             respectively.
     """
     defect_name_without_charge = defect_species.rsplit("_", 1)[0]
@@ -391,14 +391,14 @@ def get_structures(
     store them in a dictionary matching the bond distortion to the final
     structure. By default, will read the structures from the distortion
     subdirectories present in each defect folder. If only certain
-    distortions should be parsed, use the argument ``bond_distortions`
+    distortions should be parsed, use the argument ``bond_distortions``
     to specify them.
 
     Args:
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing ``defect_species`
+            Path to top-level directory containing ``defect_species``
             subdirectories.
             (Default: current directory.
         bond_distortions (:obj:`list`, optional):
@@ -489,7 +489,7 @@ def get_energies(
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing ``defect_species`
+            Path to top-level directory containing ``defect_species``
             subdirectories.
             (Default: current directory)
         distortion_increment (:obj:`float`):
@@ -581,8 +581,8 @@ def calculate_struct_comparison(
     """
     Calculate either the summed atomic displacement, with metric = "disp",
     or the maximum distance between matched atoms, with metric = "max_dist",
-    (default) between each distorted structure in ``defect_struct_dict`,
-    and either 'Unperturbed' or a specified structure (`ref_structure`).
+    (default) between each distorted structure in ``defect_struct_dict``,
+    and either 'Unperturbed' or a specified structure (``ref_structure``).
     For metric = "disp", atomic displacements below ``min_dist`` (in Å,
     default 0.1 Å) are considered noise and omitted from the sum,
     to reduce supercell size dependence.
@@ -704,7 +704,7 @@ def compare_structures(
 ) -> Union[None, pd.DataFrame]:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
-    a specified structure (`ref_structure`), and calculate the summed
+    a specified structure (``ref_structure``), and calculate the summed
     atomic displacement (in Å), and maximum distance between matched
     atomic sites (in Å).
 
@@ -713,7 +713,7 @@ def compare_structures(
             Dictionary mapping bond distortion to (relaxed) structure
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as
-            produced by ``_organize_data()`.
+            produced by ``_organize_data()``.
         ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
@@ -723,7 +723,7 @@ def compare_structures(
             (Default: "Unperturbed")
         units (:obj:`str`):
             Energy units label for outputs (either 'eV' or 'meV').
-            Should be the same as the units in ``defect_energies_dict`,
+            Should be the same as the units in ``defect_energies_dict``,
             as this does not modify the supplied values.
             (Default: "eV")
         min_dist (:obj:`float`):
@@ -1005,7 +1005,7 @@ def get_site_magnetizations(
             List of distortions to analyse (e.g. ['Unperturbed', 0.1,
             -0.2])
         output_path (:obj:`str`):
-            Path to top-level directory containing ``defect_species`
+            Path to top-level directory containing ``defect_species``
             subdirectories.
             (Default: current directory)
         threshold (:obj:`float`, optional):
