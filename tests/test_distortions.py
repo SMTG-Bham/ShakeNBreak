@@ -186,18 +186,16 @@ class DistortionTestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"
         )
 
-        # test correct behaviour with `num_nearest_neighbours` is greater than number of
-        # `distorted_element` atoms withing 4.5 Å of the defect site
+        # test correct behaviour with odd parameters input:
         output = distortions.distort(
             self.Int_Cd_2_struc,
             num_nearest_neighbours=10,
             distortion_factor=0.4,
             distorted_element="Cd",
             site_index=site_index,
+            verbose=True,
         )
-        self.assertEqual(
-            output["distorted_structure"], self.Int_Cd_2_minus0pt6_NN_10_struc_rattled
-        )
+        self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_NN_10_struc_rattled)
         self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
         self.assertEqual(output["num_distorted_neighbours"], 10)
         self.assertEqual(output["defect_site_index"], 65)
@@ -212,99 +210,41 @@ class DistortionTestCase(unittest.TestCase):
                 [14, "Cd"],
                 [24, "Cd"],
                 [30, "Cd"],
-                [38, "Te"],
-                [54, "Te"],
-                [62, "Te"],
+                [2, "Cd"],
+                [3, "Cd"],
+                [5, "Cd"],
             ],
         )
-        distortions.distort(
-            self.Int_Cd_2_struc,
-            num_nearest_neighbours=10,
-            distortion_factor=0.4,
-            site_index=site_index,
-            distorted_element="Cd",
-            verbose=True,
-        )
         mock_print.assert_called_with(
-            f"\tDefect Site Index / Frac Coords: {site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
-            + "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
-            + "'Cd'), (2.71, 38, 'Te'), (2.71, 54, 'Te'), (2.71, 62, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
-            + "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
-            + "(1.7, 30, 'Cd'), (1.09, 38, 'Te'), (1.09, 54, 'Te'), (1.09, 62, 'Te')]"
+            "\tDefect Site Index / Frac Coords: 65\n"
+            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, 'Cd'), "
+            "(5.36, 2, 'Cd'), (5.36, 3, 'Cd'), (5.36, 5, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), (1.7, 30, 'Cd'), "
+            "(2.15, 2, 'Cd'), (2.15, 3, 'Cd'), (2.15, 5, 'Cd')]"
         )
 
-    def test_distort_warnings(self):
-        """Test warning messages for bond distortion function"""
+    def test_distorted_element_error(self):
+        """Test error message when non-existent element symbol provided"""
         site_index = 65  # Cd interstitial site index (VASP indexing)
         for missing_element in ["C", "O", "H", "N", "S", "P", "X"]:
             for num_neighbours in range(8):
                 for distortion_factor in np.arange(-0.6, 0.61, 0.1):
-                    with warnings.catch_warnings(record=True) as w:
+                    with self.assertRaises(ValueError) as e:
                         distortions.distort(
-                            self.Int_Cd_2_struc,  # cause warning for no `missing_element`
-                            # neighbours
+                            self.Int_Cd_2_struc,  # cause error for no `missing_element` neighbours
                             num_nearest_neighbours=num_neighbours,
                             distortion_factor=distortion_factor,
                             site_index=site_index,
                             distorted_element=missing_element,
                         )
-                        warning_message = (
-                            f"{missing_element} was specified as the nearest neighbour element to "
-                            f"distort, with `distortion_factor` {distortion_factor} but did not "
-                            f"find `num_nearest_neighbours` ({num_neighbours}) of these elements "
-                            f"within 4.5 Å of the defect site. For the remaining neighbours to "
-                            f"distort, we ignore the elemental identity. The final distortion "
-                            f"information is:"
-                        )
-                        user_warnings = [
-                            warning for warning in w if warning.category == UserWarning
-                        ]
-                        if num_neighbours > 0:
-                            self.assertEqual(len(user_warnings), 1)
-                            self.assertIn(
-                                warning_message, str(user_warnings[0].message)
-                            )
-                        else:
-                            self.assertEqual(
-                                len(user_warnings), 0
-                            )  # No warning if we distort none
 
-        # test the case where we do have some of the `distorted_element` neighbours, but less than
-        # `num_nearest_neighbours` of them with 4.5 Å of the defect site
-        for num_neighbours in range(12):
-            for distortion_factor in np.arange(-0.6, 0.61, 0.1):
-                with warnings.catch_warnings(record=True) as w:
-                    distortions.distort(
-                        self.Int_Cd_2_struc,  # we have 3 Cd at 2.71 Å, 4 Cd at 4.25 Å from the
-                        # defect site
-                        num_nearest_neighbours=num_neighbours,
-                        distortion_factor=distortion_factor,
-                        site_index=site_index,
-                        distorted_element="Cd",
-                    )
-                    warning_message = (
-                        f"Cd was specified as the nearest neighbour element to "
-                        f"distort, with `distortion_factor` {distortion_factor} but did not "
-                        f"find `num_nearest_neighbours` ({num_neighbours}) of these elements "
-                        f"within 4.5 Å of the defect site. For the remaining neighbours to "
-                        f"distort, we ignore the elemental identity. The final distortion "
-                        f"information is:"
-                    )
-                    user_warnings = [
-                        warning for warning in w if warning.category == UserWarning
-                    ]
-                    if (
-                        num_neighbours > 7
-                    ):  # should only give warning when more than 7 distorted
-                        # neighbours requested
-                        self.assertEqual(len(user_warnings), 1)
-                        self.assertIn(warning_message, str(user_warnings[0].message))
-                    else:
-                        self.assertEqual(
-                            len(user_warnings), 0
-                        )  # No warning if we distort none
+                        missing_elt_error = ValueError(
+                            f"No atoms of `distorted_element` = {missing_element} found in the defect "
+                            f"structure, cannot apply bond distortions."
+                        )
+                        self.assertIn(missing_elt_error, e.exception)
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""
