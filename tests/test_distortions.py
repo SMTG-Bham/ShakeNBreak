@@ -5,7 +5,9 @@ from unittest.mock import patch
 
 import numpy as np
 from monty.serialization import loadfn
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Lattice
+from pymatgen.core.sites import PeriodicSite
+from pymatgen.core.periodic_table import Element
 
 from shakenbreak import distortions, analysis
 
@@ -121,6 +123,46 @@ class DistortionTestCase(unittest.TestCase):
             + "            Original Neighbour Distances: []\n"
             + "            Distorted Neighbour Distances:\n\t[]"
         )
+
+    @patch("builtins.print")
+    def test_distort_degenerate_case(self, mock_print):
+        """
+        Test bond distortion function for case of degenerate distances (but non-degenerate
+        NN distortion combinations).
+        """
+        # create a pymatgen structure with octahedral coordination of vacant site
+        # (this is perovskite-like)
+        lattice = Lattice.cubic(3.0)
+        sites = [
+            PeriodicSite(Element("H"), [0, 0, 0], lattice),
+            PeriodicSite(Element("H"), [0, 0.5, 0.5], lattice),
+            PeriodicSite(Element("H"), [0.5, 0, 0.5], lattice),
+            PeriodicSite(Element("H"), [0.5, 0.5, 0], lattice),
+            # PeriodicSite(Element("V"), [0.5, 0.5, 0.5], lattice),  # vacancy site
+        ]
+        structure = Structure.from_sites(sites)
+        vac_coords = np.array([0.5, 0.5, 0.5])  # centre of octahedral coordination
+        output = distortions.distort(
+            structure, 2,
+            0.5, frac_coords=vac_coords, verbose=True)
+        self.assertEqual(output["undistorted_structure"], structure)
+        self.assertEqual(output["num_distorted_neighbours"], 2)
+        np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
+        self.assertEqual(output.get("defect_site_index"), None)
+        self.assertEqual(output["distorted_atoms"], [[2, "H"], [3, "H"]])
+
+        # get min distance in distorted structure:
+        # (would be 1.5 Å if trans NN combo distorted, but shorter for cis distortion combo)
+        dist_matrix = output["distorted_structure"].distance_matrix.flatten()
+        min_dist = np.min(dist_matrix[dist_matrix > 0])
+        self.assertAlmostEqual(min_dist, 1.06, places=2)
+
+        mock_print.assert_called_with(
+            f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
+            "            Original Neighbour Distances: [(1.5, 2, 'H'), (1.5, 3, 'H')]\n"
+            "            Distorted Neighbour Distances:\n\t[(0.75, 2, 'H'), (0.75, 3, 'H')]"
+        )
+
 
     @patch("builtins.print")
     def test_distort_Int_Cd_2(self, mock_print):
