@@ -110,9 +110,9 @@ def snb():
 @click.option(
     "--padding",
     "-p",
-    help="If `--charge` or `--min-charge` & `--max-charge` are not set, "
+    help="If ``--charge`` or ``--min-charge`` & ``--max-charge`` are not set, "
     "defect charges will be set to the range: 0 - {Defect oxidation state}, "
-    "with a `--padding` on either side of this range.",
+    "with a ``--padding`` on either side of this range.",
     default=1,
     type=int,
 )
@@ -151,7 +151,7 @@ def snb():
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "shakenbreak/SnB_input_files/example_generate_config.yaml",
+    "``shakenbreak/SnB_input_files/example_generate_config.yaml``",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
     show_default=True,
@@ -159,8 +159,8 @@ def snb():
 @click.option(
     "--input_file",
     "-inp",
-    help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
+    help="Input file for the code specified with ``--code``, "
+    "with relaxation parameters to override defaults (e.g. ``INCAR`` for ``VASP``).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
@@ -408,9 +408,9 @@ def generate(
 @click.option(
     "--padding",
     "-p",
-    help="For any defects where `charge` is not set in the --config file, "
+    help="For any defects where ``charge`` is not set in the --config file, "
     "charges will be set to the range: 0 - {Defect oxidation state}, "
-    "with a `--padding` on either side of this range.",
+    "with a ``--padding`` on either side of this range.",
     default=1,
     type=int,
 )
@@ -426,7 +426,7 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "shakenbreak/SnB_input_files/example_generate_all_config.yaml",
+    "``shakenbreak/SnB_input_files/example_generate_all_config.yaml``",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
@@ -434,8 +434,8 @@ def generate(
 @click.option(
     "--input_file",
     "-inp",
-    help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
+    help="Input file for the code specified with ``--code``, "
+    "with relaxation parameters to override defaults (e.g. ``INCAR`` for ``VASP``).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
@@ -910,7 +910,7 @@ def parse(defect, path, code, verbose):
     "-ref",
     help="Structure to use as a reference for comparison "
     "(to compute atomic displacements). Given as a key from "
-    "`defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%').",
+    "``defect_structures_dict`` (e.g. '-0.4' for ``'Bond_Distortion_-40.0%'``).",
     type=str,
     default="Unperturbed",
     show_default=True,
@@ -1016,7 +1016,7 @@ def analyse(defect, path, code, ref_struct, verbose):
     "--min_energy",
     "-min",
     help="Minimum energy difference (in eV) between the ground-state "
-    "distortion and the `Unperturbed` structure to generate the "
+    "distortion and the ``Unperturbed`` structure to generate the "
     "distortion plot, when running from the top-level folder.",
     default=0.05,
     type=float,
@@ -1051,7 +1051,7 @@ def analyse(defect, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help="If the option `--colorbar` is specified, determines the criteria used"
+    help="If the option ``--colorbar`` is specified, determines the criteria used"
     " for the structural comparison. Can choose between the summed of atomic"
     " displacements ('disp') or the maximum distance between"
     " matched sites ('max_dist', default).",
@@ -1078,7 +1078,7 @@ def analyse(defect, path, code, ref_struct, verbose):
 @click.option(
     "--max_energy",
     "-max",
-    help="Maximum energy (in chosen `units`), relative to the "
+    help="Maximum energy (in chosen ``units``), relative to the "
     "unperturbed structure, to show on the plot.",
     type=float,
     default=0.5,
@@ -1266,7 +1266,7 @@ def plot(
     "--min_energy",
     "-min",
     help="Minimum energy difference (in eV) between the ground-state"
-    " defect structure, relative to the `Unperturbed` structure,"
+    " defect structure, relative to the ``Unperturbed`` structure,"
     " to consider it as having found a new energy-lowering"
     " distortion.",
     type=float,
@@ -1360,8 +1360,8 @@ def _running_in_defect_dir(path: str = ".", warning_substring: str = ""):
 @click.option(
     "--directory",
     "-d",
-    help="Folder name where the ground state structure will be written to. If using with `doped`, then "
-    "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
+    help="Folder name where the ground state structure will be written to. If using with ``doped``, then "
+    "typically recommended to set to ``vasp_nkred_std`` or ``vasp_std``.",
     type=str,
     default="Groundstate",
     show_default=True,

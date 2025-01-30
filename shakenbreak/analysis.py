@@ -82,7 +82,7 @@ def _read_distortion_metadata(output_path: str) -> dict:
 def _get_distortion_filename(distortion) -> str:
     """
     Format distortion names for file naming (e.g. from 0.5 to
-    'Bond_Distortion_50.0%').
+    ``"Bond_Distortion_50.0%"``).
 
     Args:
         distortion (float or str):
@@ -118,7 +118,7 @@ def _format_distortion_names(
 ) -> str:
     """
     Formats the distortion filename to the names used internally and for
-    analysis (i.e. 'Bond_Distortion_-50.0%' -> -0.5).
+    analysis (i.e. ``"Bond_Distortion_-50.0%"`` -> -0.5).
 
     Args:
         distortion_label (:obj:`str`):
@@ -216,7 +216,7 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
-        min_e_diff (:obj: ``float`):
+        min_e_diff (:obj:`float`):
             Minimum energy difference (in eV) between the ground-state
             defect structure, relative to the ``Unperturbed`` structure,
             to consider it as having found a new energy-lowering
@@ -600,8 +600,8 @@ def calculate_struct_comparison(
         ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            ``defect_structures_dict`` (e.g. '-0.4' for "Bond_Distortion_-40.0%")
-            or a pymatgen Structure object (to compare with a specific external
+            ``defect_structures_dict`` (e.g. '-0.4' for ``"Bond_Distortion_-40.0%"``)
+            or a ``pymatgen`` ``Structure`` object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
         min_dist (:obj:`float`):
@@ -617,7 +617,7 @@ def calculate_struct_comparison(
     Returns:
         :obj:`dict`:
             Dictionary matching bond distortions to structure
-            comparison metric (disp or max_dist).
+            comparison metric (``"disp"`` or ``"max_dist"``).
     """
     # Check reference structure
     if isinstance(ref_structure, (str, float)):
@@ -717,8 +717,8 @@ def compare_structures(
         ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            ``defect_structures_dict`` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
-            or a pymatgen Structure object (to compare with a specific external
+            ``defect_structures_dict`` (e.g. '-0.4' for ``"Bond_Distortion_-40.0%"``)
+            or a ``pymatgen`` ``Structure`` object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
         units (:obj:`str`):
@@ -730,7 +730,7 @@ def compare_structures(
             Minimum atomic displacement threshold to include in atomic
             displacements sum (in Å, default 0.1 Å).
         display_df (:obj:`bool`):
-            Whether to display the structure comparison DataFrame
+            Whether to display the structure comparison ``DataFrame``
             interactively in Jupyter/Ipython (Default: True).
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
@@ -741,7 +741,7 @@ def compare_structures(
 
     Returns:
         :obj:`pd.DataFrame`:
-            DataFrame containing structural comparison results (summed
+            ``DataFrame`` containing structural comparison results (summed
             normalised atomic displacement and maximum distance between
             matched atomic sites), and relative energies.
     """
@@ -953,7 +953,7 @@ def _site_magnetizations(
 
     Returns:
         :obj:`pandas.DataFrame`:
-            pandas.Dataframe with sites with magnetization above threshold.
+            ``Dataframe`` with sites with magnetization above threshold.
     """
     # Site magnetizations
     mag = outcar.magnetization
@@ -1026,7 +1026,7 @@ def get_site_magnetizations(
 
     Returns:
         :obj:`dict`:
-            Dictionary matching distortion to DataFrame containing
+            Dictionary matching distortion to ``DataFrame`` containing
             magnetization info.
     """
     magnetizations = {}

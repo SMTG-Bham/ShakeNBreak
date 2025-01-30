@@ -1211,10 +1211,12 @@ def _find_sc_defect_coords(defect_entry):
     didn't set the ``sc_defect_frac_coords`` attribute.
 
     Args:
-        defect_entry (DefectEntry): ``DefectEntry`` object
+        defect_entry (:obj:`DefectEntry`):
+            ``DefectEntry`` object.
 
     Returns:
-        frac_coords (list): Fractional coordinates of defect in defect supercell
+        frac_coords (:obj:`list`):
+            Fractional coordinates of defect in defect supercell.
     """
     frac_coords = defect_entry.sc_defect_frac_coords
     if frac_coords is None:
