@@ -306,14 +306,14 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_Int_Cd_2_NN_10_crystalNN_coord_df = pd.DataFrame(
                 {
                     "Coordination": {
-                        0: "hexagonal planar",
-                        1: "octahedral",
-                        2: "pentagonal pyramidal",
+                        0: "trigonal planar",
+                        1: "trigonal non-coplanar",
+                        2: "T-shaped",
                     },
                     "Factor": {
-                        0: round(0.778391113850372, 2),
-                        1: round(0.014891251252011014, 2),
-                        2: round(0.058350214482398306, 2),
+                        0: 0.81,
+                        1: 0.59,
+                        2: 0.06,
                     },
                 }
             )
@@ -322,14 +322,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             expected_Int_Cd_2_NN_10_crystalNN_bonding_df = pd.DataFrame(
                 {
-                    "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
+                    "Element": {0: "Cd", 1: "Cd", 2: "Cd"},
                     "Distance (\u212B)": {
                         0: "1.09",
                         1: "1.09",
                         2: "1.09",
-                        3: "1.09",
-                        4: "1.09",
-                        5: "1.09",
                     },
                 }
             )
