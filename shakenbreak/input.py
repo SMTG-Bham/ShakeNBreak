@@ -1976,7 +1976,7 @@ class Distortions:
         self,
         defect_name,
         distorted_elements: Optional[dict],
-    ) -> str:
+    ) -> Union[str, None, list[str]]:
         """
         Parse the user-defined distorted elements for a given defect
         (if given).
@@ -1988,6 +1988,11 @@ class Distortions:
                 Dictionary of distorted elements for each defect, in the form
                 of {'defect_name': ['element1', 'element2', ...]}
                 (e.g {'vac_1_Cd': ['Te']}).
+
+        Returns:
+            Union[str, None, list[str]]:
+                Neighbouring element(s) to distort, or None if no element is
+                specified.
         """
         # Specific elements to distort
         if distorted_elements:
@@ -2000,24 +2005,10 @@ class Distortions:
                     "neighbour elements to distort.",
                 )
                 distorted_element = None
-            else:
-                # Check distorted element is a valid element symbol
-                try:
-                    if isinstance(distorted_elements[defect_name], list):
-                        for element in distorted_elements[defect_name]:
-                            Element(element)
-                    elif isinstance(distorted_elements[defect_name], str):
-                        Element(distorted_elements[defect_name])
-                except ValueError:
-                    warnings.warn(
-                        "Problem reading the keys in distorted_elements. Are they correct element "
-                        "symbols? Proceeding without discriminating which neighbour elements to "
-                        "distort.",
-                    )
-                    distorted_element = None
+
         else:
             distorted_element = None
-        return distorted_element
+        return distorted_element  # may be str or list
 
     def _parse_number_electrons(
         self,
