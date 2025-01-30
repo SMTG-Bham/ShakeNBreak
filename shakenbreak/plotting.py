@@ -112,8 +112,11 @@ def _verify_data_directories_exist(
 def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
     """
     Parse the number and type of distorted nearest neighbours for a
-    given defect from the distortion_metadata dictionary.
+    given defect from the ``distortion_metadata`` dictionary.
     """
+    if defect not in distortion_metadata["defects"] and len(distortion_metadata["defects"].keys()) == 1:
+        defect = next(iter(distortion_metadata["defects"].keys()))  # use the only defect in the metadata
+
     if defect in distortion_metadata["defects"]:
         try:
             # Get number and element symbol of the distorted site(s)
@@ -139,8 +142,10 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
                 "NN"  # if distorted_elements wasn't set, set label
                 # to "NN"
             )
+
     else:
         num_nearest_neighbours, neighbour_atom = None, None
+
     return num_nearest_neighbours, neighbour_atom
 
 
