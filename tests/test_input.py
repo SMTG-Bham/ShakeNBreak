@@ -2338,6 +2338,31 @@ class InputTestCase(unittest.TestCase):
         )
         self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2)
 
+    def _compare_dist_dicts(self, generated_dist_dict, test_dist_dict, defect_name, snb_name):
+        """
+        Convenience test function to compare two distortion dictionaries.
+
+        Avoids using ``assertDictEqual`` as this can be sensitive to tiny
+        rounding differences between Linux and MacOS.
+        """
+        print(f"Comparing {defect_name}, {snb_name}")
+        for k, v in generated_dist_dict[defect_name].items():
+            if k != "charges":
+                print(f"Comparing {k}")
+                self.assertEqual(v, test_dist_dict[snb_name][k])
+            else:
+                for charge, charge_dict in v.items():
+                    print(f"Comparing charge {charge}")
+                    structures = charge_dict["structures"]
+                    self.assertEqual(structures["Unperturbed"],
+                                     test_dist_dict[snb_name]["charges"][charge]["structures"][
+                                         "Unperturbed"])
+
+                    for distortion, structure in structures["distortions"].items():
+                        self.assertEqual(structure,
+                                         test_dist_dict[snb_name]["charges"][charge]["structures"][
+                                             "distortions"][distortion])
+
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""
         # Test normal behaviour
@@ -2425,7 +2450,8 @@ class InputTestCase(unittest.TestCase):
                 doped_dict_metadata["defects"][defect_name],
                 vacancies_dist_metadata["defects"][snb_name],
             )
-            self.assertDictEqual(doped_dist_defects_dict[defect_name], test_dist_dict[snb_name])
+            self._compare_dist_dicts(doped_dist_defects_dict, test_dist_dict, defect_name, snb_name)
+
 
         # Test error if missing bulk entry
         vacancies = {
@@ -2594,7 +2620,9 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(loadfn("distortion_metadata.json"), metadata)
         dumpfn(dist_defects_dict, "distorted_defects_dict.json")
         test_dist_dict = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_defect_dict.json")
-        self.assertDictEqual(test_dist_dict, loadfn("distorted_defects_dict.json"))
+        self._compare_dist_dicts(
+            loadfn("distorted_defects_dict.json"), test_dist_dict, "v_Cd_Td_Te2.83", "v_Cd_Td_Te2.83"
+        )
 
         # Test error if missing bulk entry
         vacancies = {
