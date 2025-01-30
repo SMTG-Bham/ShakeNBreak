@@ -121,6 +121,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ]:  # everything but VASP data dir
             if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "fake_vac_1_Cd_0.yaml"))
             if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "vac_1_Cd_0.yaml"))
+            if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "default_INCAR"))
             for defect_dir in os.listdir(os.path.join(data_dir, "vac_1_Cd_0")):
                 if "Bond_Distortion_30.0%" not in defect_dir and os.path.isdir(
                     os.path.join(data_dir, "vac_1_Cd_0", defect_dir)
