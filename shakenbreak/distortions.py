@@ -185,7 +185,7 @@ def _get_nns_to_distort(
         # this is to ensure a deterministic choice in NNs to distort, in cases of degenerate choices of NNs
         # in terms of distance, but non-degenerate in terms of combination of NNs to distort
         # e.g. square coordination, indexed clockwise 1-4, then distorting 1 & 2 is different to 1 & 3 (
-        # i.e cis vs trans essentially); ShakeNBreak default is to favour NNs which are closer to each
+        # i.e. cis vs trans essentially); ShakeNBreak default is to favour NNs which are closer to each
         # other (i.e. favouring cis distortions, and thus dimer/trimer formation or other cluster-type
         # rebonding)
         nearest_neighbours = sorted(
