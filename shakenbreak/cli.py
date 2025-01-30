@@ -242,8 +242,8 @@ def generate(
     defect_struct = Structure.from_file(defect)
     bulk_struct = Structure.from_file(bulk)
 
-    # Note that here the Defect.defect_structure is the defect `supercell`
-    # structure, not the defect `primitive` structure.
+    # Note that here the Defect.defect_structure is the defect ``supercell`
+    # structure, not the defect ``primitive`` structure.
     defect_object = input.identify_defect(
         defect_structure=defect_struct,
         bulk_structure=bulk_struct,
@@ -841,10 +841,10 @@ def run(submit_command, job_script, job_name_option, verbose):
 def parse(defect, path, code, verbose):
     """
     Parse final energies of defect structures from relaxation output files.
-    Parsed energies are written to a `yaml` file in the corresponding defect directory.
+    Parsed energies are written to a ``yaml`` file in the corresponding defect directory.
 
     Can be run within a single defect folder, or in the top-level directory (either
-    specifying `defect` or looping through all defect folders).
+    specifying ``defect`` or looping through all defect folders).
     """
     if defect:
         _ = io.parse_energies(defect, path, code, verbose=verbose)
@@ -925,11 +925,11 @@ def parse(defect, path, code, verbose):
 )
 def analyse(defect, path, code, ref_struct, verbose):
     """
-    Generate `csv` file mapping each distortion to its final energy (in eV) and its
-    mean displacement (in Angstrom and relative to `ref_struct`).
+    Generate ``csv`` file mapping each distortion to its final energy (in eV) and its
+    mean displacement (in Angstrom and relative to ``ref_struct`).
 
     Can be run within a single defect folder, or in the top-level directory (either
-    specifying `defect` or looping through all defect folders).
+    specifying ``defect`` or looping through all defect folders).
     """
 
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
@@ -1127,7 +1127,7 @@ def plot(
     similarity between configurations can be illustrated with a colorbar.
 
     Can be run within a single defect folder, or in the top-level directory
-    (either specifying `defect` or looping through all defect folders).
+    (either specifying ``defect`` or looping through all defect folders).
     """
     if style_file is None:
         style_file = f"{os.path.dirname(os.path.abspath(__file__))}/shakenbreak.mplstyle"
@@ -1298,7 +1298,7 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
     Considers all identified energy-lowering distortions for each defect
     in each charge state, and screens out duplicate distorted structures
     found for multiple charge states. Defect folder names should end with
-    charge state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc).
+    charge state after an underscore (e.g. ``vac_1_Cd_0`` or ``Va_Cd_0`` etc).
     """
     if path == ".":
         path = os.getcwd()  # more verbose error if no defect folders found in path
@@ -1406,10 +1406,10 @@ def groundstate(
 ):
     """
     Generate folders with the identified ground state structures. A folder (named
-    `directory`) is created with the ground state structure (named
-    `groundstate_filename`) for each defect present in the specified path (if `path` is
+    ``directory`) is created with the ground state structure (named
+    ``groundstate_filename`) for each defect present in the specified path (if ``path`` is
     the top-level directory) or for the current defect if run within a defect folder.
-    If the name of the structure/output files is not specified, the code assumes `CONTCAR`
+    If the name of the structure/output files is not specified, the code assumes ``CONTCAR`
     (e.g. geometry optimisations performed with VASP). If using a different code,
     please specify the name of the structure/output files.
     """

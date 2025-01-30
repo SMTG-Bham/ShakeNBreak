@@ -31,14 +31,14 @@ def parse_energies(
 ) -> None:
     """
     Parse final energy for all distortions present in the given defect
-    directory and write them to a `yaml` file in the defect directory.
+    directory and write them to a ``yaml`` file in the defect directory.
     Returns the energies_file path.
 
     Args:
         defect (:obj:`str`):
             Name of defect to parse, including charge state. Should match the
             name of the defect folder.
-        path (:obj: `str`):
+        path (:obj: ``str`):
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
         code (:obj:`str`):
@@ -199,7 +199,7 @@ def parse_energies(
 
     if defect == os.path.basename(os.path.normpath(path)) and not [
         dir for dir in path if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
-    ]:  # if `defect` is in end of `path` and `path` doesn't have a subdirectory called `defect`
+    ]:  # if ``defect`` is in end of ``path`` and ``path`` doesn't have a subdirectory called ``defect`
         # then remove defect from end of path
         path = os.path.dirname(path)
 
@@ -383,16 +383,16 @@ def read_vasp_structure(
     file_path: str,
 ) -> Union[Structure, str]:
     """
-    Read VASP structure from `file_path` and convert to `pymatgen` Structure
+    Read VASP structure from ``file_path`` and convert to ``pymatgen`` Structure
     object.
 
     Args:
         file_path (:obj:`str`):
-            Path to VASP `CONTCAR` file
+            Path to VASP ``CONTCAR`` file
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
@@ -427,7 +427,7 @@ def read_espresso_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
@@ -497,7 +497,7 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, st
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -529,7 +529,7 @@ def read_cp2k_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -564,7 +564,7 @@ def read_castep_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -613,7 +613,7 @@ def parse_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` Structure object
     """
     if code.lower() == "vasp":
         if not structure_filename:

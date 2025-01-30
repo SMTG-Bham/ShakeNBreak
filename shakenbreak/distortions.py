@@ -28,7 +28,7 @@ def _get_ase_defect_structure(
     Convenience function to get an ASE Atoms object of the input structure
     and the defect site index (0-indexed).
 
-    If the defect is a vacancy (i.e. `frac_coords` is provided), a fake
+    If the defect is a vacancy (i.e. ``frac_coords`` is provided), a fake
     "V" atom is appended to the structure for consistent behaviour with
     substitutions and interstitials.
 
@@ -405,7 +405,7 @@ def rattle(
     """
     Given a pymatgen Structure object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
-    distribution of standard deviation `stdev`.
+    distribution of standard deviation ``stdev`.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
@@ -443,7 +443,7 @@ def rattle(
             (Default: 2.0)
         max_attempts (:obj:`int`):
             Maximum Monte Carlo rattle move attempts allowed for a single atom;
-            if this limit is reached an `Exception` is raised.
+            if this limit is reached an ``Exception`` is raised.
             (Default: 5000)
         seed (:obj:`int`):
             Seed for NumPy random state from which random rattle displacements
@@ -574,7 +574,7 @@ def _local_mc_rattle_displacements(
             for not generating structures where two or more have swapped positions.
         max_attempts (:obj:`int`):
             limit for how many attempted rattle moves are allowed a single atom;
-            if this limit is reached an `Exception` is raised.
+            if this limit is reached an ``Exception`` is raised.
         active_atoms (:obj:`list`):
             list of which atomic indices should undergo Monte Carlo rattling
         nbr_cutoff (:obj:`float`):
@@ -676,15 +676,15 @@ def _generate_local_mc_rattled_structures(
     Compared to the standard Monte Carlo rattle, here the displacements
     tail off as we move away from the defect site.
 
-    Rattling atom `i` is carried out as a Monte Carlo move that is
+    Rattling atom ``i`` is carried out as a Monte Carlo move that is
     accepted with a probability determined from the minimum
-    interatomic distance :math:`d_{ij}`.  If :math:`\\min(d_{ij})` is
-    smaller than :math:`d_{min}` the move is only accepted with a low
+    interatomic distance :math:`d_{ij}`.  If :math:`\\min(d_{ij})`` is
+    smaller than :math:`d_{min}`` the move is only accepted with a low
     probability.
 
     This process is repeated for each atom a number of times meaning
     the magnitude of the final displacements is not *directly*
-    connected to `rattle_std`.
+    connected to ``rattle_std`.
 
     This function has been adapted from https://gitlab.com/materials-modeling/hiphive
 
@@ -696,8 +696,8 @@ def _generate_local_mc_rattled_structures(
 
     Notes:
         The procedure implemented here might not generate a symmetric
-        distribution for the displacements `kwargs` will be forwarded to
-        `mc_rattle` (see user guide for a detailed explanation)
+        distribution for the displacements ``kwargs`` will be forwarded to
+        ``mc_rattle`` (see user guide for a detailed explanation)
 
     Args:
         atoms (:obj:`ase.Atoms`):
@@ -720,7 +720,7 @@ def _generate_local_mc_rattled_structures(
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles
         **kwargs:
-            Additional keyword arguments to be passed to `mc_rattle`
+            Additional keyword arguments to be passed to ``mc_rattle`
 
     Returns:
         :obj:`list`:
@@ -757,7 +757,7 @@ def local_mc_rattle(
     """
     Given a pymatgen Structure object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
-    distribution of standard deviation `stdev`. The random displacements
+    distribution of standard deviation ``stdev`. The random displacements
     tail off as we move away from the defect site.
 
     Args:
@@ -801,7 +801,7 @@ def local_mc_rattle(
             (Default: 2.0)
         max_attempts (:obj:`int`):
             Maximum Monte Carlo rattle move attempts allowed for a single atom;
-            if this limit is reached an `Exception` is raised.
+            if this limit is reached an ``Exception`` is raised.
             (Default: 5000)
         seed (:obj:`int`):
             Seed for NumPy random state from which random rattle displacements
