@@ -1764,7 +1764,7 @@ class InputTestCase(unittest.TestCase):
                                 (11, "Cd"),
                                 (23, "Cd"),
                                 (30, "Cd"),
-                                (39, "Te"),
+                                (2, "Cd"),
                             ],  # Defect added at index 0
                             "distortion_parameters": {
                                 "distortion_increment": 0.25,
@@ -1907,9 +1907,9 @@ class InputTestCase(unittest.TestCase):
         mock_Int_Cd_2_print.assert_any_call(
             f"\tDefect Site Index / Frac Coords: 1\n"
             + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
-            + "(2.71, 30, 'Cd'), (2.71, 39, 'Te')]\n"
+            + "(2.71, 30, 'Cd'), (4.25, 2, 'Cd')]\n"
             + "            Distorted Neighbour Distances:\n\t[(1.36, 11, 'Cd'), (1.36, 23, 'Cd'), "
-            + "(1.36, 30, 'Cd'), (1.36, 39, 'Te')]"
+            + "(1.36, 30, 'Cd'), (2.13, 2, 'Cd')]"
         )  # Defect added at index 0, so atom indexing + 1 wrt original structure
         # check correct folder was created:
         self.assertTrue(os.path.exists("Int_Cd_2_+1/Unperturbed"))
