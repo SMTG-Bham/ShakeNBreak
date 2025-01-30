@@ -16,6 +16,10 @@ v3.4.0
     - All ``snb-xxx`` functions now auto-detect if running within a defect folder or in a top-level
       directory (i.e. auto ``--all`` behaviour).
     - Handling of gzipped ``OUTCAR.gz`` files for energy parsing.
+    - For (rare) cases of degenerate choices of NNs to distort in terms of distance, but non-degenerate
+      `combinations` (e.g. distorting 2 NNs of a square coordination, could be cis or trans choices),
+      the choice is made deterministically; choosing the combination with the shortest distances between
+      distorted NNs (i.e. the cis choice).
     - Greater verbosity control
     - Some code cleanup and formatting, and robustness updates
 
