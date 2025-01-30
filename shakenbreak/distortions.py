@@ -452,7 +452,7 @@ def rattle(
 
     Returns:
         :obj:`Structure`:
-            Rattled pymatgen Structure object
+            Rattled ``pymatgen`` ``Structure`` object
     """
     ase_struct = structure.to_ase_atoms()
     if active_atoms is not None:

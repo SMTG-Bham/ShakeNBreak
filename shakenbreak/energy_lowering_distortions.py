@@ -360,7 +360,7 @@ def get_energy_lowering_distortions(
         structure_filename (:obj:`str`, optional):
             Name of the file containing the structure.
             (Default: CONTCAR)
-        min_e_diff (:obj: ``float`):
+        min_e_diff (:obj:`float`):
             Minimum energy difference (in eV) between the ground-state
             defect structure, relative to the ``Unperturbed`` structure,
             to consider it as having found a new energy-lowering
@@ -679,11 +679,11 @@ def compare_struct_to_distortions(
 
     Returns:
         :obj:`tuple`:
-            (True/False/None, matching structure, energy difference of the
-            matching structure compared to its unperturbed reference, bond
-            distortion of the matching structure). True if a match is found
+            (``True``/``False``/``None``, matching structure, energy difference
+            of the matching structure compared to its unperturbed reference, bond
+            distortion of the matching structure). ``True`` if a match is found
             between the input structure and the relaxed bond-distorted
-            structures for ``defect_species``, False if no match, None if no
+            structures for ``defect_species``, ``False`` if no match, ``None`` if no
             converged structures found for defect_species.
     """
     try:
