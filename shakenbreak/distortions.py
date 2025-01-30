@@ -406,7 +406,7 @@ def rattle(
     """
     Given a pymatgen Structure object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
-    distribution of standard deviation ``stdev`.
+    distribution of standard deviation ``stdev``.
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
@@ -587,7 +587,7 @@ def _local_mc_rattle_displacements(
 
     Returns:
         :obj:`numpy.ndarray`:
-            atomic displacements (`Nx3`)
+            atomic displacements (Nx3)
     """
 
     def scale_stdev(disp, r_min, r):
@@ -685,7 +685,7 @@ def _generate_local_mc_rattled_structures(
 
     This process is repeated for each atom a number of times meaning
     the magnitude of the final displacements is not *directly*
-    connected to ``rattle_std`.
+    connected to ``rattle_std``.
 
     This function has been adapted from https://gitlab.com/materials-modeling/hiphive
 
@@ -721,7 +721,7 @@ def _generate_local_mc_rattled_structures(
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles
         **kwargs:
-            Additional keyword arguments to be passed to ``mc_rattle`
+            Additional keyword arguments to be passed to ``mc_rattle``
 
     Returns:
         :obj:`list`:
@@ -758,7 +758,7 @@ def local_mc_rattle(
     """
     Given a pymatgen Structure object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
-    distribution of standard deviation ``stdev`. The random displacements
+    distribution of standard deviation ``stdev``. The random displacements
     tail off as we move away from the defect site.
 
     Args:

@@ -199,7 +199,7 @@ def parse_energies(
 
     if defect == os.path.basename(os.path.normpath(path)) and not [
         dir for dir in path if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
-    ]:  # if ``defect`` is in end of ``path`` and ``path`` doesn't have a subdirectory called ``defect`
+    ]:  # if ``defect`` is in end of ``path`` and ``path`` doesn't have a subdirectory called ``defect``
         # then remove defect from end of path
         path = os.path.dirname(path)
 
@@ -555,7 +555,7 @@ def read_castep_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from CASTEP output (`.castep`) file and returns it as a
+    Reads a structure from CASTEP output (``.castep``) file and returns it as a
     pymatgen Structure.
 
     Args:
