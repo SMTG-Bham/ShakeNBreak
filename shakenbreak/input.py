@@ -753,14 +753,15 @@ def identify_defect(
     oxi_state=None,
 ) -> Defect:
     """
-    By comparing the defect and bulk structures, identify the defect present and its
-    site in the supercell, and generate a ``doped`` ``Defect`` object from this.
+    By comparing the defect and bulk structures, identify the defect present and its site in
+    the supercell, and generate a pymatgen defect object
+    (doped.core.Defect) from this.
 
     Args:
         defect_structure (:obj:`Structure`):
-            Defect structure
+            defect structure
         bulk_structure (:obj:`Structure`):
-            Bulk structure
+            bulk structure
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
@@ -1080,14 +1081,14 @@ def generate_defect_object(
     verbose: bool = False,
 ) -> Defect:
     """
-    Create ``Defect`` object from a ``doped``/``PyCDT`` ``single_defect_dict``.
+    Create Defect() object from a doped/PyCDT single_defect_dict.
 
     Args:
         single_defect_dict (:obj:`dict`):
-            ``doped``/``PyCDT`` defect dictionary.
+            doped/PyCDT defect dictionary.
         bulk_dict (:obj:`dict`):
-            ``doped``/``PyCDT`` entry for bulk in the ``defect_entries`` dictionary,
-            (e.g. ``{"vacancies": {}, "interstitials": {}, "bulk": {},}``)
+            doped/PyCDT entry for bulk in the defect_entries dictionary,
+            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
         charges (:obj:`list`):
             List of charge states for the defect.
         verbose (:obj:`bool`):
@@ -1143,14 +1144,13 @@ def generate_defect_object(
 
 
 def _get_defects_dict_from_defects_entries(defect_entries):
-    r"""
+    """
     Return a dictionary in the SnB format:
-    ``{"defect_name_wout_charge": [DefectEntry, ...]}`` for the given ``defect_entries``
-    list.
+    {"defect_name_wout_charge": [DefectEntry, ...]} for the given defect_entries list.
 
-    If the ``DefectEntry.name`` attribute is set for all ``DefectEntry``\s in
-    ``defect_entries``, then these are used to obtain 'defect_name_wout_charge',
-    otherwise the names are set to the default ``doped`` defect names.
+    If the DefectEntry.name attribute is set for all DefectEntrys in defect_entries,
+    then these are used to obtain 'defect_name_wout_charge', otherwise the names are
+    set to the default doped defect names.
     """
     # check if all defect_entries have a name attribute set:
     if all(getattr(defect_entry, "name", False) for defect_entry in defect_entries):
@@ -1305,12 +1305,11 @@ def _apply_rattle_bond_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **mc_rattle_kwargs (:obj:`dict`):
+        **mc_rattle_kwargs:
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
-
             - max_disp (:obj:`float`):
-                Maximum atomic displacement (in Å) during Monte Carlo
+                Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
                 (Default: 2.0)
             - max_attempts (:obj:`int`):
@@ -1473,12 +1472,11 @@ def apply_snb_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **mc_rattle_kwargs (:obj:`dict`):
+        **mc_rattle_kwargs:
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
-
             - max_disp (:obj:`float`):
-                Maximum atomic displacement (in Å) during Monte Carlo
+                Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
                 (Default: 2.0)
             - max_attempts (:obj:`int`):
@@ -1489,7 +1487,7 @@ def apply_snb_distortions(
                 (Default: None)
             - seed (:obj:`int`):
                 Seed from which rattle random displacements are generated. Default
-                is to set ``seed = int(distortion_factor*100)`` (i.e. +40% distortion ->
+                is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
                 distortion_factor = 1.4 -> seed = 140, Rattled ->
                 distortion_factor = 1 (no bond distortion) -> seed = 100)
 
@@ -1728,22 +1726,21 @@ class Distortions:
                 format {'defect_name': [index_1, index_2, ...]}
                 (e.g {'vac_1_Cd': [0, 2]}).
                 If None, the closest neighbours to the defect are chosen.
-            **mc_rattle_kwargs (:obj:`dict`):
+            **mc_rattle_kwargs:
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
-
                 - stdev (:obj:`float`):
-                    Standard deviation (in Å) of the Gaussian distribution
+                    Standard deviation (in Angstroms) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
                     in the bulk supercell.
                 - d_min (:obj:`float`):
-                    Minimum interatomic distance (in Å) in the rattled
+                    Minimum interatomic distance (in Angstroms) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
                     less than this will be heavily penalised. Default is to set this
                     to 80% of the nearest neighbour distance in the bulk supercell.
                 - max_disp (:obj:`float`):
-                    Maximum atomic displacement (in Å) during Monte Carlo
+                    Maximum atomic displacement (in Angstroms) during Monte Carlo
                     rattling. Rarely occurs and is used primarily as a safety net.
                     (Default: 2.0)
                 - max_attempts (:obj:`int`):
@@ -1754,7 +1751,7 @@ class Distortions:
                     (Default: None)
                 - seed (:obj:`int`):
                     Seed from which rattle random displacements are generated. Default
-                    is to set ``seed = int(distortion_factor*100``) (i.e. +40% distortion ->
+                    is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
                     distortion_factor = 1.4 -> seed = 140, Rattled ->
                     distortion_factor = 1 (no bond distortion) -> seed = 100)
 
@@ -2278,7 +2275,6 @@ class Distortions:
     ) -> tuple[dict, dict]:
         """
         Applies rattle and bond distortion to all defects in ``defect_entries``.
-
         Returns a dictionary with the distorted (and undistorted) structures
         for each charge state of each defect.
         If file generation is desired, instead use the methods ``write_<code>_files()``.
@@ -2291,9 +2287,9 @@ class Distortions:
 
         Returns:
             :obj:`tuple`:
-                Tuple of a dictionary with the distorted and undistorted structures
+                Tuple of:
+                Dictionary with the distorted and undistorted structures
                 for each charge state of each defect, in the format:
-                ```
                 {'defect_name': {
                     'charges': {
                         {charge_state}: {
@@ -2301,7 +2297,6 @@ class Distortions:
                         },
                     },
                 }}
-                ```
                 and dictionary with distortion parameters for each defect.
         """
         if verbose is not False:  # medium level verbosity
@@ -2708,7 +2703,7 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = None,
+        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp",
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
@@ -2738,9 +2733,6 @@ class Distortions:
                 Tuple of dictionaries with new defects_dict (containing the
                 distorted structures) and defect distortion parameters.
         """
-        if input_file is None:
-            input_file = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp"
-
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
@@ -3003,7 +2995,7 @@ class Distortions:
                 fails, the fractional coordinates or index of the defect site
                 (in defect_structure for interstitials/substitutions, in
                 bulk_structure for vacancies) can be provided in the format:
-                ``[(defect Structure, frac_coords/index), ...]`` to aid site-matching.
+                [(defect Structure, frac_coords/index), ...] to aid site-matching.
 
                 Defect charge states (from which bond distortions are determined) are
                 set to the range: 0 - {Defect oxidation state}, with a ``padding``
@@ -3055,22 +3047,21 @@ class Distortions:
                 {'defect_name': [atom1, atom2, ...]} (e.g {'vac_1_Cd': [0, 1]}).
                 If None, the closest neighbours to the defect are chosen.
                 (Default: None)
-            **mc_rattle_kwargs (:obj:`dict`):
+            **mc_rattle_kwargs:
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
-
                 - stdev (:obj:`float`):
-                    Standard deviation (in Å) of the Gaussian distribution
+                    Standard deviation (in Angstroms) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
                     in the bulk supercell.
                 - d_min (:obj:`float`):
-                    Minimum interatomic distance (in Å) in the rattled
+                    Minimum interatomic distance (in Angstroms) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
                     less than this will be heavily penalised. Default is to set this
                     to 80% of the nearest neighbour distance in the bulk supercell.
                 - max_disp (:obj:`float`):
-                    Maximum atomic displacement (in Å) during Monte Carlo
+                    Maximum atomic displacement (in Angstroms) during Monte Carlo
                     rattling. Rarely occurs and is used primarily as a safety net.
                     (Default: 2.0)
                 - max_attempts (:obj:`int`):
