@@ -1,7 +1,7 @@
 """
 Module containing functions to generate rattled and bond-distorted structures,
-as well as input files to run Gamma point relaxations with `VASP`, `CP2K`,
-`Quantum-Espresso`, `FHI-aims` and `CASTEP`.
+as well as input files to run Gamma point relaxations with ``VASP`, ``CP2K`,
+`Quantum-Espresso`, ``FHI-aims`` and ``CASTEP`.
 """
 
 import contextlib
@@ -50,8 +50,8 @@ _ignore_pmg_warnings()  # Ignore pymatgen POTCAR warnings
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None) -> str:
     """Output warning messages on one line."""
-    # To set this as warnings.formatwarning, we need to be able to take in `file`
-    # and `line`, but don't want to print them, so unused arguments here
+    # To set this as warnings.formatwarning, we need to be able to take in ``file`
+    # and ``line`, but don't want to print them, so unused arguments here
     return f"{os.path.split(filename)[-1]}:{lineno}: {category.__name__}: {message}\n"
 
 
@@ -65,7 +65,7 @@ def _bold_print(string: str) -> None:
 
 
 def _create_folder(folder_name: str) -> None:
-    """Creates a folder at `./folder_name` if it doesn't already exist."""
+    """Creates a folder at ``./folder_name`` if it doesn't already exist."""
     path = os.getcwd()
     if not os.path.isdir(f"{path}/{folder_name}"):
         try:
@@ -297,23 +297,23 @@ def _create_vasp_input(
             Dictionary with the distorted structures of charged defect
         user_incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the
-            `doped` defaults.
+            ``doped`` defaults.
         user_potcar_functional (str):
             POTCAR functional to use. Default is "PBE" and if this fails,
             tries "PBE_52", then "PBE_54".
         user_potcar_settings (:obj:`dict`):
             Dictionary of user VASP POTCAR settings, to overwrite/update
-            the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
-            recommended to look at output `POTCAR`s, or `shakenbreak`
-            `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
-            `POTCAR` settings are. (Default: None)
+            the ``doped`` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
+            recommended to look at output ``POTCAR`s, or ``shakenbreak`
+            ``shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
+            ``POTCAR`` settings are. (Default: None)
         output_path (:obj:`str`):
             Path to directory in which to write distorted defect structures and
             calculation inputs.
             (Default is current directory = "./")
         **kwargs:
-            Keyword arguments to pass to `DefectDictSet.write_input()` (e.g.
-            `potcar_spec`).
+            Keyword arguments to pass to ``DefectDictSet.write_input()`` (e.g.
+            ``potcar_spec`).
 
     Returns:
         :obj:`str`:
@@ -321,7 +321,7 @@ def _create_vasp_input(
             folder names etc).
     """
     # create folder for defect
-    defect_name_wout_charge, charge_state = defect_name.rsplit("_", 1)  # `defect_name` includes charge
+    defect_name_wout_charge, charge_state = defect_name.rsplit("_", 1)  # ``defect_name`` includes charge
     charge_state = int(charge_state)
     test_letters = [
         "h",
@@ -628,7 +628,7 @@ def _calc_number_electrons(
 ) -> int:
     """
     Calculates the number of extra/missing electrons of the neutral
-    defect species (in `defect_object`) based on `oxidation_states`.
+    defect species (in ``defect_object`) based on ``oxidation_states`.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
@@ -1208,7 +1208,7 @@ def _find_sc_defect_coords(defect_entry):
     Find defect fractional coordinates in defect supercell.
 
     Targets cases where user generated DefectEntry manually and
-    didn't set the `sc_defect_frac_coords` attribute.
+    didn't set the ``sc_defect_frac_coords`` attribute.
 
     Args:
         defect_entry (DefectEntry): DefectEntry object
@@ -1257,13 +1257,13 @@ def _apply_rattle_bond_distortions(
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure
-    of `defect_entry` by calling `distortion.distort` with either:
+    of ``defect_entry`` by calling ``distortion.distort`` with either:
             - fractional coordinates (for vacancies) or
             - defect site index (other defect types).
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen `DefectEntry` object.
+            The defect to distort, as a pymatgen ``DefectEntry`` object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to.
         distortion_factor (:obj:`float`):
@@ -1304,8 +1304,8 @@ def _apply_rattle_bond_distortions(
             Whether to print distortion information.
             (Default: False)
         **mc_rattle_kwargs:
-            Additional keyword arguments to pass to `hiphive`'s
-            `mc_rattle` function. These include:
+            Additional keyword arguments to pass to ``hiphive``'s
+            ``mc_rattle`` function. These include:
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -1430,12 +1430,12 @@ def apply_snb_distortions(
     **mc_rattle_kwargs,
 ) -> dict:
     """
-    Applies rattle and bond distortions to `num_nearest_neighbours` of the
-    unperturbed defect structure of `defect_entry`.
+    Applies rattle and bond distortions to ``num_nearest_neighbours`` of the
+    unperturbed defect structure of ``defect_entry`.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen `DefectEntry` object.
+            The defect to distort, as a pymatgen ``DefectEntry`` object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -1471,8 +1471,8 @@ def apply_snb_distortions(
             Whether to print distortion information.
             (Default: False)
         **mc_rattle_kwargs:
-            Additional keyword arguments to pass to `hiphive`'s
-            `mc_rattle` function. These include:
+            Additional keyword arguments to pass to ``hiphive``'s
+            ``mc_rattle`` function. These include:
             - max_disp (:obj:`float`):
                 Maximum atomic displacement (in Angstroms) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
@@ -1644,8 +1644,8 @@ def apply_snb_distortions(
 
 class Distortions:
     """
-    Class to apply rattle and bond distortion to all defects in `defect_entries`
-    (each defect as a `doped` or `pymatgen` DefectEntry object).
+    Class to apply rattle and bond distortion to all defects in ``defect_entries`
+    (each defect as a ``doped`` or ``pymatgen`` DefectEntry object).
     """
 
     def __init__(
@@ -1663,23 +1663,23 @@ class Distortions:
         """
         Args:
             defect_entries (Union[DefectsGenerator, list, dict, DefectEntry]):
-                Either a `DefectsGenerator` object from `doped`, or a list/dictionary
+                Either a ``DefectsGenerator`` object from ``doped`, or a list/dictionary
                 of, or single, DefectEntry object(s).
                 E.g.: [DefectEntry(), DefectEntry(), ...], or single DefectEntry.
-                If a `DefectsGenerator` object or a dictionary (->
+                If a ``DefectsGenerator`` object or a dictionary (->
                 {defect_species: DefectEntry}), the defect folder names will be
-                set equal to `defect_species` (with charge states included). If
-                a list or single `DefectEntry` object is provided, the defect
-                folder names will be set equal to `DefectEntry.name` if the `name`
-                attribute is set for all input `DefectEntry`s, otherwise generated
-                according to the `doped` convention
+                set equal to ``defect_species`` (with charge states included). If
+                a list or single ``DefectEntry`` object is provided, the defect
+                folder names will be set equal to ``DefectEntry.name`` if the ``name`
+                attribute is set for all input ``DefectEntry`s, otherwise generated
+                according to the ``doped`` convention
                 (see: https://doped.readthedocs.io/en/latest/generation_tutorial.html).
 
                 Defect charge states (from which bond distortions are determined) are
-                taken from the `DefectEntry.charge_state` property.
+                taken from the ``DefectEntry.charge_state`` property.
 
-                Alternatively, a defects dict generated by `ChargedDefectStructures`
-                from `PyCDT`/`doped<2.0` can also be used as input, and the defect names
+                Alternatively, a defects dict generated by ``ChargedDefectStructures`
+                from ``PyCDT`/`doped<2.0`` can also be used as input, and the defect names
                 and charge states generated by these codes will be used
                 E.g.: {"bulk": {..}, "vacancies": [{...}, {...},], ...}
             oxidation_states (:obj:`dict`):
@@ -1697,7 +1697,7 @@ class Distortions:
                 (Default: None)
             distortion_increment (:obj:`float`):
                 Bond distortion increment. Distortion factors will range from
-                0 to +/-0.6, in increments of `distortion_increment`.
+                0 to +/-0.6, in increments of ``distortion_increment`.
                 Recommended values: 0.1-0.3
                 (Default: 0.1)
             bond_distortions (:obj:`list`):
@@ -1725,8 +1725,8 @@ class Distortions:
                 (e.g {'vac_1_Cd': [0, 2]}).
                 If None, the closest neighbours to the defect are chosen.
             **mc_rattle_kwargs:
-                Additional keyword arguments to pass to `hiphive`'s
-                `mc_rattle` function. These include:
+                Additional keyword arguments to pass to ``hiphive``'s
+                ``mc_rattle`` function. These include:
                 - stdev (:obj:`float`):
                     Standard deviation (in Angstroms) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
@@ -1760,7 +1760,7 @@ class Distortions:
         self.dict_number_electrons_user = dict_number_electrons_user
         self.local_rattle = local_rattle
 
-        # To allow user to specify defect names (with CLI), `defect_entries` can be either
+        # To allow user to specify defect names (with CLI), ``defect_entries`` can be either
         # a dict or list of DefectEntry's, or a single DefectEntry
         if isinstance(defect_entries, (DefectEntry, thermo.DefectEntry)):
             defect_entries = [
@@ -2037,7 +2037,7 @@ class Distortions:
                 extra/missing electrons.
             defect_entry (:obj:`DefectEntry`):
                 DefectEntry in dictionary of defect_entries. Must be a
-                `doped` or `pymatgen` DefectEntry object.
+                ``doped`` or ``pymatgen`` DefectEntry object.
             verbose (:obj:`bool`):
                 Whether to print the number of extra/missing electrons for
                 the defect.
@@ -2170,16 +2170,16 @@ class Distortions:
         defect_entry: DefectEntry,
     ) -> dict:
         """
-        Setup `distorted_defect_dict` with info for `defect` in
-        `DefectEntry`.
+        Setup ``distorted_defect_dict`` with info for ``defect`` in
+        ``DefectEntry`.
 
         Args:
             defect_entry (:obj:`doped.core.DefectEntry`):
-                DefectEntry object to generate `distorted_defect_dict` from.
+                DefectEntry object to generate ``distorted_defect_dict`` from.
 
         Returns:
             :obj:`dict`
-                Dictionary with information for `defect`.
+                Dictionary with information for ``defect`.
         """
         defect = defect_entry.defect
         defect_type = defect.defect_type.name.lower()
@@ -2272,10 +2272,10 @@ class Distortions:
         verbose: Optional[bool] = None,
     ) -> tuple[dict, dict]:
         """
-        Applies rattle and bond distortion to all defects in `defect_entries`.
+        Applies rattle and bond distortion to all defects in ``defect_entries`.
         Returns a dictionary with the distorted (and undistorted) structures
         for each charge state of each defect.
-        If file generation is desired, instead use the methods `write_<code>_files()`.
+        If file generation is desired, instead use the methods ``write_<code>_files()`.
 
         Args:
             verbose (:obj:`bool`):
@@ -2465,27 +2465,27 @@ class Distortions:
         **kwargs,
     ) -> tuple[dict, dict]:
         """
-        Generates the input files for `vasp_gam` relaxations of all output
+        Generates the input files for ``vasp_gam`` relaxations of all output
         structures.
 
         Args:
             user_incar_settings (:obj:`dict`):
                 Dictionary of user VASP INCAR settings (e.g.
-                {"ENCUT": 300, ...}), to overwrite the `ShakenBreak` defaults
-                for those tags. Highly recommended to look at output `INCAR`s,
-                or `shakenbreak/SnB_input_files/incar.yaml` to see what the default `INCAR`
+                {"ENCUT": 300, ...}), to overwrite the ``ShakenBreak`` defaults
+                for those tags. Highly recommended to look at output ``INCAR`s,
+                or ``shakenbreak/SnB_input_files/incar.yaml`` to see what the default ``INCAR`
                 settings are. Note that any flags that aren't numbers or
                 True/False need to be input as strings with quotation marks
-                (e.g. `{"ALGO": "All"}`). (Default: None)
+                (e.g. ``{"ALGO": "All"}`). (Default: None)
             user_potcar_functional (str):
                 POTCAR functional to use. Default is "PBE" and if this fails,
                 tries "PBE_52", then "PBE_54".
             user_potcar_settings (:obj:`dict`):
                 Dictionary of user VASP POTCAR settings, to overwrite/update
-                the `doped` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
-                recommended to look at output `POTCAR`s, or `shakenbreak`
-                `shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
-                `POTCAR` settings are. (Default: None)
+                the ``doped`` defaults (e.g. {'Fe': 'Fe_pv', 'O': 'O'}}). Highly
+                recommended to look at output ``POTCAR`s, or ``shakenbreak`
+                ``shakenbreak/SnB_input_files/default_POTCARs.yaml`, to see what the default
+                ``POTCAR`` settings are. (Default: None)
             write_files (:obj:`bool`):
                 Whether to write output files (Default: True)
             output_path (:obj:`str`):
@@ -2496,7 +2496,7 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances). (Default: None -- medium level verbosity)
             kwargs:
-                Additional keyword arguments to pass to `_create_vasp_input()`
+                Additional keyword arguments to pass to ``_create_vasp_input()`
                 (Mainly for testing purposes).
 
         Returns:
@@ -2581,13 +2581,13 @@ class Distortions:
                 (Defaults: None)
             input_parameters (:obj:`dict`, optional):
                 Dictionary of user Quantum Espresso input parameters, to
-                overwrite/update `shakenbreak` default ones (see
-                `shakenbreak/SnB_input_files/qe_input.yaml`).
+                overwrite/update ``shakenbreak`` default ones (see
+                ``shakenbreak/SnB_input_files/qe_input.yaml`).
                 (Default: None)
             input_file (:obj:`str`, optional):
                 Path to Quantum Espresso input file, to overwrite/update
-                `shakenbreak` default ones (see `shakenbreak/SnB_input_files/qe_input.yaml`).
-                If both `input_parameters` and `input_file` are provided,
+                ``shakenbreak`` default ones (see ``shakenbreak/SnB_input_files/qe_input.yaml`).
+                If both ``input_parameters`` and ``input_file`` are provided,
                 the input_parameters will be used.
                 (Default: None)
             write_structures_only (:obj:`bool`, optional):
@@ -2711,7 +2711,7 @@ class Distortions:
         Args:
             input_file (:obj:`str`, optional):
                 Path to CP2K input file. If not set, default input file will be
-                used (see `shakenbreak/SnB_input_files/cp2k_input.inp`).
+                used (see ``shakenbreak/SnB_input_files/cp2k_input.inp`).
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
                 (without calculation inputs).
@@ -2768,13 +2768,13 @@ class Distortions:
         verbose: Optional[bool] = None,
     ) -> tuple[dict, dict]:
         """
-        Generates input `.cell` and `.param` files for CASTEP relaxations of
+        Generates input ``.cell`` and ``.param`` files for CASTEP relaxations of
         all output structures.
 
         Args:
             input_file (:obj:`str`, optional):
                 Path to CASTEP input (`.param`) file. If not set, default input
-                file will be used (see `shakenbreak/SnB_input_files/castep.param`).
+                file will be used (see ``shakenbreak/SnB_input_files/castep.param`).
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
                 (without calculation inputs).
@@ -2854,8 +2854,8 @@ class Distortions:
         Args:
             input_file (:obj:`str`, optional):
                 Path to FHI-aims input file, to overwrite/update
-                `shakenbreak` default ones.
-                If both `input_file` and `ase_calculator` are provided,
+                ``shakenbreak`` default ones.
+                If both ``input_file`` and ``ase_calculator`` are provided,
                 the ase_calculator will be used.
             ase_calculator (:obj:`Aims`, :obj:`AimsTemplate`, optional):
                 Either an ``Aims`` (ASE calculator) or ``AimsTemplate`` object
@@ -2995,7 +2995,7 @@ class Distortions:
                 [(defect Structure, frac_coords/index), ...] to aid site-matching.
 
                 Defect charge states (from which bond distortions are determined) are
-                set to the range: 0 - {Defect oxidation state}, with a `padding`
+                set to the range: 0 - {Defect oxidation state}, with a ``padding`
                 (default = 1) on either side of this range.
             bulk (:obj:`pymatgen.core.structure.Structure`):
                 Bulk supercell structure, matching defect supercells.
@@ -3007,7 +3007,7 @@ class Distortions:
                 common oxidation states of any extrinsic species.
             padding (:obj:`int`):
                 Defect charge states are set to the range:
-                0 - {Defect oxidation state}, with a `padding` (default = 1)
+                0 - {Defect oxidation state}, with a ``padding`` (default = 1)
                 on either side of this range.
             dict_number_electrons_user (:obj:`dict`):
                 Optional argument to set the number of extra/missing charge
@@ -3018,7 +3018,7 @@ class Distortions:
                 (Default: None)
             distortion_increment (:obj:`float`):
                 Bond distortion increment. Distortion factors will range from
-                0 to +/-0.6, in increments of `distortion_increment`.
+                0 to +/-0.6, in increments of ``distortion_increment`.
                 Recommended values: 0.1-0.3
                 (Default: 0.1)
             bond_distortions (:obj:`list`):
@@ -3045,8 +3045,8 @@ class Distortions:
                 If None, the closest neighbours to the defect are chosen.
                 (Default: None)
             **mc_rattle_kwargs:
-                Additional keyword arguments to pass to `hiphive`'s
-                `mc_rattle` function. These include:
+                Additional keyword arguments to pass to ``hiphive``'s
+                ``mc_rattle`` function. These include:
                 - stdev (:obj:`float`):
                     Standard deviation (in Angstroms) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during

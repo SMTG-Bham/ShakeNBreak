@@ -63,7 +63,7 @@ def _read_distortion_metadata(output_path: str) -> dict:
 
     Args:
         output_path (:obj:`str`):
-            Path to directory containing `distortion_metadata.json`
+            Path to directory containing ``distortion_metadata.json`
             (Default: '.', current directory)
 
     Returns:
@@ -125,7 +125,7 @@ def _format_distortion_names(
             distortion label used for file names.
 
     Returns:
-        distortion (:obj:`float` or :obj:`float`):
+        distortion (:obj:`float`` or :obj:`float`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
             "Unperturbed"/"Rattled"/"-60.0%_from_+2"/"Rattled_from_-1")
     """
@@ -153,16 +153,16 @@ def _format_distortion_names(
 
 def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     """
-    Calculate energy difference between `Unperturbed` structure and
+    Calculate energy difference between ``Unperturbed`` structure and
     lowest energy distortion. Returns the energy (in eV) and bond
-    distortion of the ground-state relative to `Unperturbed`. If
-    `Unperturbed` not present, returns (None, ground-state bond
+    distortion of the ground-state relative to ``Unperturbed`. If
+    ``Unperturbed`` not present, returns (None, ground-state bond
     distortion).
 
     Args:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by `get_energies()` or `_sort_data`.
+            produced by ``get_energies()`` or ``_sort_data`.
 
     Returns:
         :obj:`tuple`:
@@ -202,34 +202,34 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
 def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.05) -> tuple:
     """
     Organize bond distortion results in a dictionary, calculate energy
-    of ground-state defect structure relative to `Unperturbed` structure
+    of ground-state defect structure relative to ``Unperturbed`` structure
     (in eV) and its corresponding bond distortion, and return all three
-    as a tuple. If `Unperturbed` not present, returns (defect_energies_dict,
+    as a tuple. If ``Unperturbed`` not present, returns (defect_energies_dict,
     None, ground-state distortion).
 
     Args:
         energies_file (:obj:`str`):
-            Path to `yaml` file with bond distortions and final energies
-            (in eV), obtained using the CLI command `snb-parse` or the
-            function `parse_energies()`.
+            Path to ``yaml`` file with bond distortions and final energies
+            (in eV), obtained using the CLI command ``snb-parse`` or the
+            function ``parse_energies()`.
         verbose (:obj:`bool`):
             Whether to print information about energy lowering
             distortions, if found.
             (Default: True)
-        min_e_diff (:obj: `float`):
+        min_e_diff (:obj: ``float`):
             Minimum energy difference (in eV) between the ground-state
-            defect structure, relative to the `Unperturbed` structure,
+            defect structure, relative to the ``Unperturbed`` structure,
             to consider it as having found a new energy-lowering
             distortion. Default is 0.05 eV.
 
     Returns:
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy, as
-            produced by `_organize_data()`
+            produced by ``_organize_data()`
         energy_diff (:obj:`float`):
             Energy difference between minimum energy structure and
-            `Unperturbed` (in eV).
-            None if `Unperturbed` not present.
+            ``Unperturbed`` (in eV).
+            None if ``Unperturbed`` not present.
         gs_distortion (:obj:`float`):
             Distortion corresponding to the minimum energy structure
     """
@@ -277,7 +277,7 @@ def analyse_defect_site(
 
     Args:
         structure (:obj:`Structure`):
-            `pymatgen` Structure object to analyse
+            ``pymatgen`` Structure object to analyse
         name (:obj:`str`):
             Defect name for printing. (Default: None)
         site_num (:obj:`int`):
@@ -340,9 +340,9 @@ def analyse_structure(
 ) -> tuple:
     """
     Analyse the local distortion of the input defect structure. Requires
-    access to the `distortion_metadata.json` file generated with
+    access to the ``distortion_metadata.json`` file generated with
     ShakeNBreak to read info about defect site. If lacking this,
-    can alternatively use `analyse_defect_site()`.
+    can alternatively use ``analyse_defect_site()`.
 
     Args:
         defect_species (:obj:`str`):
@@ -350,7 +350,7 @@ def analyse_structure(
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure to analyse
         output_path (:obj:`str`):
-            Path to directory containing `distortion_metadata.json`
+            Path to directory containing ``distortion_metadata.json`
             (Default: '.', current directory)
 
     Returns:
@@ -391,14 +391,14 @@ def get_structures(
     store them in a dictionary matching the bond distortion to the final
     structure. By default, will read the structures from the distortion
     subdirectories present in each defect folder. If only certain
-    distortions should be parsed, use the argument `bond_distortions`
+    distortions should be parsed, use the argument ``bond_distortions`
     to specify them.
 
     Args:
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing `defect_species`
+            Path to top-level directory containing ``defect_species`
             subdirectories.
             (Default: current directory.
         bond_distortions (:obj:`list`, optional):
@@ -489,7 +489,7 @@ def get_energies(
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
         output_path (:obj:`str`):
-            Path to top-level directory containing `defect_species`
+            Path to top-level directory containing ``defect_species`
             subdirectories.
             (Default: current directory)
         distortion_increment (:obj:`float`):
@@ -581,9 +581,9 @@ def calculate_struct_comparison(
     """
     Calculate either the summed atomic displacement, with metric = "disp",
     or the maximum distance between matched atoms, with metric = "max_dist",
-    (default) between each distorted structure in `defect_struct_dict`,
+    (default) between each distorted structure in ``defect_struct_dict`,
     and either 'Unperturbed' or a specified structure (`ref_structure`).
-    For metric = "disp", atomic displacements below `min_dist` (in Å,
+    For metric = "disp", atomic displacements below ``min_dist`` (in Å,
     default 0.1 Å) are considered noise and omitted from the sum,
     to reduce supercell size dependence.
 
@@ -597,10 +597,10 @@ def calculate_struct_comparison(
             ('disp') or the maximum distance between matched
             atoms ('max_dist', default).
             (Default: "max_dist")
-        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
+        ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` (e.g. '-0.4' for "Bond_Distortion_-40.0%")
+            ``defect_structures_dict`` (e.g. '-0.4' for "Bond_Distortion_-40.0%")
             or a pymatgen Structure object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
@@ -713,17 +713,17 @@ def compare_structures(
             Dictionary mapping bond distortion to (relaxed) structure
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as
-            produced by `_organize_data()`.
-        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
+            produced by ``_organize_data()`.
+        ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
-            `defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
+            ``defect_structures_dict`` (e.g. '-0.4' for 'Bond_Distortion_-40.0%')
             or a pymatgen Structure object (to compare with a specific external
             structure).
             (Default: "Unperturbed")
         units (:obj:`str`):
             Energy units label for outputs (either 'eV' or 'meV').
-            Should be the same as the units in `defect_energies_dict`,
+            Should be the same as the units in ``defect_energies_dict`,
             as this does not modify the supplied values.
             (Default: "eV")
         min_dist (:obj:`float`):
@@ -850,7 +850,7 @@ def get_homoionic_bonds(
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
-            `pymatgen` Structure object to analyse
+            ``pymatgen`` Structure object to analyse
         elements (:obj:`list`):
             List or single string of element symbols (wihout
             oxidation state) for which to find the homoionic
@@ -1005,13 +1005,13 @@ def get_site_magnetizations(
             List of distortions to analyse (e.g. ['Unperturbed', 0.1,
             -0.2])
         output_path (:obj:`str`):
-            Path to top-level directory containing `defect_species`
+            Path to top-level directory containing ``defect_species`
             subdirectories.
             (Default: current directory)
         threshold (:obj:`float`, optional):
             Magnetization threshold to consider site.
             (Default: 0.1)
-        defect_site (:obj:`int` or :obj:`list`, optional):
+        defect_site (:obj:`int`` or :obj:`list`, optional):
             Site index or fractional coordinates of the defect. If not
             specified, will try to read from distortion_metadata.json.
             If this file is not present, will not include the distance

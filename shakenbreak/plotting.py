@@ -99,7 +99,7 @@ def _verify_data_directories_exist(
     output_path: str,
     defect_species: str,
 ) -> None:
-    """Check top-level directory (e.g. `output_path`) and defect folders exist."""
+    """Check top-level directory (e.g. ``output_path`) and defect folders exist."""
     # Check directories and input
     if not os.path.isdir(output_path):  # if output_path does not exist, raise error
         raise FileNotFoundError(f"Path {output_path} does not exist! Skipping {defect_species}.")
@@ -149,13 +149,13 @@ def _cast_energies_to_floats(
     defect_species: str,
 ) -> dict:
     """
-    If values of the `energies_dict` are not floats, convert them to floats.
+    If values of the ``energies_dict`` are not floats, convert them to floats.
     If any problem encountered during conversion, raise ValueError.
 
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
-            `_organize_data()` or `analysis.get_energies()`)..
+            ``_organize_data()`` or ``analysis.get_energies()`)..
         defect_species (:obj:`str`):
             Defect name including charge (e.g. 'vac_1_Cd_0')
 
@@ -222,10 +222,10 @@ def _purge_data_dicts(
         disp_dict (dict):
             dictionary with displacements (for each structure relative to
             Unperturbed), in the output format of
-            `analysis.calculate_struct_comparison()`
+            ``analysis.calculate_struct_comparison()`
         energies_dict (dict):
             dictionary with final energies (for each structure relative to ¡
-            Unperturbed), in the output format of `analysis.get_energies()` or
+            Unperturbed), in the output format of ``analysis.get_energies()`` or
             analysis.organize_data()
 
     Returns:
@@ -252,18 +252,18 @@ def _remove_high_energy_points(
 ) -> tuple[dict, dict]:
     """
     Remove points whose energy is higher than the reference (Unperturbed) by
-    more than `max_energy_above_unperturbed`.
+    more than ``max_energy_above_unperturbed`.
 
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
-            `analysis._organize_data()` or `analysis.get_energies()`
+            ``analysis._organize_data()`` or ``analysis.get_energies()`
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in chosen `units`), relative to the unperturbed
+            Maximum energy (in chosen ``units`), relative to the unperturbed
             structure, to show on plot
         disp_dict (:obj:`dict`):
             Dictionary matching distortion to sum of atomic displacements, as
-            produced by `analysis.calculate_struct_comparison()`
+            produced by ``analysis.calculate_struct_comparison()`
             (Default: None)
 
     Returns:
@@ -273,7 +273,7 @@ def _remove_high_energy_points(
         # remove high energy points
         if energies_dict["distortions"][key] - energies_dict["Unperturbed"] > max_energy_above_unperturbed:
             energies_dict["distortions"].pop(key)
-            if disp_dict and key in disp_dict:  # only exists if user selected `add_colorbar=True`
+            if disp_dict and key in disp_dict:  # only exists if user selected ``add_colorbar=True`
                 disp_dict.pop(key)
     return energies_dict, disp_dict
 
@@ -287,13 +287,13 @@ def _get_displacement_dict(
     code: Optional[str] = "vasp",
 ) -> tuple[bool, dict, dict]:
     """
-    Parses structures of `defect_species` to calculate displacements between each
+    Parses structures of ``defect_species`` to calculate displacements between each
     of them and the reference configuration (Unperturbed). These displacements
     are stored in a dictionary matching distortion key to displacement value.
-    Then, ensures `energies_dict` and `disp_dict` are consistent (same keys),
+    Then, ensures ``energies_dict`` and ``disp_dict`` are consistent (same keys),
     and makes them consistent otherwise.
     If any problems encountered when parsing or calculating structural
-    similarity, warning will be raised and `add_colorbar` will be set to False.
+    similarity, warning will be raised and ``add_colorbar`` will be set to False.
 
     Args:
         defect_species (:obj:`str`):
@@ -310,7 +310,7 @@ def _get_displacement_dict(
             (Default: 'max_dist')
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
-            `_organize_data()` or `analysis.get_energies()`)
+            ``_organize_data()`` or ``analysis.get_energies()`)
         add_colorbar (:obj:`bool`):
             Whether to add a colorbar indicating structural similarity between
             each structure and the unperturbed one.
@@ -320,8 +320,8 @@ def _get_displacement_dict(
             (Default: "vasp")
 
     Returns:
-        Tuple[bool, dict, dict]: tuple of `add_colorbar`, `energies_dict` and
-        `disp_dict`
+        Tuple[bool, dict, dict]: tuple of ``add_colorbar`, ``energies_dict`` and
+        ``disp_dict`
     """
     try:
         defect_structs = analysis.get_structures(
@@ -640,7 +640,7 @@ def _setup_colormap(
     Setup colormap to measure structural similarity between structures.
 
     Args:
-        disp_dict (:obj: `dict`):
+        disp_dict (:obj: ``dict`):
             dictionary mapping distortion key to structural similarity between
             the associated structure and the reference structure.
 
@@ -736,7 +736,7 @@ def _format_legend(
     for the legend entry with label 'legend_label'.
 
     If there are any duplicate legend keys (e.g. from multiple imported
-    structures from the same charge state, when the `meta` option was
+    structures from the same charge state, when the ``meta`` option was
     used), then these are merged into a single legend entry, with the
     handles grouped together in the legend key.
     """
@@ -834,7 +834,7 @@ def plot_all_defects(
             matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in chosen `units`), relative to the unperturbed structure,
+            Maximum energy (in chosen ``units`), relative to the unperturbed structure,
             to show on the plot.
             (Default: 0.5 eV)
         units (:obj:`str`):
@@ -842,7 +842,7 @@ def plot_all_defects(
             (Default: "eV")
         min_e_diff (:obj:`float`):
             Minimum energy difference (in eV) between the ground-state defect
-            structure and the `Unperturbed` structure to generate the distortion plot.
+            structure and the ``Unperturbed`` structure to generate the distortion plot.
             (Default: 0.05 eV)
         style_file (PathLike):
             Path to a mplstyle file to use for the plot. If None (default), uses
@@ -1023,7 +1023,7 @@ def plot_defect(
             Defect name including charge (e.g. 'vac_1_Cd_0')
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
-            `_organize_data()` or `analysis.get_energies()`)
+            ``_organize_data()`` or ``analysis.get_energies()`)
         output_path (:obj:`str`):
             Path to top-level directory with your distorted defect calculations
             (to calculate structure comparisons and save plots)
@@ -1047,7 +1047,7 @@ def plot_defect(
             matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in chosen `units`), relative to the unperturbed
+            Maximum energy (in chosen ``units`), relative to the unperturbed
             structure, to show on the plot.
             (Default: 0.5 eV)
         units (:obj:`str`):
@@ -1434,11 +1434,11 @@ def plot_colorbar(
     Args:
         energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as produced by
-            `analysis.get_energies()` or `analysis._organize_data()`.
+            ``analysis.get_energies()`` or ``analysis._organize_data()`.
         disp_dict (:obj:`dict`):
             Dictionary matching bond distortions to structure comparison metric
             (metric = 'disp' or 'max_dist'), as produced by
-            `analysis.calculate_struct_comparison()`.
+            ``analysis.calculate_struct_comparison()`.
         defect_species (:obj:`str`):
             Specific defect name that will appear in plot labels (in LaTeX form)
              and file names (e.g 'vac_1_Cd_0')
@@ -1465,7 +1465,7 @@ def plot_colorbar(
             or the maximum distance between matched sites ('max_dist', default).
             (Default: "max_dist")
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in chosen `units`), relative to the unperturbed
+            Maximum energy (in chosen ``units`), relative to the unperturbed
             structure, to show on the plot.
             (Default: 0.5 eV)
         save_plot (:obj:`bool`):
@@ -1617,7 +1617,7 @@ def plot_datasets(
         datasets (:obj:`list`):
             List of {distortion: energy} dictionaries to plot (each dictionary
             matching distortion to final energy (eV), as produced by
-            `analysis._organize_data()` or `analysis.get_energies()`)
+            ``analysis._organize_data()`` or ``analysis.get_energies()`)
         dataset_labels (:obj:`list`):
             Labels for each dataset plot legend. If None, defaults to
             ["Distortions"]*len(datasets).
@@ -1637,7 +1637,7 @@ def plot_datasets(
         num_nearest_neighbours (:obj:`int`):
             Number of distorted neighbour atoms (e.g. 2)
         max_energy_above_unperturbed (:obj:`float`):
-            Maximum energy (in chosen `units`), relative to the unperturbed
+            Maximum energy (in chosen ``units`), relative to the unperturbed
             structure, to show on the plot.
             (Default: 0.5 eV)
         style_file (PathLike):
