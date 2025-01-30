@@ -1,0 +1,16 @@
+# ShakeNBreak uses the default doped INCAR settings described here: https://doped.readthedocs.io/en/latest/doped.VASP_sets.html
+# as well as these modifications:
+# Changed from doped default:
+LCHARG: false  # reduce file sizes
+LREAL: Auto  # real-space force projection, runtime speedup with acceptable loss in force accuracy
+# Note that ROPT is also set to 1e-3 * num_elements
+LWAVE: false  # reduce file sizes
+NELM: 40  # slightly reduced NELM to speedup with incomplete SCF convergence far from minimum
+NSW: 300  # increased NSW from doped default to allow relaxation from initially distorted structure
+
+# Same as doped but with added comment information in INCAR file:
+ALGO: "Normal  # Change to All if ZHEGV, FEXCP/F or ZBRENT errors encountered (done automatically by snb-run)"
+IBRION: '2  # Typically more stable / reliable than "1" (RMM-DIIS), but change if ionic convergence is poor (done automatically by snb-run)'
+
+# Comments:
+'# ShakeNBreak INCAR with coarse settings to maximise speed with sufficient accuracy for qualitative structure searching': ''

@@ -85,6 +85,10 @@ SnB_run_loop() {
     if [[ "$i" == *"_High_Energy"* ]]; then
       continue
     fi
+    if [ -f "${i}"/OUTCAR.gz ]; then
+      echo "Unzipping OUTCAR for ${i%/}, needed for checking relaxation"
+      gzip -d "${i}"/OUTCAR.gz
+    fi
     if [ ! -f "${i}"/OUTCAR ] || { ! grep -q "required accuracy" "${i}"/OUTCAR && ! grep -q "considering this converged" "${i}"/OUTCAR; }; then  # check calculation not converged
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
@@ -93,7 +97,7 @@ SnB_run_loop() {
       if [ -f "../Unperturbed/OUTCAR" ] && (($(grep -c entropy= ../Unperturbed/OUTCAR) > 0)); then
         unperturbed_energy=$(grep entropy= ../Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
       else
-        unperturbed_energy=-10000
+        unperturbed_energy=10000
       fi
       if [ -f OUTCAR ]; then # if OUTCAR exists so rerunning rather than 1st run
         # count number of ionic steps with positive energies, after the first 5 ionic steps
@@ -104,8 +108,7 @@ SnB_run_loop() {
         if ((errors > 0)) || { ((pos_energies > 0)) && { (($(echo "$energy_diff_to_unperturbed > 1" | bc -l))) || [[ "$i" == *"Unperturbed"* ]]; }; }; then # if there are positive energies or errors in OUTCAR, and at least 1 eV higher than Unperturbed
           if [[ "$i" == *"Unperturbed"* ]]; then
             # positive energies / errors for Unperturbed structure, indicates pathological defect structure
-            echo "Positive energies or forces error encountered for ${i%/}. "
-            echo "This typically indicates the initial defect structure supplied to ShakeNBreak is highly unstable, often with bond lengths smaller than the ionic radii."
+            echo "Positive energies or forces error encountered for ${i%/}. This typically indicates the initial defect structure supplied to ShakeNBreak is highly unstable, often with bond lengths smaller than the ionic radii."
             echo "Please check this defect structure and/or the relaxation output files."
             builtin cd .. || return
             continue
@@ -150,36 +153,30 @@ SnB_run_loop() {
 
         # check if multiple <=single-step OUTCARs present, and CONTCAR empty/less than 9 lines or same as POSCAR
         if check_multiple_single_step_outcars && { [[ ! -f "CONTCAR" ]] || { [[ -f "CONTCAR" ]] && { [[ $(wc -l < "CONTCAR") -le 9 ]] || diff -q "POSCAR" "CONTCAR" >/dev/null; }; }; }; then
-            echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic "
-            echo "steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
+            echo "Previous run for ${i%?} did not yield more than one ionic step, and multiple OUTCARs with <=1 ionic steps present, suggesting poor convergence. Recommended to manually check the VASP output files for this!"
         fi
 
         # check if more than 2 OUTCARs present - might indicate tricky relaxation
         if check_many_outcars; then
-          # echo "More than 2 OUTCARs present for ${i%?}, suggesting tricky relaxation. "
           #sed -i.bak 's/IBRION.*/IBRION = 1/g' INCAR  && rm -f INCAR.bak # sometimes helps to change IBRION if relaxation taking long
           # Check total number of ionic steps in all OUTCARs
           num_ionic_steps=$(grep entropy= OUTCAR* | wc -l)  # use wc -l rather than grep -c because multiple files
           if [ -f ../Unperturbed/OUTCAR ]; then  # only compare if Unperturbed folder present
             # If equal or higher than 150, compare to final energy in Unperturbed OUTCAR
-            if ((num_ionic_steps >= 150)); then
+            if ((num_ionic_steps >= 150)) && (($(echo "$energy_diff_to_unperturbed > 2" | bc -l))); then
               # If energy difference to Unperturbed is higher than 2 eV, rename to _High_Energy and continue
-              if (($(echo "$energy_diff_to_unperturbed > 1" | bc -l))); then
-                echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation"
-                echo "is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
-                echo "Renaming to ${i%?}_High_Energy and continuing."
-                builtin cd .. || return
-                mv "${i%/}" "${i%/}_High_Energy"
-                continue
-              # If higher than 500 and energy similar to Unperturbed, rename to _High_Energy and continue
-              elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))); then
-                echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, "
-                echo "indicating that ${i%?} won't lead to an energy-lowering structure. "
-                echo "Renaming to ${i%?}_High_Energy and continuing."
-                builtin cd .. || return
-                mv "${i%/}" "${i%/}_High_Energy"
-                continue
-              fi
+              echo "More than 150 ionic steps present for ${i%?}. The energy difference to last structure in Unperturbed relaxation is higher than 2 eV, indicating that ${i%?} is stuck in a high energy basin. "
+              echo "Renaming to ${i%?}_High_Energy and continuing."
+              builtin cd .. || return
+              mv "${i%/}" "${i%/}_High_Energy"
+              continue
+            # If higher than 500 ionic steps, energy not changing significantly and higher energy than Unperturbed, rename to _High_Energy and continue
+            elif ((num_ionic_steps > 500)) && (($(echo "${energy_diff#-} > -0.002" | bc -l))) && (($(echo "$energy_diff_to_unperturbed > 0.5" | bc -l))); then
+              echo "More than 500 ionic steps present for ${i%?} and energy higher than Unperturbed, indicating that ${i%?} won't lead to an energy-lowering structure. "
+              echo "Renaming to ${i%?}_High_Energy and continuing."
+              builtin cd .. || return
+              mv "${i%/}" "${i%/}_High_Energy"
+              continue
             fi
           fi
           # else if more than 300 ionic steps taken (and not moved to High_Energy), warn user to check this manually

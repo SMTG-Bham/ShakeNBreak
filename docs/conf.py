@@ -15,50 +15,50 @@ import sys
 
 from recommonmark.transform import AutoStructify
 
-sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'shakenbreak'
-copyright = '2022, Irea Mosquera-Lois, Seán R. Kavanagh'
-author = 'Irea Mosquera-Lois, Seán R. Kavanagh'
+project = "shakenbreak"
+copyright = "2022, Irea Mosquera-Lois, Seán R. Kavanagh"
+author = "Irea Mosquera-Lois, Seán R. Kavanagh"
 
 # The full version, including alpha/beta/rc tags
-release = '3.3.6'
+release = "3.4.0"
 
 
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
+# extensions coming with Sphinx (named "sphinx.ext.*") or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.coverage',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.autosectionlabel',
-    'sphinx_click',
-    'sphinx_design',
-    # 'sphinx_mdinclude',
-    'myst_nb',  # for jupyter notebooks
-    # 'myst_parser',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.autosectionlabel",
+    "sphinx_click",
+    "sphinx_design",
+    # "sphinx_mdinclude",
+    "myst_nb",  # for jupyter notebooks
+    # "myst_parser",
 ]
 
 source_suffix = {
-    '.rst': 'restructuredtext',
-    '.ipynb': 'myst-nb',
+    ".rst": "restructuredtext",
+    ".ipynb": "myst-nb",
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 myst_enable_extensions = [
     "html_admonition",
@@ -69,7 +69,7 @@ myst_enable_extensions = [
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_book_theme' # 'sphinx_rtd_theme'
+html_theme = "sphinx_book_theme" # "sphinx_rtd_theme"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
@@ -79,7 +79,7 @@ html_title = "ShakeNBreak"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -127,10 +127,10 @@ nb_execution_mode = "off"
 nb_render_image_options = {"height": "300",}  # Reduce plots size
 #myst_render_markdown_format = "gfm"
 myst_heading_anchors = 2
-github_doc_root = 'https://github.com/executablebooks/MyST-Parser/tree/master/docs/'
+github_doc_root = "https://github.com/executablebooks/MyST-Parser/tree/master/docs/"
 def setup(app):
-    app.add_config_value('myst_parser_config', {
-            'url_resolver': lambda url: github_doc_root + url,
-            'auto_toc_tree_section': 'Contents',
+    app.add_config_value("myst_parser_config", {
+            "url_resolver": lambda url: github_doc_root + url,
+            "auto_toc_tree_section": "Contents",
             }, True)
     app.add_transform(AutoStructify)
