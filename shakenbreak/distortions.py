@@ -2,7 +2,7 @@
 
 import os
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from ase.neighborlist import NeighborList
@@ -78,7 +78,7 @@ def _get_nns_to_distort(
     num_nearest_neighbours: int,
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    distorted_element: Optional[str] = None,
+    distorted_element: Optional[Union[str, list]] = None,
     distorted_atoms: Optional[list] = None,
 ):
     """
@@ -115,8 +115,9 @@ def _get_nns_to_distort(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
         distorted_element (:obj:`str`, optional):
-            Neighbouring element to distort. If None, the closest neighbours to
-            the defect will be chosen. (Default: None)
+            Neighbouring element(s) to distort, as a string or list of strings.
+            If None, the closest neighbours to the defect will be chosen.
+            (Default: None)
         distorted_atoms (:obj:`list`, optional):
             List of atom indices to distort. If None, the closest neighbours to
             the defect will be chosen. (Default: None)
@@ -146,10 +147,12 @@ def _get_nns_to_distort(
         distorted_atoms = list(range(len(input_structure_ase)))
 
     if distorted_element:
+        if isinstance(distorted_element, str):
+            distorted_element = [distorted_element]
         distorted_atoms = [
             i
             for i in distorted_atoms
-            if input_structure_ase.get_chemical_symbols()[i] == distorted_element
+            if input_structure_ase.get_chemical_symbols()[i] in distorted_element
         ]
         if not distorted_atoms:
             raise ValueError(
@@ -208,7 +211,7 @@ def distort(
     distortion_factor: float,
     site_index: Optional[int] = None,  # starting from 1
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    distorted_element: Optional[str] = None,
+    distorted_element: Optional[Union[str, list]] = None,
     distorted_atoms: Optional[list] = None,
     verbose: Optional[bool] = False,
 ) -> dict:
@@ -241,8 +244,9 @@ def distort(
             Fractional coordinates of the defect site in the structure (for
             vacancies).
         distorted_element (:obj:`str`, optional):
-            Neighbouring element to distort. If None, the closest neighbours to
-            the defect will be chosen. (Default: None)
+            Neighbouring element(s) to distort, as a string or list of strings.
+            If None, the closest neighbours to the defect will be chosen.
+            (Default: None)
         distorted_atoms (:obj:`list`, optional):
             List of atom indices to distort. If None, the closest neighbours to
             the defect will be chosen. (Default: None)
