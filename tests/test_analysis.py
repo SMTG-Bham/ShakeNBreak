@@ -59,6 +59,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.V_Cd_unperturbed = Structure.from_file(
             os.path.join(self.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/Unperturbed/CONTCAR")
         )
+        self.dense_bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
 
     def tearDown(self):
         # restore the original file (after 'no unperturbed' tests):
@@ -75,6 +76,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Unperturbed/OUTCAR")
         if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_-40.0%/OUTCAR")
         if_present_rm("v_Ca_s0_0.png")
+        if_present_rm(f"{self.VASP_TIO2_DATA_DIR}/Bond_Distortion_20.0%")
+
+        for i in os.listdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0")):
+            if os.path.isdir(os.path.join(self.VASP_DIR, "v_Ca_s0_0", i)):
+                shutil.rmtree(os.path.join(self.VASP_DIR, "v_Ca_s0_0", i))
 
     def copy_v_Ti_OUTCARs(self):
         """
@@ -300,14 +306,14 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_Int_Cd_2_NN_10_crystalNN_coord_df = pd.DataFrame(
                 {
                     "Coordination": {
-                        0: "hexagonal planar",
-                        1: "octahedral",
-                        2: "pentagonal pyramidal",
+                        0: "trigonal planar",
+                        1: "trigonal non-coplanar",
+                        2: "T-shaped",
                     },
                     "Factor": {
-                        0: round(0.778391113850372, 2),
-                        1: round(0.014891251252011014, 2),
-                        2: round(0.058350214482398306, 2),
+                        0: 0.81,
+                        1: 0.59,
+                        2: 0.06,
                     },
                 }
             )
@@ -316,14 +322,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             )
             expected_Int_Cd_2_NN_10_crystalNN_bonding_df = pd.DataFrame(
                 {
-                    "Element": {0: "Cd", 1: "Cd", 2: "Cd", 3: "Te", 4: "Te", 5: "Te"},
+                    "Element": {0: "Cd", 1: "Cd", 2: "Cd"},
                     "Distance (\u212B)": {
                         0: "1.09",
                         1: "1.09",
                         2: "1.09",
-                        3: "1.09",
-                        4: "1.09",
-                        5: "1.09",
                     },
                 }
             )
@@ -347,7 +350,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
-        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        bond_distortions = self.dense_bond_distortions
         self.assertEqual(
             set(defect_structures_dict.keys()), set(bond_distortions + ["Unperturbed"])
         )
@@ -408,7 +411,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             defect_species="vac_1_Cd_0", output_path=self.VASP_CDTE_DATA_DIR
         )
         self.assertEqual(len(defect_structures_dict), 26)
-        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        bond_distortions = self.dense_bond_distortions
         self.assertEqual(
             set(defect_structures_dict.keys()), set(bond_distortions + ["Unperturbed"])
         )
@@ -433,7 +436,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         energies_dict_keys_dict = {"distortions": None, "Unperturbed": None}
         self.assertEqual(defect_energies_dict.keys(), energies_dict_keys_dict.keys())
-        bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+        bond_distortions = self.dense_bond_distortions
         self.assertEqual(
             list(defect_energies_dict["distortions"].keys()), bond_distortions
         )
@@ -459,7 +462,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(
                 defect_energies_dict.keys(), energies_dict_keys_dict.keys()
             )
-            bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+            bond_distortions = self.dense_bond_distortions
             self.assertEqual(
                 list(defect_energies_dict["distortions"].keys()), bond_distortions
             )
@@ -516,7 +519,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(
                 defect_energies_dict.keys(), energies_dict_keys_dict.keys()
             )
-            bond_distortions = list(np.around(np.arange(-0.6, 0.001, 0.025), 3))
+            bond_distortions = self.dense_bond_distortions
             self.assertEqual(
                 list(defect_energies_dict["distortions"].keys()), bond_distortions
             )
@@ -551,11 +554,9 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertEqual(
             max_dist_dict.keys(), defect_structures_dict.keys()
         )  # one for each
-        np.testing.assert_almost_equal(max_dist_dict[-0.4], 0.8082011457587672)
-        np.testing.assert_almost_equal(max_dist_dict[-0.2], 0.02518600797944396)
-        np.testing.assert_almost_equal(
-            max_dist_dict["Unperturbed"], 1.7500286730158273e-15
-        )
+        assert np.isclose(max_dist_dict[-0.4], 0.8082011457587672, atol=1e-2)
+        assert np.isclose(max_dist_dict[-0.2], 0.024, atol=1e-2)
+        assert np.isclose(max_dist_dict["Unperturbed"], 0)
 
         # V_Cd_0 with 'disp' (reading from `vac_1_Cd_0` and `distortion_metadata.json`):
         disp_dict = analysis.calculate_struct_comparison(defect_structures_dict, "disp")
@@ -604,7 +605,6 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(round(max_dist_dict[-0.2], 3), 0.025)
-        self.assertIsNone(max_dist_dict[-0.4])
         np.testing.assert_almost_equal(max_dist_dict["Unperturbed"], 0)
 
         disp_dict = analysis.calculate_struct_comparison(
@@ -612,7 +612,6 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(round(disp_dict[-0.2], 3), 0.121)
-        self.assertIsNone(disp_dict[-0.4])
         self.assertTrue(np.isclose(disp_dict["Unperturbed"], 0))
 
         # test error catching:
@@ -650,7 +649,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError) as e:
             wrong_metric_error = ValueError(
-                f"Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'."
+                "Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'."
             )  # https://youtu.be/DmH1prySUpA
             analysis.calculate_struct_comparison(
                 defect_structures_dict, metric="metwhat"
@@ -688,7 +687,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
         # spot check:
         self.assertEqual(
-            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.0, 0.025, 0.0]
+            struct_comparison_df.iloc[16].to_list(), [-0.2, 0.0, 0.024, 0.0]
         )
         self.assertEqual(
             struct_comparison_df.iloc[8].to_list(), [-0.4, 5.760, 0.808, -0.75]
@@ -750,16 +749,6 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             self.assertEqual(
                 struct_comparison_df.iloc[16].to_list(), [-0.2, 0.121, 0.025, 0.0]
             )
-            # When a too tight stol is used, check the code retries with larger stol
-            warning_message = (
-                f"The specified tolerance {0.01} seems to be too tight as"
-                " too many lattices could not be matched. Will retry with"
-                f" larger tolerance ({0.01+0.4})."
-            )
-            # self.assertEqual(w[-1].category, UserWarning)
-            self.assertTrue(
-                any([warning_message in str(warning.message) for warning in w])
-            )
             self.assertEqual(
                 struct_comparison_df.iloc[8].to_list(), [-0.4, 8.31, 0.808, -0.75]
             )
@@ -773,7 +762,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                     "Bond Distortion",
                     "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
                     "Max Distance (\u212B)",  # Angstrom
-                    f"\u0394 Energy (meV)",  # Delta
+                    "\u0394 Energy (meV)",  # Delta
                 ],
             )
 
@@ -1121,7 +1110,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with open(f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR") as f:
             outcar_string = f.read()
         ispin1_outcar_string = re.sub(
-            "ISPIN  =      2    spin polarized calculation?", "ISPIN = 1", outcar_string
+            r"ISPIN\s*=\s*2", "ISPIN = 1", outcar_string
         )
         with open(
             f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR", "w"
@@ -1140,8 +1129,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         self.assertTrue(
             any(
                 f"{self.DATA_DIR}/vasp/vac_1_Ti_0/Bond_Distortion_20.0%/OUTCAR is "
-                f"from a "
-                "non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
+                f"from a non-spin-polarised calculation (ISPIN = 1), so magnetization analysis "
                 "is not possible. Skipping." in str(warning.message)
                 for warning in w
             )

@@ -16,7 +16,7 @@ jobs:
       max-parallel: 1
 
       matrix:
-        python-version: ['3.11']
+        python-version: ['3.12']
 
     name: Python ${{ matrix.python-version }} Test Pop
 

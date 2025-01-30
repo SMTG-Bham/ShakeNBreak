@@ -7,9 +7,21 @@ from unittest.mock import Mock, patch
 import ase
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import Structure, Composition, IStructure, PeriodicSite
 
 from shakenbreak import analysis, distortions, energy_lowering_distortions, io
+
+# use doped efficiency functions for speed (speeds up structure matching dramatically):
+from doped.utils.efficiency import Composition as doped_Composition
+from doped.utils.efficiency import IStructure as doped_IStructure
+from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
+
+Composition.__instances__ = {}
+Composition.__eq__ = doped_Composition.__eq__
+PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
+PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
+IStructure.__instances__ = {}
+IStructure.__eq__ = doped_IStructure.__eq__
 
 
 def if_present_rm(path):
@@ -109,6 +121,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ]:  # everything but VASP data dir
             if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "fake_vac_1_Cd_0.yaml"))
             if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "vac_1_Cd_0.yaml"))
+            if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "default_INCAR"))
             for defect_dir in os.listdir(os.path.join(data_dir, "vac_1_Cd_0")):
                 if "Bond_Distortion_30.0%" not in defect_dir and os.path.isdir(
                     os.path.join(data_dir, "vac_1_Cd_0", defect_dir)
@@ -118,6 +131,12 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             for file in os.listdir(os.path.join(data_dir, "vac_1_Cd_0", "Bond_Distortion_30.0%")):
                 if file not in orig_files:
                     if_present_rm(os.path.join(data_dir, "vac_1_Cd_0", "Bond_Distortion_30.0%", file))
+
+        if os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR_original"):
+            shutil.move(
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR_original",
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR",
+            )
 
     def test__format_distortion_directory_name(self):
         self.assertEqual(
@@ -1008,7 +1027,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/structure.cif",
             )
         )
-        self.assertTrue(analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test copying over Quantum Espresso input files
         shutil.move(  # avoid overwriting yaml file
@@ -1058,7 +1077,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ) as f:
             atoms = ase.io.espresso.read_espresso_in(f)
         struct = Structure.from_ase_atoms(atoms)
-        self.assertTrue(analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test copying over FHI-aims input files when the input files are only
         # present in one distortion directory (different from Unperturbed)
@@ -1107,7 +1126,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/geometry.in",
             )
         )
-        self.assertTrue(analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test CASTEP input files
         shutil.move(  # avoid overwriting yaml file
@@ -1161,7 +1180,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )
         )
-        self.assertTrue(analysis._calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
 
 if __name__ == "__main__":

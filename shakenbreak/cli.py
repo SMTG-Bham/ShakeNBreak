@@ -110,9 +110,9 @@ def snb():
 @click.option(
     "--padding",
     "-p",
-    help="If `--charge` or `--min-charge` & `--max-charge` are not set, "
+    help="If ``--charge`` or ``--min-charge`` & ``--max-charge`` are not set, "
     "defect charges will be set to the range: 0 - {Defect oxidation state}, "
-    "with a `--padding` on either side of this range.",
+    "with a ``--padding`` on either side of this range.",
     default=1,
     type=int,
 )
@@ -150,8 +150,8 @@ def snb():
 @click.option(
     "--config",
     "-conf",
-    help="Config file for advanced distortion settings. See example in"
-    " SnB_input_files/example_generate_config.yaml",
+    help="Config file for advanced distortion settings. See example in "
+    "``shakenbreak/SnB_input_files/example_generate_config.yaml``",
     default=None,
     type=click.Path(exists=True, dir_okay=False),
     show_default=True,
@@ -159,19 +159,18 @@ def snb():
 @click.option(
     "--input_file",
     "-inp",
-    help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
+    help="Input file for the code specified with ``--code``, "
+    "with relaxation parameters to override defaults (e.g. ``INCAR`` for ``VASP``).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
 )
 @click.option(
-    "--verbose",
-    "-v",
-    help="Print information about identified defects and generated distortions",
-    default=False,
-    is_flag=True,
-    show_default=True,
+    "--verbose/--non-verbose",
+    "-v/-nv",
+    help="Print information about identified defects and generated distortions. "
+    "Default (None) gives medium level verbosity.",
+    default=None,
 )
 def generate(
     defect,
@@ -243,15 +242,15 @@ def generate(
     defect_struct = Structure.from_file(defect)
     bulk_struct = Structure.from_file(bulk)
 
-    # Note that here the Defect.defect_structure is the defect `supercell`
-    # structure, not the defect `primitive` structure.
+    # Note that here the Defect.defect_structure is the defect ``supercell``
+    # structure, not the defect ``primitive`` structure.
     defect_object = input.identify_defect(
         defect_structure=defect_struct,
         bulk_structure=bulk_struct,
         defect_index=defect_index,
         defect_coords=defect_coords,
     )
-    if verbose and defect_index is None and defect_coords is None:
+    if verbose is not False and defect_index is None and defect_coords is None:  # medium level verbosity
         site = defect_object.site
         site_info = (
             f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -297,9 +296,8 @@ def generate(
     if name is None:
         name = get_defect_name_from_entry(defect_entries[0], relaxed=False)
 
-    # if user_charges not set for all defects, print info about how charge states will be
-    # determined
-    if not defect_object.user_charges:
+    # if user_charges not set for all defects, print info about how charge states will be determined
+    if not defect_object.user_charges and verbose is not False:  # medium level verbosity
         print(
             "Defect charge states will be set to the range: 0 - {Defect oxidation state}, "
             f"with a `padding = {padding}` on either side of this range."
@@ -410,9 +408,9 @@ def generate(
 @click.option(
     "--padding",
     "-p",
-    help="For any defects where `charge` is not set in the --config file, "
+    help="For any defects where ``charge`` is not set in the --config file, "
     "charges will be set to the range: 0 - {Defect oxidation state}, "
-    "with a `--padding` on either side of this range.",
+    "with a ``--padding`` on either side of this range.",
     default=1,
     type=int,
 )
@@ -428,7 +426,7 @@ def generate(
     "--config",
     "-conf",
     help="Config file for advanced distortion settings. See example in "
-    "/SnB_input_files/example_generate_all_config.yaml",
+    "``shakenbreak/SnB_input_files/example_generate_all_config.yaml``",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
@@ -436,19 +434,18 @@ def generate(
 @click.option(
     "--input_file",
     "-inp",
-    help="Input file for the code specified with `--code`, "
-    "with relaxation parameters to override defaults (e.g. `INCAR` for `VASP`).",
+    help="Input file for the code specified with ``--code``, "
+    "with relaxation parameters to override defaults (e.g. ``INCAR`` for ``VASP``).",
     default=None,
     type=click.Path(exists=True, dir_okay=False, file_okay=True),
     show_default=True,
 )
 @click.option(
-    "--verbose",
-    "-v",
-    help="Print information about identified defects and generated distortions",
-    default=False,
-    is_flag=True,
-    show_default=True,
+    "--verbose/--non-verbose",
+    "-v/-nv",
+    help="Print information about identified defects and generated distortions. "
+    "Default (None) gives medium level verbosity.",
+    default=None,
 )
 def generate_all(
     defects,
@@ -633,7 +630,7 @@ def generate_all(
                 None if _bulk_oxi_states else "Undetermined"
             ),  # guess if bulk_oxi, else "Undetermined"
         )
-        if verbose:
+        if verbose is not False:  # medium level verbosity
             site = defect_object.site
             site_info = (
                 f"{site.species_string} at [{site._frac_coords[0]:.3f},"
@@ -762,15 +759,6 @@ def generate_all(
     default=None,
 )
 @click.option(
-    "--all",
-    "-a",
-    help="Loop through all defect folders (then through their distortion subfolders) in the "
-    "current directory",
-    default=False,
-    is_flag=True,
-    show_default=True,
-)
-@click.option(
     "--verbose",
     "-v",
     help="Print information about calculations which have fully converged",
@@ -778,18 +766,22 @@ def generate_all(
     is_flag=True,
     show_default=True,
 )
-def run(submit_command, job_script, job_name_option, all, verbose):
+def run(submit_command, job_script, job_name_option, verbose):
     """
     Loop through distortion subfolders for a defect, when run within a defect folder, or for all
-    defect folders in the current (top-level) directory if the --all (-a) flag is set, and submit
-    jobs to the HPC scheduler.
+    defect folders in the current (top-level) directory, and submit jobs to the HPC scheduler.
 
     As well as submitting the initial geometry optimisations, can automatically continue and
     resubmit calculations that have not yet converged (and handle those which have failed),
     see: https://shakenbreak.readthedocs.io/en/latest/Generation.html#submitting-the-geometry-optimisations
     """
     optional_flags = "-"
-    if all:
+    # determine if running from within a defect directory or from the top level directory:
+    if not _running_in_defect_dir(
+        path=".",
+        warning_substring="calculations will only be submitted for the distortion folders in this "
+        "directory.",
+    ):
         optional_flags += "a"
     if verbose:
         optional_flags += "v"
@@ -823,14 +815,6 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     default=None,
 )
 @click.option(
-    "--all",
-    "-a",
-    help="Parse energies for all defects present in the specified/current directory",
-    default=False,
-    is_flag=True,
-    show_default=True,
-)
-@click.option(
     "--path",
     "-p",
     help="Path to the top-level directory containing the defect folder. "
@@ -854,24 +838,26 @@ def run(submit_command, job_script, job_name_option, all, verbose):
     is_flag=True,
     show_default=True,
 )
-def parse(defect, all, path, code, verbose):
+def parse(defect, path, code, verbose):
     """
     Parse final energies of defect structures from relaxation output files.
-    Parsed energies are written to a `yaml` file in the corresponding defect directory.
+    Parsed energies are written to a ``yaml`` file in the corresponding defect directory.
+
+    Can be run within a single defect folder, or in the top-level directory (either
+    specifying ``defect`` or looping through all defect folders).
     """
     if defect:
         _ = io.parse_energies(defect, path, code, verbose=verbose)
-    elif all:
-        defect_dirs = _parse_defect_dirs(path)
-        _ = [io.parse_energies(defect, path, code, verbose=verbose) for defect in defect_dirs]
-    else:
+    elif (
+        _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be parsed for the distortion folders in this "
+            "directory.",
+        )
+        and path == "."
+    ):
         # assume current directory is the defect folder
         try:
-            if path != ".":
-                warnings.warn(
-                    "`--path` option ignored when running from within defect folder (i.e. "
-                    "when `--defect` is not specified."
-                )
             cwd = os.getcwd()
             defect = cwd.split("/")[-1]
             path = cwd.rsplit("/", 1)[0]
@@ -880,9 +866,13 @@ def parse(defect, all, path, code, verbose):
             raise Exception(
                 f"Could not parse defect '{defect}' in directory '{path}'. Please either specify "
                 f"a defect to parse (with option --defect), run from within a single defect "
-                f"directory (without setting --defect) or use the --all flag to parse all "
-                f"defects in the specified/current directory."
+                f"directory (without setting --defect) or run from the top-level directory to "
+                f"analyse all defects in the specified/current directory."
             ) from exc
+
+    else:
+        defect_dirs = _parse_defect_dirs(path)
+        _ = [io.parse_energies(defect, path, code, verbose=verbose) for defect in defect_dirs]
 
 
 @snb.command(
@@ -898,14 +888,6 @@ def parse(defect, all, path, code, verbose):
     "within defect folder).",
     type=str,
     default=None,
-)
-@click.option(
-    "--all",
-    "-a",
-    help="Analyse all defects present in specified directory",
-    default=False,
-    is_flag=True,
-    show_default=True,
 )
 @click.option(
     "--path",
@@ -928,7 +910,7 @@ def parse(defect, all, path, code, verbose):
     "-ref",
     help="Structure to use as a reference for comparison "
     "(to compute atomic displacements). Given as a key from "
-    "`defect_structures_dict` (e.g. '-0.4' for 'Bond_Distortion_-40.0%').",
+    "``defect_structures_dict`` (e.g. '-0.4' for ``'Bond_Distortion_-40.0%'``).",
     type=str,
     default="Unperturbed",
     show_default=True,
@@ -941,10 +923,13 @@ def parse(defect, all, path, code, verbose):
     is_flag=True,
     show_default=True,
 )
-def analyse(defect, all, path, code, ref_struct, verbose):
+def analyse(defect, path, code, ref_struct, verbose):
     """
-    Generate `csv` file mapping each distortion to its final energy (in eV) and its
-    mean displacement (in Angstrom and relative to `ref_struct`).
+    Generate ``csv`` file mapping each distortion to its final energy (in eV) and its
+    mean displacement (in Angstrom and relative to ``ref_struct``).
+
+    Can be run within a single defect folder, or in the top-level directory (either
+    specifying ``defect`` or looping through all defect folders).
     """
 
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
@@ -970,22 +955,25 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         dataframe.to_csv(f"{path}/{defect}/{defect}.csv")  # change name to results.csv?
         print(f"Saved results to {path}/{defect}/{defect}.csv")
 
-    if all:
+    if (
+        defect is None
+        and _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be analysed for the distortion folders in this "
+            "directory.",
+        )
+        and path == "."
+    ):
+        # assume current directory is the defect folder
+        cwd = os.getcwd()
+        defect = cwd.split("/")[-1]
+        path = cwd.rsplit("/", 1)[0]
+
+    if defect is None:  # then all
         defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             print(f"\nAnalysing {defect}...")
             analyse_single_defect(defect, path, code, ref_struct, verbose)
-
-    elif defect is None:
-        # assume current directory is the defect folder
-        if path != ".":
-            warnings.warn(
-                "`--path` option ignored when running from within defect folder (i.e. when `--defect` is "
-                "not specified."
-            )
-        cwd = os.getcwd()
-        defect = cwd.split("/")[-1]
-        path = cwd.rsplit("/", 1)[0]
 
     defect = defect.strip("/")  # Remove trailing slash if present
     # Check if defect present in path:
@@ -1004,9 +992,9 @@ def analyse(defect, all, path, code, ref_struct, verbose):
         except Exception as exc:
             raise Exception(
                 f"Could not analyse defect '{defect}' in directory '{path}'. Please either specify a "
-                f"defect to analyse (with option --defect), run from within a single defect directory ("
-                f"without setting --defect) or use the --all flag to analyse all defects in the "
-                f"specified/current directory."
+                f"defect to analyse (with option --defect), run from within a single defect directory "
+                f"(without setting --defect) or run from the top-level directory to "
+                f"analyse all defects in the specified/current directory."
             ) from exc
 
 
@@ -1025,19 +1013,11 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     default=None,
 )
 @click.option(
-    "--all",
-    "-a",
-    help="Analyse all defects present in current/specified directory",
-    default=False,
-    is_flag=True,
-    show_default=True,
-)
-@click.option(
     "--min_energy",
     "-min",
     help="Minimum energy difference (in eV) between the ground-state "
-    "distortion and the `Unperturbed` structure to generate the "
-    "distortion plot, when `--all` is set.",
+    "distortion and the ``Unperturbed`` structure to generate the "
+    "distortion plot, when running from the top-level folder.",
     default=0.05,
     type=float,
     show_default=True,
@@ -1071,7 +1051,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--metric",
     "-m",
-    help="If the option `--colorbar` is specified, determines the criteria used"
+    help="If the option ``--colorbar`` is specified, determines the criteria used"
     " for the structural comparison. Can choose between the summed of atomic"
     " displacements ('disp') or the maximum distance between"
     " matched sites ('max_dist', default).",
@@ -1098,7 +1078,7 @@ def analyse(defect, all, path, code, ref_struct, verbose):
 @click.option(
     "--max_energy",
     "-max",
-    help="Maximum energy (in chosen `units`), relative to the "
+    help="Maximum energy (in chosen ``units``), relative to the "
     "unperturbed structure, to show on the plot.",
     type=float,
     default=0.5,
@@ -1121,9 +1101,15 @@ def analyse(defect, all, path, code, ref_struct, verbose):
     is_flag=True,
     show_default=True,
 )
+@click.option(
+    "--style-file",
+    "-s",
+    help="Path to a mplstyle file to use for the plot(s). Default is 'shakenbreak.mplstyle'.",
+    default=None,
+    type=click.Path(exists=True, dir_okay=False),
+)
 def plot(
     defect,
-    all,
     min_energy,
     path,
     code,
@@ -1134,17 +1120,33 @@ def plot(
     max_energy,
     no_title,
     verbose,
+    style_file,
 ):
     """
     Generate energy vs distortion plots. Optionally, the structural
     similarity between configurations can be illustrated with a colorbar.
+
+    Can be run within a single defect folder, or in the top-level directory
+    (either specifying ``defect`` or looping through all defect folders).
     """
-    if all:
-        if defect is not None:
-            warnings.warn(
-                "The option `--defect` is ignored when using the `--all` flag. (All defects in "
-                f"`--path` = {path} will be plotted)."
-            )
+    if style_file is None:
+        style_file = f"{os.path.dirname(os.path.abspath(__file__))}/shakenbreak.mplstyle"
+
+    if (
+        defect is None
+        and _running_in_defect_dir(
+            path=path,
+            warning_substring="calculations will only be analysed and plotted for the distortion folders "
+            "in this directory.",
+        )
+        and path == "."
+    ):
+        # assume current directory is the defect folder
+        cwd = os.getcwd()
+        defect = cwd.split("/")[-1]
+        path = cwd.rsplit("/", 1)[0]
+
+    if defect is None:  # then all
         defect_dirs = _parse_defect_dirs(path)
         for defect in defect_dirs:
             if verbose:
@@ -1166,19 +1168,9 @@ def plot(
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
             verbose=verbose,
+            style_file=style_file,
             close_figures=True,  # reduce memory usage with snb-plot with many defects at once
         )
-
-    if defect is None:
-        # assume current directory is the defect folder
-        if path != ".":
-            warnings.warn(
-                "`--path` option ignored when running from within defect folder ("
-                "i.e. when `--defect` is not specified."
-            )
-        cwd = os.getcwd()
-        defect = cwd.split("/")[-1]
-        path = cwd.rsplit("/", 1)[0]
 
     defect = defect.strip("/")  # Remove trailing slash if present
     # Check if defect present in path:
@@ -1207,6 +1199,7 @@ def plot(
             units=units,
             add_title=not no_title,
             max_energy_above_unperturbed=max_energy,
+            style_file=style_file,
             verbose=verbose,
         )
     except Exception:
@@ -1228,14 +1221,15 @@ def plot(
                 units=units,
                 add_title=not no_title,
                 max_energy_above_unperturbed=max_energy,
+                style_file=style_file,
                 verbose=verbose,
             )
         except Exception as exc:
             raise Exception(
                 f"Could not analyse & plot defect '{defect}' in directory '{path}'. Please either "
                 f"specify a defect to analyse (with option --defect), run from within a single "
-                f"defect directory (without setting --defect) or use the --all flag to analyse all "
-                f"defects in the specified/current directory."
+                f"defect directory (without setting --defect) or run from the top-level directory to "
+                f"analyse all defects in the specified/current directory."
             ) from exc
 
 
@@ -1272,7 +1266,7 @@ def plot(
     "--min_energy",
     "-min",
     help="Minimum energy difference (in eV) between the ground-state"
-    " defect structure, relative to the `Unperturbed` structure,"
+    " defect structure, relative to the ``Unperturbed`` structure,"
     " to consider it as having found a new energy-lowering"
     " distortion.",
     type=float,
@@ -1304,7 +1298,7 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
     Considers all identified energy-lowering distortions for each defect
     in each charge state, and screens out duplicate distorted structures
     found for multiple charge states. Defect folder names should end with
-    charge state after an underscore (e.g. `vac_1_Cd_0` or `Va_Cd_0` etc).
+    charge state after an underscore (e.g. ``vac_1_Cd_0`` or ``Va_Cd_0`` etc).
     """
     if path == ".":
         path = os.getcwd()  # more verbose error if no defect folders found in path
@@ -1327,6 +1321,37 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
     )
 
 
+def _running_in_defect_dir(path: str = ".", warning_substring: str = ""):
+    warning_substring = warning_substring or (
+        "the groundstate structure from the distortion folders in this directory will be generated."
+    )
+    if any(
+        dir
+        for dir in os.listdir()
+        if os.path.isdir(dir)
+        and any(substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed", "Dimer"])
+    ):  # distortion subfolders in cwd
+        # check if defect folders also in cwd
+        for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
+            defect_name = None
+            try:
+                defect_name = format_defect_name(dir, include_site_info_in_name=False)
+            except Exception:
+                with contextlib.suppress(Exception):
+                    defect_name = format_defect_name(f"{dir}_0", include_site_info_in_name=False)
+            if defect_name:  # recognised defect folder found in cwd, warn user and proceed
+                # assuming they want to just parse the distortion folders in cwd
+                warnings.warn(
+                    f"Both distortion folders and defect folders (i.e. {dir}) were found in the current "
+                    f"directory. The defect folders will be ignored and {warning_substring}"
+                )
+                break
+
+        return True  # current directory is the defect folder
+
+    return False
+
+
 @snb.command(
     name="groundstate",
     context_settings=CONTEXT_SETTINGS,
@@ -1335,8 +1360,8 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
 @click.option(
     "--directory",
     "-d",
-    help="Folder name where the ground state structure will be written to. If using with `doped`, then "
-    "typically recommended to set to `vasp_nkred_std` or `vasp_std`.",
+    help="Folder name where the ground state structure will be written to. If using with ``doped``, then "
+    "typically recommended to set to ``vasp_nkred_std`` or ``vasp_std``.",
     type=str,
     default="Groundstate",
     show_default=True,
@@ -1381,45 +1406,24 @@ def groundstate(
 ):
     """
     Generate folders with the identified ground state structures. A folder (named
-    `directory`) is created with the ground state structure (named
-    `groundstate_filename`) for each defect present in the specified path (if `path` is
+    ``directory``) is created with the ground state structure (named
+    ``groundstate_filename``) for each defect present in the specified path (if ``path`` is
     the top-level directory) or for the current defect if run within a defect folder.
-    If the name of the structure/output files is not specified, the code assumes `CONTCAR`
+    If the name of the structure/output files is not specified, the code assumes ``CONTCAR``
     (e.g. geometry optimisations performed with VASP). If using a different code,
     please specify the name of the structure/output files.
     """
     # determine if running from within a defect directory or from the top level directory
-    if any(
-        dir
-        for dir in os.listdir()
-        if os.path.isdir(dir)
-        and any(substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed", "Dimer"])
-    ):  # distortion subfolders in cwd
-        # check if defect folders also in cwd
-        for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
-            defect_name = None
-            try:
-                defect_name = format_defect_name(dir, include_site_info_in_name=False)
-            except Exception:
-                with contextlib.suppress(Exception):
-                    defect_name = format_defect_name(f"{dir}_0", include_site_info_in_name=False)
-            if defect_name:  # recognised defect folder found in cwd, warn user and proceed
-                # assuming they want to just parse the distortion folders in cwd
-                warnings.warn(
-                    f"Both distortion folders and defect folders (i.e. {dir}) were "
-                    f"found in the current directory. The defect folders will be "
-                    f"ignored and the groundstate structure from the distortion folders "
-                    f"in this directory will be generated."
-                )
-                break
-
-        # assume current directory is the defect folder
-        if path != ".":
-            warnings.warn(
-                "`--path` option ignored when running from within defect folder (assumed to be "
-                "the case here as distortion folders found in current directory)."
-            )
-
+    if (
+        _running_in_defect_dir(
+            path,
+            warning_substring=(
+                "the groundstate structure from the distortion folders in this directory will be "
+                "generated."
+            ),
+        )
+        and path == "."
+    ):
         energy_lowering_distortions.write_groundstate_structure(
             all=False,
             output_path=os.getcwd(),

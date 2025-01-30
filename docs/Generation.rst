@@ -32,7 +32,7 @@ we'll get a warning and we'll need to specify the defect site with the ``--defec
 
 .. NOTE::
     To specify additional distortion parameters, we can use a
-    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_config.yaml>`_
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/shakenbreak/SnB_input_files/example_generate_config.yaml>`_
     file like the one below and use the ``--config`` flag to specify its path (i.e. ``snb-generate --config ./my_config.yaml``).
     A detailed description of all the parameters is available in the Python API section
     (:ref:`shakenbreak.input.Distortions class <api_input>`).
@@ -122,7 +122,7 @@ the following directory structures will be parsed correctly:
 
 .. NOTE::
     To specify the charge state range for each defect, as well as other optional arguments, we can use a
-    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/SnB_input_files/example_generate_all_config.yaml>`_ file
+    `config.yaml <https://github.com/SMTG-Bham/ShakeNBreak/blob/main/shakenbreak/SnB_input_files/example_generate_all_config.yaml>`_ file
     like the one below. A detailed description of all the parameters is available in the
     Python API section (:ref:`shakenbreak.input.Distortions class <api_input>`).
 
@@ -198,12 +198,16 @@ Submitting the geometry optimisations
 =======================================
 
 Once the input files have been generated, we can submit the geometry optimisations
-for a single or all defects using the ``snb-run`` command.
-To submit all defects present in the current directory:
+for a single or all defects using the ``snb-run`` command:
 
 .. code:: bash
 
-    $ snb-run -a
+    $ snb-run
+
+If ``snb-run`` is run in the top-level directory (i.e. the directory containing the defect folders),
+it will loop through all defect folders present and attempt to submit the distortion calculations for
+each. Alternatively, it can be run within a single defect folder to just submit the calculations for
+that defect.
 
 This assumes the ``SGE`` queuing system (i.e. ``qsub`` = job submission command) for the HPC and a job script name of
 ``job`` by default, but again can be controlled with the ``--submit-command`` and ``--job-script`` flags
@@ -212,14 +216,7 @@ script file name of ``my_job_script.sh``, we would use:
 
 .. code:: bash
 
-    $ snb-run --submit-command sbatch --job-script my_job_script.sh --all
-
-
-To submit a single defect, we can simply run the command :code:`snb-run` within the defect folder:
-
-.. code:: bash
-
-    $ snb-run
+    $ snb-run --submit-command sbatch --job-script my_job_script.sh
 
 ``snb-run`` can be used to submit the initial geometry optimisation calculations, as well as automatically continuing
 and resubmitting calculations that have not yet converged (and handle calculations which have failed) as discussed in

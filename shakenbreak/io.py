@@ -31,14 +31,14 @@ def parse_energies(
 ) -> None:
     """
     Parse final energy for all distortions present in the given defect
-    directory and write them to a `yaml` file in the defect directory.
-    Returns the energies_file path.
+    directory and write them to a ``yaml`` file in the defect directory.
+    Returns the ``energies_file`` path.
 
     Args:
         defect (:obj:`str`):
             Name of defect to parse, including charge state. Should match the
             name of the defect folder.
-        path (:obj: `str`):
+        path (:obj:`str`):
             Path to the top-level directory containing the defect folder.
             Defaults to current directory (".").
         code (:obj:`str`):
@@ -50,12 +50,14 @@ def parse_energies(
             that are defined in the default input files:
             (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
             castep: "*.castep", fhi-aims: "aims.out")
-            Default to the ShakeNBreak default filenames.
+            Defaults to the ``ShakeNBreak`` default filenames.
         verbose (:obj:`bool`):
             If True, print information about renamed/saved-over files.
             Defaults to False.
 
-    Returns: energies_file path.
+    Returns:
+        :obj:`str`:
+            Path to the ``energies_file``.
     """
 
     def _match(filename, grep_string):
@@ -112,7 +114,7 @@ def parse_energies(
             dumpfn(energies, filename)
 
     def parse_vasp_energy(defect_dir, dist, energy, outcar):
-        """Parse VASP energy from OUTCAR file."""
+        """Parse VASP energy from ``OUTCAR`` file."""
         converged = False
         if os.path.exists(os.path.join(defect_dir, dist, "OUTCAR")):
             outcar = os.path.join(defect_dir, dist, "OUTCAR")
@@ -127,7 +129,7 @@ def parse_energies(
         return converged, energy, outcar
 
     def parse_espresso_energy(defect_dir, dist, energy, espresso_out):
-        """Parse Quantum Espresso energy from espresso.out file."""
+        """Parse Quantum Espresso energy from ``espresso.out`` file."""
         if os.path.join(defect_dir, dist, "espresso.out"):  # Default SnB output filename
             espresso_out = os.path.join(defect_dir, dist, "espresso.out")
         elif os.path.exists(os.path.join(defect_dir, dist, filename)):
@@ -199,7 +201,7 @@ def parse_energies(
 
     if defect == os.path.basename(os.path.normpath(path)) and not [
         dir for dir in path if (os.path.isdir(dir) and os.path.basename(os.path.normpath(dir)) == defect)
-    ]:  # if `defect` is in end of `path` and `path` doesn't have a subdirectory called `defect`
+    ]:  # if ``defect`` is in end of ``path`` and ``path`` doesn't have a subdirectory called ``defect``
         # then remove defect from end of path
         path = os.path.dirname(path)
 
@@ -283,7 +285,7 @@ def parse_energies(
                 energies[dist_name] = prev_energies_dict[dist_name]
             elif "distortions" in prev_energies_dict and dist_name in prev_energies_dict["distortions"]:
                 energies["distortions"][dist_name] = prev_energies_dict["distortions"][dist_name]
-            else:
+            elif f"{dist}_High_Energy" not in dist_dirs:  # don't warn if was renamed to High_Energy
                 warnings.warn(f"No output file in {dist} directory")
 
     if energies["distortions"]:
@@ -383,42 +385,43 @@ def read_vasp_structure(
     file_path: str,
 ) -> Union[Structure, str]:
     """
-    Read VASP structure from `file_path` and convert to `pymatgen` Structure
+    Read VASP structure from ``file_path`` and convert to ``pymatgen`` Structure
     object.
 
     Args:
         file_path (:obj:`str`):
-            Path to VASP `CONTCAR` file
+            Path to VASP ``CONTCAR`` file
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
     if not os.path.isfile(abs_path_formatted):
-        warnings.warn(
-            f"{abs_path_formatted} file doesn't exist, storing as "
-            f"'Not converged'. Check path & relaxation"
-        )
-        struct = "Not converged"
-    else:
-        try:
-            struct = Structure.from_file(abs_path_formatted)
-        except Exception:
+        # check if there's an equivalent high-energy folder, and if so don't warn
+        if not os.path.exists(abs_path_formatted.rsplit("/", 1)[0] + "_High_Energy"):
             warnings.warn(
-                f"Problem obtaining structure from: {abs_path_formatted}, "
-                f"storing as 'Not converged'. Check file & relaxation"
+                f"{abs_path_formatted} file doesn't exist, storing as "
+                f"'Not converged'. Check path & relaxation"
             )
-            struct = "Not converged"
-    return struct
+        return "Not converged"
+
+    try:
+        return Structure.from_file(abs_path_formatted)
+    except Exception:
+        warnings.warn(
+            f"Problem obtaining structure from: {abs_path_formatted}, "
+            f"storing as 'Not converged'. Check file & relaxation"
+        )
+        return "Not converged"
 
 
 def read_espresso_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from Quantum Espresso output and returns it as a pymatgen
-    Structure.
+    Reads a structure from Quantum Espresso output and returns it as a
+    ``pymatgen`` ``Structure``.
 
     Args:
         filename (:obj:`str`):
@@ -426,7 +429,7 @@ def read_espresso_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     # ase.io.espresso functions seem a bit buggy, so we use the following implementation
     if os.path.exists(filename):
@@ -485,8 +488,8 @@ def read_espresso_structure(
 
 def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, str]:
     """
-    Reads a structure from FHI-aims output and returns it as a pymatgen
-    Structure.
+    Reads a structure from FHI-aims output and returns it as a
+    ``pymatgen`` ``Structure``.
 
     Args:
         filename (:obj:`str`):
@@ -496,7 +499,7 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, st
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -519,8 +522,8 @@ def read_cp2k_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from CP2K restart file and returns it as a pymatgen
-    Structure.
+    Reads a structure from CP2K restart file and returns it as a
+    ``pymatgen`` ``Structure``.
 
     Args:
         filename (:obj:`str`):
@@ -528,7 +531,7 @@ def read_cp2k_structure(
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -554,16 +557,16 @@ def read_castep_structure(
     filename: str,
 ) -> Union[Structure, str]:
     """
-    Reads a structure from CASTEP output (`.castep`) file and returns it as a
-    pymatgen Structure.
+    Reads a structure from ``CASTEP`` output (``.castep``) file and
+    returns it as a ``pymatgen`` ``Structure``.
 
     Args:
         filename (:obj:`str`):
-            Path to the CASTEP output file.
+            Path to the ``CASTEP`` output file.
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
@@ -592,7 +595,7 @@ def parse_structure(
 ) -> Union[Structure, str]:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
-    CATSEP, FHI-aims) and converts it to a pymatgen Structure object.
+    CATSEP, FHI-aims) and converts it to a ``pymatgen`` ``Structure`` object.
 
     Args:
         code (:obj:`str`):
@@ -604,15 +607,16 @@ def parse_structure(
             Name of the structure file or the output file containing the
             optimized structure. If not set, the following values will be used
             for each code:
-            vasp: "CONTCAR",
-            cp2k: "cp2k.restart" (The restart file is used),
-            Quantum espresso: "espresso.out",
-            castep: "castep.castep" (castep output file is used)
-            fhi-aims: geometry.in.next_step
+
+            - ``VASP``: "CONTCAR",
+            - ``cp2k``: "cp2k.restart" (The restart file is used),
+            - ``Quantum Espresso``: "espresso.out",
+            - ``CASTEP``: "castep.castep" (castep output file is used)
+            - ``Fhi-AIMS``: "geometry.in.next_step"
 
     Returns:
         :obj:`Structure`:
-            `pymatgen` Structure object
+            ``pymatgen`` ``Structure`` object
     """
     if code.lower() == "vasp":
         if not structure_filename:

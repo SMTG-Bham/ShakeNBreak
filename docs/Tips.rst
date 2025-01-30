@@ -218,9 +218,14 @@ message about the origin of the problem, it is likely to be an issue with your v
   pip install pymatgen pymatgen-analysis-defects monty --upgrade
   pip install ShakeNBreak doped --upgrade
 
-If this does not solve your issue, please check the specific cases noted below. If your issue still isn't
-solved, then please contact the developers through the ``GitHub``
-`Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page.
+If this does not solve your issue, please check the specific cases noted below.
+The next recommended step is to search through the ``ShakeNBreak``
+`GitHub Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ (use the GitHub search bar on the top
+right) to see if your issue/question has been asked before. If your problem is still not solved, then
+please contact the developers through the
+`GitHub Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page.
+
+- For any issues relating to installation, please see the `Installation`_ page.
 
 - A current known issue with ``numpy``/``pymatgen`` is that it might give an error similar to this:
 
@@ -238,3 +243,6 @@ solved, then please contact the developers through the ``GitHub``
 
 
 Have any tips for users from using `ShakeNBreak`? Please share it with the developers and we'll add them here!
+
+
+.. _Installation: https://shakenbreak.readthedocs.io/en/latest/Installation.html
