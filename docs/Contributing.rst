@@ -50,6 +50,6 @@ Tests
 -------
 
 Unit tests are in the `tests <https://github.com/SMTG-Bham/ShakeNBreak/tree/main/tests>`_ directory
-and can be run from the top directory using ``unittest``. Automatic testing is run on the master and
-develop branches using `Github Actions <https://docs.github.com/en/actions>`_. Please
-run tests and add new tests for any new features whenever submitting pull requests.
+and can be run from the top directory using ``pytest`` or ``unittest``. Automatic testing is run upon
+pushes to all branches using `Github Actions <https://docs.github.com/en/actions>`_. Please run tests and
+add new tests for any new features whenever submitting pull requests.

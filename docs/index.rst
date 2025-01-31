@@ -99,31 +99,6 @@ which contains the ``POTCAR.X(.gz)`` files (in this case for PBE ``POTCARs``). P
 `doped Installation docs <https://doped.readthedocs.io/en/latest/Installation.html>`_ if you have
 difficulty with this.
 
-Developer installation
-------------------------
-
-For development work, ``ShakeNBreak`` can also be installed from a copy of the source directory:
-
-1. Download ``ShakeNBreak`` source code using the command:
-
-   .. code:: bash
-
-      git clone https://github.com/SMTG-Bham/ShakeNBreak
-
-2. Navigate to root directory:
-
-   .. code:: bash
-
-      cd ShakeNBreak
-
-3. Install the code, using the command:
-
-   .. code:: bash
-
-      pip install -e .
-
-   This command tries to obtain the required packages and their dependencies and install them automatically.
-
 Usage
 ========================
 
@@ -159,57 +134,6 @@ More information about each function and its inputs/outputs are available from t
 We recommend at least looking through the :ref:`Tutorials <tutorials>` when first starting to use ``ShakeNBreak``, to
 familiarise yourself with the full functionality and workflow.
 
-
-Code Compatibility
-========================
-
-:code:`ShakeNBreak` is built to natively function using :code:`pymatgen` :code:`Defect` objects (`docs available here <https://materialsproject.github.io/pymatgen-analysis-defects/>`_) and be compatible with the most recent version of :code:`pymatgen`. If you are receiving :code:`pymatgen`-related errors when using :code:`ShakeNBreak`, you may need to update :code:`pymatgen` and/or :code:`ShakeNBreak`, which can be done with:
-
-.. code:: bash
-
-   pip install --upgrade pymatgen shakenbreak
-
-
-:code:`ShakeNBreak` can take :code:`pymatgen` :code:`Defect` objects as input (to then generate the trial distorted
-structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects, :code:`doped` defect dictionaries or
-structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
-(such as `doped <https://doped.readthedocs.io>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
-`PyCDT <https://github.com/mbkumar/pycdt>`_, `PyLada <https://github.com/pylada/pylada-defects>`_,
-`DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
-`DefAP <https://github.com/DefAP/defap>`_, `PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
-Please let us know if you have any issues with compatibility, or if you would like to see any additional features added to :code:`ShakeNBreak` to make it more compatible with your code.
-
-Acknowledgements
-========================
-
-``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
-used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
-Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and
-Chris Savory.
-
-Contributing
-========================
-
-Bugs reports, feature requests and questions
-----------------------------------------------
-
-Please use the `Issue Tracker <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_
-to report bugs or request new features.
-
-Contributions to extend this package are very welcome! Please use the
-`"Fork and Pull" <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_
-workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
-
-See the `Contributing Documentation <https://shakenbreak.readthedocs.io/en/latest/Contributing.html>`_ for detailed instructions.
-
-Tests
-----------------------------------------------
-
-Unit tests are in the ``tests`` directory and can be run from the top directory using
-`unittest <https://docs.python.org/3/library/unittest.html>`_.
-Automatic testing is run on the master and develop branches using Github Actions. Please
-run tests and add new tests for any new features whenever submitting pull requests.
-
 Studies using ``ShakeNBreak``
 =============================
 
@@ -244,15 +168,12 @@ Studies using ``ShakeNBreak``
 - C\. J. Krajewska et al. **Enhanced visible light absorption in layered Cs₃Bi₂Br₉ through mixed-valence Sn(II)/Sn(IV) doping** `Chemical Science <https://doi.org/10.1039/D1SC03775G>`__ 2021 (Early version)
 - (News & Views): A. Mannodi-Kanakkithodi **The devil is in the defects** `Nature Physics <https://doi.org/10.1038/s41567-023-02049-9>`__ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
-.. Se
 .. Wenzhen paper
 .. Oba book
 .. BiOI
 .. Kumagai collab paper
-.. Lavan LiNiO2
 .. Sykes Magnetic oxide polarons
 .. Kat YTOS
-.. Squires (and mention benchmark test against AIRSS? See Slack message)
 
 License and Citation
 ========================
@@ -275,21 +196,56 @@ You may also find this Preview paper useful, which discusses the general problem
 .. _Identifying the Ground State Structures of Defects in Solids: https://www.nature.com/articles/s41524-023-00973-1
 .. _In Search of Hidden Defects: https://doi.org/10.1016/j.matt.2021.06.003
 
-
-Requirements
+Code Compatibility
 ========================
 
-``ShakeNBreak`` is compatible with Python 3.9 - 3.12 and requires the following open-source python packages:
+:code:`ShakeNBreak` is built to natively function using `doped <https://doped.readthedocs.io>`__ /
+`pymatgen <https://materialsproject.github.io/pymatgen-analysis-defects/>`__ ``Defect`` objects and be
+compatible with the most recent version of ``pymatgen``.
+If you are receiving ``pymatgen``-related errors when using ``ShakeNBreak``, you may need to update
+``pymatgen`` and/or ``ShakeNBreak``, which can be done with:
 
-* `Pymatgen <https://pymatgen.org/>`_
-* `Ase <https://wiki.fysik.dtu.dk/ase/>`_
-* `Hiphive <https://hiphive.materialsmodeling.org/>`_
-* `Numpy <https://numpy.org/>`_
-* `Matplotlib <https://matplotlib.org/>`_
-* `Pandas <https://pandas.pydata.org/>`_
-* `Seaborn <https://seaborn.pydata.org/>`_
-* `Monty <https://pythonhosted.org/monty/index.html>`_
-* `Click <https://click.palletsprojects.com/en/8.1.x/>`_
+.. code:: bash
+
+   pip install -U pymatgen shakenbreak
+
+
+``ShakeNBreak`` is compatible with a variety of inputs (to then generate the trial distorted structures),
+including `doped <https://doped.readthedocs.io>`__ /
+`pymatgen <https://materialsproject.github.io/pymatgen-analysis-defects/>`__ ``Defect`` objects,
+``pymatgen`` ``Structure`` objects or structure files (e.g. ``POSCAR``\s for ``VASP``).
+As such, it should be compatible with any defect code (such as `doped <https://doped.readthedocs.io>`_,
+`pydefect <https://github.com/kumagai-group/pydefect>`_, `PyCDT <https://github.com/mbkumar/pycdt>`_,
+`PyLada <https://github.com/pylada/pylada-defects>`_,
+`DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_,
+`Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_, `DefAP <https://github.com/DefAP/defap>`_,
+`PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
+Please let us know if you have any issues with compatibility, or if you would like to see any additional
+features added to :code:`ShakeNBreak` to make it more compatible with your code.
+
+Acknowledgements
+========================
+
+``ShakeNBreak`` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have
+used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
+Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and
+Chris Savory.
+
+Contributing
+========================
+
+Bugs reports, feature requests and questions
+----------------------------------------------
+
+Please use the `Issue Tracker <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_
+to report bugs or request new features.
+
+Contributions to extend this package are very welcome! Please use the
+`"Fork and Pull" <https://docs.github.com/en/get-started/quickstart/contributing-to-projects>`_
+workflow to do so and follow the `PEP8 <https://peps.python.org/pep-0008/>`_ style guidelines.
+
+See the `Contributing Documentation <https://shakenbreak.readthedocs.io/en/latest/Contributing.html>`_ for detailed instructions.
+
 
 .. toctree::
    :hidden:
