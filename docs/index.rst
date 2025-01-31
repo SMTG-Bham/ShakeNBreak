@@ -56,10 +56,12 @@ Code contributions to support additional solid-state packages are welcome!
 Literature
 ------------------------
 
-- Preview: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
-- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_, *npj Comput Mater* 9, 25, **2023**
-- News & Views: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023** (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
+- **Preview**: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
+- **Code**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
+- **Theory/Method**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `Identifying the Ground State Structures of Defects in Solids`_, *npj Comput Mater* 9, 25, **2023**
+- **News & Views**: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023** (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
+- **YouTube Overview (10 mins)**: `ShakeNBreak: Symmetry-Breaking and Reconstruction at Defects in Solids <https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh>`__
+- **YouTube Seminar (35 mins)**: `Seminar: Predicting the Atomic Structures of Defects <https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh>`__
 
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
@@ -131,8 +133,13 @@ The functions provided include:
 More information about each function and its inputs/outputs are available from the
 :ref:`CLI section of the docs <cli_commands>` or using ``-h`` help option (e.g. ``snb -h``).
 
-We recommend at least looking through the :ref:`Tutorials <tutorials>` when first starting to use ``ShakeNBreak``, to
-familiarise yourself with the full functionality and workflow.
+We recommend at least looking through the :ref:`Tutorials <tutorials>` when first starting to use
+``ShakeNBreak``, to familiarise yourself with the full functionality and workflow.
+You may also find the
+`YouTube Overview (10 mins) <https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh>`__,
+`YouTube Seminar (35 mins) <https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh>`__
+and/or papers listed in the :ref:`Literature <literature>` section useful.
+
 
 Studies using ``ShakeNBreak``
 =============================

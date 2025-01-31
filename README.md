@@ -25,10 +25,12 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 ![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
-- Preview: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
-- Code: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817), _Journal of Open Source Software_ 7 (80), 4817, **2022**
-- Theory/Method: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.1038/s41524-023-00973-1), _npj Comput Mater_ 9, 25 **2023**
-- News & Views: Mannodi-Kanakkithodi, A. [The Devil is in the Defects](https://doi.org/10.1038/s41567-023-02049-9), _Nature Physics_ **2023** ([Free-to-read link](https://t.co/EetpnRgjzh))
+- **Preview**: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
+- **Code**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817), _Journal of Open Source Software_ 7 (80), 4817, **2022**
+- **Theory/Method**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.1038/s41524-023-00973-1), _npj Comput Mater_ 9, 25 **2023**
+- **News & Views**: Mannodi-Kanakkithodi, A. [The Devil is in the Defects](https://doi.org/10.1038/s41567-023-02049-9), _Nature Physics_ **2023** ([Free-to-read link](https://t.co/EetpnRgjzh))
+- **YouTube Overview (10 mins)**: [ShakeNBreak: Symmetry-Breaking and Reconstruction at Defects in Solids](https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh)
+- **YouTube Seminar (35 mins)**: [Seminar: Predicting the Atomic Structures of Defects](https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh)
 
 ## Installation
 `ShakeNBreak` can be installed using `conda`:
@@ -75,6 +77,10 @@ The functions provided include:
 More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
 We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
+You may also find the 
+[YouTube Overview (10 mins)](https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh),
+[YouTube Seminar (35 mins)](https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh)
+and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
