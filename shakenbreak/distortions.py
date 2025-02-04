@@ -308,6 +308,7 @@ def apply_dimer_distortion(
     structure: Structure,
     site_index: Optional[int] = None,
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    dimer_bond_length: float = 2.0,
     verbose: Optional[bool] = False,
 ) -> dict:
     """
@@ -320,14 +321,17 @@ def apply_dimer_distortion(
     Args:
         structure (Structure):
             Defect structure.
-        site_index (Optional[int], optional):
+        site_index (Optional[int]):
             Index of defect site (for non vacancy defects).
             Defaults to None.
-        frac_coords (Optional[np.array], optional):
+        frac_coords (Optional[np.array]):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
             Defaults to None.
-        verbose (Optional[bool], optional):
+        dimer_bond_length (float):
+            The bond length to set the dimer to, in Å.
+            Defaults to 2.0.
+        verbose (Optional[bool]):
             Print information about the dimer distortion.
             Defaults to False.
 
@@ -353,9 +357,9 @@ def apply_dimer_distortion(
     site_indexes = tuple(
         sorted(min(distances, key=lambda k: (round(distances.get(k, 10), 2), k[0], k[1])))
     )
-    # Set their distance to 2 A
+    # Set their distance to dimer_bond_length Å
     input_structure_ase.set_distance(
-        a0=site_indexes[0], a1=site_indexes[1], distance=2.0, fix=0.5, mic=True
+        a0=site_indexes[0], a1=site_indexes[1], distance=dimer_bond_length, fix=0.5, mic=True
     )
     if type(frac_coords) in [list, tuple, np.ndarray]:
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
@@ -385,7 +389,7 @@ def apply_dimer_distortion(
             f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
             Dimer Distorted Neighbours: {distorted_atoms}
             Original Distance: {original_distance}
-            Distorted Neighbour Distances: {2.0}"""
+            Distorted Neighbour Distances: {dimer_bond_length:.2f} Å"""
         )
     return bond_distorted_defect
 
@@ -404,7 +408,7 @@ def rattle(
     seed: int = 42,
 ) -> Structure:
     """
-    Given a pymatgen Structure object, apply random displacements to all atomic
+    Given a ``pymatgen`` ``Structure`` object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
     distribution of standard deviation ``stdev``.
 
@@ -423,7 +427,8 @@ def rattle(
             Default is to set this to 80% of the nearest neighbour
             distance in the defect supercell.
         verbose (:obj:`bool`):
-            Whether to print information about the rattling process.
+            Whether to print information about the rattling process, if
+            rattling initially fails with initial ``d_min``.
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles to perform.
             (Default: 1)
@@ -500,39 +505,37 @@ def rattle(
         )[0]
 
     except Exception as ex:
-        if "attempts" in str(ex):
-            for i in range(1, 10):  # reduce d_min in 10% increments
-                reduced_d_min = d_min * float(1 - (i / 10))
-                try:
-                    rattled_ase_struct = generate_mc_rattled_structures(
-                        ase_struct,
-                        1,  # n_configs in hiphive <= 1.1, n_structures in hiphive >= 1.2
-                        rattle_std=stdev,
-                        d_min=reduced_d_min,
-                        n_iter=n_iter,
-                        active_atoms=active_atoms,
-                        nbr_cutoff=nbr_cutoff,
-                        width=width,
-                        max_attempts=max(max_attempts, 7000),  # default is 5000
-                        max_disp=max_disp,
-                        seed=seed,
-                    )[0]
-                    break
-                except Exception as ex:
-                    if "attempts" in str(ex):
-                        continue
-
-                    raise ex
-
-            if verbose:
-                warnings.warn(
-                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                    f"significantly smaller than this present), setting d_min to"
-                    f" {reduced_d_min:.2f} \u212B for this defect."
-                )
-
-        else:
+        if "attempts" not in str(ex):
             raise ex
+
+        for i in range(1, 10):  # reduce d_min in 10% increments
+            reduced_d_min = d_min * float(1 - (i / 10))
+            try:
+                rattled_ase_struct = generate_mc_rattled_structures(
+                    ase_struct,
+                    1,  # n_configs in hiphive <= 1.1, n_structures in hiphive >= 1.2
+                    rattle_std=stdev,
+                    d_min=reduced_d_min,
+                    n_iter=n_iter,
+                    active_atoms=active_atoms,
+                    nbr_cutoff=nbr_cutoff,
+                    width=width,
+                    max_attempts=max(max_attempts, 7000),  # default is 5000
+                    max_disp=max_disp,
+                    seed=seed,
+                )[0]
+                break
+            except Exception as ex:
+                if "attempts" in str(ex):
+                    continue
+
+                raise ex
+
+        if verbose:
+            warnings.warn(
+                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths significantly "
+                f"smaller than this present), setting d_min to {reduced_d_min:.2f} \u212B for this defect."
+            )
 
     return Structure.from_ase_atoms(rattled_ase_struct)
 
@@ -600,7 +603,7 @@ def _local_mc_rattle_displacements(
             r = r_min
         return disp * r_min / r
 
-    structure = Structure.from_ase_atoms(atoms)  # transform to pymatgen structure
+    structure = Structure.from_ase_atoms(atoms)  # transform to ``pymatgen`` ``Structure``
     dist_defect_to_nn = max(
         structure[site_index].distance(_["site"])
         for _ in MinimumDistanceNN().get_nn_info(structure, site_index)
@@ -756,7 +759,7 @@ def local_mc_rattle(
     seed: int = 42,
 ) -> Structure:
     """
-    Given a pymatgen Structure object, apply random displacements to all atomic
+    Given a ``pymatgen`` ``Structure`` object, apply random displacements to all atomic
     positions, with the displacement distances randomly drawn from a Gaussian
     distribution of standard deviation ``stdev``. The random displacements
     tail off as we move away from the defect site.
@@ -782,7 +785,8 @@ def local_mc_rattle(
             Default is to set this to 80% of the nearest neighbour
             distance in the defect supercell (ignoring interstitials).
         verbose (:obj:`bool`):
-            Whether to print out information about the rattling process.
+            Whether to print information about the rattling process, if
+            rattling initially fails with initial ``d_min``.
         n_iter (:obj:`int`):
             Number of Monte Carlo cycles to perform.
             (Default: 1)
@@ -810,7 +814,7 @@ def local_mc_rattle(
 
     Returns:
         :obj:`Structure`:
-            Rattled pymatgen Structure object
+            Rattled ``pymatgen`` ``Structure`` object
     """
     ase_struct = structure.to_ase_atoms()
     if active_atoms is not None:
