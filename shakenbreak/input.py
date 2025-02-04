@@ -1533,7 +1533,10 @@ def apply_snb_distortions(
 
         if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
             # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-            seed = int(distortion_factor * 100)
+            if isinstance(distortion_factor, str):  # Dimer distortion
+                seed = 0  # same as rattled
+            else:
+                seed = int(distortion_factor * 100)
 
         bond_distorted_defect = distort_and_rattle_defect_entry(
             defect_entry=defect_entry,
@@ -1906,21 +1909,19 @@ class Distortions:
         # Setup distortion parameters
         if bond_distortions:
             self.distortion_increment = None  # user specified
-            self.bond_distortions = []
+            self.bond_distortions = [round(i, 3) for i in bond_distortions if isinstance(i, (int, float))]
             #  bond_distortions, so no increment
             if "dimer" in [i.lower() for i in bond_distortions if isinstance(i, str)]:
                 self.bond_distortions.append("Dimer")
 
-            self.bond_distortions.extend(
-                list(np.around([i for i in bond_distortions if isinstance(i, (int, float))], 3))
-            )  # round to 3 dp
         else:
             # If the user does not specify bond_distortions, use
             # distortion_increment:
             self.distortion_increment = distortion_increment
             self.bond_distortions = list(
                 np.flip(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) * -1
-            )[:-1] + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3))
+            )[:-1] + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) + [
+                "Dimer (for vacancies)"]
 
         self._mc_rattle_kwargs = mc_rattle_kwargs
 
@@ -2065,6 +2066,26 @@ class Distortions:
             f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
         )
 
+    def _get_bond_distortions(
+            self,
+            defect_type: str,
+    ) -> list:
+        """
+        Get the bond distortions to apply for a given defect type.
+
+        If "Dimer (for vacancies)" is in the bond distortions, it will be
+        replaced with "Dimer" for vacancy defects, or just removed for
+        other defect types.
+        """
+        bond_distortions = self.bond_distortions.copy()
+        if "Dimer (for vacancies)" in bond_distortions:
+            bond_distortions.remove("Dimer (for vacancies)")
+            if defect_type == "vacancy":
+                bond_distortions.append("Dimer")
+
+        return bond_distortions
+
+
     def _update_distortion_metadata(
         self,
         distortion_metadata: dict,
@@ -2094,18 +2115,13 @@ class Distortions:
                         # state, in case posterior runs use different settings for certain defects
                         "distortion_increment": self.distortion_increment,  # None if user specified
                         # bond_distortions
-                        "bond_distortions": self.bond_distortions,
+                        "bond_distortions": self._get_bond_distortions(defect_type),
                         "local_rattle": self.local_rattle,
                         "mc_rattle_parameters": rattle_parameters,
                     },
                 }
             }
         )
-        # If vacancy, add "Dimer" to bond_distortions
-        if defect_type == "vacancy":
-            distortion_metadata["defects"][defect_name]["charges"][int(charge)]["distortion_parameters"][
-                "bond_distortions"
-            ] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
@@ -2331,6 +2347,7 @@ class Distortions:
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
                 defect_entry,
             )
+            defect_type = defect_entry.defect.defect_type.name.lower()
 
             for charge in distorted_defects_dict[defect_name][
                 "charges"
@@ -2345,7 +2362,7 @@ class Distortions:
                 defect_distorted_structures = apply_snb_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=num_nearest_neighbours,
-                    bond_distortions=self.bond_distortions,
+                    bond_distortions=self._get_bond_distortions(defect_type),
                     local_rattle=self.local_rattle,
                     stdev=self.stdev,
                     distorted_element=distorted_element,
@@ -2392,7 +2409,7 @@ class Distortions:
                     defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
-                    defect_type=defect_entry.defect.defect_type.name.lower(),
+                    defect_type=defect_type,
                 )
 
         return distorted_defects_dict, self.distortion_metadata

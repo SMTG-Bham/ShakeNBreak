@@ -844,15 +844,17 @@ class InputTestCase(unittest.TestCase):
                 bond_distortions=list(distortion_range) + ["Dimer"],
                 verbose=True,
             )
-            prev_struc = V_Cd_distorted_dict["Unperturbed"].sc_entry.structure
-            for distortion in distortion_range:
-                key = f"Bond_Distortion_{round(distortion,3)+0:.1%}"
-                self.assertIn(key, V_Cd_distorted_dict["distortions"])
-                self.assertNotEqual(prev_struc, V_Cd_distorted_dict["distortions"][key])
-                prev_struc = V_Cd_distorted_dict["distortions"][key]  # different structure for each
-                # distortion
-                mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
-            mock_print.assert_any_call("--Distortion Dimer")  # Check Dimer
+        print(mock_print.call_args_list)  # for debugging
+
+        prev_struc = V_Cd_distorted_dict["Unperturbed"].sc_entry.structure
+        for distortion in distortion_range:
+            key = f"Bond_Distortion_{round(distortion,3)+0:.1%}"
+            self.assertIn(key, V_Cd_distorted_dict["distortions"])
+            self.assertNotEqual(prev_struc, V_Cd_distorted_dict["distortions"][key])
+            prev_struc = V_Cd_distorted_dict["distortions"][key]  # different structure for each
+            # distortion
+            mock_print.assert_any_call(f"--Distortion {round(distortion,3)+0:.1%}")
+        mock_print.assert_any_call("--Distortion Dimer")  # Check Dimer
 
         # plus some hard-coded checks
         self.assertIn("Bond_Distortion_-60.0%", V_Cd_distorted_dict["distortions"])
@@ -1286,17 +1288,19 @@ class InputTestCase(unittest.TestCase):
         ]:
             with patch("builtins.print") as mock_print:
                 dist = input.Distortions(defect_list)
-                mock_print.assert_called_once_with(
-                    "Oxidation states were not explicitly set, thus have been guessed as "
-                    "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
-                    "oxidation_states"
-                )
-                self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
+            print(mock_print.call_args_list)  # for debugging
+            mock_print.assert_called_once_with(
+                "Oxidation states were not explicitly set, thus have been guessed as "
+                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "oxidation_states"
+            )
+            self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
 
         # Test all intrinsic defects.
         # Test that different names are given to symmetry inequivalent defects
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(self.cdte_defect_list)
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
@@ -1309,23 +1313,24 @@ class InputTestCase(unittest.TestCase):
             extrinsic_dist = input.Distortions(
                 self.CdTe_extrinsic_defect_list,
             )
-            self.assertDictEqual(
-                extrinsic_dist.oxidation_states,
-                {
-                    "Cd": 2.0,
-                    "Te": -2.0,
-                    "Zn": 2.0,
-                    "Mn": 2.0,
-                    "Al": 3.0,
-                    "Sb": 0.0,
-                    "Cl": -1,
-                },
-            )
-            mock_print.assert_called_once_with(
-                "Oxidation states were not explicitly set, thus have been guessed as "
-                "{'Cd': 2.0, 'Te': -2.0, 'Zn': 2.0, 'Mn': 2.0, 'Al': 3.0, 'Sb': 0.0, 'Cl': -1}. "
-                "If this is unreasonable you should manually set oxidation_states"
-            )
+        print(mock_print.call_args_list)  # for debugging
+        self.assertDictEqual(
+            extrinsic_dist.oxidation_states,
+            {
+                "Cd": 2.0,
+                "Te": -2.0,
+                "Zn": 2.0,
+                "Mn": 2.0,
+                "Al": 3.0,
+                "Sb": 0.0,
+                "Cl": -1,
+            },
+        )
+        mock_print.assert_called_once_with(
+            "Oxidation states were not explicitly set, thus have been guessed as "
+            "{'Cd': 2.0, 'Te': -2.0, 'Zn': 2.0, 'Mn': 2.0, 'Al': 3.0, 'Sb': 0.0, 'Cl': -1}. "
+            "If this is unreasonable you should manually set oxidation_states"
+        )
 
         # test only partial oxidation state specification and that (wrong) bulk oxidation states
         # are not overridden:
@@ -1334,23 +1339,24 @@ class InputTestCase(unittest.TestCase):
                 self.CdTe_extrinsic_defect_list,
                 oxidation_states={"Cd": 7, "Te": -20, "Zn": 1, "Mn": 9},
             )
-            self.assertDictEqual(
-                extrinsic_dist.oxidation_states,
-                {
-                    "Cd": 7.0,
-                    "Te": -20.0,
-                    "Zn": 1.0,
-                    "Mn": 9.0,
-                    "Al": 3.0,
-                    "Sb": 0.0,
-                    "Cl": -1,
-                },
-            )
-            mock_print.assert_called_once_with(
-                "Oxidation states for ['Al', 'Cl', 'Sb'] were not explicitly set, thus have been "
-                "guessed as {'Al': 3.0, 'Cl': -1, 'Sb': 0.0}. If this is unreasonable you should "
-                "manually set oxidation_states"
-            )
+        print(mock_print.call_args_list)  # for debugging
+        self.assertDictEqual(
+            extrinsic_dist.oxidation_states,
+            {
+                "Cd": 7.0,
+                "Te": -20.0,
+                "Zn": 1.0,
+                "Mn": 9.0,
+                "Al": 3.0,
+                "Sb": 0.0,
+                "Cl": -1,
+            },
+        )
+        mock_print.assert_called_once_with(
+            "Oxidation states for ['Al', 'Cl', 'Sb'] were not explicitly set, thus have been "
+            "guessed as {'Al': 3.0, 'Cl': -1, 'Sb': 0.0}. If this is unreasonable you should "
+            "manually set oxidation_states"
+        )
 
         # test no print statement when all oxidation states set
 
@@ -1359,7 +1365,8 @@ class InputTestCase(unittest.TestCase):
                 [copy.deepcopy(self.V_Cd_entry), copy.deepcopy(self.Int_Cd_2_entry)],
                 oxidation_states={"Cd": 2, "Te": -2},
             )
-            mock_print.assert_not_called()
+        print(mock_print.call_args_list)  # for debugging
+        mock_print.assert_not_called()
 
         # test extrinsic interstitial defect:
         fake_extrinsic_interstitial_subdict = self.cdte_doped_defect_dict["interstitials"][0].copy()
@@ -1390,6 +1397,7 @@ class InputTestCase(unittest.TestCase):
         ]
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(fake_extrinsic_interstitial_list)
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2.0, "
             "'Te': -2.0, 'Li': 1}. If this is unreasonable you should manually set "
@@ -1434,14 +1442,15 @@ class InputTestCase(unittest.TestCase):
                     defect_entry,
                 ]
             )
-            oxi_state_warning_message = (
-                "Oxidation states were not explicitly set, thus have been guessed as {'Cu': 0.0}. If "
-                "this is unreasonable you should manually set oxidation_states"
-            )
-            try:
-                mock_print.assert_called_once_with(oxi_state_warning_message)
-            except AssertionError:
-                mock_print.assert_any_call(oxi_state_warning_message.replace("0.0", "0"))
+        print(mock_print.call_args_list)  # for debugging
+        oxi_state_warning_message = (
+            "Oxidation states were not explicitly set, thus have been guessed as {'Cu': 0.0}. If "
+            "this is unreasonable you should manually set oxidation_states"
+        )
+        try:
+            mock_print.assert_called_once_with(oxi_state_warning_message)
+        except AssertionError:
+            mock_print.assert_any_call(oxi_state_warning_message.replace("0.0", "0"))
 
         self.assertEqual(dist.oxidation_states, {"Cu": 0})
         self.assertAlmostEqual(dist.stdev, 0.2529625487091717)
@@ -1481,10 +1490,11 @@ class InputTestCase(unittest.TestCase):
 
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(defect_entries)
-            mock_print.assert_called_once_with(
-                "Oxidation states were not explicitly set, thus have been guessed as "
-                "{'Cu': 0, 'Ag': 0}. If this is unreasonable you should manually set oxidation_states"
-            )
+        print(mock_print.call_args_list)  # for debugging
+        mock_print.assert_called_once_with(
+            "Oxidation states were not explicitly set, thus have been guessed as "
+            "{'Cu': 0, 'Ag': 0}. If this is unreasonable you should manually set oxidation_states"
+        )
 
         self.assertEqual(dist.oxidation_states, {"Cu": 0, "Ag": 0})
         self.assertAlmostEqual(dist.stdev, 0.2552655480083435)
@@ -1522,6 +1532,7 @@ class InputTestCase(unittest.TestCase):
                 _, distortion_metadata = dist.write_vasp_files(
                     user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
                 )
+        print(mock_print.call_args_list)  # for debugging
 
         # check if expected folders were created:
         self.assertTrue(set(self.cdte_defect_folders_old_names).issubset(set(os.listdir())))
@@ -1634,7 +1645,8 @@ class InputTestCase(unittest.TestCase):
         self.tearDown()
         with patch("builtins.print") as mock_print:
             dist.write_vasp_files(verbose=False)
-            mock_print.assert_not_called()
+        print(mock_print.call_args_list)  # for debugging
+        mock_print.assert_not_called()
 
         # Test `Rattled` folder not generated for non-fully-ionised defects,
         # and only `Rattled` and `Unperturbed` folders generated for fully-ionised defects
@@ -1748,7 +1760,7 @@ class InputTestCase(unittest.TestCase):
         kwarged_Int_Cd_2_dict = {
             "distortion_parameters": {
                 "distortion_increment": 0.25,
-                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5, "Dimer (for vacancies)"],
                 "local_rattle": False,
                 "mc_rattle_parameters": {"stdev": 0.25, "seed": 42},
             },
@@ -1813,8 +1825,7 @@ class InputTestCase(unittest.TestCase):
                                     0.45,
                                     0.5,
                                     0.55,
-                                    0.6,
-                                    "Dimer",  # now included by default
+                                    0.6,  # no Dimer because this was explicit distortions list
                                 ],
                                 "local_rattle": False,
                                 "mc_rattle_parameters": {
@@ -1880,18 +1891,24 @@ class InputTestCase(unittest.TestCase):
         for defect in metadata["defects"].values():
             defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
             # json converts integer keys to strings
+
+        np.testing.assert_equal(metadata["distortion_parameters"], kwarged_Int_Cd_2_dict["distortion_parameters"])
+
         for defect in kwarged_Int_Cd_2_dict["defects"]:
             for charge in kwarged_Int_Cd_2_dict["defects"][defect]["charges"]:
-                np.testing.assert_equal(
-                    metadata["defects"][defect]["charges"][charge],  # defect in distortion_defect_dict
-                    kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge],
+                species_metadata = metadata["defects"][defect]["charges"][charge]
+                species_kwarged_data = kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge]
+                print(f"Comparing:\n{species_metadata['distortion_parameters']} and:\n"
+                      f"{species_kwarged_data['distortion_parameters']}")
+                np.testing.assert_equal(  # defect in distortion_defect_dict
+                    species_metadata, species_kwarged_data,
                 )
 
         # check expected info printing:
         mock_Int_Cd_2_print.assert_any_call(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
-            "['-0.5', '-0.25', '0.0', '0.25', '0.5'].",
+            "['-0.5', '-0.25', '0.0', '0.25', '0.5', 'Dimer (for vacancies)'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
         mock_Int_Cd_2_print.assert_any_call("\033[1m" + "\nDefect: Int_Cd_2" + "\033[0m")
@@ -1903,7 +1920,7 @@ class InputTestCase(unittest.TestCase):
         )
         mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
         mock_Int_Cd_2_print.assert_any_call(
-            f"\tDefect Site Index / Frac Coords: 1\n"
+            "\tDefect Site Index / Frac Coords: 1\n"
             + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
             + "(2.71, 30, 'Cd'), (4.25, 2, 'Cd')]\n"
             + "            Distorted Neighbour Distances:\n\t[(1.36, 11, 'Cd'), (1.36, 23, 'Cd'), "
@@ -1917,8 +1934,6 @@ class InputTestCase(unittest.TestCase):
         )  # no duplicates
         kpoints = Kpoints.from_file("Int_Cd_2_+1/Unperturbed/KPOINTS")
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
-
-        # TODO: Should explicitly test V_Cd dimer somewhere here
 
         if _potcars_available():
             int_Cd_2_INCAR = Incar.from_file("Int_Cd_2_+1/Unperturbed/INCAR")
@@ -2036,15 +2051,38 @@ class InputTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_print:
             dist.write_vasp_files()
-            # check expected info printing:
-            mock_print.assert_any_call(
-                "Applying ShakeNBreak...",
-                "Will apply the following bond distortions:",
-                "['Dimer'].",
-                "Then, will rattle with a std dev of 0.25 Å \n",
-            )
+        print(mock_print.call_args_list)  # for debugging
+        # check expected info printing:
+        mock_print.assert_any_call(
+            "Applying ShakeNBreak...",
+            "Will apply the following bond distortions:",
+            "['Dimer (for vacancies)'].",
+            "Then, will rattle with a std dev of 0.25 Å \n",
+        )
         V_Cd_dimer_POSCAR = Structure.from_file("v_Cd_Td_Te2.83_0/Dimer/POSCAR")
         self.assertEqual(V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled)
+        
+        # test default generation of Dimer:
+        self.tearDown()
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            seed=42,
+            stdev=0.25,
+            d_min=d_min,
+        )
+        dist.write_vasp_files()
+        V_Cd_dimer_POSCAR = Structure.from_file("v_Cd_Td_Te2.83_0/Dimer/POSCAR")
+        self.assertEqual(V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled)
+
+        # test no dimer generation with explicit distortions list
+        self.tearDown()
+        dist = input.Distortions(
+            defect_entries=[self.V_Cd_entry_neutral],
+            bond_distortions=[-0.5, 0.5],
+        )
+        dist.write_vasp_files()
+        self.assertFalse(os.path.exists("v_Cd_Td_Te2.83_0/Dimer"))
+        self.assertTrue(os.path.exists("v_Cd_Td_Te2.83_0/Bond_Distortion_-50.0%"))
 
     def test_write_vasp_files_from_doped_defect_gen(self):
         """Test Distortions() class with (new) doped DefectsGenerator input"""
@@ -2056,6 +2094,7 @@ class InputTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_print:
             with warnings.catch_warnings(record=True) as w:
                 _, distortion_metadata = dist.write_vasp_files(user_incar_settings={"IVDW": 12})
+        print(mock_print.call_args_list)  # for debugging
 
         # check if expected folders were created:
         for key in self.cdte_doped_reduced_defect_gen.keys():
@@ -2072,7 +2111,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
-            "'0.6'].",
+            "'0.6', 'Dimer (for vacancies)'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
         mock_print.assert_any_call("\033[1m" + "\nDefect: v_Cd" + "\033[0m")  # bold print
@@ -2164,8 +2203,7 @@ class InputTestCase(unittest.TestCase):
                 "Unperturbed",
                 "Bond_Distortion_-50.0%",
                 "Bond_Distortion_20.0%",
-            ]  # just
-            # check sub-sample
+            ]  # just check sub-sample
 
         for i in folder_list:
             self.assertTrue(os.path.exists(f"{folder_name}/{i}"))
@@ -2180,7 +2218,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
-            "'0.6'].",
+            "'0.6', 'Dimer (for vacancies)'].",
             "Then, will rattle with a std dev of 0.29 Å \n",
         )
         defect_wout_charge = folder_name.rsplit("_", 1)[0]
@@ -2233,6 +2271,7 @@ class InputTestCase(unittest.TestCase):
                     user_incar_settings={"IVDW": 12},
                     verbose=True,
                 )
+        print(mock_print.call_args_list)  # for debugging
 
         self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w)
 
@@ -2251,6 +2290,7 @@ class InputTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_print:
             with warnings.catch_warnings(record=True) as w:
                 _, distortion_metadata = dist.write_vasp_files()
+        print(mock_print.call_args_list)  # for debugging
 
         self._check_agsbte2_files("Ag_Sb_-2", mock_print, w)
 
@@ -2280,6 +2320,7 @@ class InputTestCase(unittest.TestCase):
                     user_incar_settings={"IVDW": 12},
                     verbose=True,
                 )
+        print(mock_print.call_args_list)  # for debugging
 
         self._check_agsbte2_files(self.Ag_Sb_AgSbTe2_m2_defect_entry.name, mock_print, w, charge_state=-2)
         self._check_agsbte2_files(Ag_Sb_AgSbTe2_neutral_defect_entry.name, mock_print, w, charge_state=0)
@@ -2303,6 +2344,7 @@ class InputTestCase(unittest.TestCase):
                     user_incar_settings={"IVDW": 12},
                     verbose=True,
                 )
+        print(mock_print.call_args_list)  # for debugging
 
         # reset to doped names:
         self._check_agsbte2_files("Ag_Sb_-2", mock_print, w, charge_state=-2)
@@ -2331,6 +2373,7 @@ class InputTestCase(unittest.TestCase):
                     user_incar_settings={"IVDW": 12},
                     verbose=True,
                 )
+        print(mock_print.call_args_list)  # for debugging
 
         self.assertEqual(
             len([warning for warning in w if "reviously-generated" in str(warning.message)]),
@@ -2375,6 +2418,7 @@ class InputTestCase(unittest.TestCase):
         }
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(vacancies)
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
@@ -2416,6 +2460,7 @@ class InputTestCase(unittest.TestCase):
                 stdev=0.25,
             )
             dist_defects_dict, dist_metadata = dist.write_vasp_files()
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -2428,8 +2473,19 @@ class InputTestCase(unittest.TestCase):
         )
         mock_print.assert_any_call("\033[1m" + "\nDefect: vac_2_Te" + "\033[0m")  # bold print
         mock_print.assert_any_call("\033[1m" + "Number of extra electrons in neutral state: 2" + "\033[0m")
-        vacancies_dist_metadata = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
+
         doped_dict_metadata = loadfn("distortion_metadata.json")
+        # # to update test files:
+        # dist_metadata = copy.deepcopy(doped_dict_metadata)
+        # for defect_name in ["vac_1_Cd", "vac_2_Te"]:
+        #     snb_name = list(self.new_full_names_old_names_CdTe.keys())[
+        #         list(self.new_full_names_old_names_CdTe.values()).index(defect_name)
+        #     ]
+        #     dist_metadata["defects"][snb_name] = doped_dict_metadata["defects"][defect_name]
+        #     dist_metadata["defects"].pop(defect_name)
+        # dumpfn(dist_metadata, f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
+
+        vacancies_dist_metadata = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
         self.assertNotEqual(doped_dict_metadata, vacancies_dist_metadata)  # new vs old names
         self.assertDictEqual(
             doped_dict_metadata["distortion_parameters"],
@@ -2478,6 +2534,7 @@ class InputTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_print:
             dist = input.Distortions(self.cdte_defect_list)
             dist.write_vasp_files()
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
             "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
@@ -2506,7 +2563,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', "
-            "'0.5', '0.6'].",
+            "'0.5', '0.6', 'Dimer (for vacancies)'].",
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call(
@@ -2601,6 +2658,7 @@ class InputTestCase(unittest.TestCase):
                 stdev=0.25,
             )
             dist_defects_dict, dist_metadata = dist.write_vasp_files()
+        print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -2616,6 +2674,7 @@ class InputTestCase(unittest.TestCase):
         for defect_name in ["v_Cd_Td_Te2.83", "v_Te_Td_Cd2.83"]:
             self.assertTrue(os.path.exists(f"{defect_name}_0/Bond_Distortion_-30.0%/POSCAR"))
             self.assertFalse(os.path.exists(f"{defect_name}_+1"))
+
         metadata = loadfn(f"{self.VASP_CDTE_DATA_DIR}/vacancies_dist_metadata.json")
         self.assertDictEqual(loadfn("distortion_metadata.json"), metadata)
         dumpfn(dist_defects_dict, "distorted_defects_dict.json")
@@ -3033,6 +3092,8 @@ class InputTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
+        print(mock_print.call_args_list)  # for debugging
+
         # Check structure
         gen_struct = defects_dict["Int_Cd_2"]["charges"][0]["structures"]["distortions"][
             "Bond_Distortion_-60.0%"
@@ -3269,6 +3330,7 @@ class InputTestCase(unittest.TestCase):
         self.assertTrue(dist.local_rattle)
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
+        print(mock_print.call_args_list)  # for debugging
         # test distortion info printing with auto-determined `stdev`
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
@@ -3310,6 +3372,8 @@ class InputTestCase(unittest.TestCase):
         )
         with patch("builtins.print") as mock_print:
             defects_dict, metadata_dict = dist.apply_distortions()
+        print(mock_print.call_args_list)  # for debugging
+
         # test distortion info printing with auto-determined `stdev`
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
@@ -3390,7 +3454,9 @@ class InputTestCase(unittest.TestCase):
         )
 
     def test_from_structures(self):
-        """Test from_structures() method of Distortion() class.
+        """
+        Test from_structures() method of Distortion() class.
+
         Implicitly, this also tests the functionality of `input.identify_defect()`
         """
         # Test normal behaviour (no defect_index or defect_coords), with `defect_entries` as a single
@@ -3398,6 +3464,7 @@ class InputTestCase(unittest.TestCase):
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures(self.V_Cd_struc, self.CdTe_bulk_struc)
             dist.write_vasp_files()
+        print(mock_print.call_args_list)  # for debugging
         for charge in [0, -1, -2]:
             self.assertEqual(
                 [i.defect for i in dist.defects_dict["v_Cd_Td_Te2.83"] if i.charge_state == charge][0],
@@ -3409,7 +3476,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', "
-            "'0.5', '0.6'].",
+            "'0.5', '0.6', 'Dimer (for vacancies)'].",
             "Then, will rattle with a std dev of 0.28 Å \n",  # default stdev
         )
         mock_print.assert_any_call("\033[1m" + "\nDefect: v_Cd_Td_Te2.83" + "\033[0m")  # bold print
@@ -3493,6 +3560,7 @@ class InputTestCase(unittest.TestCase):
                 ],
                 bulk=self.cdte_doped_defect_dict["bulk"]["supercell"]["structure"],
             )
+        print(mock_print.call_args_list)  # for debugging
         # mock_print.assert_any_call(
         #     "Defect charge states will be set to the range: 0 - {Defect "
         #     "oxidation state}, with a `padding = 1` on either side of this "
@@ -3515,6 +3583,7 @@ class InputTestCase(unittest.TestCase):
         # Test defect position given with `defect_index`
         with patch("builtins.print") as mock_print:
             dist = input.Distortions.from_structures([(self.V_Cd_struc, 0)], bulk=self.CdTe_bulk_struc)
+        print(mock_print.call_args_list)  # for debugging
         # self.assertDictEqual(
         #     dist.defects_dict, {"v_Cd": self.cdte_defects["vac_1_Cd"]}
         # )
@@ -3542,6 +3611,7 @@ class InputTestCase(unittest.TestCase):
                 ],
                 bulk=self.CdTe_bulk_struc,
             )
+        print(mock_print.call_args_list)  # for debugging
         self.assertEqual(dist.defects_dict["Cd_i_C3v_Cd2.71"][0].defect.defect_site_index, 0)
         self.assertEqual(
             list(dist.defects_dict["Cd_i_C3v_Cd2.71"][0].defect.defect_structure[0].frac_coords),
