@@ -268,7 +268,7 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
 def analyse_defect_site(
     structure: Structure,
     name: Optional[str] = None,
-    site_num: Optional[int] = None,
+    site_index: Optional[int] = None,
     vac_site: Optional[list] = None,
 ) -> tuple:
     r"""
@@ -280,9 +280,10 @@ def analyse_defect_site(
             ``pymatgen`` Structure object to analyse
         name (:obj:`str`):
             Defect name for printing. (Default: None)
-        site_num (:obj:`int`):
-            Defect site index in the structure, starting from 1 (VASP
-            rather than python indexing). (Default: None)
+        site_index (:obj:`int`):
+            Defect site index in the structure, using ``python`` /
+            ``pymatgen`` 0-indexing.
+            (Default: None)
         vac_site (:obj:`list`):
             For vacancies, the fractional coordinates of the vacant
             lattice site.
@@ -295,19 +296,17 @@ def analyse_defect_site(
     """
     # get defect site
     struct = deepcopy(structure)
-    if site_num:
-        isite = site_num - 1  # python/pymatgen indexing (starts counting from zero!)
-    elif vac_site:
+    if vac_site:
         struct.append("V", vac_site)  # Have to add a fake element for coordination analysis
-        isite = len(struct.sites) - 1  # python/pymatgen indexing (starts counting from zero!)
-    else:
-        raise ValueError("Either site_num or vac_site must be specified")
+        site_index = -1  # python/pymatgen indexing
+    elif site_index is None:
+        raise ValueError("Either site_index or vac_site must be specified")
 
     if name is not None:
         from shakenbreak.input import bold_print
         bold_print(name + " structural analysis ")
-    print("Analysing site", struct[isite].specie, struct[isite].frac_coords)
-    coordination = crystalNN.get_local_order_parameters(struct, isite)
+    print("Analysing site", struct[site_index].specie, struct[site_index].frac_coords)
+    coordination = crystalNN.get_local_order_parameters(struct, site_index)
     if coordination is not None:
         coord_list = []
         for coord, value in coordination.items():
@@ -319,9 +318,9 @@ def analyse_defect_site(
     bond_lengths = [
         {
             "Element": i["site"].specie.as_dict()["element"],
-            "Distance (\u212B)": f"{i['site'].distance(struct[isite]):.2f}",
+            "Distance (\u212B)": f"{i['site'].distance(struct[site_index]):.2f}",
         }
-        for i in crystalNN.get_nn_info(struct, isite)
+        for i in crystalNN.get_nn_info(struct, site_index)
     ]
     bond_length_df = pd.DataFrame(bond_lengths)
     print("\nBond-lengths (in \u212B) to nearest neighbours: ")
@@ -377,7 +376,7 @@ def analyse_structure(
     if defect_site is None:  # for vacancies, get fractional coordinates
         defect_frac_coords = distortion_metadata["defects"][defect_name_without_charge]["unique_site"]
         return analyse_defect_site(structure, name=defect_species, vac_site=defect_frac_coords)
-    return analyse_defect_site(structure, name=defect_species, site_num=defect_site)
+    return analyse_defect_site(structure, name=defect_species, site_index=defect_site)
 
 
 def get_structures(

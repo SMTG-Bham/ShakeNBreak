@@ -1323,7 +1323,9 @@ def distort_and_rattle_defect_entry(
             to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of the atomic indices which should undergo bond distortions.
+            List of atomic indices which should undergo bond distortions,
+            using 0-indexing (i.e. python / ``pymatgen`` indexing). If None,
+            the closest neighbours to the defect will be chosen.
             (Default: None)
         oxidation_states (:obj:`dict`):
             Dictionary with oxidation states of the atoms in the material (e.g.
@@ -1381,9 +1383,7 @@ def distort_and_rattle_defect_entry(
             **mc_rattle_kwargs,
         )
 
-    # .distort() assumes VASP indexing (starting at 1)
-    # indexing in defect_object matches defect_structure
-    defect_site_index = defect_object.defect_site_index + 1
+    defect_site_index = defect_object.defect_site_index  # defect_object indexing matches defect_structure
 
     if defect_site_index is None:
         raise ValueError("Defect lacks defect_site_index!")
@@ -1392,7 +1392,7 @@ def distort_and_rattle_defect_entry(
         structure=defect_structure,
         num_nearest_neighbours=num_nearest_neighbours,
         distortion_factor=distortion_factor,
-        site_index=defect_site_index,  # site index rather than frac_coords now
+        site_index=defect_site_index,  # site index rather than frac_coords now; 0-indexing
         stdev=stdev,
         d_min=d_min,
         distorted_element=distorted_element,
@@ -1472,8 +1472,9 @@ def apply_snb_distortions(
             to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of the atomic indices which should undergo bond distortions.
-            If None, the closest neighbours to the defect will be chosen.
+            List of atomic indices which should undergo bond distortions,
+            using 0-indexing (i.e. python / ``pymatgen`` indexing). If None,
+            the closest neighbours to the defect will be chosen.
             (Default: None)
         oxidation_states (:obj:`dict`):
             Dictionary with oxidation states of the atoms in the material (e.g.
@@ -1568,7 +1569,8 @@ def apply_snb_distortions(
                     "distorted_atoms": bond_distorted_defect["distorted_atoms"],
                 }
             )
-        if bond_distorted_defect.get("defect_site_index"):  # only add site index if not vacancy
+
+        if "defect_site_index" in bond_distorted_defect:  # only add site index if not vacancy
             distorted_defect_dict["distortion_parameters"]["defect_site_index"] = bond_distorted_defect[
                 "defect_site_index"
             ]
@@ -1685,12 +1687,13 @@ class Distortions:
                 the defect are chosen.
                 (Default: None)
             distorted_atoms (:obj:`list`):
-                Optional argument to specify the indices of the
-                neighbouring atoms to distort (indices starting from 0)
-                for each defect, in the form of a dictionary with
-                format {'defect_name': [index_1, index_2, ...]}
-                (e.g {'vac_1_Cd': [0, 2]}).
-                If None, the closest neighbours to the defect are chosen.
+                Optional argument to specify the indices of the neighbouring
+                atoms to distort for each defect (with indices starting from 0,
+                matching python / ``pymatgen`` 0-indexing) for each defect, in
+                the form of a dictionary with format:
+                ``{'defect_name': [index_1, index_2, ...]}`` (e.g
+                ``{'vac_1_Cd': [0, 2]}``).
+                If None (default), the closest neighbours to the defect are chosen.
             **mc_rattle_kwargs (:obj:`dict`):
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
@@ -2100,10 +2103,8 @@ class Distortions:
         Update distortion_metadata with distortion information for each
         charged defect.
         """
-        if defect_site_index:
-            distortion_metadata["defects"][defect_name][
-                "defect_site_index"
-            ] = defect_site_index  # store site index of defect if not vacancy
+        if defect_site_index:  # store site index of defect if not vacancy
+            distortion_metadata["defects"][defect_name]["defect_site_index"] = defect_site_index
         rattle_parameters = self._mc_rattle_kwargs.copy()
         rattle_parameters["stdev"] = self.stdev
         distortion_metadata["defects"][defect_name]["charges"].update(
@@ -3070,9 +3071,11 @@ class Distortions:
                 the defect are chosen.
                 (Default: None)
             distorted_atoms (:obj:`list`):
-                Optional argument to specify the neighbouring atoms to distort
-                for each defect, in the form of a dictionary with format
-                {'defect_name': [atom1, atom2, ...]} (e.g {'vac_1_Cd': [0, 1]}).
+                Optional argument to specify the indices of the neighbouring atoms
+                to distort for each defect (with indices starting from 0, matching
+                python / ``pymatgen`` 0-indexing), in the form of a dictionary with
+                format: ``{'defect_name': [atom1, atom2, ...]}`` (e.g
+                ``{'vac_1_Cd': [0, 1]}``).
                 If None, the closest neighbours to the defect are chosen.
                 (Default: None)
             **mc_rattle_kwargs (:obj:`dict`):

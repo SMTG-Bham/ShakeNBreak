@@ -21,7 +21,7 @@ warnings.formatwarning = _warning_on_one_line
 
 def _get_ase_defect_structure(
     structure: Structure,
-    site_index: Optional[int] = None,  # starting from 1
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
 ):
     """
@@ -44,7 +44,7 @@ def _get_ase_defect_structure(
             Defect structure as a pymatgen object
         site_index (:obj:`int`, optional):
             Index of defect site in structure (for substitutions or
-            interstitials), counting from 1.
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
         frac_coords (:obj:`numpy.ndarray`, optional):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
@@ -59,24 +59,25 @@ def _get_ase_defect_structure(
     input_structure_ase = structure.to_ase_atoms()
 
     if site_index is not None:  # site_index can be 0
-        defect_site_index = site_index - 1  # Align atom number with python 0-indexing
-    elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
+        return input_structure_ase, site_index
+
+    if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy, for consistent behaviour with subs/ints
         input_structure_ase.positions[-1] = np.dot(frac_coords, input_structure_ase.cell)
-        defect_site_index = len(input_structure_ase) - 1
+        site_index = -1
     else:
         raise ValueError(
             "Insufficient information to apply bond distortions, no `site_index` or `frac_coords` "
             "provided."
         )
 
-    return input_structure_ase, defect_site_index
+    return input_structure_ase, site_index
 
 
 def _get_nns_to_distort(
     structure: Structure,
     num_nearest_neighbours: int,
-    site_index: Optional[int] = None,  # starting from 1
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     distorted_element: Optional[Union[str, list]] = None,
     distorted_atoms: Optional[list] = None,
@@ -96,7 +97,7 @@ def _get_nns_to_distort(
     Returns a tuple of:
 
     - a list of the nearest neighbours to distort in the form of a list of tuples
-      containing the distance to the defect site, the site index (1-indexed), and the
+      containing the distance to the defect site, the site index (0-indexed), and the
       element symbol
     - the defect site index (0-indexed)
     - the ASE Atoms object of the input structure, with the defect site appended as
@@ -110,7 +111,7 @@ def _get_nns_to_distort(
             Number of defect nearest neighbours to apply bond distortions to
         site_index (:obj:`int`, optional):
             Index of defect site in structure (for substitutions or
-            interstitials), counting from 1.
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
         frac_coords (:obj:`numpy.ndarray`, optional):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
@@ -119,13 +120,14 @@ def _get_nns_to_distort(
             If None, the closest neighbours to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of atom indices to distort. If None, the closest neighbours to
-            the defect will be chosen. (Default: None)
+            List of atom indices to distort, using 0-indexing (i.e. python /
+            pymatgen indexing). If None, the closest neighbours to the defect
+            will be chosen. (Default: None)
 
     Returns:
         :obj:`tuple`:
             - a list of the nearest neighbours to distort in the form of a list of tuples
-                containing the distance to the defect site, the site index (1-indexed), and the
+                containing the distance to the defect site, the site index (0-indexed), and the
                 element symbol
             - the defect site index (0-indexed)
             - the ASE Atoms object of the input structure, with the defect site appended as
@@ -164,11 +166,12 @@ def _get_nns_to_distort(
         [
             (
                 input_structure_ase.get_distance(defect_site_index, index, mic=True),
-                index + 1,
+                index,  # 0-indexing (ASE/pymatgen)
                 input_structure_ase.get_chemical_symbols()[index],
             )
             for index in distorted_atoms
-            if index != defect_site_index  # ignore defect itself
+            if index not in [defect_site_index, len(input_structure_ase)+defect_site_index]  # in case -1
+            # ignore defect itself
         ],
         key=lambda tup: (round(tup[0], 2), tup[1]),  # sort by distance (to 2 dp), then by index
     )
@@ -195,7 +198,7 @@ def _get_nns_to_distort(
             nearest_neighbours,
             key=lambda tup: (
                 round(tup[0], 2),
-                round(input_structure_ase.get_distance(nearest_neighbour[1] - 1, tup[1] - 1, mic=True), 2),
+                round(input_structure_ase.get_distance(nearest_neighbour[1], tup[1], mic=True), 2),
                 tup[1],
             ),
         )
@@ -209,7 +212,7 @@ def distort(
     structure: Structure,
     num_nearest_neighbours: int,
     distortion_factor: float,
-    site_index: Optional[int] = None,  # starting from 1
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     distorted_element: Optional[Union[str, list]] = None,
     distorted_atoms: Optional[list] = None,
@@ -239,7 +242,7 @@ def distort(
             and 1.6 (+60%).
         site_index (:obj:`int`, optional):
             Index of defect site in structure (for substitutions or
-            interstitials), counting from 1.
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
         frac_coords (:obj:`numpy.ndarray`, optional):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
@@ -248,8 +251,9 @@ def distort(
             If None, the closest neighbours to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of atom indices to distort. If None, the closest neighbours to
-            the defect will be chosen. (Default: None)
+            List of atom indices to distort, using 0-indexing (i.e. python /
+            pymatgen indexing). If None, the closest neighbours to the defect
+            will be chosen. (Default: None)
         verbose (:obj:`bool`, optional):
             Whether to print distortion information. (Default: False)
 
@@ -257,28 +261,31 @@ def distort(
         :obj:`dict`:
             Dictionary with distorted defect structure and the distortion parameters.
     """
+    if frac_coords is not None and not isinstance(frac_coords, np.ndarray):
+        frac_coords = np.array(frac_coords)
+
     nns_to_distort, defect_site_index, input_structure_ase = _get_nns_to_distort(
         structure,
         num_nearest_neighbours,
-        site_index,
+        site_index,  # 0-indexed
         frac_coords,
         distorted_element,
-        distorted_atoms,
+        distorted_atoms,  # 0-indexed
     )
 
-    distorted = [
+    distorted = [  # Note: i[1] in nns_to_distort is 0-indexed, matching ASE/pymatgen etc
         (i[0] * distortion_factor, i[1], i[2]) for i in nns_to_distort
     ]  # Distort the nearest neighbour distances according to the distortion factor
     for i in distorted:
         input_structure_ase.set_distance(
-            defect_site_index, i[1] - 1, i[0], fix=0, mic=True
+            defect_site_index, i[1], i[0], fix=0, mic=True
         )  # Set the distorted distances in the ASE Atoms object
 
     if isinstance(frac_coords, np.ndarray):
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
     distorted_structure = Structure.from_ase_atoms(input_structure_ase)
-    distorted_atoms = [[i[1], i[2]] for i in nns_to_distort]  # element and site number
+    distorted_atoms = [[i[1], i[2]] for i in nns_to_distort]  # site number and element; 0-indexed
 
     # Create dictionary with distortion info & distorted structure
     bond_distorted_defect = {
@@ -287,7 +294,7 @@ def distort(
         "distorted_atoms": distorted_atoms,
         "undistorted_structure": structure,
     }
-    if site_index:
+    if site_index is not None:  # site_index can be 0
         bond_distorted_defect["defect_site_index"] = site_index
     elif isinstance(frac_coords, np.ndarray):
         bond_distorted_defect["defect_frac_coords"] = frac_coords
@@ -295,8 +302,10 @@ def distort(
     if verbose:
         distorted_info = [(round(i[0], 2), i[1], i[2]) for i in distorted]
         nearest_info = [(round(i[0], 2), i[1], i[2]) for i in nns_to_distort]  # round numbers
+        site_index_or_frac_coords = site_index if site_index is not None else np.around(frac_coords,
+                                                                                    decimals=3)
         print(
-            f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
+            f"""\tDefect Site Index / Frac Coords: {site_index_or_frac_coords}
             Original Neighbour Distances: {nearest_info}
             Distorted Neighbour Distances:\n\t{distorted_info}"""
         )
@@ -306,7 +315,7 @@ def distort(
 
 def apply_dimer_distortion(
     structure: Structure,
-    site_index: Optional[int] = None,
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     dimer_bond_length: float = 2.0,
     verbose: Optional[bool] = False,
@@ -323,7 +332,8 @@ def apply_dimer_distortion(
         structure (Structure):
             Defect structure.
         site_index (Optional[int]):
-            Index of defect site (for non vacancy defects).
+            Index of defect site (for non vacancy defects), using ``python``
+            / ``pymatgen`` 0-indexing.
             Defaults to None.
         frac_coords (Optional[np.array]):
             Fractional coordinates of the defect site in the structure (for
@@ -340,13 +350,19 @@ def apply_dimer_distortion(
         obj:`Structure`:
             Distorted dimer structure
     """
+    if frac_coords is not None and not isinstance(frac_coords, np.ndarray):
+        frac_coords = np.array(frac_coords)
+
     # Note: Future work could extend this to allow the use of ``distorted_element`` and ``distorted_atoms``
     input_structure_ase, defect_site_index = _get_ase_defect_structure(structure, site_index, frac_coords)
 
     # Get defect nn
     input_structure = Structure.from_ase_atoms(input_structure_ase)
-    cnn = CrystalNN()
-    sites = [d["site"] for d in cnn.get_nn_info(input_structure, defect_site_index)]
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="No oxidation states")
+        warnings.filterwarnings("ignore", message="CrystalNN")
+        cnn = CrystalNN()
+        sites = [d["site"] for d in cnn.get_nn_info(input_structure, defect_site_index)]
 
     # Get distances between NN
     distances = {}
@@ -380,7 +396,7 @@ def apply_dimer_distortion(
         "distorted_atoms": distorted_atoms,
         "undistorted_structure": structure,
     }
-    if site_index:
+    if site_index is not None:  # site_index can be 0
         bond_distorted_defect["defect_site_index"] = site_index
     elif type(frac_coords) in [np.ndarray, list]:
         bond_distorted_defect["defect_frac_coords"] = frac_coords
@@ -544,9 +560,9 @@ def rattle(
 
 def distort_and_rattle(
     structure: Structure,
-    num_nearest_neighbours: int,
     distortion_factor: Union[float, str],
-    site_index: Optional[int] = None,  # starting from 1
+    num_nearest_neighbours: int = 0,
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     local_rattle: bool = False,
     stdev: Optional[float] = None,
@@ -584,12 +600,19 @@ def distort_and_rattle(
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure as a ``pymatgen`` ``Structure`` object.
-        num_nearest_neighbours (:obj:`int`):
-            Number of defect nearest neighbours to apply bond distortions to.
         distortion_factor (:obj:`float`):
             The distortion factor or distortion name ("Dimer") to apply
             to the bond distance between the defect and nearest neighbours.
             Typical choice is between 0.4 (-60%) and 1.6 (+60%).
+        num_nearest_neighbours (:obj:`int`):
+            Number of defect nearest neighbours to apply bond distortions to.
+            Default is 0.
+        site_index (:obj:`int`, optional):
+            Index of defect site in structure (for substitutions or
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
+        frac_coords (:obj:`numpy.ndarray`, optional):
+            Fractional coordinates of the defect site in the structure (for
+            vacancies).
         local_rattle (:obj:`bool`):
             Whether to apply random displacements that tail off as we move
             away from the defect site. If False, all supercell sites are
@@ -615,11 +638,9 @@ def distort_and_rattle(
             to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of the atomic indices which should undergo bond distortions.
-            (Default: None)
-        oxidation_states (:obj:`dict`):
-            Dictionary with oxidation states of the atoms in the material (e.g.
-            {"Cd": +2, "Te": -2}).
+            List of atom indices which can undergo bond distortions, using
+            0-indexing (i.e. python / pymatgen indexing). If None, the closest
+            neighbours to the defect will be chosen. (Default: None)
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
@@ -646,6 +667,9 @@ def distort_and_rattle(
             Dictionary with distorted defect structure and the distortion
             parameters.
     """
+    if frac_coords is not None and not isinstance(frac_coords, np.ndarray):
+        frac_coords = np.array(frac_coords)
+
     if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
         bond_distorted_defect = apply_dimer_distortion(
             structure=structure,
@@ -661,19 +685,16 @@ def distort_and_rattle(
             site_index=site_index,
             frac_coords=frac_coords,
             distorted_element=distorted_element,
-            distorted_atoms=distorted_atoms,  # site indices starting from 0
+            distorted_atoms=distorted_atoms,  # 0-indexed
             verbose=verbose,
         )  # Dict with distorted struct, undistorted struct,
         # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
 
     # Apply rattle to the bond distorted structure
     if active_atoms is None:
-        distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
-            bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
-        ]  # Note this is VASP indexing here
-        distorted_atom_indices = [
-            i - 1 for i in distorted_atom_indices if i is not None
-        ]  # remove 'None' if defect is vacancy, and convert to python indexing
+        distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]]
+        if "defect_site_index" in bond_distorted_defect:  # only present if not vacancy
+            distorted_atom_indices += [bond_distorted_defect["defect_site_index"]]
         rattling_atom_indices = np.arange(0, len(structure))
         idx = np.in1d(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
         active_atoms = rattling_atom_indices[~idx]  # remove matching indices
@@ -869,7 +890,7 @@ def _generate_local_mc_rattled_structures(
             Prototype structure
         site_index (:obj:`int`):
             Index of defect site in structure (for substitutions or
-            interstitials), counting from 1.
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
         n_configs (:obj:`int`):
             Number of structures to generate
         rattle_std (:obj:`float`):
@@ -906,7 +927,7 @@ def _generate_local_mc_rattled_structures(
 
 def local_mc_rattle(
     structure: Structure,
-    site_index: Optional[int] = None,  # starting from 1
+    site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
     stdev: Optional[float] = None,
     d_min: Optional[float] = None,
@@ -930,7 +951,7 @@ def local_mc_rattle(
             Structure as a pymatgen object
         site_index (:obj:`int`, optional):
             Index of defect site in structure (for substitutions or
-            interstitials), counting from 1.
+            interstitials), using ``python`` / ``pymatgen`` 0-indexing.
         frac_coords (:obj:`numpy.ndarray`, optional):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
@@ -977,6 +998,9 @@ def local_mc_rattle(
         :obj:`Structure`:
             Rattled ``pymatgen`` ``Structure`` object
     """
+    if frac_coords is not None and not isinstance(frac_coords, np.ndarray):
+        frac_coords = np.array(frac_coords)
+
     ase_struct = structure.to_ase_atoms()
     if active_atoms is not None:
         # select only the distances involving active_atoms
@@ -986,13 +1010,11 @@ def local_mc_rattle(
 
     sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
 
-    if isinstance(site_index, int):
-        defect_site_index = site_index - 1  # Align atom number with python 0-indexing
-    elif isinstance(frac_coords, np.ndarray):  # Only for vacancies!
+    if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         ase_struct.append("V")  # fake "V" at vacancy
         ase_struct.positions[-1] = np.dot(frac_coords, ase_struct.cell)
-        defect_site_index = len(ase_struct) - 1
-    else:
+        site_index = -1
+    elif site_index is None:
         raise ValueError(
             "Insufficient information to apply local rattle, no `site_index` or `frac_coords` provided."
         )
@@ -1022,7 +1044,7 @@ def local_mc_rattle(
     try:
         local_rattled_ase_struct = _generate_local_mc_rattled_structures(
             ase_struct,
-            site_index=defect_site_index,
+            site_index=site_index,
             n_configs=1,
             rattle_std=stdev,
             d_min=d_min,
@@ -1040,7 +1062,7 @@ def local_mc_rattle(
             reduced_d_min = sorted_distances[0] + stdev
             local_rattled_ase_struct = _generate_local_mc_rattled_structures(
                 ase_struct,
-                site_index=defect_site_index,
+                site_index=site_index,
                 n_configs=1,
                 rattle_std=stdev,
                 d_min=reduced_d_min,
