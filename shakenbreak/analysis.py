@@ -305,6 +305,7 @@ def analyse_defect_site(
     if name is not None:
         from shakenbreak.input import bold_print
         bold_print(name + " structural analysis ")
+
     print("Analysing site", struct[site_index].specie, struct[site_index].frac_coords)
     coordination = crystalNN.get_local_order_parameters(struct, site_index)
     if coordination is not None:

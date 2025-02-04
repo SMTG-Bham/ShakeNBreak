@@ -97,14 +97,14 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["num_distorted_neighbours"], 2)
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
-        self.assertEqual(output["distorted_atoms"], [[33, "Te"], [42, "Te"]])
+        self.assertEqual(output["distorted_atoms"], [[32, "Te"], [41, "Te"]])
         distortions.distort(
             self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.42, 33, 'Te'), (1.42, 42, 'Te')]"
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.42, 32, 'Te'), (1.42, 41, 'Te')]"
         )
 
         # Test if num_nearest_neighbours = 0 that nothing happens:
@@ -149,7 +149,7 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["num_distorted_neighbours"], 2)
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
         self.assertEqual(output.get("defect_site_index"), None)
-        self.assertEqual(output["distorted_atoms"], [[2, "H"], [3, "H"]])
+        self.assertEqual(output["distorted_atoms"], [[1, "H"], [2, "H"]])
 
         # get min distance in distorted structure:
         # (would be 1.5 Å if trans NN combo distorted, but shorter for cis distortion combo)
@@ -159,31 +159,31 @@ class DistortionTestCase(unittest.TestCase):
 
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-            "            Original Neighbour Distances: [(1.5, 2, 'H'), (1.5, 3, 'H')]\n"
-            "            Distorted Neighbour Distances:\n\t[(0.75, 2, 'H'), (0.75, 3, 'H')]"
+            "            Original Neighbour Distances: [(1.5, 1, 'H'), (1.5, 2, 'H')]\n"
+            "            Distorted Neighbour Distances:\n\t[(0.75, 1, 'H'), (0.75, 2, 'H')]"
         )
 
 
     @patch("builtins.print")
     def test_distort_Int_Cd_2(self, mock_print):
         """Test bond distortion function for Int_Cd_2"""
-        site_index = 65  # Cd interstitial site index (VASP indexing)
+        site_index = 64  # Cd interstitial site index (python indexing)
         output = distortions.distort(
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=False
         )
         self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_struc)
         self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertEqual(output["defect_site_index"], 65)
+        self.assertEqual(output["defect_site_index"], site_index)
         self.assertEqual(output.get("defect_frac_coords"), None)
-        self.assertEqual(output["distorted_atoms"], [[10, "Cd"], [22, "Cd"]])
+        self.assertEqual(output["distorted_atoms"], [[9, "Cd"], [21, "Cd"]])
         distortions.distort(
             self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True
         )
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]"
+            + "            Original Neighbour Distances: [(2.71, 9, 'Cd'), (2.71, 21, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 9, 'Cd'), (1.09, 21, 'Cd')]"
         )
 
         # test correct behaviour with odd parameters input:
@@ -198,36 +198,36 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_NN_10_struc_rattled)
         self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
         self.assertEqual(output["num_distorted_neighbours"], 10)
-        self.assertEqual(output["defect_site_index"], 65)
+        self.assertEqual(output["defect_site_index"], site_index)
         self.assertEqual(output.get("defect_frac_coords"), None)
         self.assertCountEqual(
             output["distorted_atoms"],
             [
-                [10, "Cd"],
-                [22, "Cd"],
+                [9, "Cd"],
+                [21, "Cd"],
+                [28, "Cd"],
+                [0, "Cd"],
+                [13, "Cd"],
+                [23, "Cd"],
                 [29, "Cd"],
                 [1, "Cd"],
-                [14, "Cd"],
-                [24, "Cd"],
-                [30, "Cd"],
                 [2, "Cd"],
-                [3, "Cd"],
-                [5, "Cd"],
+                [4, "Cd"],
             ],
         )
         mock_print.assert_called_with(
-            "\tDefect Site Index / Frac Coords: 65\n"
-            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
-            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, 'Cd'), "
-            "(5.36, 2, 'Cd'), (5.36, 3, 'Cd'), (5.36, 5, 'Cd')]\n"
-            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
-            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), (1.7, 30, 'Cd'), "
-            "(2.15, 2, 'Cd'), (2.15, 3, 'Cd'), (2.15, 5, 'Cd')]"
+            "\tDefect Site Index / Frac Coords: 64\n"
+            "            Original Neighbour Distances: [(2.71, 9, 'Cd'), (2.71, 21, 'Cd'), "
+            "(2.71, 28, 'Cd'), (4.25, 0, 'Cd'), (4.25, 13, 'Cd'), (4.25, 23, 'Cd'), (4.25, 29, 'Cd'), "
+            "(5.36, 1, 'Cd'), (5.36, 2, 'Cd'), (5.36, 4, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 9, 'Cd'), (1.09, 21, 'Cd'), "
+            "(1.09, 28, 'Cd'), (1.7, 0, 'Cd'), (1.7, 13, 'Cd'), (1.7, 23, 'Cd'), (1.7, 29, 'Cd'), "
+            "(2.15, 1, 'Cd'), (2.15, 2, 'Cd'), (2.15, 4, 'Cd')]"
         )
 
     def test_distorted_element_error(self):
         """Test error message when non-existent element symbol provided"""
-        site_index = 65  # Cd interstitial site index (VASP indexing)
+        site_index = 64  # Cd interstitial site index (python indexing)
         for missing_element in ["C", "O", "H", "N", "S", "P", "X"]:
             for num_neighbours in range(8):
                 for distortion_factor in np.arange(-0.6, 0.61, 0.1):
@@ -252,7 +252,7 @@ class DistortionTestCase(unittest.TestCase):
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [33, 42]])
+        idx = np.in1d(rattling_atom_indices, [32, 41])
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Te indices
@@ -295,7 +295,7 @@ class DistortionTestCase(unittest.TestCase):
         rattling_atom_indices = np.arange(
             0, 64
         )  # not including index 64 which is Int_Cd_2
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [10, 22]])
+        idx = np.in1d(rattling_atom_indices, [9, 21])
         rattling_atom_indices = rattling_atom_indices[
             ~idx
         ]  # removed distorted Cd indices

@@ -221,33 +221,33 @@ class InputTestCase(unittest.TestCase):
         cls.V_Cd_distortion_parameters = {
             "unique_site": np.array([0.0, 0.0, 0.0]),
             "num_distorted_neighbours": 2,
-            "distorted_atoms": [[33, "Te"], [42, "Te"]],
+            "distorted_atoms": [[32, "Te"], [41, "Te"]],
             "dimer_distorted_atoms": [[32, "Te"], [41, "Te"]],  # Dimer-related info
         }
         cls.Int_Cd_2_normal_distortion_parameters = {
             "unique_site": cls.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 2,
-            "distorted_atoms": [(10 + 1, "Cd"), (22 + 1, "Cd")],
+            "distorted_atoms": [[9 + 1, "Cd"], [21 + 1, "Cd"]],
             # +1 for atom indices because interstitial is added at the beginning of the structure
-            "defect_site_index": 1,
+            "defect_site_index": 0,
         }
         cls.Int_Cd_2_NN_10_distortion_parameters = {
             "unique_site": cls.Int_Cd_2_dict["unique_site"].frac_coords,
             "num_distorted_neighbours": 10,
             "distorted_atoms": [
-                (10 + 1, "Cd"),
-                (22 + 1, "Cd"),
+                (9 + 1, "Cd"),
+                (21 + 1, "Cd"),
+                (28 + 1, "Cd"),
+                (0 + 1, "Cd"),
+                (13 + 1, "Cd"),
+                (23 + 1, "Cd"),
                 (29 + 1, "Cd"),
                 (1 + 1, "Cd"),
-                (14 + 1, "Cd"),
-                (24 + 1, "Cd"),
-                (30 + 1, "Cd"),
                 (2 + 1, "Cd"),
-                (3 + 1, "Cd"),
-                (5 + 1, "Cd"),
+                (4 + 1, "Cd"),
                 # +1 because interstitial is added at the beginning of the structure
             ],
-            "defect_site_index": 1,
+            "defect_site_index": 0,
         }
 
         # Note that Int_Cd_2 has been chosen as a test case, because the first few nonzero bond
@@ -574,7 +574,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [33, 42]])
+        idx = np.in1d(rattling_atom_indices, [32, 41])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
@@ -616,7 +616,7 @@ class InputTestCase(unittest.TestCase):
             stdev=0.28333683853583164,  # 10% of CdTe bond length, default
             seed=40,  # distortion_factor * 100, default
         )
-        output = distort(self.Int_Cd_2_struc, 2, 0.4, site_index=65)
+        output = distort(self.Int_Cd_2_struc, 2, 0.4, site_index=64)
         np.testing.assert_raises(
             AssertionError,
             np.testing.assert_array_equal,
@@ -625,7 +625,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 64)  # not including index 64 which is Int_Cd_2
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [10, 22]])
+        idx = np.in1d(rattling_atom_indices, [9, 21])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Cd indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             output["distorted_structure"],
@@ -638,8 +638,8 @@ class InputTestCase(unittest.TestCase):
         Int_Cd_2_distorted_dict["undistorted_structure"].remove_oxidation_states()
         # With pymatgen-analysis-defects, interstitial is added at the beginning
         # (rather than at the end) - so we need to shift all indexes + 1
-        output["distorted_atoms"] = [[11, "Cd"], [23, "Cd"]]
-        output["defect_site_index"] = 1
+        output["distorted_atoms"] = [[10, "Cd"], [22, "Cd"]]
+        output["defect_site_index"] = 0
         np.testing.assert_equal(Int_Cd_2_distorted_dict, output)
         self.assertEqual(
             Int_Cd_2_distorted_dict["distorted_structure"],
@@ -672,32 +672,32 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(Int_Cd_2_distorted_dict["undistorted_structure"], self.Int_Cd_2_struc)
         self.assertEqual(Int_Cd_2_distorted_dict["num_distorted_neighbours"], 10)
-        self.assertEqual(Int_Cd_2_distorted_dict["defect_site_index"], 1)
+        self.assertEqual(Int_Cd_2_distorted_dict["defect_site_index"], 0)
         self.assertEqual(Int_Cd_2_distorted_dict.get("defect_frac_coords"), None)
         self.assertCountEqual(
             Int_Cd_2_distorted_dict["distorted_atoms"],
             [
-                [10 + 1, "Cd"],
-                [22 + 1, "Cd"],
+                [9 + 1, "Cd"],
+                [21 + 1, "Cd"],
+                [28 + 1, "Cd"],
+                [0 + 1, "Cd"],
+                [13 + 1, "Cd"],
+                [23 + 1, "Cd"],
                 [29 + 1, "Cd"],
                 [1 + 1, "Cd"],
-                [14 + 1, "Cd"],
-                [24 + 1, "Cd"],
-                [30 + 1, "Cd"],
                 [2 + 1, "Cd"],
-                [3 + 1, "Cd"],
-                [5 + 1, "Cd"],
+                [4 + 1, "Cd"],
             ],
         )
         # Interstitial is added at the beginning - shift all indexes + 1
         mock_print.assert_called_with(
-            "\tDefect Site Index / Frac Coords: 1\n"
-            "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
-            "(2.71, 30, 'Cd'), (4.25, 2, 'Cd'), (4.25, 15, 'Cd'), (4.25, 25, 'Cd'), (4.25, 31, "
-            "'Cd'), (5.36, 3, 'Cd'), (5.36, 4, 'Cd'), (5.36, 6, 'Cd')]\n"
-            "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd'), "
-            "(1.09, 30, 'Cd'), (1.7, 2, 'Cd'), (1.7, 15, 'Cd'), (1.7, 25, 'Cd'), "
-            "(1.7, 31, 'Cd'), (2.15, 3, 'Cd'), (2.15, 4, 'Cd'), (2.15, 6, 'Cd')]"
+            "\tDefect Site Index / Frac Coords: 0\n"
+            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
+            "'Cd'), (5.36, 2, 'Cd'), (5.36, 3, 'Cd'), (5.36, 5, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
+            "(1.7, 30, 'Cd'), (2.15, 2, 'Cd'), (2.15, 3, 'Cd'), (2.15, 5, 'Cd')]"
         )
 
         # test all possible rattling kwargs with V_Cd
@@ -750,7 +750,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [i - 1 for i in [41, 32]])
+        idx = np.in1d(rattling_atom_indices, [41, 32])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
@@ -811,8 +811,12 @@ class InputTestCase(unittest.TestCase):
         distorted_V_Cd_struc.remove_oxidation_states()
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
+
         distorted_V_Cd_dimer_struc = V_Cd_0pt1_distorted_dict["distortions"]["Dimer"]
         distorted_V_Cd_dimer_struc.remove_oxidation_states()
+        # distorted_V_Cd_dimer_struc.to(
+        #     os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt1_POSCAR")
+        # )  # to update (last time was to ensure dimer atoms not included in rattling)
         self.assertEqual(self.V_Cd_dimer_struc_0pt1_rattled, distorted_V_Cd_dimer_struc)
         np.testing.assert_equal(
             V_Cd_0pt1_distorted_dict["distortion_parameters"],
@@ -830,7 +834,7 @@ class InputTestCase(unittest.TestCase):
         V_Cd_3_neighbours_distortion_parameters = copy.deepcopy(self.V_Cd_distortion_parameters)
         V_Cd_3_neighbours_distortion_parameters.pop("dimer_distorted_atoms")  # no dimer this time
         V_Cd_3_neighbours_distortion_parameters["num_distorted_neighbours"] = 3
-        V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(52, "Te")]
+        V_Cd_3_neighbours_distortion_parameters["distorted_atoms"] += [(51, "Te")]
         np.testing.assert_equal(
             V_Cd_3_neighbours_distorted_dict["distortion_parameters"],
             V_Cd_3_neighbours_distortion_parameters,
@@ -896,6 +900,7 @@ class InputTestCase(unittest.TestCase):
         distorted_Int_Cd_2_struc = Int_Cd_2_distorted_dict["distortions"]["Bond_Distortion_-60.0%"]
         distorted_Int_Cd_2_struc.remove_oxidation_states()
         self.assertNotEqual(self.Int_Cd_2_struc, distorted_Int_Cd_2_struc)
+        distorted_Int_Cd_2_struc.to("new_distorted_Int_Cd_2_struc_POSCAR")
         self.assertEqual(self.Int_Cd_2_minus0pt6_struc_rattled, distorted_Int_Cd_2_struc)
         np.testing.assert_equal(
             Int_Cd_2_distorted_dict["distortion_parameters"],
@@ -933,13 +938,13 @@ class InputTestCase(unittest.TestCase):
             self.Int_Cd_2_NN_10_distortion_parameters,
         )
         mock_print.assert_called_with(
-            f"\tDefect Site Index / Frac Coords: 1\n"
-            "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
-            "(2.71, 30, 'Cd'), (4.25, 2, 'Cd'), (4.25, 15, 'Cd'), (4.25, 25, 'Cd'), (4.25, 31, "
-            "'Cd'), (5.36, 3, 'Cd'), (5.36, 4, 'Cd'), (5.36, 6, 'Cd')]\n"
-            "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd'), "
-            "(1.09, 30, 'Cd'), (1.7, 2, 'Cd'), (1.7, 15, 'Cd'), (1.7, 25, 'Cd'), "
-            "(1.7, 31, 'Cd'), (2.15, 3, 'Cd'), (2.15, 4, 'Cd'), (2.15, 6, 'Cd')]"
+            f"\tDefect Site Index / Frac Coords: 0\n"
+            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            "(2.71, 29, 'Cd'), (4.25, 1, 'Cd'), (4.25, 14, 'Cd'), (4.25, 24, 'Cd'), (4.25, 30, "
+            "'Cd'), (5.36, 2, 'Cd'), (5.36, 3, 'Cd'), (5.36, 5, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd'), "
+            "(1.09, 29, 'Cd'), (1.7, 1, 'Cd'), (1.7, 14, 'Cd'), (1.7, 24, 'Cd'), "
+            "(1.7, 30, 'Cd'), (2.15, 2, 'Cd'), (2.15, 3, 'Cd'), (2.15, 5, 'Cd')]"
         )
 
         # test all possible rattling kwargs with V_Cd
@@ -974,6 +979,9 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(self.V_Cd_minus0pt5_struc_kwarged, distorted_V_Cd_struc)
         distorted_V_Cd_dimer_struc = V_Cd_kwarg_distorted_dict["distortions"]["Dimer"]
         distorted_V_Cd_dimer_struc.remove_oxidation_states()
+        # distorted_V_Cd_dimer_struc.to(
+        #     os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_0p15_kwarged_POSCAR")
+        # )  # to update
         self.assertEqual(self.V_Cd_dimer_struc_kwarged, distorted_V_Cd_dimer_struc)
         np.testing.assert_equal(
             V_Cd_kwarg_distorted_dict["distortion_parameters"],
@@ -996,16 +1004,19 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         self.assertEqual(self.V_Cd_entry, V_Cd_distorted_dict["Unperturbed"])
-        distorted_V_Cd_struc = V_Cd_distorted_dict["distortions"]["Dimer"]
-        distorted_V_Cd_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
-        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
+        distorted_V_Cd_dimer_struc = V_Cd_distorted_dict["distortions"]["Dimer"]
+        distorted_V_Cd_dimer_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
+        self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_dimer_struc)
         distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
-        self.assertNotIn("num_distorted_neighbours",  distortion_parameters_dict)
+        self.assertNotIn("num_distorted_neighbours", distortion_parameters_dict)
         self.assertEqual(
             distortion_parameters_dict["dimer_distorted_atoms"],
             [[32, "Te"], [41, "Te"]],  # order of elements not important
         )
-        self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_struc)
+        # distorted_V_Cd_dimer_struc.to(
+        #     os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt25_POSCAR")
+        # )  # to update (last time was to ensure dimer atoms not included in rattling)
+        self.assertEqual(self.V_Cd_dimer_struc_0pt25_rattled, distorted_V_Cd_dimer_struc)
 
     def test_apply_snb_distortions_indexes(self):
         """Test selecting indices of atoms to distort"""
@@ -1020,7 +1031,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             dist_dict["distortion_parameters"]["distorted_atoms"],
-            [[57 + 1, "Se"], [33 + 1, "Te"]],  # indices start at 1
+            [[57, "Se"], [33, "Te"]],
         )
 
     # test create_folder and create_vasp_input simultaneously:
@@ -1771,10 +1782,10 @@ class InputTestCase(unittest.TestCase):
                         1: {
                             "num_nearest_neighbours": 4,
                             "distorted_atoms": [
-                                (11, "Cd"),
-                                (23, "Cd"),
-                                (30, "Cd"),
-                                (2, "Cd"),
+                                (10, "Cd"),
+                                (22, "Cd"),
+                                (29, "Cd"),
+                                (1, "Cd"),
                             ],  # Defect added at index 0
                             "distortion_parameters": {
                                 "distortion_increment": 0.25,
@@ -1797,7 +1808,7 @@ class InputTestCase(unittest.TestCase):
                     "charges": {
                         0: {
                             "num_nearest_neighbours": 2,
-                            "distorted_atoms": [[33, "Te"], [42, "Te"]],
+                            "distorted_atoms": [[32, "Te"], [41, "Te"]],
                             "distortion_parameters": {
                                 "distortion_increment": None,
                                 "bond_distortions": [
@@ -1892,16 +1903,21 @@ class InputTestCase(unittest.TestCase):
             defect["charges"] = {int(k): v for k, v in defect["charges"].items()}
             # json converts integer keys to strings
 
-        np.testing.assert_equal(metadata["distortion_parameters"], kwarged_Int_Cd_2_dict["distortion_parameters"])
+        np.testing.assert_equal(
+            metadata["distortion_parameters"], kwarged_Int_Cd_2_dict["distortion_parameters"]
+        )
 
         for defect in kwarged_Int_Cd_2_dict["defects"]:
             for charge in kwarged_Int_Cd_2_dict["defects"][defect]["charges"]:
                 species_metadata = metadata["defects"][defect]["charges"][charge]
                 species_kwarged_data = kwarged_Int_Cd_2_dict["defects"][defect]["charges"][charge]
-                print(f"Comparing:\n{species_metadata['distortion_parameters']} and:\n"
-                      f"{species_kwarged_data['distortion_parameters']}")
+                print(
+                    f"Comparing:\n{species_metadata['distortion_parameters']} and:\n"
+                    f"{species_kwarged_data['distortion_parameters']}"
+                )
                 np.testing.assert_equal(  # defect in distortion_defect_dict
-                    species_metadata, species_kwarged_data,
+                    species_metadata,
+                    species_kwarged_data,
                 )
 
         # check expected info printing:
@@ -1920,11 +1936,11 @@ class InputTestCase(unittest.TestCase):
         )
         mock_Int_Cd_2_print.assert_any_call("--Distortion -50.0%")
         mock_Int_Cd_2_print.assert_any_call(
-            "\tDefect Site Index / Frac Coords: 1\n"
-            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd'), "
-            + "(2.71, 30, 'Cd'), (4.25, 2, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.36, 11, 'Cd'), (1.36, 23, 'Cd'), "
-            + "(1.36, 30, 'Cd'), (2.13, 2, 'Cd')]"
+            "\tDefect Site Index / Frac Coords: 0\n"
+            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd'), "
+            + "(2.71, 29, 'Cd'), (4.25, 1, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.36, 10, 'Cd'), (1.36, 22, 'Cd'), "
+            + "(1.36, 29, 'Cd'), (2.13, 1, 'Cd')]"
         )  # Defect added at index 0, so atom indexing + 1 wrt original structure
         # check correct folder was created:
         self.assertTrue(os.path.exists("Int_Cd_2_+1/Unperturbed"))
@@ -2056,12 +2072,12 @@ class InputTestCase(unittest.TestCase):
         mock_print.assert_any_call(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
-            "['Dimer (for vacancies)'].",
+            "['Dimer'].",
             "Then, will rattle with a std dev of 0.25 Å \n",
         )
         V_Cd_dimer_POSCAR = Structure.from_file("v_Cd_Td_Te2.83_0/Dimer/POSCAR")
         self.assertEqual(V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled)
-        
+
         # test default generation of Dimer:
         self.tearDown()
         dist = input.Distortions(
@@ -2397,14 +2413,18 @@ class InputTestCase(unittest.TestCase):
                 for charge, charge_dict in v.items():
                     print(f"Comparing charge {charge}")
                     structures = charge_dict["structures"]
-                    self.assertEqual(structures["Unperturbed"],
-                                     test_dist_dict[snb_name]["charges"][charge]["structures"][
-                                         "Unperturbed"])
+                    self.assertEqual(
+                        structures["Unperturbed"],
+                        test_dist_dict[snb_name]["charges"][charge]["structures"]["Unperturbed"],
+                    )
 
                     for distortion, structure in structures["distortions"].items():
-                        self.assertEqual(structure,
-                                         test_dist_dict[snb_name]["charges"][charge]["structures"][
-                                             "distortions"][distortion])
+                        self.assertEqual(
+                            structure,
+                            test_dist_dict[snb_name]["charges"][charge]["structures"]["distortions"][
+                                distortion
+                            ],
+                        )
 
     def test_write_vasp_files_from_doped_dict(self):
         """Test Distortions() class with doped dict input"""
@@ -2507,7 +2527,6 @@ class InputTestCase(unittest.TestCase):
                 vacancies_dist_metadata["defects"][snb_name],
             )
             self._compare_dist_dicts(doped_dist_defects_dict, test_dist_dict, defect_name, snb_name)
-
 
         # Test error if missing bulk entry
         vacancies = {
@@ -3279,7 +3298,7 @@ class InputTestCase(unittest.TestCase):
         output = dist.apply_distortions()
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[58, "Se"], [34, "Te"]],
+            [[57, "Se"], [33, "Te"]],
         )
         # Test when user doesn't specify enough neighbours to distort
         dist = input.Distortions(
@@ -3306,7 +3325,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[58, "Se"], [63, "Se"]],
+            [[57, "Se"], [62, "Se"]],
         )
 
     def test_local_rattle(
