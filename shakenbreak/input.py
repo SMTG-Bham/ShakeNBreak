@@ -37,7 +37,9 @@ from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
 from pymatgen.io.vasp.sets import BadInputSetWarning
 
-from shakenbreak import analysis, distortions, io
+from shakenbreak.analysis import _get_distortion_filename
+from shakenbreak.io import parse_qe_input, parse_fhi_aims_input
+from shakenbreak.distortions import distort_and_rattle
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/SnB_input_files/default_POTCARs.yaml")
@@ -59,8 +61,13 @@ warnings.formatwarning = _warning_on_one_line
 
 
 # Helper functions
-def _bold_print(string: str) -> None:
-    """Prints the input string in bold."""
+def bold_print(string: str) -> None:
+    """
+    Prints the input string in bold.
+
+    Args:
+        string (:obj:`str`): String to print in bold.
+    """
     print("\033[1m" + string + "\033[0m")
 
 
@@ -1212,7 +1219,7 @@ def _find_sc_defect_coords(defect_entry):
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            ``DefectEntry`` object.
+            ``doped``/``pymatgen`` ``DefectEntry``.
 
     Returns:
         frac_coords (:obj:`list`):
@@ -1240,10 +1247,7 @@ def _find_sc_defect_coords(defect_entry):
     return frac_coords
 
 
-# Main functions
-
-
-def _apply_rattle_bond_distortions(
+def distort_and_rattle_defect_entry(
     defect_entry: DefectEntry,
     num_nearest_neighbours: int,
     distortion_factor: Union[float, str],
@@ -1259,13 +1263,15 @@ def _apply_rattle_bond_distortions(
 ) -> dict:
     """
     Applies rattle and bond distortions to the unperturbed defect structure
-    of ``defect_entry`` by calling ``distortion.distort`` with either:
-            - fractional coordinates (for vacancies) or
-            - defect site index (other defect types).
+    of ``defect_entry`` using the ``distort_and_rattle()`` function from
+    ``shakenbreak.distortions``, with the defect site specified by either:
+
+        - fractional coordinates (for vacancies), or
+        - defect site index (for substitutions/interstitials).
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen ``DefectEntry`` object.
+            The defect to distort, as a ``doped``/``pymatgen`` ``DefectEntry``.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to.
         distortion_factor (:obj:`float`):
@@ -1339,84 +1345,43 @@ def _apply_rattle_bond_distortions(
     if defect_type == "vacancy":  # for vacancies, we need to use fractional coordinates
         # (no atom site in structure!)
         frac_coords = bulk_supercell_site.frac_coords
-        defect_site_index = None
-        if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-        else:
-            bond_distorted_defect = distortions.distort(
-                structure=defect_structure,
-                num_nearest_neighbours=num_nearest_neighbours,
-                distortion_factor=distortion_factor,
-                frac_coords=frac_coords,
-                distorted_element=distorted_element,
-                distorted_atoms=distorted_atoms,  # site indices starting from 0
-                verbose=verbose,
-            )  # Dict with distorted struct, undistorted struct,
-            # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
-    else:
-        # .distort() assumes VASP indexing (starting at 1)
-        defect_site_index = defect_object.defect_site_index + 1  # indexing in the
-        # unit cell is conserved in the supercell
-        frac_coords = None  # only for vacancies
-        if defect_site_index is None:
-            raise ValueError("Defect lacks defect_site_index!")
 
-        if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-        else:
-            bond_distorted_defect = distortions.distort(
-                structure=defect_structure,
-                num_nearest_neighbours=num_nearest_neighbours,
-                distortion_factor=distortion_factor,
-                site_index=defect_site_index,
-                distorted_element=distorted_element,
-                distorted_atoms=distorted_atoms,  # site indices starting from 0
-                verbose=verbose,
-            )
-    # Apply rattle to the bond distorted structure
-    if active_atoms is None:
-        distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
-            bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
-        ]  # Note this is VASP indexing here
-        distorted_atom_indices = [
-            i - 1 for i in distorted_atom_indices if i is not None
-        ]  # remove 'None' if defect is vacancy, and convert to python indexing
-        rattling_atom_indices = np.arange(0, len(defect_structure))
-        idx = np.in1d(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
-        active_atoms = rattling_atom_indices[~idx]  # remove matching indices
-
-    if local_rattle:
-        bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
-            structure=bond_distorted_defect["distorted_structure"],
+        return distort_and_rattle(
+            structure=defect_structure,
+            num_nearest_neighbours=num_nearest_neighbours,
+            distortion_factor=distortion_factor,
             frac_coords=frac_coords,
-            site_index=defect_site_index,
             stdev=stdev,
             d_min=d_min,
-            verbose=verbose,
+            distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,
+            local_rattle=local_rattle,
             active_atoms=active_atoms,
-            **mc_rattle_kwargs,
-        )
-    else:
-        bond_distorted_defect["distorted_structure"] = distortions.rattle(
-            structure=bond_distorted_defect["distorted_structure"],
-            stdev=stdev,
-            d_min=d_min,
             verbose=verbose,
-            active_atoms=active_atoms,
             **mc_rattle_kwargs,
         )
 
-    return bond_distorted_defect
+    # .distort() assumes VASP indexing (starting at 1)
+    # indexing in defect_object matches defect_structure
+    defect_site_index = defect_object.defect_site_index + 1
+
+    if defect_site_index is None:
+        raise ValueError("Defect lacks defect_site_index!")
+
+    return distort_and_rattle(
+        structure=defect_structure,
+        num_nearest_neighbours=num_nearest_neighbours,
+        distortion_factor=distortion_factor,
+        site_index=defect_site_index,  # site index rather than frac_coords now
+        stdev=stdev,
+        d_min=d_min,
+        distorted_element=distorted_element,
+        distorted_atoms=distorted_atoms,
+        local_rattle=local_rattle,
+        active_atoms=active_atoms,
+        verbose=verbose,
+        **mc_rattle_kwargs,
+    )
 
 
 def apply_snb_distortions(
@@ -1433,12 +1398,15 @@ def apply_snb_distortions(
     **mc_rattle_kwargs,
 ) -> dict:
     """
+    TODO: Update docstring?
+    # TODO: Check docstrings note correct dimer default behaviour (i.e. generated by default,
+    can be chosen with 'Dimer', but excluded if explicit bond distortions given without including it etc)
     Applies rattle and bond distortions to ``num_nearest_neighbours`` of the
     unperturbed defect structure of ``defect_entry``.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen ``DefectEntry`` object.
+            The defect to distort, as a ``doped``/``pymatgen`` ``DefectEntry``.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         bond_distortions (:obj:`list`):
@@ -1498,151 +1466,70 @@ def apply_snb_distortions(
             Dictionary with distorted defect structure and the distortion
             parameters.
     """
+    bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
     distorted_defect_dict = {
         "Unperturbed": defect_entry,
         "distortions": {},
-        "distortion_parameters": {},
+        "distortion_parameters": {"unique_site": bulk_supercell_site.frac_coords},
     }
 
-    defect_object = defect_entry.defect
-    defect_type = defect_object.defect_type.name.lower()
-    defect_structure = defect_entry.sc_entry.structure
-    # Get defect site
-    bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
-    defect_site_index = defect_object.defect_site_index  # This is for the unit cell,
-    # but is conserved in the supercell
-
     seed = mc_rattle_kwargs.pop("seed", None)
-    if num_nearest_neighbours != 0:
-        # If vacancy, add "Dimer" to bond_distortions to ensure dimer reconstruction
-        # is found.
-        if defect_type == "vacancy" and ("dimer" not in (str(item).lower() for item in bond_distortions)):
-            bond_distortions = list(bond_distortions)  # in case provided as array
-            bond_distortions.append("Dimer")
-        for raw_distortion in bond_distortions:
-            if not isinstance(raw_distortion, str):
-                distortion = round(raw_distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
-                if verbose:
-                    print(f"--Distortion {distortion:.1%}")
-                distortion_factor = 1 + distortion
-                if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
-                    # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-                    seed = int(distortion_factor * 100)
+    if num_nearest_neighbours == 0:  # then we just apply rattling, and Dimer if included
+        bond_distortions = ["Rattled"] + (
+            ["Dimer"] if any(isinstance(d, str) and "dimer" in d.lower() for d in bond_distortions) else []
+        )
 
-                bond_distorted_defect = _apply_rattle_bond_distortions(
-                    defect_entry=defect_entry,
-                    num_nearest_neighbours=num_nearest_neighbours,
-                    distortion_factor=distortion_factor,
-                    local_rattle=local_rattle,
-                    stdev=stdev,
-                    d_min=d_min,
-                    distorted_element=distorted_element,
-                    distorted_atoms=distorted_atoms,
-                    verbose=verbose,
-                    seed=seed,
-                    oxidation_states=oxidation_states,
-                    **mc_rattle_kwargs,
-                )
-                distorted_defect_dict["distortions"][analysis._get_distortion_filename(distortion)] = (
-                    bond_distorted_defect["distorted_structure"]
-                )
-                distorted_defect_dict["distortion_parameters"] = {
-                    "unique_site": bulk_supercell_site.frac_coords,
-                    "num_distorted_neighbours": num_nearest_neighbours,
-                    "distorted_atoms": bond_distorted_defect["distorted_atoms"],
-                }
-                if bond_distorted_defect.get("defect_site_index"):  # only add site index if not vacancy
-                    distorted_defect_dict["distortion_parameters"]["defect_site_index"] = (
-                        bond_distorted_defect["defect_site_index"]
-                    )
+    for raw_distortion in bond_distortions:
+        if not isinstance(raw_distortion, str):
+            distortion_factor = 1 + raw_distortion
+            # +0 ensures positive zero (not "-0.0%"):
+            formatted_distortion = f"{round(raw_distortion, ndigits=3)+0:.1%}"
+        else:  # setting distortion_factor to "Dimer" selects Dimer distortion with distort_and_rattle
+            distortion_factor = "Dimer" if raw_distortion.lower() == "dimer" else 0
+            formatted_distortion = raw_distortion
 
-            elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
-                # Apply dimer distortion, with rattling
-                if verbose:
-                    print(f"--Distortion {raw_distortion}")
-                bond_distorted_defect = _apply_rattle_bond_distortions(
-                    defect_entry=defect_entry,
-                    num_nearest_neighbours=2,
-                    distortion_factor=raw_distortion,
-                    local_rattle=local_rattle,
-                    stdev=stdev,
-                    d_min=d_min,
-                    distorted_element=distorted_element,
-                    distorted_atoms=distorted_atoms,
-                    verbose=verbose,
-                    seed=seed,
-                    oxidation_states=oxidation_states,
-                    **mc_rattle_kwargs,
-                )
-                distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect[
-                    "distorted_structure"
-                ]
-                distorted_defect_dict["distortion_parameters"].update(
-                    {
-                        "unique_site": bulk_supercell_site.frac_coords,
-                        "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
-                        "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
-                    }
-                )
-                if defect_site_index:  # only add site index if not vacancy
-                    distorted_defect_dict["distortion_parameters"]["defect_site_index"] = defect_site_index
-
-    else:  # when no extra/missing electrons, just rattle the structure
-        # Likely to be a shallow defect.
-        if defect_type == "vacancy":
-            defect_site_index = None
-            frac_coords = bulk_supercell_site.frac_coords
-        else:
-            frac_coords = None  # only for vacancies!
-            defect_site_index = defect_object.defect_site_index
+        if verbose:
+            print(f"--Distortion {formatted_distortion}")
 
         if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
             # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-            seed = 100  # distortion_factor = 1 when no bond distortion, just rattling
+            seed = int(distortion_factor * 100)
 
-        if local_rattle:
-            perturbed_structure = distortions.local_mc_rattle(
-                defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                stdev=stdev,
-                d_min=d_min,
-                verbose=verbose,
-                **mc_rattle_kwargs,
-            )
-        else:
-            perturbed_structure = distortions.rattle(
-                defect_structure,
-                stdev=stdev,
-                d_min=d_min,
-                verbose=verbose,
-                **mc_rattle_kwargs,
-            )
-        distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
-        distorted_defect_dict["distortion_parameters"] = {
-            "unique_site": bulk_supercell_site.frac_coords,
-            "num_distorted_neighbours": num_nearest_neighbours,
-            "distorted_atoms": None,
-        }
-        if defect_site_index:  # only add site index if vacancy
-            distorted_defect_dict["distortion_parameters"]["defect_site_index"] = defect_site_index
-
-        if "Dimer" in bond_distortions:
-            # Apply dimer distortion, without rattling
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-            distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect["distorted_structure"]
+        bond_distorted_defect = distort_and_rattle_defect_entry(
+            defect_entry=defect_entry,
+            num_nearest_neighbours=num_nearest_neighbours,
+            distortion_factor=distortion_factor,
+            local_rattle=local_rattle,
+            stdev=stdev,
+            d_min=d_min,
+            distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,
+            verbose=verbose,
+            seed=seed,
+            oxidation_states=oxidation_states,
+            **mc_rattle_kwargs,
+        )
+        distorted_defect_dict["distortions"][_get_distortion_filename(raw_distortion)] = (
+            bond_distorted_defect["distorted_structure"]
+        )
+        if distortion_factor == "Dimer":
             distorted_defect_dict["distortion_parameters"].update(
                 {
-                    "unique_site": bulk_supercell_site.frac_coords,
-                    "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
-                    "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
+                    "dimer_distorted_atoms": bond_distorted_defect["distorted_atoms"],
                 }
             )
+        else:
+            distorted_defect_dict["distortion_parameters"].update(
+                {
+                    "num_distorted_neighbours": num_nearest_neighbours,
+                    "distorted_atoms": bond_distorted_defect["distorted_atoms"],
+                }
+            )
+        if bond_distorted_defect.get("defect_site_index"):  # only add site index if not vacancy
+            distorted_defect_dict["distortion_parameters"]["defect_site_index"] = bond_distorted_defect[
+                "defect_site_index"
+            ]
+
     return distorted_defect_dict
 
 
@@ -1948,11 +1835,12 @@ class Distortions:
             self.distortion_increment = None  # user specified
             self.bond_distortions = []
             #  bond_distortions, so no increment
-            if "Dimer" in bond_distortions:
+            if "dimer" in [i.lower() for i in bond_distortions if isinstance(i, str)]:
                 self.bond_distortions.append("Dimer")
-                bond_distortions.remove("Dimer")
 
-            self.bond_distortions.extend(list(np.around(bond_distortions, 3)))  # round to 3 decimal places
+            self.bond_distortions.extend(
+                list(np.around([i for i in bond_distortions if isinstance(i, (int, float))], 3))
+            )  # round to 3 dp
         else:
             # If the user does not specify bond_distortions, use
             # distortion_increment:
@@ -2059,11 +1947,11 @@ class Distortions:
             number_electrons = _calc_number_electrons(defect_entry, defect_name, oxidation_states)
 
         if verbose:
-            _bold_print(f"\nDefect: {defect_name}")
+            bold_print(f"\nDefect: {defect_name}")
             if number_electrons < 0:
-                _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
+                bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
             else:
-                _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
+                bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
         return number_electrons
 
     def _get_number_distorted_neighbours(
@@ -2636,7 +2524,7 @@ class Distortions:
         if pseudopotentials and not write_structures_only:
             default_input_parameters = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/qe_input.yaml"))
             if input_file and not input_parameters:
-                input_parameters = io.parse_qe_input(input_file)
+                input_parameters = parse_qe_input(input_file)
             if input_parameters:
                 for section in input_parameters:
                     for key in input_parameters[section]:
@@ -2913,7 +2801,7 @@ class Distortions:
         parameters = {}
 
         if input_file and not ase_calculator:
-            parameters = io.parse_fhi_aims_input(input_file)
+            parameters = parse_fhi_aims_input(input_file)
             parameters.update({"k_grid": (1, 1, 1)})
 
         if not parameters and not write_structures_only:
