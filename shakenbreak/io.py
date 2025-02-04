@@ -17,8 +17,6 @@ from pymatgen.core.structure import Structure
 from pymatgen.core.units import Energy
 from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis
-
 aaa = AseAtomsAdaptor()
 
 
@@ -59,6 +57,7 @@ def parse_energies(
         :obj:`str`:
             Path to the ``energies_file``.
     """
+    from shakenbreak.analysis import _sort_data, _format_distortion_names
 
     def _match(filename, grep_string):
         """Helper function to grep for a string in a file."""
@@ -238,7 +237,7 @@ def parse_energies(
     energies_file = f"{path}/{defect}/{defect}.yaml"
     if os.path.exists(energies_file):
         try:
-            prev_energies_dict, _, _ = analysis._sort_data(energies_file, verbose=False)
+            prev_energies_dict, _, _ = _sort_data(energies_file, verbose=False)
         except Exception:
             prev_energies_dict = {}
     else:
@@ -265,8 +264,8 @@ def parse_energies(
         elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
             converged, energy, outcar = parse_fhi_aims_energy(defect_dir, dist, energy, outcar)
 
-        if analysis._format_distortion_names(dist) != "Label_not_recognized":
-            dist_name = analysis._format_distortion_names(dist)
+        if _format_distortion_names(dist) != "Label_not_recognized":
+            dist_name = _format_distortion_names(dist)
         else:
             dist_name = dist
 

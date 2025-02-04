@@ -21,7 +21,7 @@ from pymatgen.core.composition import Composition, Element
 from pymatgen.core.structure import IStructure, PeriodicSite, Structure
 from pymatgen.io.vasp.outputs import Outcar
 
-from shakenbreak import input, io
+from shakenbreak.io import parse_structure, read_vasp_structure
 
 crystalNN = CrystalNN(distance_cutoffs=None, x_diff_weight=0.0, porous_adjustment=False, search_cutoff=5.0)
 
@@ -103,8 +103,8 @@ def _get_distortion_filename(distortion) -> str:
     if "_from_" in distortion and ("Rattled" not in distortion and "Dimer" not in distortion):
         return f"Bond_Distortion_{distortion}"  # runs from other charge states
 
-    if any(distortion.startswith(i) for i in ["Unperturbed", "Rattled", "Dimer"]):
-        return distortion
+    if any(distortion.lower().startswith(i) for i in ["unperturbed", "rattled", "dimer"]):
+        return distortion.capitalize()
 
     with contextlib.suppress(Exception):  # try converting to float, in case user entered '0.5'
         distortion = float(distortion)
@@ -304,7 +304,8 @@ def analyse_defect_site(
         raise ValueError("Either site_num or vac_site must be specified")
 
     if name is not None:
-        input._bold_print(name + " structural analysis ")
+        from shakenbreak.input import bold_print
+        bold_print(name + " structural analysis ")
     print("Analysing site", struct[isite].specie, struct[isite].frac_coords)
     coordination = crystalNN.get_local_order_parameters(struct, isite)
     if coordination is not None:
@@ -438,7 +439,7 @@ def get_structures(
                 # e.g. from 'Bond_Distortion_-10.0% -> -0.1
                 if distortion != "Label_not_recognized":  # If the subdirectory name is recognised
                     try:
-                        defect_structures_dict[distortion] = io.parse_structure(
+                        defect_structures_dict[distortion] = parse_structure(
                             code=code,
                             structure_path=f"{output_path}/{defect_species}/{distortion_subdirectory}",
                             structure_filename=structure_filename,
@@ -460,7 +461,7 @@ def get_structures(
                     distortion_label != "Distortion_not_recognized"
                 ):  # If the distortion label is recognised
                     try:
-                        defect_structures_dict[distortion] = io.parse_structure(
+                        defect_structures_dict[distortion] = parse_structure(
                             code=code,
                             structure_path=f"{output_path}/{defect_species}/{distortion_label}/",
                             structure_filename=structure_filename,
@@ -939,9 +940,9 @@ def _site_magnetizations(
 
     Args:
         outcar (pymatgen.io.vasp.outputs.Outcar):
-            Outcar object
+            ``Outcar`` object
         structure (pymatgen.core.structure.Structure):
-            Structure object
+            ``Structure`` object
         threshold (float, optional):
             Magnetization threhold to print site. Defaults to 0.1 e-.
         defect_site (int, optional):
@@ -1064,7 +1065,7 @@ def get_site_magnetizations(
                 "Unperturbed/Rattled name."
             )
             continue
-        structure = io.read_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
+        structure = read_vasp_structure(f"{output_path}/{defect_species}/{dist_label}/CONTCAR")
         if not isinstance(structure, Structure):
             warnings.warn(
                 f"Structure for {defect_species} either not converged or not "
