@@ -230,7 +230,7 @@ def distort(
 
     Args:
         structure (:obj:`~pymatgen.core.structure.Structure`):
-            Defect structure as a pymatgen object
+            Defect structure as a ``pymatgen`` ``Structure`` object.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to
         distortion_factor (:obj:`float`):
@@ -539,6 +539,159 @@ def rattle(
 
     return Structure.from_ase_atoms(rattled_ase_struct)
 
+
+def distort_and_rattle(
+    structure: Structure,
+    num_nearest_neighbours: int,
+    distortion_factor: Union[float, str],
+    site_index: Optional[int] = None,  # starting from 1
+    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    local_rattle: bool = False,
+    stdev: Optional[float] = None,
+    d_min: Optional[float] = None,
+    active_atoms: Optional[list] = None,
+    distorted_element: Optional[str] = None,
+    distorted_atoms: Optional[list] = None,
+    verbose: bool = False,
+    **mc_rattle_kwargs,
+) -> dict:
+    """
+    TODO: Docstring
+    Applies bond distortions and rattling to ``num_nearest_neighbours`` of the
+    defect (specified by ``site_index`` (for substitutions or interstitials, counting
+    from 1) or ``frac_coords`` (for vacancies)).
+
+    Note that by default, rattling is not applied to the defect site or distorted
+    neighbours, but to all other atoms in the supercell, however this can be
+    controlled with the ``active_atoms`` kwarg.
+
+    The nearest neighbours to distort are chosen by taking all sites (or those
+    matching ``distorted_element`` / ``distorted_atoms``, if provided), then sorting
+    by distance to the defect site (rounded to 2 decimal places) and site index, and
+    then taking the first ``num_nearest_neighbours`` of these. If there are multiple
+    non-degenerate combinations of (nearly) equidistant NNs to distort (e.g. cis vs
+    trans when distorting 2 NNs in a 4 NN square coordination), then the combination
+    with distorted NNs closest to each other is chosen.
+
+    Args:
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            Defect structure as a ``pymatgen`` ``Structure`` object.
+        num_nearest_neighbours (:obj:`int`):
+            Number of defect nearest neighbours to apply bond distortions to.
+        distortion_factor (:obj:`float`):
+            The distortion factor or distortion name ("Dimer") to apply
+            to the bond distance between the defect and nearest neighbours.
+            Typical choice is between 0.4 (-60%) and 1.6 (+60%).
+        local_rattle (:obj:`bool`):
+            Whether to apply random displacements that tail off as we move
+            away from the defect site. If False, all supercell sites are
+            rattled with the same amplitude.
+            (Default: False)
+        stdev (:obj:`float`):
+            Standard deviation (in Angstroms) of the Gaussian distribution
+            from which random atomic displacement distances are drawn during
+            rattling. Default is set to 10% of the bulk nearest neighbour
+            distance.
+        d_min (:obj:`float`):
+            Minimum interatomic distance (in Angstroms) in the rattled
+            structure. Monte Carlo rattle moves that put atoms at
+            distances less than this will be heavily penalised.
+            Default is to set this to 80% of the nearest neighbour
+            distance in the defect supercell (ignoring interstitials).
+        active_atoms (:obj:`list`, optional):
+            List (or array) of which atomic indices should undergo Monte Carlo
+            rattling. Default is to apply rattle to all atoms except the
+            defect and the bond-distorted neighbours.
+        distorted_element (:obj:`str`, optional):
+            Neighbouring element to distort. If None, the closest neighbours
+            to the defect will be chosen.
+            (Default: None)
+        distorted_atoms (:obj:`list`, optional):
+            List of the atomic indices which should undergo bond distortions.
+            (Default: None)
+        oxidation_states (:obj:`dict`):
+            Dictionary with oxidation states of the atoms in the material (e.g.
+            {"Cd": +2, "Te": -2}).
+        verbose (:obj:`bool`):
+            Whether to print distortion information.
+            (Default: False)
+        **mc_rattle_kwargs (:obj:`dict`):
+            Additional keyword arguments to pass to ``hiphive``'s
+            ``mc_rattle`` function. These include:
+
+            - max_disp (:obj:`float`):
+                Maximum atomic displacement (in Å) during Monte Carlo
+                rattling. Rarely occurs and is used primarily as a safety net.
+                (Default: 2.0)
+            - max_attempts (:obj:`int`):
+                Limit for how many attempted rattle moves are allowed a single atom.
+            - active_atoms (:obj:`list`):
+                List of the atomic indices which should undergo Monte
+                Carlo rattling. By default, all atoms are rattled.
+                (Default: None)
+            - seed (:obj:`int`):
+                Seed for setting up NumPy random state from which rattle
+                random displacements are generated.
+
+    Returns:
+        :obj:`dict`:
+            Dictionary with distorted defect structure and the distortion
+            parameters.
+    """
+    if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
+        bond_distorted_defect = apply_dimer_distortion(
+            structure=structure,
+            site_index=site_index,
+            frac_coords=frac_coords,
+            verbose=verbose,
+        )
+    else:
+        bond_distorted_defect = distort(
+            structure=structure,
+            num_nearest_neighbours=num_nearest_neighbours,
+            distortion_factor=distortion_factor,
+            site_index=site_index,
+            frac_coords=frac_coords,
+            distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,  # site indices starting from 0
+            verbose=verbose,
+        )  # Dict with distorted struct, undistorted struct,
+        # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
+
+    # Apply rattle to the bond distorted structure
+    if active_atoms is None:
+        distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
+            bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
+        ]  # Note this is VASP indexing here
+        distorted_atom_indices = [
+            i - 1 for i in distorted_atom_indices if i is not None
+        ]  # remove 'None' if defect is vacancy, and convert to python indexing
+        rattling_atom_indices = np.arange(0, len(structure))
+        idx = np.in1d(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
+        active_atoms = rattling_atom_indices[~idx]  # remove matching indices
+
+    if local_rattle:
+        bond_distorted_defect["distorted_structure"] = local_mc_rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            frac_coords=frac_coords,
+            site_index=site_index,
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
+    else:
+        bond_distorted_defect["distorted_structure"] = rattle(
+            structure=bond_distorted_defect["distorted_structure"],
+            stdev=stdev,
+            d_min=d_min,
+            verbose=verbose,
+            active_atoms=active_atoms,
+            **mc_rattle_kwargs,
+        )
+
+    return bond_distorted_defect
 
 def _local_mc_rattle_displacements(
     atoms,
