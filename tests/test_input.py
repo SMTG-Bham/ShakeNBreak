@@ -24,6 +24,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints, Potcar
 
 from shakenbreak import input
+from shakenbreak.analysis import get_homoionic_bonds
 from shakenbreak.distortions import rattle, distort, apply_dimer_distortion
 
 
@@ -732,8 +733,10 @@ class InputTestCase(unittest.TestCase):
         np.testing.assert_array_equal(V_Cd_kwarg_distorted_dict.get("defect_frac_coords"), vac_coords)
 
     def test_distort_and_rattle_defect_entry_V_Cd_dimer(self):
-        """Test distort_and_rattle_defect_entry function with dimer distortion
-        for V_Cd"""
+        """
+        Test distort_and_rattle_defect_entry function with dimer distortion
+        for V_Cd.
+        """
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
         V_Cd_distorted_dict = input.distort_and_rattle_defect_entry(
@@ -743,6 +746,10 @@ class InputTestCase(unittest.TestCase):
             d_min=d_min,
             verbose=True,
         )
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            V_Cd_distorted_dict['distorted_structure'], elements=["Te", ]
+        ).values())).values())), "2.0 A")
+
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = apply_dimer_distortion(structure=self.V_Cd_struc, frac_coords=vac_coords)
         np.testing.assert_raises(
@@ -775,6 +782,9 @@ class InputTestCase(unittest.TestCase):
             stdev_0pt25_V_Cd_distorted_dict["distorted_structure"],
             self.V_Cd_dimer_struc_0pt25_rattled,  # this is with stdev=0.25
         )
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            stdev_0pt25_V_Cd_distorted_dict["distorted_structure"], elements=["Te", ]
+        ).values())).values())), "2.0 A")
 
     def test_apply_snb_distortions_V_Cd(self):
         """Test apply_distortions function for V_Cd"""
@@ -788,6 +798,9 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         self.assertEqual(self.V_Cd_entry, V_Cd_distorted_dict["Unperturbed"])
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            V_Cd_distorted_dict["distortions"]["Dimer"], elements=["Te", ]
+        ).values())).values())), "2.0 A")
 
         distorted_V_Cd_struc = V_Cd_distorted_dict["distortions"]["Bond_Distortion_-50.0%"]
         distorted_V_Cd_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
@@ -813,6 +826,9 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(self.V_Cd_minus0pt5_struc_0pt1_rattled, distorted_V_Cd_struc)
 
         distorted_V_Cd_dimer_struc = V_Cd_0pt1_distorted_dict["distortions"]["Dimer"]
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            distorted_V_Cd_dimer_struc, elements=["Te", ]
+        ).values())).values())), "2.0 A")
         distorted_V_Cd_dimer_struc.remove_oxidation_states()
         # distorted_V_Cd_dimer_struc.to(
         #     os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Rattled_0pt1_POSCAR")
@@ -867,6 +883,12 @@ class InputTestCase(unittest.TestCase):
         self.assertIn("Bond_Distortion_0.0%", V_Cd_distorted_dict["distortions"])
         # Check Dimer added for vacancies
         self.assertIn("Dimer", V_Cd_distorted_dict["distortions"])
+
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            V_Cd_distorted_dict["distortions"]["Dimer"], elements=["Te", ]
+        ).values())).values())), "2.0 A")
+
+    def test_apply_snb_distortions_V_Cd_kwargs(self):
         """
         Test apply_snb_distortions function for V_Cd with distorted_element
         kwargs set to ["Cd", "Te"], giving same behaviour.
@@ -977,7 +999,11 @@ class InputTestCase(unittest.TestCase):
         distorted_V_Cd_struc.remove_oxidation_states()
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_struc)
         self.assertEqual(self.V_Cd_minus0pt5_struc_kwarged, distorted_V_Cd_struc)
+
         distorted_V_Cd_dimer_struc = V_Cd_kwarg_distorted_dict["distortions"]["Dimer"]
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            distorted_V_Cd_dimer_struc, elements=["Te", ]
+        ).values())).values())), "2.0 A")
         distorted_V_Cd_dimer_struc.remove_oxidation_states()
         # distorted_V_Cd_dimer_struc.to(
         #     os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_0p15_kwarged_POSCAR")
@@ -1004,7 +1030,11 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         self.assertEqual(self.V_Cd_entry, V_Cd_distorted_dict["Unperturbed"])
+
         distorted_V_Cd_dimer_struc = V_Cd_distorted_dict["distortions"]["Dimer"]
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            distorted_V_Cd_dimer_struc, elements=["Te", ]
+        ).values())).values())), "2.0 A")
         distorted_V_Cd_dimer_struc.remove_oxidation_states()  # pymatgen-analysis-defects add ox. states
         self.assertNotEqual(self.V_Cd_struc, distorted_V_Cd_dimer_struc)
         distortion_parameters_dict = V_Cd_distorted_dict["distortion_parameters"]
@@ -2077,6 +2107,9 @@ class InputTestCase(unittest.TestCase):
         )
         V_Cd_dimer_POSCAR = Structure.from_file("v_Cd_Td_Te2.83_0/Dimer/POSCAR")
         self.assertEqual(V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled)
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            V_Cd_dimer_POSCAR, elements=["Te", ]
+        ).values())).values())), "2.0 A")
 
         # test default generation of Dimer:
         self.tearDown()
@@ -2089,6 +2122,9 @@ class InputTestCase(unittest.TestCase):
         dist.write_vasp_files()
         V_Cd_dimer_POSCAR = Structure.from_file("v_Cd_Td_Te2.83_0/Dimer/POSCAR")
         self.assertEqual(V_Cd_dimer_POSCAR, self.V_Cd_dimer_struc_0pt25_rattled)
+        self.assertEqual(next(iter(next(iter(get_homoionic_bonds(  # check dimer bond length
+            V_Cd_dimer_POSCAR, elements=["Te", ]
+        ).values())).values())), "2.0 A")
 
         # test no dimer generation with explicit distortions list
         self.tearDown()
