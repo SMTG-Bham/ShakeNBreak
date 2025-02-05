@@ -368,11 +368,27 @@ class DistortionTestCase(unittest.TestCase):
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
         self.assertTrue(output["distorted_atoms"] == [[32, 'Te'], [41, 'Te']])
-        # Check that 2 Te are separated by 2 A
+        # Check that 2 Te are separated by 2 Å
         homo_bonds = analysis.get_homoionic_bonds(
             output['distorted_structure'], elements=["Te",]
         )
         self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '2.0 A'}})
+
+    def test_apply_dimer_distortion_custom_bond_length(self):
+        """Test apply_dimer_distortion function"""
+        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
+        output = distortions.apply_dimer_distortion(
+            self.V_Cd_struc, frac_coords=vac_coords, dimer_bond_length=1
+        )
+        self.assertNotEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
+        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
+        self.assertEqual(output["num_distorted_neighbours"], 2)
+        self.assertTrue(output["distorted_atoms"] == [[32, 'Te'], [41, 'Te']])
+        # Check that 2 Te are separated by 1 Å
+        homo_bonds = analysis.get_homoionic_bonds(
+            output['distorted_structure'], elements=["Te",]
+        )
+        self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '1.0 A'}})
 
 if __name__ == "__main__":
     unittest.main()
