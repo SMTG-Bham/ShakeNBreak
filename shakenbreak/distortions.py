@@ -8,9 +8,9 @@ import numpy as np
 from ase.neighborlist import NeighborList
 from hiphive.structure_generation.rattle import _probability_mc_rattle, generate_mc_rattled_structures
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
-from pymatgen.core.structure import Structure
-from pymatgen.core.bonds import get_bond_length
 from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
+from pymatgen.core.bonds import get_bond_length
+from pymatgen.core.structure import Structure
 from pymatgen.util.typing import SpeciesLike
 
 
@@ -469,6 +469,7 @@ def apply_dimer_distortion(
 
 
 # TODO: allow setting dimer bond length from higher level functions?
+# TODO: Update other docstrings about default dimer bond lengths
 
 
 def rattle(
