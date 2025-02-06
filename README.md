@@ -58,7 +58,7 @@ The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/pag
 ## Usage
 
 ### Python API
-`ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://readthedocs.org/projects/shakenbreak).
+`ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://shakenbreak.readthedocs.io).
 
 ### Command line interface
 Alternatively, the code can be used via the command line:

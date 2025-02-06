@@ -107,7 +107,10 @@ Usage
 Python API
 ----------------
 
-``ShakeNBreak`` can be used through a Python API, as exemplified in the `SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_.
+``ShakeNBreak`` can be used through a Python API, as exemplified in the
+`SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_
+and
+`SnB Polarons Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Polaron_Workflow.html>`_.
 
 Command line interface
 -------------------------
