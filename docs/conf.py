@@ -25,7 +25,7 @@ copyright = "2022, Irea Mosquera-Lois, Seán R. Kavanagh"
 author = "Irea Mosquera-Lois, Seán R. Kavanagh"
 
 # The full version, including alpha/beta/rc tags
-release = "3.4.0"
+release = "3.4.1"
 
 
 # -- General configuration ---------------------------------------------------
