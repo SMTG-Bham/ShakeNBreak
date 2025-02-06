@@ -37,7 +37,9 @@ from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
 from pymatgen.io.vasp.sets import BadInputSetWarning
 
-from shakenbreak import analysis, distortions, io
+from shakenbreak.analysis import _get_distortion_filename
+from shakenbreak.distortions import distort_and_rattle
+from shakenbreak.io import parse_fhi_aims_input, parse_qe_input
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/SnB_input_files/default_POTCARs.yaml")
@@ -59,8 +61,13 @@ warnings.formatwarning = _warning_on_one_line
 
 
 # Helper functions
-def _bold_print(string: str) -> None:
-    """Prints the input string in bold."""
+def bold_print(string: str) -> None:
+    """
+    Prints the input string in bold.
+
+    Args:
+        string (:obj:`str`): String to print in bold.
+    """
     print("\033[1m" + string + "\033[0m")
 
 
@@ -753,15 +760,14 @@ def identify_defect(
     oxi_state=None,
 ) -> Defect:
     """
-    By comparing the defect and bulk structures, identify the defect present and its site in
-    the supercell, and generate a pymatgen defect object
-    (doped.core.Defect) from this.
+    By comparing the defect and bulk structures, identify the defect present and its
+    site in the supercell, and generate a ``doped`` ``Defect`` object from this.
 
     Args:
         defect_structure (:obj:`Structure`):
-            defect structure
+            Defect structure
         bulk_structure (:obj:`Structure`):
-            bulk structure
+            Bulk structure
         defect_coords (:obj:`list`):
             Fractional coordinates of the defect site in the supercell.
         defect_index (:obj:`int`):
@@ -1081,14 +1087,14 @@ def generate_defect_object(
     verbose: bool = False,
 ) -> Defect:
     """
-    Create Defect() object from a doped/PyCDT single_defect_dict.
+    Create ``Defect`` object from a ``doped``/``PyCDT`` ``single_defect_dict``.
 
     Args:
         single_defect_dict (:obj:`dict`):
-            doped/PyCDT defect dictionary.
+            ``doped``/``PyCDT`` defect dictionary.
         bulk_dict (:obj:`dict`):
-            doped/PyCDT entry for bulk in the defect_entries dictionary,
-            (e.g. {"vacancies": {}, "interstitials": {}, "bulk": {},})
+            ``doped``/``PyCDT`` entry for bulk in the ``defect_entries`` dictionary,
+            (e.g. ``{"vacancies": {}, "interstitials": {}, "bulk": {},}``)
         charges (:obj:`list`):
             List of charge states for the defect.
         verbose (:obj:`bool`):
@@ -1144,13 +1150,14 @@ def generate_defect_object(
 
 
 def _get_defects_dict_from_defects_entries(defect_entries):
-    """
+    r"""
     Return a dictionary in the SnB format:
-    {"defect_name_wout_charge": [DefectEntry, ...]} for the given defect_entries list.
+    ``{"defect_name_wout_charge": [DefectEntry, ...]}`` for the given ``defect_entries``
+    list.
 
-    If the DefectEntry.name attribute is set for all DefectEntrys in defect_entries,
-    then these are used to obtain 'defect_name_wout_charge', otherwise the names are
-    set to the default doped defect names.
+    If the ``DefectEntry.name`` attribute is set for all ``DefectEntry``\s in
+    ``defect_entries``, then these are used to obtain 'defect_name_wout_charge',
+    otherwise the names are set to the default ``doped`` defect names.
     """
     # check if all defect_entries have a name attribute set:
     if all(getattr(defect_entry, "name", False) for defect_entry in defect_entries):
@@ -1212,7 +1219,7 @@ def _find_sc_defect_coords(defect_entry):
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            ``DefectEntry`` object.
+            ``doped``/``pymatgen`` ``DefectEntry``.
 
     Returns:
         frac_coords (:obj:`list`):
@@ -1240,10 +1247,7 @@ def _find_sc_defect_coords(defect_entry):
     return frac_coords
 
 
-# Main functions
-
-
-def _apply_rattle_bond_distortions(
+def distort_and_rattle_defect_entry(
     defect_entry: DefectEntry,
     num_nearest_neighbours: int,
     distortion_factor: Union[float, str],
@@ -1255,17 +1259,41 @@ def _apply_rattle_bond_distortions(
     distorted_atoms: Optional[list] = None,
     oxidation_states: Optional[dict] = None,
     verbose: bool = False,
+    dimer_bond_length: Optional[float] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
-    Applies rattle and bond distortions to the unperturbed defect structure
-    of ``defect_entry`` by calling ``distortion.distort`` with either:
-            - fractional coordinates (for vacancies) or
-            - defect site index (other defect types).
+    Applies bond distortions and rattling to ``num_nearest_neighbours`` of the
+    unperturbed defect supercell structure of ``defect_entry`` using the
+    ``distort_and_rattle()`` function from ``shakenbreak.distortions``.
+
+    The defect site is specified by either:
+
+        - fractional coordinates (for vacancies), or
+        - defect site index (for substitutions/interstitials).
+
+    Note that by default, rattling is not applied to the defect site or distorted
+    neighbours, but to all other atoms in the supercell, however this can be
+    controlled with the ``active_atoms`` kwarg. Rattling is performed by applying
+    random displacements to atomic positions, with the displacement distances
+    randomly drawn from a Gaussian distribution of standard deviation ``stdev``,
+    using a Monte Carlo algorithm which disfavours moves that bring atoms closer
+    than ``d_min``. Rattling behaviour can be controlled with ``mc_rattle_kwargs``,
+    see the ``distortions.rattle()`` docstring for more info.
+    Note that dimer distortions can be generated by setting ``distortion_factor``
+    to "Dimer"; see ``distortions.apply_dimer_distortion()`` for more info.
+
+    The nearest neighbours to distort are chosen by taking all sites (or those
+    matching ``distorted_element`` / ``distorted_atoms``, if provided), then sorting
+    by distance to the defect site (rounded to 2 decimal places) and site index, and
+    then taking the first ``num_nearest_neighbours`` of these. If there are multiple
+    non-degenerate combinations of (nearly) equidistant NNs to distort (e.g. cis vs
+    trans when distorting 2 NNs in a 4 NN square coordination), then the combination
+    with distorted NNs closest to each other is chosen.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen ``DefectEntry`` object.
+            The defect to distort, as a ``doped``/``pymatgen`` ``DefectEntry``.
         num_nearest_neighbours (:obj:`int`):
             Number of defect nearest neighbours to apply bond distortions to.
         distortion_factor (:obj:`float`):
@@ -1297,7 +1325,9 @@ def _apply_rattle_bond_distortions(
             to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of the atomic indices which should undergo bond distortions.
+            List of atomic indices which should undergo bond distortions,
+            using 0-indexing (i.e. python / ``pymatgen`` indexing). If None,
+            the closest neighbours to the defect will be chosen.
             (Default: None)
         oxidation_states (:obj:`dict`):
             Dictionary with oxidation states of the atoms in the material (e.g.
@@ -1305,11 +1335,16 @@ def _apply_rattle_bond_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **mc_rattle_kwargs:
+        dimer_bond_length (:obj:`float`):
+            The bond length to set generated dimers in dimer distortions to,
+            in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+            to estimate the dimer bond length.
+        **mc_rattle_kwargs (:obj:`dict`):
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
+
             - max_disp (:obj:`float`):
-                Maximum atomic displacement (in Angstroms) during Monte Carlo
+                Maximum atomic displacement (in Å) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
                 (Default: 2.0)
             - max_attempts (:obj:`int`):
@@ -1338,84 +1373,43 @@ def _apply_rattle_bond_distortions(
     if defect_type == "vacancy":  # for vacancies, we need to use fractional coordinates
         # (no atom site in structure!)
         frac_coords = bulk_supercell_site.frac_coords
-        defect_site_index = None
-        if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-        else:
-            bond_distorted_defect = distortions.distort(
-                structure=defect_structure,
-                num_nearest_neighbours=num_nearest_neighbours,
-                distortion_factor=distortion_factor,
-                frac_coords=frac_coords,
-                distorted_element=distorted_element,
-                distorted_atoms=distorted_atoms,  # site indices starting from 0
-                verbose=verbose,
-            )  # Dict with distorted struct, undistorted struct,
-            # num_distorted_neighbours, distorted_atoms, defect_site_index/defect_frac_coords
-    else:
-        # .distort() assumes VASP indexing (starting at 1)
-        defect_site_index = defect_object.defect_site_index + 1  # indexing in the
-        # unit cell is conserved in the supercell
-        frac_coords = None  # only for vacancies
-        if defect_site_index is None:
-            raise ValueError("Defect lacks defect_site_index!")
 
-        if isinstance(distortion_factor, str) and distortion_factor.lower() == "dimer":
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-        else:
-            bond_distorted_defect = distortions.distort(
-                structure=defect_structure,
-                num_nearest_neighbours=num_nearest_neighbours,
-                distortion_factor=distortion_factor,
-                site_index=defect_site_index,
-                distorted_element=distorted_element,
-                distorted_atoms=distorted_atoms,  # site indices starting from 0
-                verbose=verbose,
-            )
-    # Apply rattle to the bond distorted structure
-    if active_atoms is None:
-        distorted_atom_indices = [i[0] for i in bond_distorted_defect["distorted_atoms"]] + [
-            bond_distorted_defect.get("defect_site_index")  # only adds defect site if not vacancy
-        ]  # Note this is VASP indexing here
-        distorted_atom_indices = [
-            i - 1 for i in distorted_atom_indices if i is not None
-        ]  # remove 'None' if defect is vacancy, and convert to python indexing
-        rattling_atom_indices = np.arange(0, len(defect_structure))
-        idx = np.in1d(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
-        active_atoms = rattling_atom_indices[~idx]  # remove matching indices
-
-    if local_rattle:
-        bond_distorted_defect["distorted_structure"] = distortions.local_mc_rattle(
-            structure=bond_distorted_defect["distorted_structure"],
+        return distort_and_rattle(
+            structure=defect_structure,
+            num_nearest_neighbours=num_nearest_neighbours,
+            distortion_factor=distortion_factor,
             frac_coords=frac_coords,
-            site_index=defect_site_index,
             stdev=stdev,
             d_min=d_min,
-            verbose=verbose,
+            distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,
+            local_rattle=local_rattle,
             active_atoms=active_atoms,
-            **mc_rattle_kwargs,
-        )
-    else:
-        bond_distorted_defect["distorted_structure"] = distortions.rattle(
-            structure=bond_distorted_defect["distorted_structure"],
-            stdev=stdev,
-            d_min=d_min,
             verbose=verbose,
-            active_atoms=active_atoms,
+            dimer_bond_length=dimer_bond_length,
             **mc_rattle_kwargs,
         )
 
-    return bond_distorted_defect
+    defect_site_index = defect_object.defect_site_index  # defect_object indexing matches defect_structure
+
+    if defect_site_index is None:
+        raise ValueError("Defect lacks defect_site_index!")
+
+    return distort_and_rattle(
+        structure=defect_structure,
+        num_nearest_neighbours=num_nearest_neighbours,
+        distortion_factor=distortion_factor,
+        site_index=defect_site_index,  # site index rather than frac_coords now; 0-indexing
+        stdev=stdev,
+        d_min=d_min,
+        distorted_element=distorted_element,
+        distorted_atoms=distorted_atoms,
+        local_rattle=local_rattle,
+        active_atoms=active_atoms,
+        verbose=verbose,
+        dimer_bond_length=dimer_bond_length,
+        **mc_rattle_kwargs,
+    )
 
 
 def apply_snb_distortions(
@@ -1427,22 +1421,46 @@ def apply_snb_distortions(
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     distorted_atoms: Optional[list] = None,
-    verbose: bool = False,
     oxidation_states: Optional[dict] = None,
+    verbose: bool = False,
+    dimer_bond_length: Optional[float] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
-    Applies rattle and bond distortions to ``num_nearest_neighbours`` of the
-    unperturbed defect structure of ``defect_entry``.
+    Applies a range of bond distortions (given by ``bond_distortions``) and rattling
+    to ``num_nearest_neighbours`` of the unperturbed defect supercell structure of
+    ``defect_entry``, generating a range of distorted structures, using
+    ``distort_and_rattle_defect_entry()``.
+
+    Note that by default, rattling is not applied to the defect site or distorted
+    neighbours, but to all other atoms in the supercell, however this can be
+    controlled with the ``active_atoms`` kwarg. Rattling is performed by applying
+    random displacements to atomic positions, with the displacement distances
+    randomly drawn from a Gaussian distribution of standard deviation ``stdev``,
+    using a Monte Carlo algorithm which disfavours moves that bring atoms closer
+    than ``d_min``. Rattling behaviour can be controlled with ``mc_rattle_kwargs``,
+    see the ``distortions.rattle()`` docstring for more info.
+    Note that dimer distortions can be generated by including ``"Dimer"`` in
+    the ``bond_distortions`` list; see ``distortions.apply_dimer_distortion()`` for
+    more info.
+
+    The nearest neighbours to distort are chosen by taking all sites (or those
+    matching ``distorted_element`` / ``distorted_atoms``, if provided), then sorting
+    by distance to the defect site (rounded to 2 decimal places) and site index, and
+    then taking the first ``num_nearest_neighbours`` of these. If there are multiple
+    non-degenerate combinations of (nearly) equidistant NNs to distort (e.g. cis vs
+    trans when distorting 2 NNs in a 4 NN square coordination), then the combination
+    with distorted NNs closest to each other is chosen.
 
     Args:
         defect_entry (:obj:`DefectEntry`):
-            The defect to distort, as a pymatgen ``DefectEntry`` object.
+            The defect to distort, as a ``doped``/``pymatgen`` ``DefectEntry``.
         num_nearest_neighbours (:obj:`int`):
-            Number of defect nearest neighbours to apply bond distortions to
+            Number of defect nearest neighbours to apply bond distortions to.
         bond_distortions (:obj:`list`):
-            List of specific distortions to apply to defect nearest neighbours.
-            (e.g. [-0.5, 0.5])
+            List of specific distortions to apply to defect nearest neighbours
+            (e.g. [-0.5, 0.5]). If "Dimer" is included, then a dimer distortion
+            is also generated.
         local_rattle (:obj:`bool`):
             Whether to apply random displacements that tail off as we move
             away from the defect site. If False, all supercell sites are
@@ -1463,8 +1481,9 @@ def apply_snb_distortions(
             to the defect will be chosen.
             (Default: None)
         distorted_atoms (:obj:`list`, optional):
-            List of the atomic indices which should undergo bond distortions.
-            If None, the closest neighbours to the defect will be chosen.
+            List of atomic indices which should undergo bond distortions,
+            using 0-indexing (i.e. python / ``pymatgen`` indexing). If None,
+            the closest neighbours to the defect will be chosen.
             (Default: None)
         oxidation_states (:obj:`dict`):
             Dictionary with oxidation states of the atoms in the material (e.g.
@@ -1472,11 +1491,16 @@ def apply_snb_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
-        **mc_rattle_kwargs:
+        dimer_bond_length (:obj:`float`):
+            The bond length to set generated dimers in dimer distortions to,
+            in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+            to estimate the dimer bond length in each case.
+        **mc_rattle_kwargs (:obj:`dict`):
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
+
             - max_disp (:obj:`float`):
-                Maximum atomic displacement (in Angstroms) during Monte Carlo
+                Maximum atomic displacement (in Å) during Monte Carlo
                 rattling. Rarely occurs and is used primarily as a safety net.
                 (Default: 2.0)
             - max_attempts (:obj:`int`):
@@ -1487,7 +1511,7 @@ def apply_snb_distortions(
                 (Default: None)
             - seed (:obj:`int`):
                 Seed from which rattle random displacements are generated. Default
-                is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                is to set ``seed = int(distortion_factor*100)`` (i.e. +40% distortion ->
                 distortion_factor = 1.4 -> seed = 140, Rattled ->
                 distortion_factor = 1 (no bond distortion) -> seed = 100)
 
@@ -1496,151 +1520,73 @@ def apply_snb_distortions(
             Dictionary with distorted defect structure and the distortion
             parameters.
     """
+    bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
     distorted_defect_dict = {
         "Unperturbed": defect_entry,
         "distortions": {},
-        "distortion_parameters": {},
+        "distortion_parameters": {"unique_site": bulk_supercell_site.frac_coords},
     }
 
-    defect_object = defect_entry.defect
-    defect_type = defect_object.defect_type.name.lower()
-    defect_structure = defect_entry.sc_entry.structure
-    # Get defect site
-    bulk_supercell_site = _get_bulk_defect_site(defect_entry)  # bulk site
-    defect_site_index = defect_object.defect_site_index  # This is for the unit cell,
-    # but is conserved in the supercell
-
     seed = mc_rattle_kwargs.pop("seed", None)
-    if num_nearest_neighbours != 0:
-        # If vacancy, add "Dimer" to bond_distortions to ensure dimer reconstruction
-        # is found.
-        if defect_type == "vacancy" and ("dimer" not in (str(item).lower() for item in bond_distortions)):
-            bond_distortions = list(bond_distortions)  # in case provided as array
-            bond_distortions.append("Dimer")
-        for raw_distortion in bond_distortions:
-            if not isinstance(raw_distortion, str):
-                distortion = round(raw_distortion, ndigits=3) + 0  # ensure positive zero (not "-0.0%")
-                if verbose:
-                    print(f"--Distortion {distortion:.1%}")
-                distortion_factor = 1 + distortion
-                if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
-                    # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-                    seed = int(distortion_factor * 100)
+    if num_nearest_neighbours == 0:  # then we just apply rattling, and Dimer if included
+        bond_distortions = ["Rattled"] + (
+            ["Dimer"] if any(isinstance(d, str) and "dimer" in d.lower() for d in bond_distortions) else []
+        )
 
-                bond_distorted_defect = _apply_rattle_bond_distortions(
-                    defect_entry=defect_entry,
-                    num_nearest_neighbours=num_nearest_neighbours,
-                    distortion_factor=distortion_factor,
-                    local_rattle=local_rattle,
-                    stdev=stdev,
-                    d_min=d_min,
-                    distorted_element=distorted_element,
-                    distorted_atoms=distorted_atoms,
-                    verbose=verbose,
-                    seed=seed,
-                    oxidation_states=oxidation_states,
-                    **mc_rattle_kwargs,
-                )
-                distorted_defect_dict["distortions"][analysis._get_distortion_filename(distortion)] = (
-                    bond_distorted_defect["distorted_structure"]
-                )
-                distorted_defect_dict["distortion_parameters"] = {
-                    "unique_site": bulk_supercell_site.frac_coords,
-                    "num_distorted_neighbours": num_nearest_neighbours,
-                    "distorted_atoms": bond_distorted_defect["distorted_atoms"],
-                }
-                if bond_distorted_defect.get("defect_site_index"):  # only add site index if not vacancy
-                    distorted_defect_dict["distortion_parameters"]["defect_site_index"] = (
-                        bond_distorted_defect["defect_site_index"]
-                    )
+    for raw_distortion in bond_distortions:
+        if not isinstance(raw_distortion, str):
+            distortion_factor = 1 + raw_distortion
+            # +0 ensures positive zero (not "-0.0%"):
+            formatted_distortion = f"{round(raw_distortion, ndigits=3)+0:.1%}"
+        else:  # setting distortion_factor to "Dimer" selects Dimer distortion with distort_and_rattle
+            distortion_factor = "Dimer" if raw_distortion.lower() == "dimer" else 0
+            formatted_distortion = raw_distortion
 
-            elif isinstance(raw_distortion, str) and raw_distortion.lower() == "dimer":
-                # Apply dimer distortion, with rattling
-                if verbose:
-                    print(f"--Distortion {raw_distortion}")
-                bond_distorted_defect = _apply_rattle_bond_distortions(
-                    defect_entry=defect_entry,
-                    num_nearest_neighbours=2,
-                    distortion_factor=raw_distortion,
-                    local_rattle=local_rattle,
-                    stdev=stdev,
-                    d_min=d_min,
-                    distorted_element=distorted_element,
-                    distorted_atoms=distorted_atoms,
-                    verbose=verbose,
-                    seed=seed,
-                    oxidation_states=oxidation_states,
-                    **mc_rattle_kwargs,
-                )
-                distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect[
-                    "distorted_structure"
-                ]
-                distorted_defect_dict["distortion_parameters"].update(
-                    {
-                        "unique_site": bulk_supercell_site.frac_coords,
-                        "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
-                        "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
-                    }
-                )
-                if defect_site_index:  # only add site index if not vacancy
-                    distorted_defect_dict["distortion_parameters"]["defect_site_index"] = defect_site_index
-
-    else:  # when no extra/missing electrons, just rattle the structure
-        # Likely to be a shallow defect.
-        if defect_type == "vacancy":
-            defect_site_index = None
-            frac_coords = bulk_supercell_site.frac_coords
-        else:
-            frac_coords = None  # only for vacancies!
-            defect_site_index = defect_object.defect_site_index
+        if verbose:
+            print(f"--Distortion {formatted_distortion}")
 
         if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
             # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-            seed = 100  # distortion_factor = 1 when no bond distortion, just rattling
+            # if distortion_factor is a string, should be Dimer distortion, so use seed=0 (same as Rattled)
+            seed = 0 if isinstance(distortion_factor, str) else int(distortion_factor * 100)
 
-        if local_rattle:
-            perturbed_structure = distortions.local_mc_rattle(
-                defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                stdev=stdev,
-                d_min=d_min,
-                verbose=verbose,
-                **mc_rattle_kwargs,
-            )
-        else:
-            perturbed_structure = distortions.rattle(
-                defect_structure,
-                stdev=stdev,
-                d_min=d_min,
-                verbose=verbose,
-                **mc_rattle_kwargs,
-            )
-        distorted_defect_dict["distortions"]["Rattled"] = perturbed_structure
-        distorted_defect_dict["distortion_parameters"] = {
-            "unique_site": bulk_supercell_site.frac_coords,
-            "num_distorted_neighbours": num_nearest_neighbours,
-            "distorted_atoms": None,
-        }
-        if defect_site_index:  # only add site index if vacancy
-            distorted_defect_dict["distortion_parameters"]["defect_site_index"] = defect_site_index
-
-        if "Dimer" in bond_distortions:
-            # Apply dimer distortion, without rattling
-            bond_distorted_defect = distortions.apply_dimer_distortion(
-                structure=defect_structure,
-                site_index=defect_site_index,
-                frac_coords=frac_coords,
-                verbose=verbose,
-            )
-            distorted_defect_dict["distortions"]["Dimer"] = bond_distorted_defect["distorted_structure"]
+        bond_distorted_defect = distort_and_rattle_defect_entry(
+            defect_entry=defect_entry,
+            num_nearest_neighbours=num_nearest_neighbours,
+            distortion_factor=distortion_factor,
+            local_rattle=local_rattle,
+            stdev=stdev,
+            d_min=d_min,
+            distorted_element=distorted_element,
+            distorted_atoms=distorted_atoms,
+            verbose=verbose,
+            seed=seed,
+            oxidation_states=oxidation_states,
+            dimer_bond_length=dimer_bond_length,
+            **mc_rattle_kwargs,
+        )
+        distorted_defect_dict["distortions"][_get_distortion_filename(raw_distortion)] = (
+            bond_distorted_defect["distorted_structure"]
+        )
+        if distortion_factor == "Dimer":
             distorted_defect_dict["distortion_parameters"].update(
                 {
-                    "unique_site": bulk_supercell_site.frac_coords,
-                    "num_distorted_neighbours_in_dimer": 2,  # Dimer distortion only affects 2 atoms
-                    "distorted_atoms_in_dimer": bond_distorted_defect["distorted_atoms"],
+                    "dimer_distorted_atoms": bond_distorted_defect["distorted_atoms"],
                 }
             )
+        else:
+            distorted_defect_dict["distortion_parameters"].update(
+                {
+                    "num_distorted_neighbours": num_nearest_neighbours,
+                    "distorted_atoms": bond_distorted_defect["distorted_atoms"],
+                }
+            )
+
+        if "defect_site_index" in bond_distorted_defect:  # only add site index if not vacancy
+            distorted_defect_dict["distortion_parameters"]["defect_site_index"] = bond_distorted_defect[
+                "defect_site_index"
+            ]
+
     return distorted_defect_dict
 
 
@@ -1660,9 +1606,44 @@ class Distortions:
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
         distorted_atoms: Optional[list] = None,
+        dimer_bond_length: Optional[float] = None,
         **mc_rattle_kwargs,
     ):
         r"""
+        Initialises the relevant information for generating ``ShakeNBreak`` distorted
+        structures for defect entries in ``defect_entries``.
+
+        The `default` distortions generated have the bond lengths of ``X`` nearest
+        neighbours distorted by -60% to +60% (``bond_distortions``) in increments of
+        10% (``distortion_increment``), where ``X`` is equal to the excess charge for
+        that defect species (e.g. ``2`` for ``v_Cd_0``; see SnB tutorial:
+        https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html
+        or npj theory paper: https://doi.org/10.1038/s41524-023-00973-1 for more info).
+        Additionally, a dimer distortion will be included by default for each vacancy
+        defect (see ``distortions.apply_dimer_distortion`` for more info), and
+        distortions which result in inter-atomic distances less than 1 Å are excluded
+        (unless Hydrogen is present).
+
+        Rattling is then performed by applying random displacements to atomic positions,
+        with the displacement distances randomly drawn from a Gaussian distribution of
+        standard deviation ``stdev``, using a Monte Carlo algorithm which disfavours moves
+        that bring atoms closer than ``d_min``. Rattling behaviour can be controlled with
+        ``mc_rattle_kwargs``, see the ``distortions.rattle()`` docstring for more info.
+        Note that by default, rattling is not applied to the defect site or distorted
+        neighbours, but to all other atoms in the supercell, however this can be
+        controlled with the ``active_atoms`` kwarg (in ``mc_rattle_kwargs``).
+
+        The nearest neighbours to distort are chosen by taking all sites (or those
+        matching ``distorted_element`` / ``distorted_atoms``, if provided), then sorting
+        by distance to the defect site (rounded to 2 decimal places) and site index, and
+        then taking the first ``num_nearest_neighbours`` of these. If there are multiple
+        non-degenerate combinations of (nearly) equidistant NNs to distort (e.g. cis vs
+        trans when distorting 2 NNs in a 4 NN square coordination), then the combination
+        with distorted NNs closest to each other is chosen.
+
+        The bond distortion and rattling approaches are highly customisable via ``kwargs``
+        to this class and its methods, so see the argument descriptions for more info.
+
         Args:
             defect_entries (Union[DefectsGenerator, list, dict, DefectEntry]):
                 Either a ``DefectsGenerator`` object from ``doped``, or a list/dictionary
@@ -1704,7 +1685,7 @@ class Distortions:
                 (Default: 0.1)
             bond_distortions (:obj:`list`):
                 List of bond distortions to apply to nearest neighbours,
-                instead of the default set (e.g. [-0.5, 0.5]).
+                instead of the default set described above (e.g. [-0.5, 0.5]).
                 (Default: None)
             local_rattle (:obj:`bool`):
                 Whether to apply random displacements that tail off as we move
@@ -1720,27 +1701,33 @@ class Distortions:
                 the defect are chosen.
                 (Default: None)
             distorted_atoms (:obj:`list`):
-                Optional argument to specify the indices of the
-                neighbouring atoms to distort (indices starting from 0)
-                for each defect, in the form of a dictionary with
-                format {'defect_name': [index_1, index_2, ...]}
-                (e.g {'vac_1_Cd': [0, 2]}).
-                If None, the closest neighbours to the defect are chosen.
-            **mc_rattle_kwargs:
+                Optional argument to specify the indices of the neighbouring
+                atoms to distort for each defect (with indices starting from 0,
+                matching python / ``pymatgen`` 0-indexing) for each defect, in
+                the form of a dictionary with format:
+                ``{'defect_name': [index_1, index_2, ...]}`` (e.g
+                ``{'vac_1_Cd': [0, 2]}``).
+                If None (default), the closest neighbours to the defect are chosen.
+            dimer_bond_length (:obj:`float`):
+                The bond length to set generated dimers in dimer distortions to,
+                in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+                to estimate the dimer bond length in each case.
+            **mc_rattle_kwargs (:obj:`dict`):
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
+
                 - stdev (:obj:`float`):
-                    Standard deviation (in Angstroms) of the Gaussian distribution
+                    Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
                     in the bulk supercell.
                 - d_min (:obj:`float`):
-                    Minimum interatomic distance (in Angstroms) in the rattled
+                    Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
                     less than this will be heavily penalised. Default is to set this
                     to 80% of the nearest neighbour distance in the bulk supercell.
                 - max_disp (:obj:`float`):
-                    Maximum atomic displacement (in Angstroms) during Monte Carlo
+                    Maximum atomic displacement (in Å) during Monte Carlo
                     rattling. Rarely occurs and is used primarily as a safety net.
                     (Default: 2.0)
                 - max_attempts (:obj:`int`):
@@ -1751,7 +1738,7 @@ class Distortions:
                     (Default: None)
                 - seed (:obj:`int`):
                     Seed from which rattle random displacements are generated. Default
-                    is to set seed = int(distortion_factor*100) (i.e. +40% distortion ->
+                    is to set ``seed = int(distortion_factor*100``) (i.e. +40% distortion ->
                     distortion_factor = 1.4 -> seed = 140, Rattled ->
                     distortion_factor = 1 (no bond distortion) -> seed = 100)
 
@@ -1761,6 +1748,7 @@ class Distortions:
         self.distorted_atoms = distorted_atoms
         self.dict_number_electrons_user = dict_number_electrons_user
         self.local_rattle = local_rattle
+        self.dimer_bond_length = dimer_bond_length
 
         # To allow user to specify defect names (with CLI), ``defect_entries`` can be either
         # a dict or list of DefectEntry's, or a single DefectEntry
@@ -1943,20 +1931,22 @@ class Distortions:
         # Setup distortion parameters
         if bond_distortions:
             self.distortion_increment = None  # user specified
-            self.bond_distortions = []
+            self.bond_distortions = [round(i, 3) for i in bond_distortions if isinstance(i, (int, float))]
             #  bond_distortions, so no increment
-            if "Dimer" in bond_distortions:
+            if "dimer" in [i.lower() for i in bond_distortions if isinstance(i, str)]:
                 self.bond_distortions.append("Dimer")
-                bond_distortions.remove("Dimer")
 
-            self.bond_distortions.extend(list(np.around(bond_distortions, 3)))  # round to 3 decimal places
         else:
             # If the user does not specify bond_distortions, use
             # distortion_increment:
             self.distortion_increment = distortion_increment
-            self.bond_distortions = list(
-                np.flip(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) * -1
-            )[:-1] + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3))
+            self.bond_distortions = (
+                list(np.flip(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) * -1)[
+                    :-1
+                ]
+                + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3))
+                + ["Dimer (for vacancies)"]
+            )
 
         self._mc_rattle_kwargs = mc_rattle_kwargs
 
@@ -2056,11 +2046,11 @@ class Distortions:
             number_electrons = _calc_number_electrons(defect_entry, defect_name, oxidation_states)
 
         if verbose:
-            _bold_print(f"\nDefect: {defect_name}")
+            bold_print(f"\nDefect: {defect_name}")
             if number_electrons < 0:
-                _bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
+                bold_print(f"Number of extra electrons in neutral state: {abs(number_electrons)}")
             else:
-                _bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
+                bold_print(f"Number of missing electrons in neutral state: {number_electrons}")
         return number_electrons
 
     def _get_number_distorted_neighbours(
@@ -2101,24 +2091,41 @@ class Distortions:
             f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
         )
 
+    def _get_bond_distortions(
+        self,
+        defect_type: str,
+    ) -> list:
+        """
+        Get the bond distortions to apply for a given defect type.
+
+        If "Dimer (for vacancies)" is in the bond distortions, it will be
+        replaced with "Dimer" for vacancy defects, or just removed for
+        other defect types.
+        """
+        bond_distortions = self.bond_distortions.copy()
+        if "Dimer (for vacancies)" in bond_distortions:
+            bond_distortions.remove("Dimer (for vacancies)")
+            if defect_type == "vacancy":
+                bond_distortions.append("Dimer")
+
+        return bond_distortions
+
     def _update_distortion_metadata(
         self,
         distortion_metadata: dict,
         defect_name: str,
         charge: int,
-        defect_site_index: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
+        defect_site_index: Optional[int] = None,
         defect_type: str = "",
     ) -> dict:
         """
         Update distortion_metadata with distortion information for each
         charged defect.
         """
-        if defect_site_index:
-            distortion_metadata["defects"][defect_name][
-                "defect_site_index"
-            ] = defect_site_index  # store site index of defect if not vacancy
+        if defect_site_index is not None:  # store site index of defect if not vacancy
+            distortion_metadata["defects"][defect_name]["defect_site_index"] = defect_site_index
         rattle_parameters = self._mc_rattle_kwargs.copy()
         rattle_parameters["stdev"] = self.stdev
         distortion_metadata["defects"][defect_name]["charges"].update(
@@ -2130,18 +2137,13 @@ class Distortions:
                         # state, in case posterior runs use different settings for certain defects
                         "distortion_increment": self.distortion_increment,  # None if user specified
                         # bond_distortions
-                        "bond_distortions": self.bond_distortions,
+                        "bond_distortions": self._get_bond_distortions(defect_type),
                         "local_rattle": self.local_rattle,
                         "mc_rattle_parameters": rattle_parameters,
                     },
                 }
             }
         )
-        # If vacancy, add "Dimer" to bond_distortions
-        if defect_type == "vacancy":
-            distortion_metadata["defects"][defect_name]["charges"][int(charge)]["distortion_parameters"][
-                "bond_distortions"
-            ] = [*self.bond_distortions, "Dimer"]
         return distortion_metadata
 
     def _generate_structure_comment(
@@ -2274,10 +2276,34 @@ class Distortions:
         verbose: Optional[bool] = None,
     ) -> tuple[dict, dict]:
         """
-        Applies rattle and bond distortion to all defects in ``defect_entries``.
+        Applies a range of bond distortions (given by ``self.bond_distortions``) and
+        rattling to the unperturbed defect supercell structures of all defects in
+        ``self.defect_entries``, using ``apply_snb_distortions()``.
+
         Returns a dictionary with the distorted (and undistorted) structures
         for each charge state of each defect.
         If file generation is desired, instead use the methods ``write_<code>_files()``.
+
+        Note that by default, rattling is not applied to the defect site or distorted
+        neighbours, but to all other atoms in the supercell, however this can be
+        controlled with the ``active_atoms`` kwarg (in ``mc_rattle_kwargs``).
+        Rattling is performed by applying random displacements to atomic positions,
+        with the displacement distances randomly drawn from a Gaussian distribution of
+        standard deviation ``stdev``, using a Monte Carlo algorithm which disfavours
+        moves that bring atoms closer than ``d_min``. Rattling behaviour can be
+        controlled with ``mc_rattle_kwargs``, see the ``distortions.rattle()`` docstring
+        for more info.
+
+        The nearest neighbours to distort are chosen by taking all sites (or those
+        matching ``distorted_element`` / ``distorted_atoms``, if provided), then sorting
+        by distance to the defect site (rounded to 2 decimal places) and site index, and
+        then taking the first ``num_nearest_neighbours`` of these. If there are multiple
+        non-degenerate combinations of (nearly) equidistant NNs to distort (e.g. cis vs
+        trans when distorting 2 NNs in a 4 NN square coordination), then the combination
+        with distorted NNs closest to each other is chosen.
+
+        The bond distortion and rattling approaches are highly customisable via ``kwargs``
+        to this class and its methods, so see the argument descriptions for more info.
 
         Args:
             verbose (:obj:`bool`):
@@ -2287,9 +2313,9 @@ class Distortions:
 
         Returns:
             :obj:`tuple`:
-                Tuple of:
-                Dictionary with the distorted and undistorted structures
+                Tuple of a dictionary with the distorted and undistorted structures
                 for each charge state of each defect, in the format:
+                ```
                 {'defect_name': {
                     'charges': {
                         {charge_state}: {
@@ -2297,6 +2323,7 @@ class Distortions:
                         },
                     },
                 }}
+                ```
                 and dictionary with distortion parameters for each defect.
         """
         if verbose is not False:  # medium level verbosity
@@ -2342,6 +2369,7 @@ class Distortions:
             distorted_defects_dict[defect_name] = self._setup_distorted_defect_dict(
                 defect_entry,
             )
+            defect_type = defect_entry.defect.defect_type.name.lower()
 
             for charge in distorted_defects_dict[defect_name][
                 "charges"
@@ -2356,13 +2384,14 @@ class Distortions:
                 defect_distorted_structures = apply_snb_distortions(
                     defect_entry=defect_entry,
                     num_nearest_neighbours=num_nearest_neighbours,
-                    bond_distortions=self.bond_distortions,
+                    bond_distortions=self._get_bond_distortions(defect_type),
                     local_rattle=self.local_rattle,
                     stdev=self.stdev,
                     distorted_element=distorted_element,
                     distorted_atoms=self.distorted_atoms,
                     verbose=verbose is True,  # high level verbosity,
                     oxidation_states=self.oxidation_states,
+                    dimer_bond_length=self.dimer_bond_length,
                     **self._mc_rattle_kwargs,
                 )
 
@@ -2400,10 +2429,10 @@ class Distortions:
                     distortion_metadata=self.distortion_metadata,
                     defect_name=defect_name,
                     charge=charge,
-                    defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
-                    defect_type=defect_entry.defect.defect_type.name.lower(),
+                    defect_type=defect_type,
+                    defect_site_index=defect_site_index,
                 )
 
         return distorted_defects_dict, self.distortion_metadata
@@ -2468,7 +2497,10 @@ class Distortions:
     ) -> tuple[dict, dict]:
         r"""
         Generates the input files for ``vasp_gam`` relaxations of all output
-        structures.
+        structures from ``Distortions.apply_distortions()``.
+
+        See the ``Distortions.apply_distortions()`` docstring for info on
+        the distortion generation approach.
 
         Args:
             user_incar_settings (:obj:`dict`):
@@ -2575,7 +2607,10 @@ class Distortions:
     ) -> tuple[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output
-        structures.
+        structures from ``Distortions.apply_distortions()``.
+
+        See the ``Distortions.apply_distortions()`` docstring for info on
+        the distortion generation approach.
 
         Args:
             pseudopotentials (:obj:`dict`, optional):
@@ -2631,7 +2666,7 @@ class Distortions:
         if pseudopotentials and not write_structures_only:
             default_input_parameters = loadfn(os.path.join(MODULE_DIR, "SnB_input_files/qe_input.yaml"))
             if input_file and not input_parameters:
-                input_parameters = io.parse_qe_input(input_file)
+                input_parameters = parse_qe_input(input_file)
             if input_parameters:
                 for section in input_parameters:
                     for key in input_parameters[section]:
@@ -2703,13 +2738,17 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp",
+        input_file: Optional[str] = None,
         write_structures_only: Optional[bool] = False,
         output_path: str = ".",
         verbose: Optional[bool] = None,
     ) -> tuple[dict, dict]:
         """
-        Generates input files for CP2K relaxations of all output structures.
+        Generates input files for CP2K relaxations of all output
+        structures from ``Distortions.apply_distortions()``.
+
+        See the ``Distortions.apply_distortions()`` docstring for info on
+        the distortion generation approach.
 
         Args:
             input_file (:obj:`str`, optional):
@@ -2733,6 +2772,9 @@ class Distortions:
                 Tuple of dictionaries with new defects_dict (containing the
                 distorted structures) and defect distortion parameters.
         """
+        if input_file is None:
+            input_file = f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp"
+
         if os.path.exists(input_file) and not write_structures_only:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
@@ -2772,7 +2814,10 @@ class Distortions:
     ) -> tuple[dict, dict]:
         """
         Generates input ``.cell`` and ``.param`` files for CASTEP relaxations of
-        all output structures.
+        all output structures from ``Distortions.apply_distortions()``.
+
+        See the ``Distortions.apply_distortions()`` docstring for info on
+        the distortion generation approach.
 
         Args:
             input_file (:obj:`str`, optional):
@@ -2849,7 +2894,10 @@ class Distortions:
     ) -> tuple[dict, dict]:
         """
         Generates input geometry and control files for FHI-aims relaxations
-        of all output structures.
+        of all output structures from ``Distortions.apply_distortions()``.
+
+        See the ``Distortions.apply_distortions()`` docstring for info on
+        the distortion generation approach.
 
         Note that if using ASE >= 3.23 and not ``write_structures_only``, the
         ``$AIMS_SPECIES_DIR`` environment variable must be set.
@@ -2905,7 +2953,7 @@ class Distortions:
         parameters = {}
 
         if input_file and not ase_calculator:
-            parameters = io.parse_fhi_aims_input(input_file)
+            parameters = parse_fhi_aims_input(input_file)
             parameters.update({"k_grid": (1, 1, 1)})
 
         if not parameters and not write_structures_only:
@@ -2986,7 +3034,10 @@ class Distortions:
         **mc_rattle_kwargs,
     ) -> "Distortions":
         """
-        Initialise Distortions() class from defect and bulk structures.
+        Initialise ``Distortions`` from defect and bulk structures.
+
+        See the ``Distortions`` docstring for information on behaviour and
+        arguments.
 
         Args:
             defects (:obj:`list_or_Structure`):
@@ -2995,7 +3046,7 @@ class Distortions:
                 fails, the fractional coordinates or index of the defect site
                 (in defect_structure for interstitials/substitutions, in
                 bulk_structure for vacancies) can be provided in the format:
-                [(defect Structure, frac_coords/index), ...] to aid site-matching.
+                ``[(defect Structure, frac_coords/index), ...]`` to aid site-matching.
 
                 Defect charge states (from which bond distortions are determined) are
                 set to the range: 0 - {Defect oxidation state}, with a ``padding``
@@ -3042,26 +3093,29 @@ class Distortions:
                 the defect are chosen.
                 (Default: None)
             distorted_atoms (:obj:`list`):
-                Optional argument to specify the neighbouring atoms to distort
-                for each defect, in the form of a dictionary with format
-                {'defect_name': [atom1, atom2, ...]} (e.g {'vac_1_Cd': [0, 1]}).
+                Optional argument to specify the indices of the neighbouring atoms
+                to distort for each defect (with indices starting from 0, matching
+                python / ``pymatgen`` 0-indexing), in the form of a dictionary with
+                format: ``{'defect_name': [atom1, atom2, ...]}`` (e.g
+                ``{'vac_1_Cd': [0, 1]}``).
                 If None, the closest neighbours to the defect are chosen.
                 (Default: None)
-            **mc_rattle_kwargs:
+            **mc_rattle_kwargs (:obj:`dict`):
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
+
                 - stdev (:obj:`float`):
-                    Standard deviation (in Angstroms) of the Gaussian distribution
+                    Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
                     in the bulk supercell.
                 - d_min (:obj:`float`):
-                    Minimum interatomic distance (in Angstroms) in the rattled
+                    Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
                     less than this will be heavily penalised. Default is to set this
                     to 80% of the nearest neighbour distance in the bulk supercell.
                 - max_disp (:obj:`float`):
-                    Maximum atomic displacement (in Angstroms) during Monte Carlo
+                    Maximum atomic displacement (in Å) during Monte Carlo
                     rattling. Rarely occurs and is used primarily as a safety net.
                     (Default: 2.0)
                 - max_attempts (:obj:`int`):
@@ -3087,10 +3141,10 @@ class Distortions:
                 f"Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects, but "
                 f"got {type(defects)} instead."
             )
-        if not padding:
+        if padding is None:
             print(
                 "Defect charge states will be set to the range: 0 - {Defect oxidation state}, "
-                "with a `padding = 1` on either side of this range."
+                "with default `padding = 1` on either side of this range."
             )
         else:
             print(

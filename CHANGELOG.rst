@@ -1,6 +1,18 @@
 Change Log
 ==========
 
+v3.4.1
+----------
+- Updated handling of Dimer distortions:
+    - The default dimer bond lengths are now set to match known covalent bond lengths (e.g. for O-O, S-S,
+      O-N etc), or failing that, the sum of their covalent radii (rather than prev hard default of 2 Å).
+    - Alternatively, dimer bond lengths can be specified by the user, both in the ``distortions`` functions
+      and in the higher level ``shakenbreak.input`` functions/classes (i.e. in ``Distortions``).
+- Added ``distort_and_rattle`` convenience function to ``distortions``, to easily apply the SnB distortions
+  and rattling (where rattling is not applied to the bond-distorted atoms) to a given structure. Useful for
+  power users.
+- Minor code streamlining and simplification in ``inputs``/``distortions``.
+
 v3.4.0
 ----------
 - Major efficiency updates:

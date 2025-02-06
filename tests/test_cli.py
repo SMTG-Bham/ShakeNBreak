@@ -274,8 +274,8 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
-            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
-            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.25 Å",
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6', 'Dimer (for vacancies)']. Then, will rattle with a std dev of 0.25 Å",
             result.output,
         )
         defect_name = "v_Cd_Td_Te2.83"
@@ -288,15 +288,15 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         self.assertIn("--Distortion -40.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
 
@@ -355,8 +355,8 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
-            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
-            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6', 'Dimer (for vacancies)']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
         self.assertIn(f"Defect: {defect_name}", result.output)
@@ -368,8 +368,8 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn("--Distortion -60.0%", result.output)
         self.assertNotIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         current_datetime_wo_minutes = datetime.datetime.now().strftime(
@@ -653,6 +653,7 @@ class CLITestCase(unittest.TestCase):
                     0.4,
                     0.5,
                     0.6,
+                    "Dimer (for vacancies)",
                 ],
                 "local_rattle": False,
                 "mc_rattle_parameters": {"stdev": 0.28333683853583164},
@@ -664,8 +665,8 @@ class CLITestCase(unittest.TestCase):
                         "0": {  # json converts integer strings to keys
                             "num_nearest_neighbours": 2,
                             "distorted_atoms": [
-                                [37, "Te"],
-                                [46, "Te"],
+                                [36, "Te"],
+                                [45, "Te"],
                             ],
                             "distortion_parameters": {
                                 "distortion_increment": 0.1,
@@ -692,7 +693,7 @@ class CLITestCase(unittest.TestCase):
                             },
                         },
                     },
-                'defect_site_index': 4,}
+                }
             },
         }
         # check defects from old metadata file are in new metadata file
@@ -735,11 +736,11 @@ class CLITestCase(unittest.TestCase):
         self.assertTrue(any(warning.category == UserWarning for warning in w))
         self.assertTrue(any(str(warning.message) == warning_message for warning in w))
         self.assertIn("--Distortion -60.0%", result.output)
-        defect_site_index = 1
+        defect_site_index = 0
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
+            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
             result.output,
         )
         defect_name = "Cd_i_C3v_Cd2.71"
@@ -778,8 +779,8 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 11, 'Cd'), (2.71, 23, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 11, 'Cd'), (1.09, 23, 'Cd')]",
+            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
             result.output,
         )
         self.assertEqual(
@@ -825,8 +826,8 @@ class CLITestCase(unittest.TestCase):
 
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.49, 11, 'Cd'), (2.59, 23, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.0, 11, 'Cd'), (1.04, 23, 'Cd')]",
+            + "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, 'Cd')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, 'Cd')]",
             result.output,
         )
 
@@ -860,8 +861,8 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: [0.016 0.017 0.001]\n"  # rattled position
-            + "            Original Neighbour Distances: [(2.33, 42, 'Te'), (2.73, 33, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(0.93, 42, 'Te'), (1.09, 33, 'Te')]",
+            + "            Original Neighbour Distances: [(2.33, 41, 'Te'), (2.73, 32, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(0.93, 41, 'Te'), (1.09, 32, 'Te')]",
             result.output,
         )
         self.assertNotIn("Auto site-matching", result.output)
@@ -895,8 +896,8 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         self.assertNotIn("Auto site-matching", result.output)
@@ -917,6 +918,7 @@ class CLITestCase(unittest.TestCase):
                     0.4,
                     0.5,
                     0.6,
+                    "Dimer (for vacancies)",
                 ],
                 "local_rattle": False,
                 "mc_rattle_parameters": {"stdev": 0.28333683853583164},
@@ -933,8 +935,8 @@ class CLITestCase(unittest.TestCase):
                         "0": {  # json converts integer strings to keys
                             "num_nearest_neighbours": 2,
                             "distorted_atoms": [
-                                [33, "Te"],
-                                [42, "Te"],
+                                [32, "Te"],
+                                [41, "Te"],
                             ],
                             "distortion_parameters": {
                                 "distortion_increment": 0.1,
@@ -996,8 +998,8 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
-            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
-            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6', 'Dimer (for vacancies)']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
         defect_name = "Te_Cd_Td_Te2.83"
@@ -1009,11 +1011,11 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            "\tDefect Site Index / Frac Coords: 1\n"
-            + "            Original Neighbour Distances: [(2.83, 34, 'Te'), (2.83, 43, 'Te'), "
-            "(2.83, 53, 'Te'), (2.83, 64, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 34, 'Te'), (1.13, 43, 'Te'), "
-            "(1.13, 53, 'Te'), (1.13, 64, 'Te')]",
+            "\tDefect Site Index / Frac Coords: 0\n"
+            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), "
+            "(2.83, 52, 'Te'), (2.83, 63, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te'), "
+            "(1.13, 52, 'Te'), (1.13, 63, 'Te')]",
             result.output,
         )
 
@@ -1187,8 +1189,8 @@ oxidation_states:
         self.assertNotIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
             "Applying ShakeNBreak... Will apply the following bond distortions: ["
-            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', "
-            "'0.3', '0.4', '0.5', '0.6']. Then, will rattle with a std dev of 0.28 Å",
+            "'-0.6', '-0.5', '-0.4', '-0.3', '-0.2', '-0.1', '0.0', '0.1', '0.2', '0.3', '0.4', '0.5', "
+            "'0.6', 'Dimer (for vacancies)']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
         defect_name = "v_Cd_Td_Te2.83"
@@ -1235,8 +1237,8 @@ local_rattle: False
         self.assertIn("Auto site-matching identified", result.output)  # medium verbosity
         self.assertIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
-            "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', "
-            "'-0.25', '0.0', '0.25', '0.5']. Then, will rattle with a std dev of 0.28 Å",
+            "Applying ShakeNBreak... Will apply the following bond distortions: ['-0.5', '-0.25', "
+            "'0.0', '0.25', '0.5', 'Dimer (for vacancies)']. Then, will rattle with a std dev of 0.28 Å",
             result.output,
         )
         self.assertIn(f"Defect: {defect_name}", result.output)
@@ -1251,7 +1253,7 @@ local_rattle: False
         kwarged_Int_Cd_2_dict = {
             "distortion_parameters": {
                 "distortion_increment": 0.25,
-                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5],
+                "bond_distortions": [-0.5, -0.25, 0.0, 0.25, 0.5, "Dimer (for vacancies)"],
                 "local_rattle": False,
                 "mc_rattle_parameters": {
                     "stdev": 0.28333683853583164,
@@ -1266,10 +1268,10 @@ local_rattle: False
                         "1": {  # json converts integer strings to keys
                             "num_nearest_neighbours": 4,
                             "distorted_atoms": [
-                                [11, "Cd"],
-                                [23, "Cd"],
-                                [30, "Cd"],
-                                [2, "Cd"],
+                                [10, "Cd"],
+                                [22, "Cd"],
+                                [29, "Cd"],
+                                [1, "Cd"],
                             ],
                             "distortion_parameters": {
                                 "distortion_increment": 0.25,
@@ -1285,13 +1287,14 @@ local_rattle: False
                             },
                         },
                     },
-                    "defect_site_index": 1,
+                    "defect_site_index": 0,
                 }
             },
         }
         # check defects from old metadata file are in new metadata file
         with open("distortion_metadata.json", "r") as metadata_file:
             metadata = json.load(metadata_file)
+        print(metadata, kwarged_Int_Cd_2_dict)  # for debugging
         np.testing.assert_equal(metadata, kwarged_Int_Cd_2_dict)
 
         self.tearDown()
@@ -1542,8 +1545,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te')]",
             result.output,
         )
         self.assertIn(
@@ -1553,8 +1556,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         self.assertIn(
@@ -1564,8 +1567,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), (2.83, 52, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te'), (3.68, 52, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te'), (2.83, 51, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te'), (3.68, 51, 'Te')]",
             result.output,
         )
         self.assertNotIn(f"Defect {defect_name} in charge state: +2.", result.output)  # old default
@@ -1659,8 +1662,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1727,8 +1730,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1801,8 +1804,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1858,19 +1861,19 @@ POTCAR:
             result.output,  # test auto-determined stdev and bond length
         )
         self.assertIn(
-            f"Defect v_Cd_Td_Te2.83 in charge state: 0. Number of distorted neighbours: 2",
+            "Defect v_Cd_Td_Te2.83 in charge state: 0. Number of distorted neighbours: 2",
             result.output,
         )
         # Not only neutral charge state because auto-determined defect name doesn't match config
         self.assertIn(
-            f"Defect v_Cd_Td_Te2.83 in charge state: -2. Number of distorted neighbours: 0",
+            "Defect v_Cd_Td_Te2.83 in charge state: -2. Number of distorted neighbours: 0",
             result.output,
         )
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 33, 'Te'), (3.68, 42, 'Te')]",
+            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
