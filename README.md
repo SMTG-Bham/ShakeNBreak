@@ -77,7 +77,7 @@ The functions provided include:
 More information about each function and its inputs/outputs are available from the [CLI section of the docs](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#commands) or using `-h` help option (e.g. `snb -h`).
 
 We recommend at least looking through the [tutorials](https://shakenbreak.readthedocs.io/en/latest/Tutorials.html) when first starting to use `ShakeNBreak`, to familiarise yourself with the full functionality and workflow.
-You may also find the 
+You may also find the
 [YouTube Overview (10 mins)](https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh),
 [YouTube Seminar (35 mins)](https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh)
 and/or papers listed in the [Literature](#literature) section above useful.

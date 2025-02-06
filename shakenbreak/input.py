@@ -38,8 +38,8 @@ from pymatgen.io.vasp.inputs import Kpoints
 from pymatgen.io.vasp.sets import BadInputSetWarning
 
 from shakenbreak.analysis import _get_distortion_filename
-from shakenbreak.io import parse_qe_input, parse_fhi_aims_input
 from shakenbreak.distortions import distort_and_rattle
+from shakenbreak.io import parse_fhi_aims_input, parse_qe_input
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 default_potcar_dict = loadfn(f"{MODULE_DIR}/SnB_input_files/default_POTCARs.yaml")
@@ -1259,13 +1259,15 @@ def distort_and_rattle_defect_entry(
     distorted_atoms: Optional[list] = None,
     oxidation_states: Optional[dict] = None,
     verbose: bool = False,
+    dimer_bond_length: Optional[float] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
     Applies bond distortions and rattling to ``num_nearest_neighbours`` of the
     unperturbed defect supercell structure of ``defect_entry`` using the
-    ``distort_and_rattle()`` function from ``shakenbreak.distortions``, with
-    the defect site specified by either:
+    ``distort_and_rattle()`` function from ``shakenbreak.distortions``.
+
+    The defect site is specified by either:
 
         - fractional coordinates (for vacancies), or
         - defect site index (for substitutions/interstitials).
@@ -1333,6 +1335,10 @@ def distort_and_rattle_defect_entry(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
+        dimer_bond_length (:obj:`float`):
+            The bond length to set generated dimers in dimer distortions to,
+            in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+            to estimate the dimer bond length.
         **mc_rattle_kwargs (:obj:`dict`):
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
@@ -1380,6 +1386,7 @@ def distort_and_rattle_defect_entry(
             local_rattle=local_rattle,
             active_atoms=active_atoms,
             verbose=verbose,
+            dimer_bond_length=dimer_bond_length,
             **mc_rattle_kwargs,
         )
 
@@ -1400,6 +1407,7 @@ def distort_and_rattle_defect_entry(
         local_rattle=local_rattle,
         active_atoms=active_atoms,
         verbose=verbose,
+        dimer_bond_length=dimer_bond_length,
         **mc_rattle_kwargs,
     )
 
@@ -1413,8 +1421,9 @@ def apply_snb_distortions(
     d_min: Optional[float] = None,
     distorted_element: Optional[str] = None,
     distorted_atoms: Optional[list] = None,
-    verbose: bool = False,
     oxidation_states: Optional[dict] = None,
+    verbose: bool = False,
+    dimer_bond_length: Optional[float] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1482,6 +1491,10 @@ def apply_snb_distortions(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
+        dimer_bond_length (:obj:`float`):
+            The bond length to set generated dimers in dimer distortions to,
+            in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+            to estimate the dimer bond length in each case.
         **mc_rattle_kwargs (:obj:`dict`):
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
@@ -1534,10 +1547,8 @@ def apply_snb_distortions(
 
         if not seed:  # by default, set seed equal to distortion factor * 100 (e.g. 0.5 -> 50)
             # to avoid cases where a particular supercell rattle gets stuck in a local minimum
-            if isinstance(distortion_factor, str):  # Dimer distortion
-                seed = 0  # same as rattled
-            else:
-                seed = int(distortion_factor * 100)
+            # if distortion_factor is a string, should be Dimer distortion, so use seed=0 (same as Rattled)
+            seed = 0 if isinstance(distortion_factor, str) else int(distortion_factor * 100)
 
         bond_distorted_defect = distort_and_rattle_defect_entry(
             defect_entry=defect_entry,
@@ -1551,6 +1562,7 @@ def apply_snb_distortions(
             verbose=verbose,
             seed=seed,
             oxidation_states=oxidation_states,
+            dimer_bond_length=dimer_bond_length,
             **mc_rattle_kwargs,
         )
         distorted_defect_dict["distortions"][_get_distortion_filename(raw_distortion)] = (
@@ -1594,6 +1606,7 @@ class Distortions:
         local_rattle: bool = False,
         distorted_elements: Optional[dict] = None,
         distorted_atoms: Optional[list] = None,
+        dimer_bond_length: Optional[float] = None,
         **mc_rattle_kwargs,
     ):
         r"""
@@ -1607,8 +1620,9 @@ class Distortions:
         https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html
         or npj theory paper: https://doi.org/10.1038/s41524-023-00973-1 for more info).
         Additionally, a dimer distortion will be included by default for each vacancy
-        defect, and distortions which result in inter-atomic distances less than 1 Å
-        are excluded (unless Hydrogen is present).
+        defect (see ``distortions.apply_dimer_distortion`` for more info), and
+        distortions which result in inter-atomic distances less than 1 Å are excluded
+        (unless Hydrogen is present).
 
         Rattling is then performed by applying random displacements to atomic positions,
         with the displacement distances randomly drawn from a Gaussian distribution of
@@ -1694,6 +1708,10 @@ class Distortions:
                 ``{'defect_name': [index_1, index_2, ...]}`` (e.g
                 ``{'vac_1_Cd': [0, 2]}``).
                 If None (default), the closest neighbours to the defect are chosen.
+            dimer_bond_length (:obj:`float`):
+                The bond length to set generated dimers in dimer distortions to,
+                in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+                to estimate the dimer bond length in each case.
             **mc_rattle_kwargs (:obj:`dict`):
                 Additional keyword arguments to pass to ``hiphive``'s
                 ``mc_rattle`` function. These include:
@@ -1730,6 +1748,7 @@ class Distortions:
         self.distorted_atoms = distorted_atoms
         self.dict_number_electrons_user = dict_number_electrons_user
         self.local_rattle = local_rattle
+        self.dimer_bond_length = dimer_bond_length
 
         # To allow user to specify defect names (with CLI), ``defect_entries`` can be either
         # a dict or list of DefectEntry's, or a single DefectEntry
@@ -1921,10 +1940,13 @@ class Distortions:
             # If the user does not specify bond_distortions, use
             # distortion_increment:
             self.distortion_increment = distortion_increment
-            self.bond_distortions = list(
-                np.flip(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) * -1
-            )[:-1] + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) + [
-                "Dimer (for vacancies)"]
+            self.bond_distortions = (
+                list(np.flip(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3)) * -1)[
+                    :-1
+                ]
+                + list(np.around(np.arange(0, 0.601, self.distortion_increment), decimals=3))
+                + ["Dimer (for vacancies)"]
+            )
 
         self._mc_rattle_kwargs = mc_rattle_kwargs
 
@@ -2070,8 +2092,8 @@ class Distortions:
         )
 
     def _get_bond_distortions(
-            self,
-            defect_type: str,
+        self,
+        defect_type: str,
     ) -> list:
         """
         Get the bond distortions to apply for a given defect type.
@@ -2087,7 +2109,6 @@ class Distortions:
                 bond_distortions.append("Dimer")
 
         return bond_distortions
-
 
     def _update_distortion_metadata(
         self,
@@ -2370,6 +2391,7 @@ class Distortions:
                     distorted_atoms=self.distorted_atoms,
                     verbose=verbose is True,  # high level verbosity,
                     oxidation_states=self.oxidation_states,
+                    dimer_bond_length=self.dimer_bond_length,
                     **self._mc_rattle_kwargs,
                 )
 

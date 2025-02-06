@@ -57,7 +57,7 @@ def parse_energies(
         :obj:`str`:
             Path to the ``energies_file``.
     """
-    from shakenbreak.analysis import _sort_data, _format_distortion_names
+    from shakenbreak.analysis import _format_distortion_names, _sort_data
 
     def _match(filename, grep_string):
         """Helper function to grep for a string in a file."""

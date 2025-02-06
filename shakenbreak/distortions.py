@@ -468,10 +468,6 @@ def apply_dimer_distortion(
     return bond_distorted_defect
 
 
-# TODO: allow setting dimer bond length from higher level functions?
-# TODO: Update other docstrings about default dimer bond lengths
-
-
 def rattle(
     structure: Structure,
     stdev: Optional[float] = None,
@@ -632,6 +628,7 @@ def distort_and_rattle(
     distorted_element: Optional[str] = None,
     distorted_atoms: Optional[list] = None,
     verbose: bool = False,
+    dimer_bond_length: Optional[float] = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -705,6 +702,10 @@ def distort_and_rattle(
         verbose (:obj:`bool`):
             Whether to print distortion information.
             (Default: False)
+        dimer_bond_length (:obj:`float`):
+            The bond length to set generated dimers in dimer distortions to,
+            in Å. If ``None`` (default), uses ``distortions.get_dimer_bond_length``
+            to estimate the dimer bond length.
         **mc_rattle_kwargs (:obj:`dict`):
             Additional keyword arguments to pass to ``hiphive``'s
             ``mc_rattle`` function. These include:
@@ -737,6 +738,7 @@ def distort_and_rattle(
             site_index=site_index,
             frac_coords=frac_coords,
             verbose=verbose,
+            dimer_bond_length=dimer_bond_length,
         )
     else:
         bond_distorted_defect = distort(
