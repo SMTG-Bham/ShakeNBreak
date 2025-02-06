@@ -289,7 +289,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             output = analysis.analyse_defect_site(
                 self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
                 name="Int_Cd_2",
-                site_num=65,
+                site_index=64,
             )
             # mock_print.assert_any_call("==> ", "Int_Cd_2 structural analysis ", " <==")
             mock_print.assert_any_call(
@@ -340,7 +340,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             analysis.analyse_defect_site(
                 self.Int_Cd_2_minus0pt6_NN_10_struc_rattled,
                 name="Int_Cd_2",
-                # no site_num or vac_coords specified
+                # no site_index or vac_coords specified
             )
 
     def test_get_structures(self):

@@ -2115,16 +2115,16 @@ class Distortions:
         distortion_metadata: dict,
         defect_name: str,
         charge: int,
-        defect_site_index: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
+        defect_site_index: Optional[int] = None,
         defect_type: str = "",
     ) -> dict:
         """
         Update distortion_metadata with distortion information for each
         charged defect.
         """
-        if defect_site_index:  # store site index of defect if not vacancy
+        if defect_site_index is not None:  # store site index of defect if not vacancy
             distortion_metadata["defects"][defect_name]["defect_site_index"] = defect_site_index
         rattle_parameters = self._mc_rattle_kwargs.copy()
         rattle_parameters["stdev"] = self.stdev
@@ -2429,10 +2429,10 @@ class Distortions:
                     distortion_metadata=self.distortion_metadata,
                     defect_name=defect_name,
                     charge=charge,
-                    defect_site_index=defect_site_index,
                     num_nearest_neighbours=num_nearest_neighbours,
                     distorted_atoms=distorted_atoms,
                     defect_type=defect_type,
+                    defect_site_index=defect_site_index,
                 )
 
         return distorted_defects_dict, self.distortion_metadata
