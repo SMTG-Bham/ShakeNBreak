@@ -379,6 +379,27 @@ class DistortionTestCase(unittest.TestCase):
         )
         self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '2.76 A'}})
 
+    def test_apply_dimer_distortion_V_Te(self):
+        """Test apply_dimer_distortion function"""
+        output = distortions.apply_dimer_distortion(
+            self.V_Cd_struc, site_index=len(self.V_Cd_struc)-1  # Te
+        )
+        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
+        self.assertEqual(output["num_distorted_neighbours"], 2)
+        self.assertTrue(output["distorted_atoms"] == [[10, 'Cd'], [20, 'Cd']])
+        # Check that 2 Te are separated by 2 Å
+        homo_bonds = analysis.get_homoionic_bonds(
+            output['distorted_structure'], elements=["Cd",]
+        )
+        self.assertEqual(homo_bonds, {"Cd(10)": {'Cd(20)': '2.88 A'}})
+
+    def test_get_dimer_bond_length(self):
+        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "O"), 1.48)
+        self.assertAlmostEqual(distortions.get_dimer_bond_length("H", "H"), 1.07)
+        self.assertAlmostEqual(distortions.get_dimer_bond_length("S", "S"), 2.06)
+        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "N"), 1.51)
+        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "S"), 1.57)
+
     def test_apply_dimer_distortion_custom_bond_length(self):
         """Test apply_dimer_distortion function"""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates

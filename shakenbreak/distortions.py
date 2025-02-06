@@ -338,13 +338,14 @@ def get_dimer_bond_length(
         float:
             The estimated dimer bond length between the two species.
     """
-    # TODO: Test
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         pmg_bond_length = get_bond_length(species_1, species_2)
         if w and any("No order" in str(warn.message) for warn in w):
             # use CovalentRadius values, rather than pmg defaulting to atomic radii
             return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
+
+    return pmg_bond_length
 
 
 def apply_dimer_distortion(
