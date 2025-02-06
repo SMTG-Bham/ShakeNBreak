@@ -67,7 +67,7 @@ def _get_ase_defect_structure(
     if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         input_structure_ase.append("V")  # fake "V" at vacancy, for consistent behaviour with subs/ints
         input_structure_ase.positions[-1] = np.dot(frac_coords, input_structure_ase.cell)
-        site_index = -1
+        site_index = len(input_structure_ase) - 1  # Set to the index of the appended atom
     else:
         raise ValueError(
             "Insufficient information to apply bond distortions, no `site_index` or `frac_coords` "
@@ -173,8 +173,7 @@ def _get_nns_to_distort(
                 input_structure_ase.get_chemical_symbols()[index],
             )
             for index in distorted_atoms
-            if index not in [defect_site_index, len(input_structure_ase) + defect_site_index]  # in case -1
-            # ignore defect itself
+            if index != defect_site_index  # ignore defect itself
         ],
         key=lambda tup: (round(tup[0], 2), tup[1]),  # sort by distance (to 2 dp), then by index
     )
@@ -1077,7 +1076,7 @@ def local_mc_rattle(
     if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         ase_struct.append("V")  # fake "V" at vacancy
         ase_struct.positions[-1] = np.dot(frac_coords, ase_struct.cell)
-        site_index = -1
+        site_index = len(ase_struct) - 1  # Set to the index of the appended atom
     elif site_index is None:
         raise ValueError(
             "Insufficient information to apply local rattle, no `site_index` or `frac_coords` provided."
@@ -1122,32 +1121,31 @@ def local_mc_rattle(
         )[0]
 
     except Exception as ex:
-        if "attempts" in str(ex):
-            reduced_d_min = sorted_distances[0] + stdev
-            local_rattled_ase_struct = _generate_local_mc_rattled_structures(
-                ase_struct,
-                site_index=site_index,
-                n_configs=1,
-                rattle_std=stdev,
-                d_min=reduced_d_min,
-                n_iter=n_iter,
-                active_atoms=active_atoms,
-                nbr_cutoff=nbr_cutoff,
-                width=width,
-                max_attempts=max(7000, max_attempts),  # default is 5000
-                max_disp=max_disp,
-                seed=seed,
-            )[0]
-
-            if verbose:
-                warnings.warn(
-                    f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
-                    f"significantly smaller than this present), setting d_min to"
-                    f" {reduced_d_min:.2f} \u212B for this defect."
-                )
-
-        else:
+        if "attempts" not in str(ex):
             raise ex
+
+        reduced_d_min = sorted_distances[0] + stdev
+        local_rattled_ase_struct = _generate_local_mc_rattled_structures(
+            ase_struct,
+            site_index=site_index,
+            n_configs=1,
+            rattle_std=stdev,
+            d_min=reduced_d_min,
+            n_iter=n_iter,
+            active_atoms=active_atoms,
+            nbr_cutoff=nbr_cutoff,
+            width=width,
+            max_attempts=max(7000, max_attempts),  # default is 5000
+            max_disp=max_disp,
+            seed=seed,
+        )[0]
+
+        if verbose:
+            warnings.warn(
+                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                f"significantly smaller than this present), setting d_min to"
+                f" {reduced_d_min:.2f} \u212B for this defect."
+            )
 
     if isinstance(frac_coords, np.ndarray):
         local_rattled_ase_struct.pop(-1)  # remove fake V from vacancy structure
