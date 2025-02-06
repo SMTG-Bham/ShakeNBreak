@@ -364,6 +364,11 @@ class DistortionTestCase(unittest.TestCase):
         output = distortions.apply_dimer_distortion(
             self.V_Cd_struc, frac_coords=vac_coords
         )
+        # to update dimer structure (last change was switch to ``get_dimer_bond_length`` default):
+        # output["distorted_structure"].to(fmt="POSCAR", filename=os.path.join(
+        #         self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Distortion_Unrattled_POSCAR"
+        #     )
+        # )
         self.assertEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
@@ -372,7 +377,7 @@ class DistortionTestCase(unittest.TestCase):
         homo_bonds = analysis.get_homoionic_bonds(
             output['distorted_structure'], elements=["Te",]
         )
-        self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '2.0 A'}})
+        self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '2.76 A'}})
 
     def test_apply_dimer_distortion_custom_bond_length(self):
         """Test apply_dimer_distortion function"""

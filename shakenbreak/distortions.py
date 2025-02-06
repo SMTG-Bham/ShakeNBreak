@@ -9,6 +9,9 @@ from ase.neighborlist import NeighborList
 from hiphive.structure_generation.rattle import _probability_mc_rattle, generate_mc_rattled_structures
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.structure import Structure
+from pymatgen.core.bonds import get_bond_length
+from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
+from pymatgen.util.typing import SpeciesLike
 
 
 def _warning_on_one_line(message, category, filename, lineno, file=None, line=None):
@@ -170,7 +173,7 @@ def _get_nns_to_distort(
                 input_structure_ase.get_chemical_symbols()[index],
             )
             for index in distorted_atoms
-            if index not in [defect_site_index, len(input_structure_ase)+defect_site_index]  # in case -1
+            if index not in [defect_site_index, len(input_structure_ase) + defect_site_index]  # in case -1
             # ignore defect itself
         ],
         key=lambda tup: (round(tup[0], 2), tup[1]),  # sort by distance (to 2 dp), then by index
@@ -277,7 +280,7 @@ def distort(
         (i[0] * distortion_factor, i[1], i[2]) for i in nns_to_distort
     ]  # Distort the nearest neighbour distances according to the distortion factor
     for i in distorted:
-        input_structure_ase.set_distance(
+        input_structure_ase.set_distance(  # fix=0 keeps ``defect_site_index`` fixed
             defect_site_index, i[1], i[0], fix=0, mic=True
         )  # Set the distorted distances in the ASE Atoms object
 
@@ -302,8 +305,9 @@ def distort(
     if verbose:
         distorted_info = [(round(i[0], 2), i[1], i[2]) for i in distorted]
         nearest_info = [(round(i[0], 2), i[1], i[2]) for i in nns_to_distort]  # round numbers
-        site_index_or_frac_coords = site_index if site_index is not None else np.around(frac_coords,
-                                                                                    decimals=3)
+        site_index_or_frac_coords = (
+            site_index if site_index is not None else np.around(frac_coords, decimals=3)
+        )
         print(
             f"""\tDefect Site Index / Frac Coords: {site_index_or_frac_coords}
             Original Neighbour Distances: {nearest_info}
@@ -313,11 +317,41 @@ def distort(
     return bond_distorted_defect
 
 
+def get_dimer_bond_length(
+    species_1: SpeciesLike,
+    species_2: SpeciesLike,
+):
+    """
+    Get the estimated dimer bond length between two species,
+    using the ``get_bond_length()`` function from ``pymatgen``
+    (which uses a database of known covalent bond lengths), or
+    if this fails, using the sum of the covalent radii of the
+    two species.
+
+    Args:
+        species_1 (SpeciesLike):
+            First species.
+        species_2 (SpeciesLike):
+            Second species.
+
+    Returns:
+        float:
+            The estimated dimer bond length between the two species.
+    """
+    # TODO: Test
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        pmg_bond_length = get_bond_length(species_1, species_2)
+        if w and any("No order" in str(warn.message) for warn in w):
+            # use CovalentRadius values, rather than pmg defaulting to atomic radii
+            return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
+
+
 def apply_dimer_distortion(
     structure: Structure,
     site_index: Optional[int] = None,  # 0-indexed
     frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    dimer_bond_length: float = 2.0,
+    dimer_bond_length: Optional[float] = None,
     verbose: Optional[bool] = False,
 ) -> dict:
     """
@@ -325,8 +359,13 @@ def apply_dimer_distortion(
 
     The defect nearest neighbours are determined (using ``CrystalNN`` with
     default settings), from them the two closest in distance are selected,
-    which are pushed towards each other so that their interatomic distance
+    which are pushed towards each other so that their inter-atomic distance
     is ``dimer_bond_length`` Å.
+
+    If ``dimer_bond_length`` is ``None`` (default), then the dimer bond length
+    is estimated using ``get_dimer_bond_length``, which uses a database of
+    known covalent bond lengths, or if this fails, using the sum of the
+    covalent radii of the two species.
 
     Args:
         structure (Structure):
@@ -341,7 +380,8 @@ def apply_dimer_distortion(
             Defaults to None.
         dimer_bond_length (float):
             The bond length to set the dimer to, in Å.
-            Defaults to 2.0.
+            If ``None`` (default), uses ``get_dimer_bond_length`` to estimate
+            the dimer bond length.
         verbose (Optional[bool]):
             Print information about the dimer distortion.
             Defaults to False.
@@ -364,20 +404,36 @@ def apply_dimer_distortion(
         cnn = CrystalNN()
         sites = [d["site"] for d in cnn.get_nn_info(input_structure, defect_site_index)]
 
+    if len(sites) < 2:
+        nns_to_distort, defect_site_index, input_structure_ase = _get_nns_to_distort(
+            structure,
+            2,
+            site_index,  # 0-indexed
+            frac_coords,
+        )
+        sites = [input_structure.sites[idx] for idx in [i[1] for i in nns_to_distort]]
+
     # Get distances between NN
     distances = {}
     sites = sorted(sites, key=lambda x: x.index)  # sort by site index for deterministic behaviour
     for i, site in enumerate(sites):
         for other_site in sites[i + 1 :]:
             distances[(site.index, other_site.index)] = site.distance(other_site)
+
     # Get defect NN with the smallest distance and lowest indices:
     site_indexes = tuple(
         sorted(min(distances, key=lambda k: (round(distances.get(k, 10), 2), k[0], k[1])))
     )
+    if dimer_bond_length is None:
+        dimer_bond_length = get_dimer_bond_length(
+            input_structure_ase[site_indexes[0]].symbol, input_structure_ase[site_indexes[1]].symbol
+        )
+
     # Set their distance to dimer_bond_length Å
     input_structure_ase.set_distance(
         a0=site_indexes[0], a1=site_indexes[1], distance=dimer_bond_length, fix=0.5, mic=True
-    )
+    )  # fix=0.5 keeps the centre of line between these atoms fixed in position
+
     if type(frac_coords) in [list, tuple, np.ndarray]:
         input_structure_ase.pop(-1)  # remove fake V from vacancy structure
 
@@ -409,6 +465,9 @@ def apply_dimer_distortion(
             Distorted Neighbour Distances: {dimer_bond_length:.2f} Å"""
         )
     return bond_distorted_defect
+
+
+# TODO: allow setting dimer bond length from higher level functions?
 
 
 def rattle(
@@ -721,6 +780,7 @@ def distort_and_rattle(
         )
 
     return bond_distorted_defect
+
 
 def _local_mc_rattle_displacements(
     atoms,
