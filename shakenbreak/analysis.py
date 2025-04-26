@@ -140,11 +140,8 @@ def _format_distortion_names(
     if distortion_label.startswith("Bond_Distortion") and ("_from_" in distortion_label):
         # distortions from other charge state of the defect
         return distortion_label.split("Bond_Distortion_")[-1]
-    if (
-        "Rattled" in distortion_label
-        and "_from_" in distortion_label
-        or "Dimer" in distortion_label
-        and "_from_" in distortion_label
+    if ("Rattled" in distortion_label and "_from_" in distortion_label) or (
+        "Dimer" in distortion_label and "_from_" in distortion_label
     ):
         return distortion_label
 

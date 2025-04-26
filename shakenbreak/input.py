@@ -2702,9 +2702,9 @@ class Distortions:
                     filename=f"{folder_path}/espresso.pwi",
                     images=atoms,
                     format="espresso-in",
-                    pseudopotentials={
-                        atom: "Pseudopotential not specified" for atom in set(atoms.get_chemical_symbols())
-                    },
+                    pseudopotentials=dict.fromkeys(
+                        set(atoms.get_chemical_symbols()), "Pseudopotential not specified"
+                    ),
                 )
             else:
                 # write complete input file

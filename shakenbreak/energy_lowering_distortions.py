@@ -998,9 +998,7 @@ def _copy_espresso_files(
             filename=f"{distorted_dir}/{input_filename}",
             images=atoms,
             format="espresso-in",
-            pseudopotentials={  # doesn't matter, is rewritten below to use same as before
-                atom: "N/A" for atom in set(atoms.get_chemical_symbols())
-            },
+            pseudopotentials=dict.fromkeys(set(atoms.get_chemical_symbols()), "N/A"),
         )
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
@@ -1028,9 +1026,7 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
-                pseudopotentials={  # doesn't matter, is rewritten below to use same as before
-                    atom: "N/A" for atom in set(atoms.get_chemical_symbols())
-                },
+                pseudopotentials=dict.fromkeys(set(atoms.get_chemical_symbols()), "N/A"),
             )
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
@@ -1052,9 +1048,9 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
-                pseudopotentials={
-                    atom: "Pseudopotentials not specified" for atom in set(atoms.get_chemical_symbols())
-                },
+                pseudopotentials=dict.fromkeys(
+                    set(atoms.get_chemical_symbols()), "Pseudopotentials not specified"
+                ),
             )
 
 

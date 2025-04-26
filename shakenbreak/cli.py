@@ -600,8 +600,7 @@ def generate_all(
                     file.lower()
                     for file in os.listdir(f"{defects}/{defect}")
                     if structure_file.lower() in file.lower()
-                    or "cif" in file
-                    and "bulk" not in file.lower()
+                    or ("cif" in file and "bulk" not in file.lower())
                 ]
                 if len(poss_defect_files) == 1:
                     defect_file = poss_defect_files[0]
