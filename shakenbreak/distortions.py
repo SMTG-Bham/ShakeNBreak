@@ -165,14 +165,15 @@ def _get_nns_to_distort(
                 f"cannot apply bond distortions."
             )
 
+    distances = input_structure_ase.get_distances(defect_site_index, distorted_atoms, mic=True)
     nearest_neighbours = sorted(
         [
             (
-                input_structure_ase.get_distance(defect_site_index, index, mic=True),
+                distances[i],
                 index,  # 0-indexing (ASE/pymatgen)
                 input_structure_ase.get_chemical_symbols()[index],
             )
-            for index in distorted_atoms
+            for i, index in enumerate(distorted_atoms)
             if index != defect_site_index  # ignore defect itself
         ],
         key=lambda tup: (round(tup[0], 2), tup[1]),  # sort by distance (to 2 dp), then by index
