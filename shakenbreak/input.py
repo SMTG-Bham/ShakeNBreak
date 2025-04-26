@@ -36,6 +36,7 @@ from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
 from pymatgen.io.vasp.sets import BadInputSetWarning
+from tqdm import tqdm
 
 from shakenbreak.analysis import _get_distortion_filename
 from shakenbreak.distortions import distort_and_rattle
@@ -2334,7 +2335,11 @@ class Distortions:
         for (
             defect_name,
             list_of_defect_entries,
-        ) in self.defects_dict.items():  # loop for each defect
+        ) in tqdm(
+            self.defects_dict.items(),  # loop for each defect
+            bar_format="{desc}{percentage:.1f}%|{bar}| [{elapsed},  {rate_fmt}{postfix}]",
+            desc="Generating distorted defect structures...",
+        ):  # tqdm progress bar. 100% is completion
             # Get one defect object
             defect_entry = list_of_defect_entries[0]
             # Store the charge states in the user_charges attribute of the defect
