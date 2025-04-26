@@ -10,7 +10,7 @@ from hiphive.structure_generation.rattle import _probability_mc_rattle, generate
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
 from pymatgen.core.bonds import get_bond_length
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import PeriodicNeighbor, Structure
 from pymatgen.util.typing import SpeciesLike
 
 
@@ -412,7 +412,17 @@ def apply_dimer_distortion(
             site_index,  # 0-indexed
             frac_coords,
         )
-        sites = [input_structure.sites[idx] for idx in [i[1] for i in nns_to_distort]]
+        sites = [
+            PeriodicNeighbor(
+                species=input_structure.sites[i[1]].species,
+                coords=input_structure.sites[i[1]].frac_coords,
+                lattice=input_structure.lattice,
+                properties=input_structure.sites[i[1]].properties,
+                nn_distance=i[0],
+                index=i[1],
+            )
+            for i in nns_to_distort
+        ]
 
     # Get distances between NN
     distances = {}

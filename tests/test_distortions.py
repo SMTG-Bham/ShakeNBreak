@@ -1,3 +1,7 @@
+"""
+Note that most of the tests in ``test_input`` implicitly test these functions.
+"""
+
 import os
 import unittest
 import warnings
@@ -82,6 +86,7 @@ class DistortionTestCase(unittest.TestCase):
                 self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Distortion_Unrattled_POSCAR"
             )
         )
+        self.V_Si_HfSiO_interface_entry = loadfn(os.path.join(self.DATA_DIR, "v_Si_C1_O1.70_HfSiO_interface_+1.json"))
         warnings.simplefilter("always")  # Cause all warnings to always be triggered.
 
     def tearDown(self):
@@ -415,6 +420,26 @@ class DistortionTestCase(unittest.TestCase):
             output['distorted_structure'], elements=["Te",]
         )
         self.assertEqual(homo_bonds, {"Te(32)": {'Te(41)': '1.0 A'}})
+
+    def test_apply_dimer_distortion_less_than_2_CNN_NN(self):
+        """
+        Test the ``apply_dimer_distortion`` function, for a case where
+        ``CrystalNN`` returns less than 2 neighbours, and so we default to
+        using ``_get_nns_to_distort``.
+
+        Previously failed, causing the bug reported in #85.
+        """
+        output = distortions.apply_dimer_distortion(
+            self.V_Si_HfSiO_interface_entry.defect_supercell,
+            frac_coords=self.V_Si_HfSiO_interface_entry.defect_supercell_site.frac_coords,
+        )
+        self.assertEqual(output["undistorted_structure"], self.V_Si_HfSiO_interface_entry.defect_supercell)
+        self.assertEqual(output["num_distorted_neighbours"], 2)
+        self.assertTrue(output["distorted_atoms"] == [[82, 'Si'], [177, 'O']])
+
+        dist_matrix = output["distorted_structure"].distance_matrix.flatten()
+        min_dist = np.min(dist_matrix[dist_matrix > 0])
+        self.assertTrue(min_dist > 1.5)  # Si-O dimer bond length is larger than min_dist in orig structure
 
 if __name__ == "__main__":
     unittest.main()
