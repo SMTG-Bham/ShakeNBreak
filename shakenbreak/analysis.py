@@ -13,7 +13,7 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-from doped.utils.configurations import _scan_sm_stol_till_match
+from doped.utils.efficiency import StructureMatcher_scan_stol
 from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
@@ -553,9 +553,10 @@ def _cached_calculate_atomic_disp(
         struct2 (:obj:`Structure`):
             Structure to compare to struct1.
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`tuple`:
@@ -566,7 +567,7 @@ def _cached_calculate_atomic_disp(
     # likely be made faster using Cython/numba (see
     # https://github.com/materialsproject/pymatgen/issues/2593), caching and/or multiprocessing, but
     # ``doped`` efficiency improvements have made it multiple orders of magnitude faster:
-    return _scan_sm_stol_till_match(struct1, struct2, func_name="_get_atomic_disps", **sm_kwargs)
+    return StructureMatcher_scan_stol(struct1, struct2, func_name="_get_atomic_disps", **sm_kwargs)
 
 
 def calculate_struct_comparison(
@@ -609,9 +610,10 @@ def calculate_struct_comparison(
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`:
@@ -734,9 +736,10 @@ def compare_structures(
         verbose (:obj:`bool`):
             Whether to print information message about structures being compared.
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``_scan_sm_stol_till_match`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`pd.DataFrame`:

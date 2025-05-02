@@ -149,9 +149,9 @@ setup(
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.10",  # dictated by "pymatgen>=2024.9.10" requirement in doped
+    python_requires=">=3.10",  # dictated by "pymatgen>=2025.5.2" requirement in doped
     install_requires=[
-        "numpy",  # >=1.21.2" needed for numpy.typing.NDArray?
+        "numpy",
         "pymatgen",  # requirement set by doped
         "pymatgen-analysis-defects",  # requirement set by doped
         "matplotlib>=3.6",
@@ -162,7 +162,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=3.0.0",  # for _scan_sm_stol_till_match, for super-fast structure matching
+        "doped>=3.1",  # for StructureMatcher_scan_stol, for super-fast structure matching
     ],
     extras_require={
         "tests": [

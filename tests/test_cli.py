@@ -1593,13 +1593,8 @@ POTCAR:
 
         if _potcars_available():
             v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
-            assert v_Cd_INCAR != self.V_Cd_INCAR
-            # NELECT has changed due to POTCARs
-
-            v_Cd_INCAR.pop("NELECT")
-            test_INCAR = self.V_Cd_INCAR.copy()
-            test_INCAR.pop("NELECT")
-            assert v_Cd_INCAR == test_INCAR
+            assert v_Cd_INCAR == self.V_Cd_INCAR  # NELECT has changed due to POTCARs, but NELECT not
+            # set (by default) for neutral defects in doped >=3.1
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POTCAR")

@@ -20,6 +20,7 @@ from ase.calculators.castep import Castep
 from doped import _ignore_pmg_warnings
 from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout
 from doped.generation import DefectsGenerator, name_defect_entries
+from doped.utils.efficiency import StructureMatcher_scan_stol
 from doped.utils.parsing import (
     get_defect_type_and_composition_diff,
     get_defect_type_site_idxs_and_unrelaxed_structure,
@@ -29,7 +30,7 @@ from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects import thermo
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
-from pymatgen.analysis.structure_matcher import ElementComparator, StructureMatcher
+from pymatgen.analysis.structure_matcher import ElementComparator
 from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
@@ -380,21 +381,22 @@ def _create_vasp_input(
                     current_unperturbed_struct = distorted_defect_dict["Unperturbed"][
                         "Defect Structure"
                     ].copy()
-                    tight_sm = StructureMatcher(
+                    if StructureMatcher_scan_stol(  # tight StructureMatcher
+                        prev_unperturbed_struct,
+                        current_unperturbed_struct,
+                        func_name="fit",
                         stol=0.02,
                         ltol=0.02,
                         angle_tol=0.5,
                         primitive_cell=False,
                         attempt_supercell=False,
                         comparator=ElementComparator(),
-                    )
-                    if tight_sm.fit(prev_unperturbed_struct, current_unperturbed_struct):
+                    ):
                         warnings.warn(
                             f"The previously-generated defect distortions folder {dir} in "
-                            f"{os.path.basename(os.path.abspath(output_path))} "
-                            f"has the same Unperturbed defect structure as the current "
-                            f"defect species: {defect_name}. ShakeNBreak files in {dir} will "
-                            f"be overwritten."
+                            f"{os.path.basename(os.path.abspath(output_path))} has the same Unperturbed "
+                            f"defect structure as the current defect species: {defect_name}. ShakeNBreak "
+                            f"files in {dir} will be overwritten."
                         )
                         defect_name = dir
                         match_found = True
@@ -1185,11 +1187,14 @@ def _get_defects_dict_from_defects_entries(defect_entries):
         }
 
         # sub-select defect_entries to those with a unique defect.defect_structure to avoid duplicates:
-        sm = StructureMatcher()
         defect_entry_list = []
         for defect_entry in defect_entries:
             if not any(
-                sm.fit(defect_entry.defect.defect_structure, entry.defect.defect_structure)
+                StructureMatcher_scan_stol(  # default, loose StructureMatcher
+                    defect_entry.defect.defect_structure,
+                    entry.defect.defect_structure,
+                    func_name="fit",
+                )
                 for entry in defect_entry_list
             ):
                 # ensure sc_defect_frac_coords defined:
