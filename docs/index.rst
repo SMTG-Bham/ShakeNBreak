@@ -55,6 +55,7 @@ Code contributions to support additional solid-state packages are welcome!
 
 Literature
 ------------------------
+We kindly ask that you cite the code and theory/method paper if you use ``ShakeNBreak`` in your work.
 
 - **Preview**: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
 - **Code**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
