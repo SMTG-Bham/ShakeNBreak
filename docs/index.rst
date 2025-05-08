@@ -157,6 +157,7 @@ Studies using ``ShakeNBreak``
 - Z\. Cai & C. Ma **Origin of oxygen partial pressure-dependent conductivity in SrTiO₃** `Applied Physics Letters <https://doi.org/10.1063/5.0245820>`__ 2025
 - R\. Desai et al. **Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.5c01597>`__ 2025
 - C\. Kaewmeechai, J. Strand & A. Shluger **Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga₂O₃** `Physica Status Solidi B <https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652>`__ 2025
+- W\. Gierlotka et al. **Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium** `Computational Materials Science <https://doi.org/10.1016/j.commatsci.2025.113934>`__ 2025
 - W\. D. Neilson et al. **Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO** :sub:`2±x` **: A Density Functional Theory Study** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.4c06580>`__ 2024
 - X\. Wang et al. **Sulfur vacancies limit the open-circuit voltage of Sb₂S₃ solar cells** `ACS Energy Letters <https://doi.org/10.1021/acsenergylett.4c02722>`__ 2024
 - Z\. Yuan & G. Hautier **First-principles study of defects and doping limits in CaO** `Applied Physics Letters <https://doi.org/10.1063/5.0211707>`__ 2024
