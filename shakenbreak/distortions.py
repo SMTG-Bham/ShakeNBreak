@@ -276,6 +276,13 @@ def distort(
         distorted_atoms,  # 0-indexed
     )
 
+    if distortion_factor < 0:
+        raise ValueError(
+            "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond "
+            "distortions) cannot be less than zero! Note that input `bond_distortions` are converted to "
+            "distortion factors as: `distortion_factor = 1 + bond_distortion`."
+        )
+
     distorted = [  # Note: i[1] in nns_to_distort is 0-indexed, matching ASE/pymatgen etc
         (i[0] * distortion_factor, i[1], i[2]) for i in nns_to_distort
     ]  # Distort the nearest neighbour distances according to the distortion factor

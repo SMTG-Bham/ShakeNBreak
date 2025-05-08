@@ -129,6 +129,18 @@ class DistortionTestCase(unittest.TestCase):
             + "            Distorted Neighbour Distances:\n\t[]"
         )
 
+    def test_distort_V_Cd(self):
+        """Test bond distortion function for V_Cd"""
+        vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
+        with self.assertRaises(ValueError) as e:
+            output = distortions.distort(self.V_Cd_struc, 2, -0.5, frac_coords=vac_coords)
+            neg_dist_factor_error = ValueError(
+                "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond "
+                "distortions) cannot be less than zero! Note that input `bond_distortions` are converted to "
+                "distortion factors as: `distortion_factor = 1 + bond_distortion`."
+            )
+            self.assertIn(neg_dist_factor_error, e.exception)
+
     @patch("builtins.print")
     def test_distort_degenerate_case(self, mock_print):
         """
