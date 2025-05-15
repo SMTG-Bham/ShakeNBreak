@@ -148,6 +148,8 @@ and/or papers listed in the :ref:`Literature <literature>` section useful.
 Studies using ``ShakeNBreak``
 =============================
 
+- C\. López et al. **Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers** `arXiv <https://arxiv.org/abs/2504.18089>`__ 2025
+- K\. Ogawa et al. **Defect Tolerance via External Passivation in the Photocatalyst SrTiO₃:Al** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-j44qd>`__ 2025
 - Y\. Fu & H. Lohan et al. **Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based Solar Absorbers: In-depth Investigation into CuSbSe₂** `Nature Communications <https://doi.org/10.1038/s41467-024-55254-2>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancies with Foundation Models and Electrostatics** `arXiv <https://doi.org/10.48550/arXiv.2412.19330>`__ 2025
 - Y\. Liu **Small hole polarons in yellow phase δ-CsPbI₃** `arXiv <https://doi.org/10.48550/arXiv.2501.16695>`__ 2025
