@@ -44,6 +44,7 @@ extensions = [
     "sphinx_design",
     # "sphinx_mdinclude",
     "myst_nb",  # for jupyter notebooks
+    "sphinx_copybutton",
     # "myst_parser",
 ]
 
