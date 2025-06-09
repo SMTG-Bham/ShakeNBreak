@@ -115,12 +115,12 @@ class DistortionTestCase(unittest.TestCase):
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         with self.assertRaises(ValueError) as e:
             output = distortions.distort(self.V_Cd_struc, 2, -0.5, frac_coords=vac_coords)
-        neg_dist_factor_error = ValueError(
+        self.assertEqual(
             "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond "
             "distortions) cannot be less than zero! Note that input `bond_distortions` are converted to "
-            "distortion factors as: `distortion_factor = 1 + bond_distortion`."
+            "distortion factors as: `distortion_factor = 1 + bond_distortion`.",
+            str(e.exception),
         )
-        self.assertIn(neg_dist_factor_error, e.exception)
 
     @patch("builtins.print")
     def test_distort_degenerate_case(self, mock_print):
@@ -231,11 +231,11 @@ class DistortionTestCase(unittest.TestCase):
                             distorted_element=missing_element,
                         )
 
-                        missing_elt_error = ValueError(
-                            f"No atoms of `distorted_element` = {missing_element} found in the defect "
-                            f"structure, cannot apply bond distortions."
-                        )
-                        self.assertIn(missing_elt_error, e.exception)
+                    self.assertEqual(
+                        f"No atoms of `distorted_element` = ['{missing_element}'] found in the defect "
+                        f"structure, cannot apply bond distortions.",
+                        str(e.exception),
+                    )
 
     def test_rattle_V_Cd(self):
         """Test structure rattle function for V_Cd"""

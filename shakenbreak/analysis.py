@@ -419,7 +419,7 @@ def get_structures(
     defect_structures_dict = {}
     if not bond_distortions:  # if the user didn't specify any set of distortions, loop over subdirectories
         if not os.path.isdir(f"{output_path}/{defect_species}"):  # check if defect folder exists
-            raise FileNotFoundError(f"Path f'{output_path}/{defect_species}' does not exist!")
+            raise FileNotFoundError(f"Path {output_path}/{defect_species} does not exist!")
         distortion_subdirectories = [
             i
             for i in next(os.walk(f"{output_path}/{defect_species}"))[1]

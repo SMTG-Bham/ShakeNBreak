@@ -1557,8 +1557,9 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Cd_dimer_structure, ["Te"], "2.76 A")
 
         # test custom dimer bond length:
@@ -1567,12 +1568,13 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 "Dimer",
             ],
-            dimer_bond_length=1.5
+            dimer_bond_length=1.5,
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Cd_dimer_structure, ["Te"], "1.5 A")
 
         # quick test with V_Te:
@@ -1581,12 +1583,13 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 "Dimer",
             ],
-            dimer_bond_length=3
+            dimer_bond_length=3,
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Te_dimer_structure = defects_dict["v_Te_Td_Cd2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Te_dimer_structure = defects_dict["v_Te_Td_Cd2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Te_dimer_structure, ["Cd"], "3.0 A")
 
     def test_write_vasp_files(self):
@@ -2616,12 +2619,12 @@ class InputTestCase(unittest.TestCase):
             ],
         }
         with self.assertRaises(ValueError) as e:
-            no_bulk_error = ValueError(
-                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defect_entries`."
-            )
             dist = input.Distortions(vacancies)
-            self.assertIn(no_bulk_error, e.exception)
+        self.assertIn(
+            str(e.exception),
+            "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry present. "
+            "Please try again providing a `bulk` entry in `defect_entries`.",
+        )
 
     def test_write_vasp_files_from_list(self):
         """
@@ -2790,12 +2793,12 @@ class InputTestCase(unittest.TestCase):
             ],
         }
         with self.assertRaises(ValueError) as e:
-            no_bulk_error = ValueError(
-                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defect_entries`."
-            )
             dist = input.Distortions(vacancies)
-            self.assertIn(no_bulk_error, e.exception)
+        self.assertIn(
+            "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry present. "
+            "Please try again providing a `bulk` entry in `defect_entries`.",
+            str(e.exception),
+        )
 
         # Test setting chargge state
         vacancies = [
@@ -3208,7 +3211,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
 
         # check files are not written if `apply_distortions()` method is used
@@ -3435,7 +3438,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.3'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
         # Check structure
         defects_dict["vac_1_Cd"]["charges"][0]["structures"]["distortions"][
@@ -3478,7 +3481,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.3'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
         gen_struct = defects_dict["Int_Cd_2"]["charges"][2]["structures"]["distortions"]["Rattled"]
         gen_struct.remove_oxidation_states()
@@ -3743,13 +3746,13 @@ class InputTestCase(unittest.TestCase):
 
         # Test wrong type for `defect_entries`
         with self.assertRaises(TypeError) as e:
-            wrong_type_error = TypeError(
-                "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects"
-            )
             dist = input.Distortions.from_structures(
                 "wrong type!", bulk=self.CdTe_bulk_struc
             )  # `defect_entries` as string
-            self.assertIn(wrong_type_error, e.exception)
+        self.assertIn(
+            "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects",
+            str(e.exception),
+        )
 
         if_present_rm(os.path.join("Cd_i_C3v_Cd2.71_+3"))
         if_present_rm(os.path.join("v_Cd_Td_Te2.83_-3"))  # default padding
