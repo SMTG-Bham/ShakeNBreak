@@ -55,6 +55,7 @@ Code contributions to support additional solid-state packages are welcome!
 
 Literature
 ------------------------
+We kindly ask that you cite the code and theory/method paper if you use ``ShakeNBreak`` in your work.
 
 - **Preview**: Mosquera-Lois, I.; Kavanagh, S. R. `In Search of Hidden Defects`_, *Matter* 4 (8), 2602-2605, **2021**
 - **Code**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. `ShakeNBreak: Navigating the defect configurational landscape`_, *Journal of Open Source Software* 7 (80), 4817, **2022**
@@ -107,7 +108,10 @@ Usage
 Python API
 ----------------
 
-``ShakeNBreak`` can be used through a Python API, as exemplified in the `SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_.
+``ShakeNBreak`` can be used through a Python API, as exemplified in the
+`SnB Python API Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html>`_
+and
+`SnB Polarons Tutorial <https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Polaron_Workflow.html>`_.
 
 Command line interface
 -------------------------
@@ -144,13 +148,19 @@ and/or papers listed in the :ref:`Literature <literature>` section useful.
 Studies using ``ShakeNBreak``
 =============================
 
+- C\. López et al. **Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers** `arXiv <https://arxiv.org/abs/2504.18089>`__ 2025
+- K\. Ogawa et al. **Defect Tolerance via External Passivation in the Photocatalyst SrTiO₃:Al** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-j44qd>`__ 2025
 - Y\. Fu & H. Lohan et al. **Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based Solar Absorbers: In-depth Investigation into CuSbSe₂** `Nature Communications <https://doi.org/10.1038/s41467-024-55254-2>`__ 2025
-- Y\. Liu **Small hole polarons in yellow phase δ-CsPbI₃** `arXiv <https://doi.org/10.48550/arXiv.2501.16695>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancies with Foundation Models and Electrostatics** `arXiv <https://doi.org/10.48550/arXiv.2412.19330>`__ 2025
-- S\. R. Kavanagh et al. **Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2024-91h02>`__ 2025
+- Y\. Liu **Small hole polarons in yellow phase δ-CsPbI₃** `Physical Review Materials <https://doi.org/10.1103/yr22-9j6r>`__ 2025
+- S\. R. Kavanagh et al. **Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics** `Energy & Environmental Science <https://doi.org/10.1039/D4EE04647A>`__ 2025
+- J\. Huang et al. **Manganese in β-Ga₂O₃: a deep acceptor with a large nonradiative electron capture cross-section_** `Journal of Physics D: Applied Physics <https://doi.org/10.1088/1361-6463/adca42>`__ 2025
 - J\. Hu et al. **Enabling ionic transport in Li₃AlP₂ the roles of defects and disorder** `Journal of Materials Chemistry A <https://doi.org/10.1039/D4TA04347B>`__ 2025
 - X\. Zhao et al. **Trace Yb doping-induced cationic vacancy clusters enhance thermoelectrics in p-type PbTe** `Applied Physics Letters <https://doi.org/10.1063/5.0249058>`__ 2025
 - Z\. Cai & C. Ma **Origin of oxygen partial pressure-dependent conductivity in SrTiO₃** `Applied Physics Letters <https://doi.org/10.1063/5.0245820>`__ 2025
+- R\. Desai et al. **Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.5c01597>`__ 2025
+- C\. Kaewmeechai, J. Strand & A. Shluger **Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga₂O₃** `Physica Status Solidi B <https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652>`__ 2025
+- W\. Gierlotka et al. **Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium** `Computational Materials Science <https://doi.org/10.1016/j.commatsci.2025.113934>`__ 2025
 - W\. D. Neilson et al. **Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO** :sub:`2±x` **: A Density Functional Theory Study** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.4c06580>`__ 2024
 - X\. Wang et al. **Sulfur vacancies limit the open-circuit voltage of Sb₂S₃ solar cells** `ACS Energy Letters <https://doi.org/10.1021/acsenergylett.4c02722>`__ 2024
 - Z\. Yuan & G. Hautier **First-principles study of defects and doping limits in CaO** `Applied Physics Letters <https://doi.org/10.1063/5.0211707>`__ 2024

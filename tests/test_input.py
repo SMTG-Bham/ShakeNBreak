@@ -1150,7 +1150,8 @@ class InputTestCase(unittest.TestCase):
             assert self.V_Cd_INCAR != Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
             kwarged_INCAR = self.V_Cd_INCAR.copy()
             kwarged_INCAR.update(kwarg_incar_settings)
-            kwarged_INCAR["NELECT"] = 812.0  # changed POTCARs
+            # NELECT has changed due to POTCARs, but NELECT not set (by default) for neutral defects in
+            # doped >=3.1, so doesn't need to be updated here:
             assert kwarged_INCAR == Incar.from_file(f"{V_Cd_kwarg_folder}/INCAR")
 
             # check if POTCARs have been written:
@@ -1556,8 +1557,9 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Cd_dimer_structure, ["Te"], "2.76 A")
 
         # test custom dimer bond length:
@@ -1566,12 +1568,13 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 "Dimer",
             ],
-            dimer_bond_length=1.5
+            dimer_bond_length=1.5,
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Cd_dimer_structure = defects_dict["v_Cd_Td_Te2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Cd_dimer_structure, ["Te"], "1.5 A")
 
         # quick test with V_Te:
@@ -1580,12 +1583,13 @@ class InputTestCase(unittest.TestCase):
             bond_distortions=[
                 "Dimer",
             ],
-            dimer_bond_length=3
+            dimer_bond_length=3,
         )
         self.assertEqual(dist.bond_distortions, ["Dimer"])
         defects_dict, metadata_dict = dist.apply_distortions()
-        V_Te_dimer_structure = defects_dict["v_Te_Td_Cd2.83"]["charges"][0]["structures"][
-            "distortions"]["Dimer"]
+        V_Te_dimer_structure = defects_dict["v_Te_Td_Cd2.83"]["charges"][0]["structures"]["distortions"][
+            "Dimer"
+        ]
         self._check_dimer_length(V_Te_dimer_structure, ["Cd"], "3.0 A")
 
     def test_write_vasp_files(self):
@@ -1683,9 +1687,9 @@ class InputTestCase(unittest.TestCase):
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
-        Int_Cd_2_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
-        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
+        Int_Cd_2_0_Bond_Distortion_folder = "Int_Cd_2_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_0_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
             len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
         )  # no duplicates
@@ -1696,21 +1700,19 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(  # Int_Cd_2_minus0pt6_struc_rattled is with new default `stdev` & `seed`
             Int_Cd_2_POSCAR.structure, self.Int_Cd_2_minus0pt6_struc_rattled
         )
-        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             kwarged_INCAR = self.V_Cd_INCAR.copy()
-            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/INCAR")
             assert kwarged_INCAR != Int_Cd_2_INCAR
 
             kwarged_INCAR.update({"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4})
-            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
-            Int_Cd_2_INCAR.pop("NELECT")
             assert kwarged_INCAR == Int_Cd_2_INCAR
 
             # check if POTCARs have been written:
-            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            potcar = Potcar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {
                 input.default_potcar_dict["POTCAR"][el_symbol]
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
@@ -2020,9 +2022,9 @@ class InputTestCase(unittest.TestCase):
             v_Cd_INCAR = self.V_Cd_INCAR.copy()
             assert v_Cd_INCAR != int_Cd_2_INCAR
 
-            v_Cd_INCAR.pop("NELECT")  # NELECT and NUPDOWN differs for the two defects
+            # NELECT and NUPDOWN differs for the two defects:
             v_Cd_INCAR.pop("NUPDOWN")
-            int_Cd_2_INCAR.pop("NELECT")
+            int_Cd_2_INCAR.pop("NELECT")  # NELECT not set for V_Cd_0, but is for Cd_i_+2
             int_Cd_2_INCAR.pop("NUPDOWN")
             assert v_Cd_INCAR == int_Cd_2_INCAR
 
@@ -2262,9 +2264,9 @@ class InputTestCase(unittest.TestCase):
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
-        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POSCAR")
+        Int_Cd_2_0_Bond_Distortion_folder = "Cd_i_C3v_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_0_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/POSCAR")
         self.assertEqual(
             len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
         )  # no duplicates
@@ -2272,21 +2274,19 @@ class InputTestCase(unittest.TestCase):
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.3,0.4,0.4]",  # closest to middle
         )
-        kpoints = Kpoints.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/KPOINTS")
+        kpoints = Kpoints.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/KPOINTS")
         self.assertEqual(kpoints.kpts, [(1, 1, 1)])
 
         if _potcars_available():
             kwarged_INCAR = self.V_Cd_INCAR.copy()
-            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/INCAR")
+            Int_Cd_2_INCAR = Incar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/INCAR")
             assert kwarged_INCAR != Int_Cd_2_INCAR
 
             kwarged_INCAR.update({"IVDW": 12})
-            kwarged_INCAR.pop("NELECT")  # different NELECT for Cd_i_+2
-            Int_Cd_2_INCAR.pop("NELECT")
             assert kwarged_INCAR == Int_Cd_2_INCAR
 
             # check if POTCARs have been written:
-            potcar = Potcar.from_file(f"{Int_Cd_2_Bond_Distortion_folder}/POTCAR")
+            potcar = Potcar.from_file(f"{Int_Cd_2_0_Bond_Distortion_folder}/POTCAR")
             assert set(potcar.as_dict()["symbols"]) == {
                 input.default_potcar_dict["POTCAR"][el_symbol]
                 for el_symbol in V_Cd_POSCAR.structure.symbol_set
@@ -2619,12 +2619,12 @@ class InputTestCase(unittest.TestCase):
             ],
         }
         with self.assertRaises(ValueError) as e:
-            no_bulk_error = ValueError(
-                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defect_entries`."
-            )
             dist = input.Distortions(vacancies)
-            self.assertIn(no_bulk_error, e.exception)
+        self.assertIn(
+            str(e.exception),
+            "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry present. "
+            "Please try again providing a `bulk` entry in `defect_entries`.",
+        )
 
     def test_write_vasp_files_from_list(self):
         """
@@ -2727,9 +2727,9 @@ class InputTestCase(unittest.TestCase):
         self.assertNotEqual(V_Cd_POSCAR.structure, self.V_Cd_minus0pt5_struc_rattled)
         # old default rattling
 
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
-        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        Int_Cd_2_0_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_0_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_0_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             Int_Cd_2_POSCAR.comment,
             "-60.0% N(Distort)=2 ~[0.8,0.2,0.8]",
@@ -2793,12 +2793,12 @@ class InputTestCase(unittest.TestCase):
             ],
         }
         with self.assertRaises(ValueError) as e:
-            no_bulk_error = ValueError(
-                "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry "
-                "present. Please try again providing a `bulk` entry in `defect_entries`."
-            )
             dist = input.Distortions(vacancies)
-            self.assertIn(no_bulk_error, e.exception)
+        self.assertIn(
+            "Input `defect_entries` dict matches `doped`/`PyCDT` format, but no 'bulk' entry present. "
+            "Please try again providing a `bulk` entry in `defect_entries`.",
+            str(e.exception),
+        )
 
         # Test setting chargge state
         vacancies = [
@@ -3211,7 +3211,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.6'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
 
         # check files are not written if `apply_distortions()` method is used
@@ -3438,7 +3438,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.3'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
         # Check structure
         defects_dict["vac_1_Cd"]["charges"][0]["structures"]["distortions"][
@@ -3481,7 +3481,7 @@ class InputTestCase(unittest.TestCase):
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             "['-0.3'].",
-            "Then, will rattle with a std dev of 0.28 \u212B \n",
+            "Then, will rattle with a std dev of 0.28 \u212b \n",
         )
         gen_struct = defects_dict["Int_Cd_2"]["charges"][2]["structures"]["distortions"]["Rattled"]
         gen_struct.remove_oxidation_states()
@@ -3634,9 +3634,9 @@ class InputTestCase(unittest.TestCase):
             )
 
         # check if correct files were created:
-        Int_Cd_2_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
-        self.assertTrue(os.path.exists(Int_Cd_2_Bond_Distortion_folder))
-        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_Bond_Distortion_folder + "/POSCAR")
+        Int_Cd_2_0_Bond_Distortion_folder = "Cd_i_C3v_Cd2.71_0/Bond_Distortion_-60.0%"
+        self.assertTrue(os.path.exists(Int_Cd_2_0_Bond_Distortion_folder))
+        Int_Cd_2_POSCAR = Poscar.from_file(Int_Cd_2_0_Bond_Distortion_folder + "/POSCAR")
         self.assertEqual(
             len(Int_Cd_2_POSCAR.site_symbols), len(set(Int_Cd_2_POSCAR.site_symbols))
         )  # no duplicates
@@ -3746,13 +3746,13 @@ class InputTestCase(unittest.TestCase):
 
         # Test wrong type for `defect_entries`
         with self.assertRaises(TypeError) as e:
-            wrong_type_error = TypeError(
-                "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects"
-            )
             dist = input.Distortions.from_structures(
                 "wrong type!", bulk=self.CdTe_bulk_struc
             )  # `defect_entries` as string
-            self.assertIn(wrong_type_error, e.exception)
+        self.assertIn(
+            "Wrong format for `defect_entries`. Should be a list of pymatgen Structure objects",
+            str(e.exception),
+        )
 
         if_present_rm(os.path.join("Cd_i_C3v_Cd2.71_+3"))
         if_present_rm(os.path.join("v_Cd_Td_Te2.83_-3"))  # default padding

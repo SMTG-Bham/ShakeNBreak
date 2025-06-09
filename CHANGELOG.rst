@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+v3.4.2
+----------
+- Add polarons distortion tutorial; https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Polaron_Workflow.html
+- Update to use efficiency functions from latest ``doped``.
+- Use ``tqdm`` progress bar for distortion generation.
+
 v3.4.1
 ----------
 - Updated handling of Dimer distortions:

@@ -10,7 +10,7 @@ from hiphive.structure_generation.rattle import _probability_mc_rattle, generate
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
 from pymatgen.core.bonds import get_bond_length
-from pymatgen.core.structure import Structure
+from pymatgen.core.structure import PeriodicNeighbor, Structure
 from pymatgen.util.typing import SpeciesLike
 
 
@@ -165,14 +165,15 @@ def _get_nns_to_distort(
                 f"cannot apply bond distortions."
             )
 
+    distances = input_structure_ase.get_distances(defect_site_index, distorted_atoms, mic=True)
     nearest_neighbours = sorted(
         [
             (
-                input_structure_ase.get_distance(defect_site_index, index, mic=True),
+                distances[i],
                 index,  # 0-indexing (ASE/pymatgen)
                 input_structure_ase.get_chemical_symbols()[index],
             )
-            for index in distorted_atoms
+            for i, index in enumerate(distorted_atoms)
             if index != defect_site_index  # ignore defect itself
         ],
         key=lambda tup: (round(tup[0], 2), tup[1]),  # sort by distance (to 2 dp), then by index
@@ -274,6 +275,13 @@ def distort(
         distorted_element,
         distorted_atoms,  # 0-indexed
     )
+
+    if distortion_factor < 0:
+        raise ValueError(
+            "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond "
+            "distortions) cannot be less than zero! Note that input `bond_distortions` are converted to "
+            "distortion factors as: `distortion_factor = 1 + bond_distortion`."
+        )
 
     distorted = [  # Note: i[1] in nns_to_distort is 0-indexed, matching ASE/pymatgen etc
         (i[0] * distortion_factor, i[1], i[2]) for i in nns_to_distort
@@ -411,7 +419,17 @@ def apply_dimer_distortion(
             site_index,  # 0-indexed
             frac_coords,
         )
-        sites = [input_structure.sites[idx] for idx in [i[1] for i in nns_to_distort]]
+        sites = [
+            PeriodicNeighbor(
+                species=input_structure.sites[i[1]].species,
+                coords=input_structure.sites[i[1]].frac_coords,
+                lattice=input_structure.lattice,
+                properties=input_structure.sites[i[1]].properties,
+                nn_distance=i[0],
+                index=i[1],
+            )
+            for i in nns_to_distort
+        ]
 
     # Get distances between NN
     distances = {}

@@ -132,9 +132,10 @@ def _compare_distortion(
             Whether to print information message about structures being compared.
             (Default: False)
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`
@@ -244,9 +245,10 @@ def _prune_dict_across_charges(
             structures for energy-lowering distortions, if found.
             (Default: False)
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`
@@ -381,9 +383,10 @@ def get_energy_lowering_distortions(
             distortions for other charge states.
             (Default: False)
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`dict`:
@@ -673,9 +676,10 @@ def compare_struct_to_distortions(
             Whether to print information message about structures being compared.
             (Default: False)
         **sm_kwargs:
-            Additional keyword arguments to pass to ``_scan_sm_stol_till_match``
-            in ``doped`` (used for ultra-fast structure matching), such as
-            ``min_stol``, ``max_stol``, ``stol_factor`` etc.
+            Additional keyword arguments to pass to
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
+            structure matching), such as ``min_stol``, ``max_stol``,
+            ``stol_factor`` etc.
 
     Returns:
         :obj:`tuple`:
@@ -998,9 +1002,7 @@ def _copy_espresso_files(
             filename=f"{distorted_dir}/{input_filename}",
             images=atoms,
             format="espresso-in",
-            pseudopotentials={  # doesn't matter, is rewritten below to use same as before
-                atom: "N/A" for atom in set(atoms.get_chemical_symbols())
-            },
+            pseudopotentials=dict.fromkeys(set(atoms.get_chemical_symbols()), "N/A"),
         )
         with open(f"{distorted_dir}/{input_filename}") as f:
             new_struct = f.read()
@@ -1028,9 +1030,7 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
-                pseudopotentials={  # doesn't matter, is rewritten below to use same as before
-                    atom: "N/A" for atom in set(atoms.get_chemical_symbols())
-                },
+                pseudopotentials=dict.fromkeys(set(atoms.get_chemical_symbols()), "N/A"),
             )
             with open(f"{distorted_dir}/{input_filename}") as f:
                 new_struct = f.read()
@@ -1052,9 +1052,9 @@ def _copy_espresso_files(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
                 format="espresso-in",
-                pseudopotentials={
-                    atom: "Pseudopotentials not specified" for atom in set(atoms.get_chemical_symbols())
-                },
+                pseudopotentials=dict.fromkeys(
+                    set(atoms.get_chemical_symbols()), "Pseudopotentials not specified"
+                ),
             )
 
 

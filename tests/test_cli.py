@@ -1096,6 +1096,7 @@ class CLITestCase(unittest.TestCase):
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
+        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -1111,7 +1112,7 @@ class CLITestCase(unittest.TestCase):
             catch_exceptions=False,
         )
         print(result.output)  # for debugging
-        assert not result.output  # no printed output
+        assert not result.stdout  # no printed output (exclude tqdm in stderr)
 
     def test_snb_generate_config(self):
         # test config file:
@@ -1592,13 +1593,8 @@ POTCAR:
 
         if _potcars_available():
             v_Cd_INCAR = Incar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/INCAR")
-            assert v_Cd_INCAR != self.V_Cd_INCAR
-            # NELECT has changed due to POTCARs
-
-            v_Cd_INCAR.pop("NELECT")
-            test_INCAR = self.V_Cd_INCAR.copy()
-            test_INCAR.pop("NELECT")
-            assert v_Cd_INCAR == test_INCAR
+            assert v_Cd_INCAR == self.V_Cd_INCAR  # NELECT has changed due to POTCARs, but NELECT not
+            # set (by default) for neutral defects in doped >=3.1
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{defect_name}_0/Bond_Distortion_30.0%/POTCAR")

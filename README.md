@@ -25,6 +25,8 @@ The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-
 ![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
+We kindly ask that you cite the code and theory/method paper if you use `ShakeNBreak` in your work.
+
 - **Preview**: Mosquera-Lois, I.; Kavanagh, S. R. [In Search of Hidden Defects](https://doi.org/10.1016/j.matt.2021.06.003), _Matter_ 4 (8), 2602-2605, **2021**
 - **Code**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [ShakeNBreak: Navigating the defect configurational landscape](https://doi.org/10.21105/joss.04817), _Journal of Open Source Software_ 7 (80), 4817, **2022**
 - **Theory/Method**: Mosquera-Lois, I. & Kavanagh, S. R.; Walsh, A.; Scanlon, D. O. [Identifying the Ground State Structures of Defects in Solids](https://doi.org/10.1038/s41524-023-00973-1), _npj Comput Mater_ 9, 25 **2023**
@@ -58,7 +60,7 @@ The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/pag
 ## Usage
 
 ### Python API
-`ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://readthedocs.org/projects/shakenbreak).
+`ShakeNBreak` can be used through a Python API, as exemplified in the [SnB Python API tutorial](https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Example_Workflow.html), with more info available on the [docs](https://shakenbreak.readthedocs.io).
 
 ### Command line interface
 Alternatively, the code can be used via the command line:
@@ -84,14 +86,20 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- C. López et al. **_Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers_** [_arXiv_](https://arxiv.org/abs/2504.18089) 2025
+- K. Ogawa et al. **_Defect Tolerance via External Passivation in the Photocatalyst SrTiO<sub>3</sub>:Al_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-j44qd) 2025
 - Y. Fu & H. Lohan et al. **_Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based
 Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Communications_](https://doi.org/10.1038/s41467-024-55254-2) 2025
-- Y\. Liu **_Small hole polarons in yellow phase δ-CsPbI<sub>3</sub>_** [_arXiv_](https://doi.org/10.48550/arXiv.2501.16695) 2025
 - S. R. Kavanagh **_Identifying Split Vacancies with Foundation Models and Electrostatics_** [_arXiv_](https://doi.org/10.48550/arXiv.2412.19330) 2025
-- S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2024-91h02) 2025
+- Y. Liu **_Small hole polarons in yellow phase δ-CsPbI<sub>3</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/yr22-9j6r) 2025
+- S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_Energy & Environmental Science_](https://doi.org/10.1039/D4EE04647A) 2025
+- J. Huang et al. **_Manganese in β-Ga<sub>2</sub>O<sub>3</sub>: a deep acceptor with a large nonradiative electron capture cross-section_** [_Journal of Physics D: Applied Physics_](https://doi.org/10.1088/1361-6463/adca42) 2025
 - J. Hu et al. **_Enabling ionic transport in Li<sub>3</sub>AlP<sub>2</sub> the roles of defects and disorder_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D4TA04347B) 2025
 - X. Zhao et al. **_Trace Yb doping-induced cationic vacancy clusters enhance thermoelectrics in p-type PbTe_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0249058) 2025
 - Z. Cai & C. Ma **_Origin of oxygen partial pressure-dependent conductivity in SrTiO<sub>3</sub>_** [_Applied Physics Letters_](doi.org/10.1063/5.0245820) 2025
+- R. Desai et al. **_Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS<sub>3</sub>_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.5c01597) 2025
+- C. Kaewmeechai, J. Strand & A. Shluger **_Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga<sub>2</sub>O<sub>3</sub>_** [_Physica Status Solidi B_](https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652) 2025 <!-- though didn't properly cite SnB or doped code papers... -->
+- W. Gierlotka et al. **_Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium_** [_Computational Materials Science_](https://doi.org/10.1016/j.commatsci.2025.113934) 2025 <!-- though didn't cite SnB code paper... -->
 - W. D. Neilson et al. **_Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO<sub>2±x</sub>: A Density Functional Theory Study_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.4c06580) 2024
 - X. Wang et al. **_Sulfur Vacancies Limit the Open-circuit Voltage of Sb<sub>2</sub>S<sub>3</sub> Solar Cells_** [_ACS Energy Letters_](https://doi.org/10.1021/acsenergylett.4c02722) 2024
 - Z. Yuan & G. Hautier **_First-principles study of defects and doping limits in CaO_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0211707) 2024
