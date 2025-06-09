@@ -737,7 +737,7 @@ def compare_structures(
             Whether to print information message about structures being compared.
         **sm_kwargs:
             Additional keyword arguments to pass to
-            ``_scan_sm_stol_till_match`` in ``doped`` (used for ultra-fast
+            ``StructureMatcher_scan_stol`` in ``doped`` (used for ultra-fast
             structure matching), such as ``min_stol``, ``max_stol``,
             ``stol_factor`` etc.
 
