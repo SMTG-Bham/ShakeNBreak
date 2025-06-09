@@ -1,3 +1,4 @@
+import itertools
 from pymatgen.io.vasp.outputs import BSVasprun
 from pymatgen.electronic_structure.core import Spin
 import pandas as pd
@@ -29,12 +30,20 @@ def hole_finder(vasprun_defect, bands_below=3, bands_above=3):
 
     print("\nLoading eigenvalue table...\n")
 
-    eigenvals = []
-
-    for b in range(vbm_data[0] - bands_below, vbm_data[0] + bands_above):
-        for k in range(len(eigen_up)):
-            eigenvals.append([b + 1, k + 1, eigen_up[k][b][0], eigen_down[k][b][0], eigen_up[k][b][1],
-                              eigen_down[k][b][1]])
+    eigenvals = [
+        [
+            b + 1,
+            k + 1,
+            eigen_up[k][b][0],
+            eigen_down[k][b][0],
+            eigen_up[k][b][1],
+            eigen_down[k][b][1],
+        ]
+        for b, k in itertools.product(
+            range(vbm_data[0] - bands_below, vbm_data[0] + bands_above),
+            range(len(eigen_up)),
+        )
+    ]
     df = pd.DataFrame(eigenvals,
                       columns=["band", "k-point", "up-eigenval", "down-eigenval", "up-occupancy",
                                "down-occupancy"])
@@ -59,7 +68,8 @@ def hole_finder(vasprun_defect, bands_below=3, bands_above=3):
     elif hole_spin_down.empty == True and hole_spin_up.empty == False:
         print("Hole is in the spin up channel:\n", hole_spin_up)
         print("Recommended min and max for EINT in PARCHG calculation:",
-              round(hole_spin_up["down-eigenval"].min(), 2), round(hole_spin_up["down-eigenval"].max(), 2))
+              round(hole_spin_up["up-eigenval"].min(), 2),
+              round(hole_spin_up["up-eigenval"].max(), 2))
     elif hole_spin_up.empty == True and hole_spin_down.empty == True:
         print("No holes found!")
 

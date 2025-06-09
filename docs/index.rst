@@ -152,7 +152,7 @@ Studies using ``ShakeNBreak``
 - K\. Ogawa et al. **Defect Tolerance via External Passivation in the Photocatalyst SrTiO₃:Al** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-j44qd>`__ 2025
 - Y\. Fu & H. Lohan et al. **Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based Solar Absorbers: In-depth Investigation into CuSbSe₂** `Nature Communications <https://doi.org/10.1038/s41467-024-55254-2>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancies with Foundation Models and Electrostatics** `arXiv <https://doi.org/10.48550/arXiv.2412.19330>`__ 2025
-- Y\. Liu **Small hole polarons in yellow phase δ-CsPbI₃** `arXiv <https://doi.org/10.48550/arXiv.2501.16695>`__ 2025
+- Y\. Liu **Small hole polarons in yellow phase δ-CsPbI₃** `Physical Review Materials <https://doi.org/10.1103/yr22-9j6r>`__ 2025
 - S\. R. Kavanagh et al. **Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics** `Energy & Environmental Science <https://doi.org/10.1039/D4EE04647A>`__ 2025
 - J\. Huang et al. **Manganese in β-Ga₂O₃: a deep acceptor with a large nonradiative electron capture cross-section_** `Journal of Physics D: Applied Physics <https://doi.org/10.1088/1361-6463/adca42>`__ 2025
 - J\. Hu et al. **Enabling ionic transport in Li₃AlP₂ the roles of defects and disorder** `Journal of Materials Chemistry A <https://doi.org/10.1039/D4TA04347B>`__ 2025

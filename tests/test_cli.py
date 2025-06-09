@@ -318,7 +318,7 @@ class CLITestCase(unittest.TestCase):
 
         if _potcars_available():
             generated_incar = Incar.from_file(f"{V_Cd_Bond_Distortion_folder}/INCAR")
-            # assert generated_incar == self.V_Cd_INCAR
+            assert generated_incar == self.V_Cd_INCAR
 
             # check if POTCARs have been written:
             potcar = Potcar.from_file(f"{V_Cd_Bond_Distortion_folder}/POTCAR")
@@ -1096,7 +1096,7 @@ class CLITestCase(unittest.TestCase):
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        runner = CliRunner(mix_stderr=False)  # exclude tqdm output here
+        runner = CliRunner()
         result = runner.invoke(
             snb,
             [
@@ -1112,7 +1112,7 @@ class CLITestCase(unittest.TestCase):
             catch_exceptions=False,
         )
         print(result.output)  # for debugging
-        assert not result.output  # no printed output
+        assert not result.stdout  # no printed output (exclude tqdm in stderr)
 
     def test_snb_generate_config(self):
         # test config file:
