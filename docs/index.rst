@@ -63,6 +63,7 @@ We kindly ask that you cite the code and theory/method paper if you use ``ShakeN
 - **News & Views**: Mannodi-Kanakkithodi, A. `The Devil is in the Defects`_, *Nature Physics* **2023** (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 - **YouTube Overview (10 mins)**: `ShakeNBreak: Symmetry-Breaking and Reconstruction at Defects in Solids <https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh>`__
 - **YouTube Seminar (35 mins)**: `Seminar: Predicting the Atomic Structures of Defects <https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh>`__
+- `DeepWiki Code Overview & Workflow <https://deepwiki.com/SMTG-Bham/ShakeNBreak/1-overview>`__
 
 
 .. _ShakeNBreak\: Navigating the defect configurational landscape: https://doi.org/10.21105/joss.04817
@@ -274,6 +275,7 @@ See the `Contributing Documentation <https://shakenbreak.readthedocs.io/en/lates
    Python API <modules>
    Tutorials
    Tips
+   Code Overview & Workflow Diagrams <https://deepwiki.com/SMTG-Bham/ShakeNBreak/1-overview>
 
 .. toctree::
    :hidden:
