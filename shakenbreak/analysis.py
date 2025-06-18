@@ -13,12 +13,10 @@ from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
-from doped.utils.efficiency import StructureMatcher_scan_stol
+from doped.utils.efficiency import Element, Structure, StructureMatcher_scan_stol
 from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
 from pymatgen.analysis.local_env import CrystalNN
-from pymatgen.core.composition import Composition, Element
-from pymatgen.core.structure import IStructure, PeriodicSite, Structure
 from pymatgen.io.vasp.outputs import Outcar
 
 from shakenbreak.io import parse_structure, read_vasp_structure
@@ -651,18 +649,6 @@ def calculate_struct_comparison(
 
     disp_dict = {}
     normalization = (len(ref_structure) / ref_structure.volume) ** (1 / 3)
-
-    # use doped efficiency functions for speed (speeds up structure matching dramatically):
-    from doped.utils.efficiency import Composition as doped_Composition
-    from doped.utils.efficiency import IStructure as doped_IStructure
-    from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
-
-    Composition.__instances__ = {}
-    Composition.__eq__ = doped_Composition.__eq__
-    PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
-    PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
-    IStructure.__instances__ = {}
-    IStructure.__eq__ = doped_IStructure.__eq__
 
     for distortion in list(defect_structures_dict.keys()):
         if defect_structures_dict[distortion] == "Not converged":

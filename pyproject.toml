@@ -50,6 +50,7 @@ lint.ignore = [
   "PLR",     # pylint refactor
   "W605",    # Invalid escape sequence
   "PT011",   # too broad pytest.raises()
+  "PLC0415", # non top-level imports, fine as we do this to avoid circular imports / handle older ase versions etc
 ]
 
 [tool.ruff.lint.per-file-ignores]
