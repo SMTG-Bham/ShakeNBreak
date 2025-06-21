@@ -109,37 +109,35 @@ def _verify_data_directories_exist(
         )
 
 
-def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
+def _parse_distortion_metadata(distortion_metadata: dict, defect: str, charge: int) -> tuple:
     """
     Parse the number and type of distorted nearest neighbours for a
     given defect from the ``distortion_metadata`` dictionary.
     """
+    num_nearest_neighbours, neighbour_atom = None, None  # default if info not available
+
     if defect not in distortion_metadata["defects"] and len(distortion_metadata["defects"].keys()) == 1:
         defect = next(iter(distortion_metadata["defects"].keys()))  # use the only defect in the metadata
 
     if defect in distortion_metadata["defects"]:
-        try:  # Get number and element symbol of the distorted site(s)
-            num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][str(charge)][
-                "num_nearest_neighbours"
-            ]  # get number of distorted neighbours
-        except KeyError:
-            num_nearest_neighbours = None
-        try:
-            neighbour_atoms = [  # get element of the distorted site
-                i[1]  # element symbol
-                for i in distortion_metadata["defects"][defect]["charges"][str(charge)]["distorted_atoms"]
-            ]
+        charges_dict = distortion_metadata["defects"][defect]["charges"]
+        if defect_species_dict := charges_dict.get(str(charge), charges_dict.get(charge, {})):
+            try:  # Get number and element symbol of the distorted site(s)
+                num_nearest_neighbours = defect_species_dict["num_nearest_neighbours"]
+            except KeyError:
+                num_nearest_neighbours = None
+            try:
+                neighbour_atoms = [  # get element of the distorted site
+                    i[1] for i in defect_species_dict["distorted_atoms"]  # element symbol
+                ]
 
-            if all(element == neighbour_atoms[0] for element in neighbour_atoms):
-                neighbour_atom = neighbour_atoms[0]
-            else:
-                neighbour_atom = "NN"  # if different elements were distorted, just use "NN" for label
+                if all(element == neighbour_atoms[0] for element in neighbour_atoms):
+                    neighbour_atom = neighbour_atoms[0]
+                else:
+                    neighbour_atom = "NN"  # if different elements were distorted, just use "NN" for label
 
-        except (KeyError, TypeError, ValueError, IndexError):
-            neighbour_atom = "NN"  # if distorted_elements wasn't set, set label to "NN"
-
-    else:
-        num_nearest_neighbours, neighbour_atom = None, None
+            except (KeyError, TypeError, ValueError, IndexError):
+                neighbour_atom = "NN"  # if distorted_elements wasn't set, set label to "NN"
 
     return num_nearest_neighbours, neighbour_atom
 
