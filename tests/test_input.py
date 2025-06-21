@@ -26,11 +26,7 @@ from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints
 from shakenbreak import input
 from shakenbreak.analysis import get_homoionic_bonds
 from shakenbreak.distortions import rattle, distort, apply_dimer_distortion
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        shutil.rmtree(path)
+from test_cli import if_present_rm
 
 
 def _potcars_available() -> bool:

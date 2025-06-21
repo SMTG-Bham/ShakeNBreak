@@ -16,16 +16,9 @@ from monty.serialization import loadfn
 
 from shakenbreak import analysis, plotting, io
 from test_energy_lowering_distortions import assert_not_called_with
+from test_cli import if_present_rm
 
 Mock.assert_not_called_with = assert_not_called_with
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
 
 
 _file_path = os.path.dirname(__file__)

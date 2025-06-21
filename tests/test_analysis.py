@@ -12,14 +12,7 @@ from pandas.core.frame import DataFrame
 from pymatgen.core.structure import Element, Structure
 
 from shakenbreak import analysis
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
+from test_cli import if_present_rm
 
 
 class AnalyseDefectsTestCase(unittest.TestCase):

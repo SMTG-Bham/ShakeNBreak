@@ -7,29 +7,10 @@ from unittest.mock import Mock, patch
 import ase
 import numpy as np
 from monty.serialization import dumpfn, loadfn
-from pymatgen.core.structure import Structure, Composition, IStructure, PeriodicSite
 
 from shakenbreak import analysis, distortions, energy_lowering_distortions, io
-
-# use doped efficiency functions for speed (speeds up structure matching dramatically):
-from doped.utils.efficiency import Composition as doped_Composition
-from doped.utils.efficiency import IStructure as doped_IStructure
-from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
-
-Composition.__instances__ = {}
-Composition.__eq__ = doped_Composition.__eq__
-PeriodicSite.__eq__ = doped_PeriodicSite.__eq__
-PeriodicSite.__hash__ = doped_PeriodicSite.__hash__
-IStructure.__instances__ = {}
-IStructure.__eq__ = doped_IStructure.__eq__
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
+from doped.utils.efficiency import Structure, Composition, PeriodicSite
+from test_cli import if_present_rm
 
 
 # https://stackoverflow.com/questions/54838354/
