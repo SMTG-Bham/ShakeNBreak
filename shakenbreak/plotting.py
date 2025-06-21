@@ -118,8 +118,7 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
         defect = next(iter(distortion_metadata["defects"].keys()))  # use the only defect in the metadata
 
     if defect in distortion_metadata["defects"]:
-        try:
-            # Get number and element symbol of the distorted site(s)
+        try:  # Get number and element symbol of the distorted site(s)
             num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][str(charge)][
                 "num_nearest_neighbours"
             ]  # get number of distorted neighbours
@@ -134,14 +133,10 @@ def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
             if all(element == neighbour_atoms[0] for element in neighbour_atoms):
                 neighbour_atom = neighbour_atoms[0]
             else:
-                neighbour_atom = "NN"  # if different elements were
-                # distorted, just use nearest neighbours (NN) for label
+                neighbour_atom = "NN"  # if different elements were distorted, just use "NN" for label
 
-        except (KeyError, TypeError, ValueError):
-            neighbour_atom = (
-                "NN"  # if distorted_elements wasn't set, set label
-                # to "NN"
-            )
+        except (KeyError, TypeError, ValueError, IndexError):
+            neighbour_atom = "NN"  # if distorted_elements wasn't set, set label to "NN"
 
     else:
         num_nearest_neighbours, neighbour_atom = None, None

@@ -450,6 +450,8 @@ class InputTestCase(unittest.TestCase):
             if os.path.isdir(i) and any(x in i for x in regen_defect_folder_names):
                 if_present_rm(i)
 
+        if_present_rm("new_distorted_Int_Cd_2_struc_POSCAR")
+
     def _check_dimer_length(self, structure, elements, dimer_length_string):
         self.assertEqual(
             next(
