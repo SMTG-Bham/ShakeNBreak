@@ -1,5 +1,6 @@
 """Module containing functions for applying distortions to defect structures."""
 
+import contextlib
 import os
 import warnings
 from typing import Optional, Union
@@ -347,10 +348,12 @@ def get_dimer_bond_length(
     """
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        pmg_bond_length = get_bond_length(species_1, species_2)
-        if w and any("No order" in str(warn.message) for warn in w):
-            # use CovalentRadius values, rather than pmg defaulting to atomic radii
-            return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
+        pmg_bond_length = None
+        with contextlib.suppress(TypeError):
+            pmg_bond_length = get_bond_length(species_1, species_2)
+    if w and any("No order" in str(warn.message) for warn in w) or pmg_bond_length is None:
+        # use CovalentRadius values, rather than pmg defaulting to atomic radii
+        return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
 
     return pmg_bond_length
 
