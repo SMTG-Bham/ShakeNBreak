@@ -2789,8 +2789,7 @@ class Distortions:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
             warnings.warn(
-                f"Specified input file {input_file} does not exist! Using"
-                " default CP2K input file "
+                f"Specified input file {input_file} does not exist! Using default CP2K input file "
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
             cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp")
@@ -2799,15 +2798,18 @@ class Distortions:
             verbose=verbose,
         )
 
-        # loop for each defect in dict
-        for folder_path, struct in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path
+        for folder_path, (  # loop for each defect in dict
+            struct,
+            charge,
+        ) in self._prepare_distorted_defect_inputs(
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             struct.to(
                 fmt="cif",
                 filename=f"{folder_path}/structure.cif",
             )
             if not write_structures_only and cp2k_input:
+                cp2k_input["FORCE_EVAL"]["DFT"]["CHARGE"] = int(charge)  # set charge
                 cp2k_input.write_file(
                     input_filename="cp2k_input.inp",
                     output_dir=f"{folder_path}",
