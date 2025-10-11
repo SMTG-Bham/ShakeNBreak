@@ -1,5 +1,6 @@
 """Module containing functions for applying distortions to defect structures."""
 
+import contextlib
 import os
 import warnings
 from typing import Optional, Union
@@ -347,10 +348,12 @@ def get_dimer_bond_length(
     """
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        pmg_bond_length = get_bond_length(species_1, species_2)
-        if w and any("No order" in str(warn.message) for warn in w):
-            # use CovalentRadius values, rather than pmg defaulting to atomic radii
-            return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
+        pmg_bond_length = None
+        with contextlib.suppress(TypeError):
+            pmg_bond_length = get_bond_length(species_1, species_2)
+    if w and any("No order" in str(warn.message) for warn in w) or pmg_bond_length is None:
+        # use CovalentRadius values, rather than pmg defaulting to atomic radii
+        return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
 
     return pmg_bond_length
 
@@ -511,7 +514,8 @@ def rattle(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -522,8 +526,7 @@ def rattle(
             Whether to print information about the rattling process, if
             rattling initially fails with initial ``d_min``.
         n_iter (:obj:`int`):
-            Number of Monte Carlo cycles to perform.
-            (Default: 1)
+            Number of Monte Carlo cycles to perform. (Default: 1)
         active_atoms (:obj:`list`, optional):
             List of which atomic indices should undergo Monte Carlo rattling.
             If not set, rattles all atoms in the structure.
@@ -559,27 +562,7 @@ def rattle(
         distance_matrix = structure.distance_matrix
 
     sorted_distances = np.sort(distance_matrix[distance_matrix > 0.8].flatten())
-
-    if stdev is None:
-        stdev = 0.1 * sorted_distances[0]
-        if stdev > 0.4 or stdev < 0.02:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
-                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
-                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
-                f"set `stdev` manually"
-            )
-            stdev = 0.25
-
-    if d_min is None:
-        d_min = 0.8 * sorted_distances[0]
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1/0.8)*d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
+    stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     try:
         rattled_ase_struct = generate_mc_rattled_structures(
@@ -630,6 +613,34 @@ def rattle(
             )
 
     return Structure.from_ase_atoms(rattled_ase_struct)
+
+
+def _get_stdev_and_d_min(
+    sorted_distances: np.ndarray, stdev: Optional[float], d_min: Optional[float]
+) -> tuple[float, float]:
+    if stdev is None:
+        stdev = 0.1 * sorted_distances[0]
+        if stdev > 0.4 or stdev < 0.02:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
+                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"set `stdev` manually"
+            )
+            stdev = 0.25
+
+    if d_min is None:
+        d_min = 0.8 * sorted_distances[0]
+
+        if d_min < 1.0:
+            warnings.warn(
+                f"Automatic bond-length detection gave a bulk bond length of "
+                f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+            )
+            d_min = 2.25
+
+    return stdev, d_min
 
 
 def distort_and_rattle(
@@ -697,7 +708,8 @@ def distort_and_rattle(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -809,51 +821,53 @@ def _local_mc_rattle_displacements(
     rattle_std,
     d_min,
     width=0.1,
-    n_iter=10,
+    n_iter=1,
     max_attempts=5000,
     max_disp=2.0,
     active_atoms=None,
     nbr_cutoff=None,
     seed=42,
 ) -> np.ndarray:
-    # This function has been adapted from https://gitlab.com/materials-modeling/hiphive
     """
     Generate displacements using the Monte Carlo rattle method.
+
     The displacements tail off as we move away from the defect site.
+    Adapted from https://gitlab.com/materials-modeling/hiphive.
 
     Args:
         atoms (:obj:`ase.Atoms`):
-            prototype structure
+            Prototype structure.
         site_index (:obj:`int`):
-            index of defect, starting from 0
+            Index of defect, starting from 0.
         rattle_std (:obj:`float`):
-            rattle amplitude (standard deviation in normal distribution)
+            Rattle amplitude (standard deviation in normal distribution).
         d_min (:obj:`float`):
-            interatomic distance used for computing the probability for each rattle
-            move. Center position of the error function
+            Interatomic distance used for computing the probability for each
+            rattle move. Center position of the error function.
         width (:obj:`float`):
-            width of the error function
+            Width of the error function.
         n_iter (:obj:`int`):
-            number of Monte Carlo cycle
+            Number of Monte Carlo cycles. Default is 1.
         max_disp (:obj:`float`):
-            rattle moves that yields a displacement larger than max_disp will
-            always be rejected. This rarley occurs and is more used as a safety net
-            for not generating structures where two or more have swapped positions.
+            Rattle moves that yields a displacement larger than ``max_disp``
+            will always be rejected. This rarley occurs and is more used as a
+            safety net for not generating structures where two or more have
+            swapped positions.
         max_attempts (:obj:`int`):
-            limit for how many attempted rattle moves are allowed a single atom;
-            if this limit is reached an ``Exception`` is raised.
+            Limit for how many attempted rattle moves are allowed a single
+            atom; if this limit is reached an ``Exception`` is raised.
         active_atoms (:obj:`list`):
-            list of which atomic indices should undergo Monte Carlo rattling
+            List of which atomic indices should undergo Monte Carlo rattling.
         nbr_cutoff (:obj:`float`):
             The cutoff used to construct the neighborlist used for checking
-            interatomic distances, defaults to 2 * d_min
+            interatomic distances, defaults to ``2 * d_min``.
         seed (:obj:`int`):
             Seed for NumPy random state from which random rattle displacements
             are generated. (Default: 42)
 
     Returns:
         :obj:`numpy.ndarray`:
-            atomic displacements (Nx3)
+            Atomic displacements (Nx3)
     """
 
     def scale_stdev(disp, r_min, r):
@@ -940,6 +954,7 @@ def _generate_local_mc_rattled_structures(
     r"""
     Returns list of configurations after applying a Monte Carlo local
     rattle.
+
     Compared to the standard Monte Carlo rattle, here the displacements
     tail off as we move away from the defect site.
 
@@ -975,19 +990,19 @@ def _generate_local_mc_rattled_structures(
         n_configs (:obj:`int`):
             Number of structures to generate
         rattle_std (:obj:`float`):
-            Rattle amplitude (standard deviation in normal distribution);
-            note this value is not connected to the final
-            average displacement for the structures
+            Rattle amplitude (standard deviation in normal distribution).
+            Note that the average displacement distance will be roughly equal
+            to ``rattle_std * 1.6``.
         d_min (:obj:`float`):
-            Interatomic distance used for computing the probability for each rattle
-            move
+            Interatomic distance used for computing the probability for each
+            rattle move
         seed (:obj:`int`):
             Seed for NumPy random state from which random rattle displacements
             are generated. (Default: 42)
-        n_iter (:obj:`int`):
-            Number of Monte Carlo cycles
         **kwargs:
-            Additional keyword arguments to be passed to ``mc_rattle``
+            Additional keyword arguments to be passed to ``mc_rattle``, such as
+            ``n_iter``, ``active_atoms``, ``nbr_cutoff``, ``width``,
+            ``max_attempts`` etc.
 
     Returns:
         :obj:`list`:
@@ -1040,7 +1055,8 @@ def local_mc_rattle(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -1051,8 +1067,7 @@ def local_mc_rattle(
             Whether to print information about the rattling process, if
             rattling initially fails with initial ``d_min``.
         n_iter (:obj:`int`):
-            Number of Monte Carlo cycles to perform.
-            (Default: 1)
+            Number of Monte Carlo cycles to perform. (Default: 1)
         active_atoms (:obj:`list`, optional):
             List of which atomic indices should undergo Monte Carlo rattling.
             (Default: None)
@@ -1100,27 +1115,7 @@ def local_mc_rattle(
             "Insufficient information to apply local rattle, no `site_index` or `frac_coords` provided."
         )
 
-    if stdev is None:
-        stdev = 0.1 * sorted_distances[0]
-        if stdev > 0.4 or stdev < 0.02:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
-                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
-                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
-                f"set `stdev` manually"
-            )
-            stdev = 0.25
-
-    if d_min is None:
-        d_min = 0.8 * sorted_distances[0]
-
-        if d_min < 1.0:
-            warnings.warn(
-                f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
-            )
-            d_min = 2.25
+    stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     try:
         local_rattled_ase_struct = _generate_local_mc_rattled_structures(

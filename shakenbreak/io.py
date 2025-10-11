@@ -298,7 +298,7 @@ def parse_energies(
                 f"often this is the result of an unreasonable charge state). If both checks pass, "
                 f"you likely need to adjust the `stdev` rattling parameter (can occur for "
                 f"hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials\n"
                 f"This often indicates a complex PES with multiple minima, thus energy-lowering "
                 f"distortions particularly likely, so important to test with reduced `stdev`!"
             )
@@ -344,7 +344,7 @@ def parse_energies(
                 f"problems with these relaxations. You should first check that no user INCAR setting is "
                 f"causing this issue. If not, you likely need to adjust the `stdev` rattling parameter ("
                 f"can occur for hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials."
             )
         else:
             warnings.warn(

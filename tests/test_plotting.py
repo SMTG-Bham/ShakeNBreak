@@ -16,16 +16,9 @@ from monty.serialization import loadfn
 
 from shakenbreak import analysis, plotting, io
 from test_energy_lowering_distortions import assert_not_called_with
+from test_cli import if_present_rm
 
 Mock.assert_not_called_with = assert_not_called_with
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        if os.path.isfile(path):
-            os.remove(path)
-        elif os.path.isdir(path):
-            shutil.rmtree(path)
 
 
 _file_path = os.path.dirname(__file__)
@@ -121,6 +114,10 @@ class PlottingDefectsTestCase(unittest.TestCase):
         for file in os.listdir((f"{self.VASP_DIR}/Va_O1_1")):
             if file.endswith(".png"):
                 os.remove(f"{self.VASP_DIR}/Va_O1_1/{file}")
+
+        if os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2"):
+            shutil.move(f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2",
+                        f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2_hidden")
 
     def test_verify_data_directories_exist(self):
         """Test _verify_data_directories_exist() function"""
@@ -1008,6 +1005,20 @@ class PlottingDefectsTestCase(unittest.TestCase):
             num_nearest_neighbours=2,
             neighbour_atom="Te",
             include_site_info_in_name=False,
+            save_plot=False,
+        )
+
+    @custom_mpl_image_compare("v_Cd_-2.png")
+    def test_plot_defect_doped_v2_zero_NN(self):
+        shutil.move(f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2_hidden", f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2")
+        energies_dict = analysis.get_energies(
+            defect_species="v_Cd_-2",
+            output_path=self.VASP_CDTE_DATA_DIR,
+        )
+        return plotting.plot_defect(
+            output_path=f"{self.VASP_CDTE_DATA_DIR}/v_Cd_-2",
+            defect_species="v_Cd_-2",
+            energies_dict=energies_dict,
             save_plot=False,
         )
 
