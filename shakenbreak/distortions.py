@@ -311,8 +311,8 @@ def distort(
         bond_distorted_defect["defect_frac_coords"] = frac_coords
 
     if verbose:
-        distorted_info = [(round(i[0], 2), i[1], i[2]) for i in distorted]
-        nearest_info = [(round(i[0], 2), i[1], i[2]) for i in nns_to_distort]  # round numbers
+        distorted_info = [(float(round(i[0], 2)), i[1], i[2]) for i in distorted]
+        nearest_info = [(float(round(i[0], 2)), i[1], i[2]) for i in nns_to_distort]  # round numbers
         site_index_or_frac_coords = (
             site_index if site_index is not None else np.around(frac_coords, decimals=3)
         )

@@ -595,7 +595,7 @@ def _get_defect_entry_from_defect(
     return defect_entry
 
 
-def _most_common_oxi(element) -> int:
+def most_common_oxi(element) -> int:
     """
     Convenience function to get the most common oxidation state of an element, using pymatgen's
     elemental data.
@@ -613,10 +613,10 @@ def _most_common_oxi(element) -> int:
     oxi_probabilities = [(k, v) for k, v in comp_obj.oxi_prob.items() if k.element == element_obj]
     if oxi_probabilities:  # not empty
         most_common = max(oxi_probabilities, key=lambda x: x[1])[0]  # breaks if icsd oxi states is empty
-        return most_common.oxi_state
+        return int(most_common.oxi_state)
 
     if element_obj.common_oxidation_states:
-        return element_obj.common_oxidation_states[0]  # known common oxidation state
+        return int(element_obj.common_oxidation_states[0])  # known common oxidation state
 
     # no known common oxidation state, make guess and warn user
     guess_oxi = element_obj.oxidation_states[0] if element_obj.oxidation_states else 0
@@ -627,7 +627,7 @@ def _most_common_oxi(element) -> int:
         f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!"
     )
 
-    return guess_oxi
+    return int(guess_oxi)
 
 
 def _calc_number_electrons(
@@ -787,7 +787,7 @@ def identify_defect(
     # doped if we wanted, but works fine as is.
     # identify defect site, structural information, and create defect object:
     try:
-        defect_type, comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
+        defect_type, _comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
     except RuntimeError as exc:
         raise ValueError(
             "Could not identify defect type from number of sites in structure: "
@@ -962,7 +962,6 @@ def identify_defect(
 
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
-    unrelaxed_defect_structure = None
     auto_matching_bulk_site_index = None
     auto_matching_defect_site_index = None
 
@@ -971,7 +970,7 @@ def identify_defect(
             _defect_type,
             auto_matching_bulk_site_index,
             auto_matching_defect_site_index,
-            unrelaxed_defect_structure,
+            _unrelaxed_defect_structure,
         ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
 
     except Exception as exc:
@@ -1861,12 +1860,11 @@ class Distortions:
             )
 
         list_of_defect_entries = next(iter(self.defects_dict.values()))
-        defect_object = list_of_defect_entries[0].defect
-        bulk_comp = defect_object.structure.composition
+        defect_entry = list_of_defect_entries[0]
         if "stdev" in mc_rattle_kwargs:
             self.stdev = mc_rattle_kwargs.pop("stdev")
         else:
-            bulk_primitive = defect_object.structure
+            bulk_primitive = defect_entry.defect.structure
             sorted_distances = np.sort(bulk_primitive.distance_matrix.flatten())
             # get first finite distance:
             try:
@@ -1891,36 +1889,66 @@ class Distortions:
             )
 
         # Check if all expected oxidation states are provided
-        def guess_oxidation_states(bulk_comp):
-            for max_sites in (-1, None):
-                try:
-                    guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=max_sites)[0]
-                    if guessed_oxidation_states:
-                        return guessed_oxidation_states
-                except IndexError:
-                    continue
-            # pmg oxi state guessing can fail for single-element systems, intermetallics etc
-            return {elt.symbol: 0 for elt in bulk_comp.elements}
+        def guess_oxidation_states(bulk_structure):
+            struct_with_oxi = guess_and_set_oxi_states_with_timeout(
+                bulk_structure, break_early_if_expensive=True
+            )
+            if struct_with_oxi:  # False if guess_and_set_oxi_states_with_timeout fails
+                guessed_oxidation_states = {
+                    elt.symbol: int(elt.oxi_state) for elt in struct_with_oxi.elements
+                }
+                elts = [elt.symbol for elt in struct_with_oxi.elements]
+                # Check for elements with multiple ox states which have not been inputted
+                dupe_elts = {
+                    elt
+                    for elt in elts
+                    if elts.count(elt) > 1
+                    and (  # multiple occurrences
+                        not self.oxidation_states
+                        or elt not in self.oxidation_states  # no oxidation states specified by user
+                    )  # or, multiple-ox-state element no in user specs
+                }
+                if dupe_elts:  # duplicate elements, therefore multiple oxidation states
+                    warnings.warn(
+                        f"Multiple oxidation states have been guessed for {dupe_elts}. The most common "
+                        f"oxidation state will be used for these elements, which may not be appropriate!"
+                    )
+                    for elt in dupe_elts:  # take most common oxidation states
+                        likely_oxi = most_common_oxi(elt)
+                        guessed_oxidation_states[elt] = likely_oxi
+                return guessed_oxidation_states
 
-        guessed_oxidation_states = guess_oxidation_states(bulk_comp)
+            warnings.warn(
+                "Oxidation states could not be guessed for the bulk structure. The most common "
+                "oxidation state for each element will be used, which may not be appropriate!"
+            )
+            return {elt.symbol: most_common_oxi(elt.symbol) for elt in bulk_structure.elements}
+
+        # Only guess oxidation states if oxidation states are not fully supplied
+        if not self.oxidation_states or not all(
+            elt.symbol in self.oxidation_states for elt in defect_entry.defect.structure.elements
+        ):
+            guessed_oxidation_states = guess_oxidation_states(defect_entry.defect.structure)
+        else:  # All oxidation states for the bulk provided by user
+            guessed_oxidation_states = self.oxidation_states.copy()
 
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
             if defect.site.specie.symbol not in guessed_oxidation_states:
                 # extrinsic substituting/interstitial species not in bulk composition
                 extrinsic_specie = defect.site.specie.symbol
-                likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
+                likely_substitution_oxi = most_common_oxi(extrinsic_specie)
                 guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
-        if self.oxidation_states is None:
+        if not self.oxidation_states:
             print(
-                f"Oxidation states were not explicitly set, thus have been guessed as"
-                f" {guessed_oxidation_states}. If this is unreasonable you should manually set "
+                f"Oxidation states were not explicitly set, thus have been guessed as "
+                f"{guessed_oxidation_states}. If this is unreasonable you should manually set "
                 f"oxidation_states"
             )
             self.oxidation_states = guessed_oxidation_states
 
-        elif guessed_oxidation_states.keys() > self.oxidation_states.keys():
+        elif guessed_oxidation_states.keys() - self.oxidation_states.keys():
             # some oxidation states are missing, so use guessed versions for these and inform user
             missing_oxidation_states = {
                 k: v

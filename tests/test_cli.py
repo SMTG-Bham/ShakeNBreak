@@ -11,16 +11,14 @@ import warnings
 
 import numpy as np
 import yaml
-
 # Click
 from click.testing import CliRunner
-from monty.serialization import loadfn, dumpfn
-
+from doped.vasp import _test_potcar_functional_choice
+from monty.serialization import dumpfn, loadfn
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Kpoints, Potcar, Incar
-
-from doped.vasp import _test_potcar_functional_choice
+from pymatgen.io.vasp.inputs import (Incar, Kpoints, Poscar, Potcar,
+                                     UnknownPotcarWarning)
 
 from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
@@ -268,7 +266,7 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Oxidation states were not explicitly set, thus have been guessed as {"
-            "'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states",
             result.output,
         )
@@ -349,7 +347,7 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Oxidation states were not explicitly set, thus have been guessed as {"
-            "'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states",
             result.output,
         )
@@ -992,7 +990,7 @@ class CLITestCase(unittest.TestCase):
         )
         self.assertIn(
             "Oxidation states were not explicitly set, thus have been guessed as {"
-            "'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states",
             result.output,
         )
