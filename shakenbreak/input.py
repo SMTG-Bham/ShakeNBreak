@@ -787,7 +787,7 @@ def identify_defect(
     # doped if we wanted, but works fine as is.
     # identify defect site, structural information, and create defect object:
     try:
-        defect_type, comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
+        defect_type, _comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
     except RuntimeError as exc:
         raise ValueError(
             "Could not identify defect type from number of sites in structure: "
@@ -962,7 +962,6 @@ def identify_defect(
 
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
-    unrelaxed_defect_structure = None
     auto_matching_bulk_site_index = None
     auto_matching_defect_site_index = None
 
@@ -971,7 +970,7 @@ def identify_defect(
             _defect_type,
             auto_matching_bulk_site_index,
             auto_matching_defect_site_index,
-            unrelaxed_defect_structure,
+            _unrelaxed_defect_structure,
         ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
 
     except Exception as exc:
