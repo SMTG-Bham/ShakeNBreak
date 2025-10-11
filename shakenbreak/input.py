@@ -40,7 +40,7 @@ from pymatgen.io.vasp.sets import BadInputSetWarning
 from tqdm import tqdm
 
 from shakenbreak.analysis import _get_distortion_filename
-from shakenbreak.distortions import distort_and_rattle
+from shakenbreak.distortions import _get_stdev_and_d_min, distort_and_rattle
 from shakenbreak.io import parse_fhi_aims_input, parse_qe_input
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1314,7 +1314,8 @@ def distort_and_rattle_defect_entry(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -1475,7 +1476,8 @@ def apply_snb_distortions(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`, optional):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at distances
@@ -1725,7 +1727,8 @@ class Distortions:
                     Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
-                    in the bulk supercell.
+                    in the bulk supercell. Note that the average displacement
+                    distance will be roughly equal to ``stdev * 1.6``.
                 - d_min (:obj:`float`):
                     Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
@@ -1871,16 +1874,13 @@ class Distortions:
                 sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
                 min_distance = sorted_distances[sorted_distances > 0.5][0]
 
-            self.stdev = 0.1 * min_distance
-
-            if self.stdev > 0.4 or self.stdev < 0.02:
-                warnings.warn(
-                    f"Automatic bond-length detection gave a bulk bond length of {10*self.stdev} "
-                    f"\u212B and thus a rattle `stdev` of {self.stdev} ( = 10% bond length), "
-                    f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
-                    f"set `stdev` manually"
-                )
-                self.stdev = 0.25
+            self.stdev = _get_stdev_and_d_min(
+                [
+                    min_distance,
+                ],
+                d_min=np.inf,
+                stdev=None,
+            )[0]
 
         if not list(self.defects_dict.values()):
             raise IndexError(
@@ -2817,8 +2817,7 @@ class Distortions:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
             warnings.warn(
-                f"Specified input file {input_file} does not exist! Using"
-                " default CP2K input file "
+                f"Specified input file {input_file} does not exist! Using default CP2K input file "
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
             cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp")
@@ -2827,15 +2826,18 @@ class Distortions:
             verbose=verbose,
         )
 
-        # loop for each defect in dict
-        for folder_path, struct in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path
+        for folder_path, (  # loop for each defect in dict
+            struct,
+            charge,
+        ) in self._prepare_distorted_defect_inputs(
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             struct.to(
                 fmt="cif",
                 filename=f"{folder_path}/structure.cif",
             )
             if not write_structures_only and cp2k_input:
+                cp2k_input["FORCE_EVAL"]["DFT"]["CHARGE"] = int(charge)  # set charge
                 cp2k_input.write_file(
                     input_filename="cp2k_input.inp",
                     output_dir=f"{folder_path}",
@@ -3146,7 +3148,8 @@ class Distortions:
                     Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
-                    in the bulk supercell.
+                    in the bulk supercell. Note that the average displacement
+                    distance will be roughly equal to ``stdev * 1.6``.
                 - d_min (:obj:`float`):
                     Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances

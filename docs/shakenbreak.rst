@@ -3,6 +3,9 @@
 ShakeNBreak Package
 ===================
 
+See the `doped DeepWiki <https://deepwiki.com/SMTG-Bham/ShakeNBreak/1-overview>`__ site for an overview of the
+codebase and workflow diagrams.
+
 Module contents
 ---------------
  .. automodule:: shakenbreak

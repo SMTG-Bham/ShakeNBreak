@@ -140,6 +140,15 @@ warning in these cases, and one way to manually check this is to visually compar
 low energy distortion calculations, with the relaxed ``Unperturbed`` structure, and the bulk supercell, and see how the
 regions away from the defect site compare.
 
+.. note::
+
+    Some example cases where this behaviour was noted include
+    `Neilson et al. <https://doi.org/10.1021/acs.jpcc.4c06580>`__,
+    `Kavanagh <https://doi.org/10.1088/2515-7655/ade916>`__, and
+    `Krajewska et al. <https://doi.org/10.1039/D1SC03775G>`__.
+
+.. Also Squires perspective
+
 Often this is useful information, as it may reveal a previously-unknown low-energy polymorph for your host system.
 However, it also means that your original higher energy bulk structure is no longer an appropriate reference structure
 for calculating your final defect formation energies, and so you should instead obtain the bulk supercell corresponding
