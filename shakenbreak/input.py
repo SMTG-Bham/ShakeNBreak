@@ -18,21 +18,20 @@ import ase
 import numpy as np
 from ase.calculators.castep import Castep
 from doped import _ignore_pmg_warnings
-from doped.core import (Defect, DefectEntry,
-                        guess_and_set_oxi_states_with_timeout)
+from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout
 from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils.efficiency import StructureMatcher_scan_stol
 from doped.utils.parsing import (
     get_defect_type_and_composition_diff,
-    get_defect_type_site_idxs_and_unrelaxed_structure)
+    get_defect_type_site_idxs_and_unrelaxed_structure,
+)
 from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects import thermo
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
 from pymatgen.analysis.structure_matcher import ElementComparator
-from pymatgen.core.structure import (Composition, Element, PeriodicSite,
-                                     Structure)
+from pymatgen.core.structure import Composition, Element, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
@@ -629,6 +628,7 @@ def most_common_oxi(element) -> int:
     )
 
     return int(guess_oxi)
+
 
 def _calc_number_electrons(
     defect_entry: DefectEntry,
@@ -1893,39 +1893,46 @@ class Distortions:
         def guess_oxidation_states(bulk_structure):
             struct_with_oxi = guess_and_set_oxi_states_with_timeout(
                 bulk_structure, break_early_if_expensive=True
-            ) 
-            if struct_with_oxi: # struct_with_oxi is False if guess_and_set_oxi_states_with_timeout fails
-                guessed_oxidation_states = {elt.symbol: int(elt.oxi_state) for elt in struct_with_oxi.elements} 
+            )
+            if struct_with_oxi:  # False if guess_and_set_oxi_states_with_timeout fails
+                guessed_oxidation_states = {
+                    elt.symbol: int(elt.oxi_state) for elt in struct_with_oxi.elements
+                }
                 elts = [elt.symbol for elt in struct_with_oxi.elements]
                 # Check for elements with multiple ox states which have not been inputted
-                dupe_elts = {elt for elt in elts if elts.count(elt)>1 and (  # multiple occurrences
-                           not self.oxidation_states or  # no oxidation states specified by user
-                           elt not in self.oxidation_states)  # or, multiple-ox-state element no in user specs
-                           }
-                if dupe_elts: # Check if dupe_elts is not empty 
+                dupe_elts = {
+                    elt
+                    for elt in elts
+                    if elts.count(elt) > 1
+                    and (  # multiple occurrences
+                        not self.oxidation_states
+                        or elt not in self.oxidation_states  # no oxidation states specified by user
+                    )  # or, multiple-ox-state element no in user specs
+                }
+                if dupe_elts:  # duplicate elements, therefore multiple oxidation states
                     warnings.warn(
-                        f"Warning: Multiple oxidation states have been guessed for {dupe_elts}. The most common "
+                        f"Multiple oxidation states have been guessed for {dupe_elts}. The most common "
                         f"oxidation state will be used for these elements, which may not be appropriate!"
                     )
-                    # Guess common oxidation state for multiple oxidation state elements
-                    for elt in dupe_elts:
+                    for elt in dupe_elts:  # take most common oxidation states
                         likely_oxi = most_common_oxi(elt)
                         guessed_oxidation_states[elt] = likely_oxi
                 return guessed_oxidation_states
+
             warnings.warn(
-                f"Warning: Oxidation states could not be guessed for the bulk structure. The most common "
-                f"oxidation state for each element will be used, which may not be appropriate!"
+                "Oxidation states could not be guessed for the bulk structure. The most common "
+                "oxidation state for each element will be used, which may not be appropriate!"
             )
             return {elt.symbol: most_common_oxi(elt.symbol) for elt in bulk_structure.elements}
 
-        # Oxidation guessing only if oxidation states are not fully supplied
-        if not self.oxidation_states or not all(elt.symbol in self.oxidation_states for elt in defect_entry.defect.structure.elements):
-            # Checks if all defect elements are in the provided oxidation states
+        # Only guess oxidation states if oxidation states are not fully supplied
+        if not self.oxidation_states or not all(
+            elt.symbol in self.oxidation_states for elt in defect_entry.defect.structure.elements
+        ):
             guessed_oxidation_states = guess_oxidation_states(defect_entry.defect.structure)
-        else:
-            # All oxidation states for the bulk provided by user
+        else:  # All oxidation states for the bulk provided by user
             guessed_oxidation_states = self.oxidation_states.copy()
-        
+
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
             if defect.site.specie.symbol not in guessed_oxidation_states:
@@ -2684,8 +2691,7 @@ class Distortions:
         """
         try:
             old_ase = False  # >=3.23
-            from ase.calculators.espresso import (EspressoProfile,
-                                                  EspressoTemplate)
+            from ase.calculators.espresso import EspressoProfile, EspressoTemplate
         except ImportError:
             old_ase = True
             from ase.calculators.espresso import Espresso
