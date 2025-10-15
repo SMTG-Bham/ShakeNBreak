@@ -12,7 +12,6 @@ import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Union
 
 import ase
 import numpy as np
@@ -290,9 +289,9 @@ def _write_distortion_metadata(
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
-    user_incar_settings: Optional[dict] = None,
-    user_potcar_functional: Optional[str] = "PBE",
-    user_potcar_settings: Optional[dict] = None,
+    user_incar_settings: dict | None = None,
+    user_potcar_functional: str | None = "PBE",
+    user_potcar_settings: dict | None = None,
     output_path: str = ".",
     **kwargs,
 ) -> str:
@@ -1085,7 +1084,7 @@ def identify_defect(
 def generate_defect_object(
     single_defect_dict: dict,
     bulk_dict: dict,
-    charges: Optional[list] = None,
+    charges: list | None = None,
     verbose: bool = False,
 ) -> Defect:
     """
@@ -1255,16 +1254,16 @@ def _find_sc_defect_coords(defect_entry):
 def distort_and_rattle_defect_entry(
     defect_entry: DefectEntry,
     num_nearest_neighbours: int,
-    distortion_factor: Union[float, str],
+    distortion_factor: float | str,
     local_rattle: bool = False,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    active_atoms: Optional[list] = None,
-    distorted_element: Optional[str] = None,
-    distorted_atoms: Optional[list] = None,
-    oxidation_states: Optional[dict] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
+    active_atoms: list | None = None,
+    distorted_element: str | None = None,
+    distorted_atoms: list | None = None,
+    oxidation_states: dict | None = None,
     verbose: bool = False,
-    dimer_bond_length: Optional[float] = None,
+    dimer_bond_length: float | None = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1423,13 +1422,13 @@ def apply_snb_distortions(
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    distorted_element: Optional[str] = None,
-    distorted_atoms: Optional[list] = None,
-    oxidation_states: Optional[dict] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
+    distorted_element: str | None = None,
+    distorted_atoms: list | None = None,
+    oxidation_states: dict | None = None,
     verbose: bool = False,
-    dimer_bond_length: Optional[float] = None,
+    dimer_bond_length: float | None = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1605,15 +1604,15 @@ class Distortions:
 
     def __init__(
         self,
-        defect_entries: Union[DefectsGenerator, list, dict, DefectEntry],
-        oxidation_states: Optional[dict] = None,
-        dict_number_electrons_user: Optional[dict] = None,
+        defect_entries: DefectsGenerator | list | dict | DefectEntry,
+        oxidation_states: dict | None = None,
+        dict_number_electrons_user: dict | None = None,
         distortion_increment: float = 0.1,
-        bond_distortions: Optional[list] = None,
+        bond_distortions: list | None = None,
         local_rattle: bool = False,
-        distorted_elements: Optional[dict] = None,
-        distorted_atoms: Optional[list] = None,
-        dimer_bond_length: Optional[float] = None,
+        distorted_elements: dict | None = None,
+        distorted_atoms: list | None = None,
+        dimer_bond_length: float | None = None,
         **mc_rattle_kwargs,
     ):
         r"""
@@ -2001,8 +2000,8 @@ class Distortions:
     def _parse_distorted_element(
         self,
         defect_name,
-        distorted_elements: Optional[dict],
-    ) -> Union[str, None, list[str]]:
+        distorted_elements: dict | None,
+    ) -> str | None | list[str]:
         """
         Parse the user-defined distorted elements for a given defect
         (if given).
@@ -2122,7 +2121,7 @@ class Distortions:
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             f"{rounded_distortions}.",
-            f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
+            f"Then, will rattle with a std dev of {stdev:.2f} \u212b \n",
         )
 
     def _get_bond_distortions(
@@ -2151,7 +2150,7 @@ class Distortions:
         charge: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
-        defect_site_index: Optional[int] = None,
+        defect_site_index: int | None = None,
         defect_type: str = "",
     ) -> dict:
         """
@@ -2252,8 +2251,8 @@ class Distortions:
     def write_distortion_metadata(
         self,
         output_path: str = ".",
-        defect: Optional[str] = None,
-        charge: Optional[int] = None,
+        defect: str | None = None,
+        charge: int | None = None,
     ) -> None:
         """
         Write distortion metadata to file.
@@ -2307,7 +2306,7 @@ class Distortions:
 
     def apply_distortions(
         self,
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Applies a range of bond distortions (given by ``self.bond_distortions``) and
@@ -2516,6 +2515,7 @@ class Distortions:
                         defect_dict["charges"][charge]["structures"]["Unperturbed"],
                         *list(defect_dict["charges"][charge]["structures"]["distortions"].values()),
                     ],
+                    strict=False,
                 ):
                     sign = "+" if charge > 0 else ""
                     folder_path = f"{output_path}/{defect_name}_{sign}{charge}/{dist}"
@@ -2526,11 +2526,11 @@ class Distortions:
 
     def write_vasp_files(
         self,
-        user_incar_settings: Optional[dict] = None,
-        user_potcar_functional: Optional[str] = "PBE",
-        user_potcar_settings: Optional[dict] = None,
+        user_incar_settings: dict | None = None,
+        user_potcar_functional: str | None = "PBE",
+        user_potcar_settings: dict | None = None,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         **kwargs,
     ) -> tuple[dict, dict]:
         r"""
@@ -2601,6 +2601,7 @@ class Distortions:
                         defect_dict["charges"][charge_state]["structures"]["Unperturbed"],
                         *list(defect_dict["charges"][charge_state]["structures"]["distortions"].values()),
                     ],
+                    strict=False,
                 ):
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
@@ -2635,12 +2636,12 @@ class Distortions:
 
     def write_espresso_files(
         self,
-        pseudopotentials: Optional[dict] = None,
-        input_parameters: Optional[str] = None,
-        input_file: Optional[str] = None,
-        write_structures_only: Optional[bool] = False,
+        pseudopotentials: dict | None = None,
+        input_parameters: str | None = None,
+        input_file: str | None = None,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         profile=None,
     ) -> tuple[dict, dict]:
         """
@@ -2776,10 +2777,10 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = None,
-        write_structures_only: Optional[bool] = False,
+        input_file: str | None = None,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output
@@ -2847,10 +2848,10 @@ class Distortions:
 
     def write_castep_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/castep.param",
-        write_structures_only: Optional[bool] = False,
+        input_file: str | None = f"{MODULE_DIR}/SnB_input_files/castep.param",
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Generates input ``.cell`` and ``.param`` files for CASTEP relaxations of
@@ -2925,11 +2926,11 @@ class Distortions:
 
     def write_fhi_aims_files(
         self,
-        input_file: Optional[str] = None,
+        input_file: str | None = None,
         ase_calculator=None,  # Aims or AimsTemplate
-        write_structures_only: Optional[bool] = False,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         profile=None,
     ) -> tuple[dict, dict]:
         """
@@ -3063,14 +3064,14 @@ class Distortions:
         cls,
         defects: list,
         bulk: Structure,
-        oxidation_states: Optional[dict] = None,
+        oxidation_states: dict | None = None,
         padding: int = 1,
-        dict_number_electrons_user: Optional[dict] = None,
+        dict_number_electrons_user: dict | None = None,
         distortion_increment: float = 0.1,
-        bond_distortions: Optional[list] = None,
+        bond_distortions: list | None = None,
         local_rattle: bool = False,
-        distorted_elements: Optional[dict] = None,
-        distorted_atoms: Optional[list] = None,
+        distorted_elements: dict | None = None,
+        distorted_atoms: list | None = None,
         **mc_rattle_kwargs,
     ) -> "Distortions":
         """

@@ -9,7 +9,6 @@ import os
 import warnings
 from copy import deepcopy
 from functools import lru_cache
-from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -262,9 +261,9 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
 
 def analyse_defect_site(
     structure: Structure,
-    name: Optional[str] = None,
-    site_index: Optional[int] = None,
-    vac_site: Optional[list] = None,
+    name: str | None = None,
+    site_index: int | None = None,
+    vac_site: list | None = None,
 ) -> tuple:
     r"""
     Analyse coordination environment and bond distances to nearest
@@ -315,12 +314,12 @@ def analyse_defect_site(
     bond_lengths = [
         {
             "Element": i["site"].specie.as_dict()["element"],
-            "Distance (\u212B)": f"{i['site'].distance(struct[site_index]):.2f}",
+            "Distance (\u212b)": f"{i['site'].distance(struct[site_index]):.2f}",
         }
         for i in crystalNN.get_nn_info(struct, site_index)
     ]
     bond_length_df = pd.DataFrame(bond_lengths)
-    print("\nBond-lengths (in \u212B) to nearest neighbours: ")
+    print("\nBond-lengths (in \u212b) to nearest neighbours: ")
     if _isipython():
         display(bond_length_df)
         print()  # spacing
@@ -379,9 +378,9 @@ def analyse_structure(
 def get_structures(
     defect_species: str,
     output_path: str = ".",
-    bond_distortions: Optional[list] = None,
-    code: Optional[str] = "vasp",
-    structure_filename: Optional[str] = "CONTCAR",
+    bond_distortions: list | None = None,
+    code: str | None = "vasp",
+    structure_filename: str | None = "CONTCAR",
 ) -> dict:
     """
     Import all structures found with rattling & bond distortions, and
@@ -571,7 +570,7 @@ def _cached_calculate_atomic_disp(
 def calculate_struct_comparison(
     defect_structures_dict: dict,
     metric: str = "max_dist",
-    ref_structure: Union[str, float, Structure] = "Unperturbed",
+    ref_structure: str | float | Structure = "Unperturbed",
     min_dist: float = 0.1,
     verbose: bool = False,
     **sm_kwargs,
@@ -682,13 +681,13 @@ def calculate_struct_comparison(
 def compare_structures(
     defect_structures_dict: dict,
     defect_energies_dict: dict,
-    ref_structure: Union[str, float, Structure] = "Unperturbed",
+    ref_structure: str | float | Structure = "Unperturbed",
     units: str = "eV",
     min_dist: float = 0.1,
     display_df: bool = True,
     verbose: bool = True,
     **sm_kwargs,
-) -> Union[None, pd.DataFrame]:
+) -> None | pd.DataFrame:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
     a specified structure (``ref_structure``), and calculate the summed
@@ -815,8 +814,8 @@ def compare_structures(
         df_list,
         columns=[
             "Bond Distortion",
-            "\u03A3{Displacements} (\u212B)",  # Sigma and Angstrom
-            "Max Distance (\u212B)",  # Angstrom
+            "\u03a3{Displacements} (\u212b)",  # Sigma and Angstrom
+            "Max Distance (\u212b)",  # Angstrom
             f"\u0394 Energy ({units})",  # Delta
         ],
     )
@@ -827,8 +826,8 @@ def compare_structures(
 
 def get_homoionic_bonds(
     structure: Structure,
-    elements: Union[list[str], str],
-    radius: Optional[float] = 3.3,
+    elements: list[str] | str,
+    radius: float | None = 3.3,
     verbose: bool = True,
 ) -> dict:
     """
@@ -918,8 +917,8 @@ def _site_magnetizations(
     outcar: Outcar,
     structure: Structure,
     threshold: float = 0.1,
-    defect_site: Optional[int] = None,
-    orbital_projections: Optional[bool] = False,
+    defect_site: int | None = None,
+    orbital_projections: bool | None = False,
 ) -> pd.DataFrame:
     """
     Prints sites with magnetization above threshold.
@@ -958,7 +957,7 @@ def _site_magnetizations(
             if isinstance(defect_site, int):
                 significant_magnetizations[f"{structure[index].species_string}({index})"].update(
                     {
-                        "Dist. (\u212B)": round(
+                        "Dist. (\u212b)": round(
                             structure.get_distance(i=defect_site, j=index),
                             2,
                         )
@@ -978,10 +977,10 @@ def get_site_magnetizations(
     distortions: list,
     output_path: str = ".",
     threshold: float = 0.1,
-    defect_site: Optional[int or list] = None,
-    orbital_projections: Optional[bool] = False,
-    verbose: Optional[bool] = True,
-) -> Optional[dict]:
+    defect_site: (int or list) | None = None,
+    orbital_projections: bool | None = False,
+    verbose: bool | None = True,
+) -> dict | None:
     """
     For given distortions, find sites with significant magnetization and
     return as dictionary. Only implemented for VASP calculations.

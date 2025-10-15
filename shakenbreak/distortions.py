@@ -3,7 +3,6 @@
 import contextlib
 import os
 import warnings
-from typing import Optional, Union
 
 import numpy as np
 from ase.neighborlist import NeighborList
@@ -25,8 +24,8 @@ warnings.formatwarning = _warning_on_one_line
 
 def _get_ase_defect_structure(
     structure: Structure,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
 ):
     """
     Convenience function to get an ASE Atoms object of the input structure
@@ -81,10 +80,10 @@ def _get_ase_defect_structure(
 def _get_nns_to_distort(
     structure: Structure,
     num_nearest_neighbours: int,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    distorted_element: Optional[Union[str, list]] = None,
-    distorted_atoms: Optional[list] = None,
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    distorted_element: str | list | None = None,
+    distorted_atoms: list | None = None,
 ):
     """
     Convenience function to get the nearest neighbours to distort, based on the input
@@ -216,11 +215,11 @@ def distort(
     structure: Structure,
     num_nearest_neighbours: int,
     distortion_factor: float,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    distorted_element: Optional[Union[str, list]] = None,
-    distorted_atoms: Optional[list] = None,
-    verbose: Optional[bool] = False,
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    distorted_element: str | list | None = None,
+    distorted_atoms: list | None = None,
+    verbose: bool | None = False,
 ) -> dict:
     """
     Applies bond distortions to ``num_nearest_neighbours`` of the defect (specified
@@ -351,7 +350,7 @@ def get_dimer_bond_length(
         pmg_bond_length = None
         with contextlib.suppress(TypeError):
             pmg_bond_length = get_bond_length(species_1, species_2)
-    if w and any("No order" in str(warn.message) for warn in w) or pmg_bond_length is None:
+    if (w and any("No order" in str(warn.message) for warn in w)) or pmg_bond_length is None:
         # use CovalentRadius values, rather than pmg defaulting to atomic radii
         return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
 
@@ -360,10 +359,10 @@ def get_dimer_bond_length(
 
 def apply_dimer_distortion(
     structure: Structure,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    dimer_bond_length: Optional[float] = None,
-    verbose: Optional[bool] = False,
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    dimer_bond_length: float | None = None,
+    verbose: bool | None = False,
 ) -> dict:
     """
     Apply a dimer distortion to a defect structure.
@@ -490,11 +489,11 @@ def apply_dimer_distortion(
 
 def rattle(
     structure: Structure,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
     verbose: bool = False,
     n_iter: int = 1,
-    active_atoms: Optional[list] = None,
+    active_atoms: list | None = None,
     nbr_cutoff: float = 5,
     width: float = 0.1,
     max_attempts: int = 5000,
@@ -608,23 +607,23 @@ def rattle(
 
         if verbose:
             warnings.warn(
-                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths significantly "
-                f"smaller than this present), setting d_min to {reduced_d_min:.2f} \u212B for this defect."
+                f"Initial rattle with d_min {d_min:.2f} \u212b failed (some bond lengths significantly "
+                f"smaller than this present), setting d_min to {reduced_d_min:.2f} \u212b for this defect."
             )
 
     return Structure.from_ase_atoms(rattled_ase_struct)
 
 
 def _get_stdev_and_d_min(
-    sorted_distances: np.ndarray, stdev: Optional[float], d_min: Optional[float]
+    sorted_distances: np.ndarray, stdev: float | None, d_min: float | None
 ) -> tuple[float, float]:
     if stdev is None:
         stdev = 0.1 * sorted_distances[0]
         if stdev > 0.4 or stdev < 0.02:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of {10 * stdev} "
-                f"\u212B and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
-                f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
+                f"\u212b and thus a rattle `stdev` of {stdev} ( = 10% bond length), "
+                f"which is unreasonable. Reverting to 0.25 \u212b. If this is too large, "
                 f"set `stdev` manually"
             )
             stdev = 0.25
@@ -635,8 +634,8 @@ def _get_stdev_and_d_min(
         if d_min < 1.0:
             warnings.warn(
                 f"Automatic bond-length detection gave a bulk bond length of "
-                f"{(1 / 0.8) * d_min} \u212B, which is almost certainly too small. "
-                f"Reverting to 2.25 \u212B. If this is too large, set `d_min` manually"
+                f"{(1 / 0.8) * d_min} \u212b, which is almost certainly too small. "
+                f"Reverting to 2.25 \u212b. If this is too large, set `d_min` manually"
             )
             d_min = 2.25
 
@@ -645,18 +644,18 @@ def _get_stdev_and_d_min(
 
 def distort_and_rattle(
     structure: Structure,
-    distortion_factor: Union[float, str],
+    distortion_factor: float | str,
     num_nearest_neighbours: int = 0,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
     local_rattle: bool = False,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    active_atoms: Optional[list] = None,
-    distorted_element: Optional[str] = None,
-    distorted_atoms: Optional[list] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
+    active_atoms: list | None = None,
+    distorted_element: str | None = None,
+    distorted_atoms: list | None = None,
     verbose: bool = False,
-    dimer_bond_length: Optional[float] = None,
+    dimer_bond_length: float | None = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1023,13 +1022,13 @@ def _generate_local_mc_rattled_structures(
 
 def local_mc_rattle(
     structure: Structure,
-    site_index: Optional[int] = None,  # 0-indexed
-    frac_coords: Optional[np.array] = None,  # use frac coords for vacancies
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    verbose: Optional[bool] = False,
+    site_index: int | None = None,  # 0-indexed
+    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    stdev: float | None = None,
+    d_min: float | None = None,
+    verbose: bool | None = False,
     n_iter: int = 1,
-    active_atoms: Optional[list] = None,
+    active_atoms: list | None = None,
     nbr_cutoff: float = 5,
     width: float = 0.1,
     max_attempts: int = 5000,
@@ -1155,9 +1154,9 @@ def local_mc_rattle(
 
         if verbose:
             warnings.warn(
-                f"Initial rattle with d_min {d_min:.2f} \u212B failed (some bond lengths "
+                f"Initial rattle with d_min {d_min:.2f} \u212b failed (some bond lengths "
                 f"significantly smaller than this present), setting d_min to"
-                f" {reduced_d_min:.2f} \u212B for this defect."
+                f" {reduced_d_min:.2f} \u212b for this defect."
             )
 
     if isinstance(frac_coords, np.ndarray):

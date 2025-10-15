@@ -7,7 +7,6 @@ import copy
 import os
 import shutil
 import warnings
-from typing import Optional
 
 import pandas as pd
 from ase.io import write as ase_write
@@ -182,6 +181,7 @@ def _compare_distortion(
         for property, value in zip(
             ["charges", "structures", "energy_diffs", "bond_distortions"],
             [charge, gs_struct, energy_diff, gs_distortion],
+            strict=False,
         ):
             low_energy_defects[defect][index][property].append(value)
 
@@ -310,6 +310,7 @@ def _prune_dict_across_charges(
                             comparison_results[2],
                             comparison_results[3],
                         ],
+                        strict=False,
                     ):
                         distortion_dict[property].append(copy.deepcopy(value))
                 elif comparison_results[0] is False:
@@ -324,7 +325,7 @@ def _prune_dict_across_charges(
 
 
 def get_energy_lowering_distortions(
-    defect_charges_dict: Optional[dict] = None,
+    defect_charges_dict: dict | None = None,
     output_path: str = ".",
     code: str = "vasp",
     structure_filename: str = "CONTCAR",
@@ -810,7 +811,7 @@ def write_retest_inputs(
     low_energy_defects: dict,
     output_path: str = ".",
     code: str = "vasp",
-    input_filename: Optional[str] = None,
+    input_filename: str | None = None,
 ) -> None:
     """
     Create folders with relaxation input files for testing the low-energy
@@ -1189,7 +1190,7 @@ def _copy_fhi_aims_files(
 def write_groundstate_structure(
     all: bool = True,
     output_path: str = ".",
-    groundstate_folder: Optional[str] = None,
+    groundstate_folder: str | None = None,
     groundstate_filename: str = "groundstate_POSCAR",
     structure_filename: str = "CONTCAR",
     verbose: bool = False,
