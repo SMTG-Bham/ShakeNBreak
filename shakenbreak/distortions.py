@@ -25,7 +25,7 @@ warnings.formatwarning = _warning_on_one_line
 def _get_ase_defect_structure(
     structure: Structure,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
 ):
     """
     Convenience function to get an ASE Atoms object of the input structure
@@ -81,7 +81,7 @@ def _get_nns_to_distort(
     structure: Structure,
     num_nearest_neighbours: int,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
     distorted_element: str | list | None = None,
     distorted_atoms: list | None = None,
 ):
@@ -216,7 +216,7 @@ def distort(
     num_nearest_neighbours: int,
     distortion_factor: float,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
     distorted_element: str | list | None = None,
     distorted_atoms: list | None = None,
     verbose: bool | None = False,
@@ -360,7 +360,7 @@ def get_dimer_bond_length(
 def apply_dimer_distortion(
     structure: Structure,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
     dimer_bond_length: float | None = None,
     verbose: bool | None = False,
 ) -> dict:
@@ -647,7 +647,7 @@ def distort_and_rattle(
     distortion_factor: float | str,
     num_nearest_neighbours: int = 0,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
     local_rattle: bool = False,
     stdev: float | None = None,
     d_min: float | None = None,
@@ -1023,7 +1023,7 @@ def _generate_local_mc_rattled_structures(
 def local_mc_rattle(
     structure: Structure,
     site_index: int | None = None,  # 0-indexed
-    frac_coords: np.array | None = None,  # use frac coords for vacancies
+    frac_coords: np.ndarray | None = None,  # use frac coords for vacancies
     stdev: float | None = None,
     d_min: float | None = None,
     verbose: bool | None = False,
