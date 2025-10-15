@@ -8,7 +8,6 @@ import datetime
 import os
 import shutil
 import warnings
-from typing import Optional
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -77,7 +76,7 @@ def _install_custom_font():
             )
 
 
-def _get_backend(save_format: str) -> Optional[str]:
+def _get_backend(save_format: str) -> str | None:
     """Try use pycairo as backend if installed, and save_format is pdf."""
     backend = None
     if "pdf" in save_format:
@@ -109,42 +108,35 @@ def _verify_data_directories_exist(
         )
 
 
-def _parse_distortion_metadata(distortion_metadata, defect, charge) -> tuple:
+def _parse_distortion_metadata(distortion_metadata: dict, defect: str, charge: int) -> tuple:
     """
     Parse the number and type of distorted nearest neighbours for a
     given defect from the ``distortion_metadata`` dictionary.
     """
+    num_nearest_neighbours, neighbour_atom = None, None  # default if info not available
+
     if defect not in distortion_metadata["defects"] and len(distortion_metadata["defects"].keys()) == 1:
         defect = next(iter(distortion_metadata["defects"].keys()))  # use the only defect in the metadata
 
     if defect in distortion_metadata["defects"]:
-        try:
-            # Get number and element symbol of the distorted site(s)
-            num_nearest_neighbours = distortion_metadata["defects"][defect]["charges"][str(charge)][
-                "num_nearest_neighbours"
-            ]  # get number of distorted neighbours
-        except KeyError:
-            num_nearest_neighbours = None
-        try:
-            neighbour_atoms = [  # get element of the distorted site
-                i[1]  # element symbol
-                for i in distortion_metadata["defects"][defect]["charges"][str(charge)]["distorted_atoms"]
-            ]
+        charges_dict = distortion_metadata["defects"][defect]["charges"]
+        if defect_species_dict := charges_dict.get(str(charge), charges_dict.get(charge, {})):
+            try:  # Get number and element symbol of the distorted site(s)
+                num_nearest_neighbours = defect_species_dict["num_nearest_neighbours"]
+            except KeyError:
+                num_nearest_neighbours = None
+            try:
+                neighbour_atoms = [  # get element of the distorted site
+                    i[1] for i in defect_species_dict["distorted_atoms"]  # element symbol
+                ]
 
-            if all(element == neighbour_atoms[0] for element in neighbour_atoms):
-                neighbour_atom = neighbour_atoms[0]
-            else:
-                neighbour_atom = "NN"  # if different elements were
-                # distorted, just use nearest neighbours (NN) for label
+                if all(element == neighbour_atoms[0] for element in neighbour_atoms):
+                    neighbour_atom = neighbour_atoms[0]
+                else:
+                    neighbour_atom = "NN"  # if different elements were distorted, just use "NN" for label
 
-        except (KeyError, TypeError, ValueError):
-            neighbour_atom = (
-                "NN"  # if distorted_elements wasn't set, set label
-                # to "NN"
-            )
-
-    else:
-        num_nearest_neighbours, neighbour_atom = None, None
+            except (KeyError, TypeError, ValueError, IndexError):
+                neighbour_atom = "NN"  # if distorted_elements wasn't set, set label to "NN"
 
     return num_nearest_neighbours, neighbour_atom
 
@@ -253,7 +245,7 @@ def _purge_data_dicts(
 def _remove_high_energy_points(
     energies_dict: dict,
     max_energy_above_unperturbed: float,
-    disp_dict: Optional[dict] = None,
+    disp_dict: dict | None = None,
 ) -> tuple[dict, dict]:
     """
     Remove points whose energy is higher than the reference (Unperturbed) by
@@ -289,7 +281,7 @@ def _get_displacement_dict(
     metric: str,
     energies_dict: dict,
     add_colorbar: bool,
-    code: Optional[str] = "vasp",
+    code: str | None = "vasp",
 ) -> tuple[bool, dict, dict]:
     """
     Parses structures of ``defect_species`` to calculate displacements between each
@@ -361,8 +353,8 @@ def _get_displacement_dict(
     return add_colorbar, energies_dict, disp_dict
 
 
-def _format_datapoints_from_other_chargestates(
-    energies_dict: dict, disp_dict: Optional[dict] = None
+def _format_datapoints_from_other_charge_states(
+    energies_dict: dict, disp_dict: dict | None = None
 ) -> tuple:
     """
     Format distortions keys of the energy lowering distortions imported from
@@ -413,14 +405,15 @@ def _format_datapoints_from_other_chargestates(
         try:
             # sort keys and values
             sorted_distortions, sorted_energies, resorted_disp = zip(
-                *sorted(zip(keys, energies_dict["distortions"].values(), sorted_disp))
+                *sorted(zip(keys, energies_dict["distortions"].values(), sorted_disp, strict=True)),
+                strict=True,
             )
             # Indexes of the displacements values for other charge states
             # We need both the indexes for the unsorted lists
             # and for the sorted ones
             imported_indices = {  # unsorted_index: sorted_index
                 unsorted_index: resorted_disp.index(d)
-                for unsorted_index, d in zip(imported_indices, disps_from_other_charges)
+                for unsorted_index, d in zip(imported_indices, disps_from_other_charges, strict=True)
             }
             return (
                 imported_indices,
@@ -435,11 +428,11 @@ def _format_datapoints_from_other_chargestates(
     # Sort keys and values
     try:
         sorted_distortions, sorted_energies = zip(
-            *sorted(zip(keys, energies_dict["distortions"].values()))
+            *sorted(zip(keys, energies_dict["distortions"].values(), strict=True)), strict=True
         )
         imported_indices = {  # unsorted_index: sorted_index
             unsorted_index: sorted_energies.index(d)
-            for unsorted_index, d in zip(imported_indices, imported_energies)
+            for unsorted_index, d in zip(imported_indices, imported_energies, strict=True)
         }
         return imported_indices, keys, sorted_distortions, sorted_energies
     except ValueError:  # if keys and energies_dict["distortions"] are empty
@@ -575,8 +568,8 @@ def _format_axis(
     ax: mpl.axes.Axes,
     defect_name: str,
     y_label: str,
-    num_nearest_neighbours: Optional[int],
-    neighbour_atom: Optional[str],
+    num_nearest_neighbours: int | None,
+    neighbour_atom: str | None,
 ) -> mpl.axes.Axes:
     """
     Format and set axis labels and locators of distortion plots.
@@ -598,8 +591,7 @@ def _format_axis(
     """
     if num_nearest_neighbours and neighbour_atom and defect_name:
         x_label = (
-            f"Bond Distortion Factor (for {num_nearest_neighbours} "
-            f"{neighbour_atom} near {defect_name})"
+            f"Bond Distortion Factor (for {num_nearest_neighbours} {neighbour_atom} near {defect_name})"
         )
     elif num_nearest_neighbours and defect_name:
         x_label = f"Bond Distortion Factor (for {num_nearest_neighbours} NN near {defect_name})"
@@ -730,8 +722,8 @@ def _parse_other_charge_state_label(distortion_key: str) -> str:
 
 def _format_legend(
     ax: mpl.axes.Axes,
-    line: Optional[mpl.lines.Line2D] = None,
-    path_col: Optional[mpl.collections.PathCollection] = None,
+    line: mpl.lines.Line2D | None = None,
+    path_col: mpl.collections.PathCollection | None = None,
     legend_label: str = "",
 ) -> None:
     """
@@ -750,7 +742,7 @@ def _format_legend(
     # get handle and label that corresponds to line, if line present:
     if line and path_col:
         line_handle, line_label = next(
-            (handle, label) for handle, label in zip(handles, labels) if label == legend_label
+            (handle, label) for handle, label in zip(handles, labels, strict=True) if label == legend_label
         )
         # remove line handle and label from handles and labels
         handles = [handle for handle in handles if handle != line_handle]
@@ -761,7 +753,7 @@ def _format_legend(
 
     # merge any duplicate labels (multiple imported charge states perhaps):
     unique_labels = {}
-    for handle, label in zip(handles, labels):
+    for handle, label in zip(handles, labels, strict=True):
         if label not in unique_labels:
             unique_labels[label] = (handle,)
         else:
@@ -808,9 +800,9 @@ def plot_all_defects(
     max_energy_above_unperturbed: float = 0.5,
     units: str = "eV",
     min_e_diff: float = 0.05,
-    style_file: Optional[PathLike] = None,
-    line_color: Optional[str] = None,
-    add_title: Optional[bool] = True,
+    style_file: PathLike | None = None,
+    line_color: str | None = None,
+    add_title: bool | None = True,
     save_plot: bool = True,
     save_format: str = "png",
     verbose: bool = False,
@@ -1002,23 +994,23 @@ def plot_all_defects(
 def plot_defect(
     defect_species: str,
     energies_dict: dict,
-    output_path: Optional[str] = ".",
-    neighbour_atom: Optional[str] = None,
-    num_nearest_neighbours: Optional[int] = None,
-    add_colorbar: Optional[bool] = False,
-    metric: Optional[str] = "max_dist",
-    max_energy_above_unperturbed: Optional[float] = 0.5,
-    include_site_info_in_name: Optional[bool] = False,
-    style_file: Optional[PathLike] = None,
-    y_label: Optional[str] = "Energy (eV)",
-    add_title: Optional[bool] = True,
-    line_color: Optional[str] = None,
-    units: Optional[str] = "eV",
-    save_plot: Optional[bool] = True,
-    save_format: Optional[str] = "png",
+    output_path: str | None = ".",
+    neighbour_atom: str | None = None,
+    num_nearest_neighbours: int | None = None,
+    add_colorbar: bool | None = False,
+    metric: str | None = "max_dist",
+    max_energy_above_unperturbed: float | None = 0.5,
+    include_site_info_in_name: bool | None = False,
+    style_file: PathLike | None = None,
+    y_label: str | None = "Energy (eV)",
+    add_title: bool | None = True,
+    line_color: str | None = None,
+    units: str | None = "eV",
+    save_plot: bool | None = True,
+    save_format: str | None = "png",
     verbose: bool = False,
     close_figure: bool = False,
-) -> Optional[Figure]:
+) -> Figure | None:
     """
     Convenience function to plot energy vs distortion for a defect, to identify
     any energy-lowering distortions.
@@ -1235,9 +1227,9 @@ def _setup_plot(
     defect_species: str,
     include_site_info_in_name: bool,
     y_label: str,
-    title: Optional[str],
-    num_nearest_neighbours: Optional[int],
-    neighbour_atom: Optional[str],
+    title: str | None,
+    num_nearest_neighbours: int | None,
+    neighbour_atom: str | None,
     **fig_kwargs,
 ) -> tuple[plt.Figure, plt.Axes]:
     _install_custom_font()
@@ -1265,7 +1257,7 @@ def _setup_plot(
 
 
 def _plot_unperturbed(
-    ax: plt.Axes, unperturbed_energy: float, color, label: Optional[str] = "Unperturbed", **kwargs
+    ax: plt.Axes, unperturbed_energy: float, color, label: str | None = "Unperturbed", **kwargs
 ) -> None:
     ax.scatter(0, unperturbed_energy, color=color, ls="None", marker="d", label=label, **kwargs)
 
@@ -1277,15 +1269,15 @@ def _plot_distortions(
     sorted_distortions,
     sorted_energies,
     keys,
-    disp_dict: Optional[dict],
+    disp_dict: dict | None,
     colors: list[str] = "k",  # colors[dataset_number],
     colormap=None,
     norm=None,
-    style_settings: Optional[dict] = None,
-    sorted_disp: Optional[list] = None,
+    style_settings: dict | None = None,
+    sorted_disp: list | None = None,
     label: str = "",  # dataset_labels[dataset_number]
-    line_color: Optional[str] = None,
-    legend_label: Optional[str] = "SnB",
+    line_color: str | None = None,
+    legend_label: str | None = "SnB",
 ):
     path_col = line = None  # to later check if line was plotted, for legend formatting
     disp_dict = disp_dict or {}
@@ -1369,7 +1361,7 @@ def _plot_distortions(
                 list(energies_dict["distortions"].keys())[i].split("_")[-1] for i in imported_indices
             ]  # number of other charge states whose distortions have been imported
         )
-        for i, j in zip(imported_indices, range(num_other_charges)):
+        for i, j in zip(imported_indices, range(num_other_charges), strict=True):
             sorted_i = imported_indices[i]  # index for the sorted dicts
             if sorted_disp:
                 colors = [
@@ -1417,21 +1409,21 @@ def plot_colorbar(
     energies_dict: dict,
     disp_dict: dict,
     defect_species: str,
-    include_site_info_in_name: Optional[bool] = False,
-    num_nearest_neighbours: Optional[int] = None,
+    include_site_info_in_name: bool | None = False,
+    num_nearest_neighbours: int | None = None,
     neighbour_atom: str = "NN",
-    title: Optional[str] = None,
+    title: str | None = None,
     legend_label: str = "SnB",
-    metric: Optional[str] = "max_dist",
-    max_energy_above_unperturbed: Optional[float] = 0.5,
-    save_plot: Optional[bool] = False,
-    output_path: Optional[str] = ".",
-    style_file: Optional[PathLike] = None,
-    y_label: Optional[str] = "Energy (eV)",
-    line_color: Optional[str] = None,
-    save_format: Optional[str] = "png",
-    verbose: Optional[bool] = False,
-) -> Optional[Figure]:
+    metric: str | None = "max_dist",
+    max_energy_above_unperturbed: float | None = 0.5,
+    save_plot: bool | None = False,
+    output_path: str | None = ".",
+    style_file: PathLike | None = None,
+    y_label: str | None = "Energy (eV)",
+    line_color: str | None = None,
+    save_format: str | None = "png",
+    verbose: bool | None = False,
+) -> Figure | None:
     """
     Plot energy versus bond distortion, adding a colorbar to show structural
     similarity between different final configurations.
@@ -1536,7 +1528,7 @@ def plot_colorbar(
             sorted_distortions,
             sorted_energies,
             sorted_disp,
-        ) = _format_datapoints_from_other_chargestates(energies_dict=energies_dict, disp_dict=disp_dict)
+        ) = _format_datapoints_from_other_charge_states(energies_dict=energies_dict, disp_dict=disp_dict)
 
         path_col, line = _plot_distortions(
             ax=ax,
@@ -1596,24 +1588,24 @@ def plot_colorbar(
 
 def plot_datasets(
     datasets: list,
-    dataset_labels: Optional[list] = None,
+    dataset_labels: list | None = None,
     defect_species: str = "defect",
-    include_site_info_in_name: Optional[bool] = False,
-    title: Optional[str] = None,
-    neighbour_atom: Optional[str] = None,
-    num_nearest_neighbours: Optional[int] = None,
-    max_energy_above_unperturbed: Optional[float] = 0.5,
-    style_file: Optional[PathLike] = None,
+    include_site_info_in_name: bool | None = False,
+    title: str | None = None,
+    neighbour_atom: str | None = None,
+    num_nearest_neighbours: int | None = None,
+    max_energy_above_unperturbed: float | None = 0.5,
+    style_file: PathLike | None = None,
     y_label: str = r"Energy (eV)",
-    markers: Optional[list] = None,
-    linestyles: Optional[list] = None,
-    colors: Optional[list] = None,
-    markersize: Optional[float] = None,
-    linewidth: Optional[float] = None,
-    save_plot: Optional[bool] = False,
-    output_path: Optional[str] = ".",
-    save_format: Optional[str] = "png",
-    verbose: Optional[bool] = True,
+    markers: list | None = None,
+    linestyles: list | None = None,
+    colors: list | None = None,
+    markersize: float | None = None,
+    linewidth: float | None = None,
+    save_plot: bool | None = False,
+    output_path: str | None = ".",
+    save_format: str | None = "png",
+    verbose: bool | None = True,
 ) -> Figure:
     """
     Generate energy versus bond distortion plots for multiple datasets.
@@ -1760,7 +1752,7 @@ def plot_datasets(
                 keys,
                 sorted_distortions,
                 sorted_energies,
-            ) = _format_datapoints_from_other_chargestates(energies_dict=dataset, disp_dict=None)
+            ) = _format_datapoints_from_other_charge_states(energies_dict=dataset, disp_dict=None)
             min_max_distortions.extend([min(sorted_distortions), max(sorted_distortions)])
 
             _path_col, _line = _plot_distortions(

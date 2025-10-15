@@ -13,7 +13,7 @@ import numpy as np
 from ase.build import bulk, make_supercell
 from ase.io import read
 from doped.generation import get_defect_name_from_entry
-from doped.vasp import _test_potcar_functional_choice, DefectRelaxSet
+from doped.vasp import DefectRelaxSet, _test_potcar_functional_choice
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
@@ -21,16 +21,13 @@ from pymatgen.core.periodic_table import DummySpecies
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
-from pymatgen.io.vasp.inputs import Poscar, UnknownPotcarWarning, Incar, Kpoints, Potcar
+from pymatgen.io.vasp.inputs import (Incar, Kpoints, Poscar, Potcar,
+                                     UnknownPotcarWarning)
 
 from shakenbreak import input
 from shakenbreak.analysis import get_homoionic_bonds
 from shakenbreak.distortions import rattle, distort, apply_dimer_distortion
-
-
-def if_present_rm(path):
-    if os.path.exists(path):
-        shutil.rmtree(path)
+from test_cli import if_present_rm
 
 
 def _potcars_available() -> bool:
@@ -424,6 +421,8 @@ class InputTestCase(unittest.TestCase):
         # Generate a defect entry for each charge state
         cls.V_Cd_in_CdSeTe_entry = input._get_defect_entry_from_defect(defect=defect, charge_state=0)
 
+        cls.Fe3O4_defect_entry = loadfn(f"{cls.DATA_DIR}/Fe3O4_v_Fe.json")
+
     def tearDown(self) -> None:
         # reset locale:
         try:
@@ -449,6 +448,8 @@ class InputTestCase(unittest.TestCase):
         for i in os.listdir():
             if os.path.isdir(i) and any(x in i for x in regen_defect_folder_names):
                 if_present_rm(i)
+
+        if_present_rm("new_distorted_Int_Cd_2_struc_POSCAR")
 
     def _check_dimer_length(self, structure, elements, dimer_length_string):
         self.assertEqual(
@@ -477,32 +478,32 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(Int_Cd_comp, Composition("Cd32Te32"))
 
     def test_most_common_oxi(self):
-        self.assertEqual(input._most_common_oxi("Cd"), +2)
-        self.assertEqual(input._most_common_oxi("Te"), -2)
-        self.assertEqual(input._most_common_oxi("Cl"), -1)
-        self.assertEqual(input._most_common_oxi("Al"), +3)
-        self.assertEqual(input._most_common_oxi("Mg"), +2)
-        self.assertEqual(input._most_common_oxi("Si"), +4)
-        self.assertEqual(input._most_common_oxi("Ca"), +2)
-        self.assertEqual(input._most_common_oxi("Fe"), +3)
-        self.assertEqual(input._most_common_oxi("Ni"), 0)
-        self.assertEqual(input._most_common_oxi("Cu"), +1)
-        self.assertEqual(input._most_common_oxi("Ag"), +1)
-        self.assertEqual(input._most_common_oxi("Zn"), +2)
-        self.assertEqual(input._most_common_oxi("Pb"), +2)
-        self.assertEqual(input._most_common_oxi("Hg"), +2)
-        self.assertEqual(input._most_common_oxi("O"), -2)
-        self.assertEqual(input._most_common_oxi("S"), -2)
-        self.assertEqual(input._most_common_oxi("Se"), -2)
-        self.assertEqual(input._most_common_oxi("N"), -3)
+        self.assertEqual(input.most_common_oxi("Cd"), +2)
+        self.assertEqual(input.most_common_oxi("Te"), -2)
+        self.assertEqual(input.most_common_oxi("Cl"), -1)
+        self.assertEqual(input.most_common_oxi("Al"), +3)
+        self.assertEqual(input.most_common_oxi("Mg"), +2)
+        self.assertEqual(input.most_common_oxi("Si"), +4)
+        self.assertEqual(input.most_common_oxi("Ca"), +2)
+        self.assertEqual(input.most_common_oxi("Fe"), +3)
+        self.assertEqual(input.most_common_oxi("Ni"), 0)
+        self.assertEqual(input.most_common_oxi("Cu"), +1)
+        self.assertEqual(input.most_common_oxi("Ag"), +1)
+        self.assertEqual(input.most_common_oxi("Zn"), +2)
+        self.assertEqual(input.most_common_oxi("Pb"), +2)
+        self.assertEqual(input.most_common_oxi("Hg"), +2)
+        self.assertEqual(input.most_common_oxi("O"), -2)
+        self.assertEqual(input.most_common_oxi("S"), -2)
+        self.assertEqual(input.most_common_oxi("Se"), -2)
+        self.assertEqual(input.most_common_oxi("N"), -3)
         # no ICSD oxidation state in pymatgen for Au, At, so uses
         # element_obj.common_oxidation_states[0]:
-        self.assertEqual(input._most_common_oxi("Au"), 3)
-        self.assertEqual(input._most_common_oxi("At"), -1)
-        self.assertEqual(input._most_common_oxi("Po"), -2)
-        self.assertEqual(input._most_common_oxi("Ac"), +3)
-        self.assertEqual(input._most_common_oxi("Fr"), +1)
-        self.assertEqual(input._most_common_oxi("Ra"), +2)
+        self.assertEqual(input.most_common_oxi("Au"), 3)
+        self.assertEqual(input.most_common_oxi("At"), -1)
+        self.assertEqual(input.most_common_oxi("Po"), -2)
+        self.assertEqual(input.most_common_oxi("Ac"), +3)
+        self.assertEqual(input.most_common_oxi("Fr"), +1)
+        self.assertEqual(input.most_common_oxi("Ra"), +2)
 
     def test_get_sc_defect_coords(self):
         defect_entry = copy.deepcopy(self.V_Cd_entry)
@@ -1324,6 +1325,29 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(list(defect.site.frac_coords), list(subs["bulk_supercell_site"].frac_coords))
         self.assertEqual(str(defect.as_dict()["@class"].lower()), "substitution")
 
+    def test_oxidation_state_guessing(self):
+        # Check if most common oxidation state is used when multiple possible oxidation states
+        # are guessed for an element:
+        with patch("builtins.print") as mock_print:
+            with warnings.catch_warnings(record=True) as w:
+                dist = input.Distortions(
+                self.Fe3O4_defect_entry
+            )
+        warning_msg = w[-1].message
+        
+        self.assertEqual(
+            str(warning_msg), 
+            "Multiple oxidation states have been guessed for {'Fe'}. The most common "
+            "oxidation state will be used for these elements, which may not be appropriate!"
+        )
+        print(mock_print.call_args_list)  # for debugging
+        mock_print.assert_called_once_with(
+            "Oxidation states were not explicitly set, thus have been guessed as "
+            "{'Fe': 3, 'O': -2}. If this is unreasonable you should manually set "
+            "oxidation_states"
+        )
+        self.assertEqual(dist.oxidation_states, {"Fe": +3, "O": -2})
+        
     def test_Distortions_initialisation(self):
         # test auto oxidation state determination:
         for defect_list in [
@@ -1335,7 +1359,7 @@ class InputTestCase(unittest.TestCase):
             print(mock_print.call_args_list)  # for debugging
             mock_print.assert_called_once_with(
                 "Oxidation states were not explicitly set, thus have been guessed as "
-                "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+                "{'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
                 "oxidation_states"
             )
             self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
@@ -1347,7 +1371,7 @@ class InputTestCase(unittest.TestCase):
         print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "{'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
         self.assertEqual(dist.oxidation_states, {"Cd": +2, "Te": -2})
@@ -1361,18 +1385,18 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(
             extrinsic_dist.oxidation_states,
             {
-                "Cd": 2.0,
-                "Te": -2.0,
-                "Zn": 2.0,
-                "Mn": 2.0,
-                "Al": 3.0,
-                "Sb": 0.0,
+                "Cd": 2,
+                "Te": -2,
+                "Zn": 2,
+                "Mn": 2,
+                "Al": 3,
+                "Sb": 0,
                 "Cl": -1,
             },
         )
         mock_print.assert_called_once_with(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2.0, 'Te': -2.0, 'Zn': 2.0, 'Mn': 2.0, 'Al': 3.0, 'Sb': 0.0, 'Cl': -1}. "
+            "{'Cd': 2, 'Te': -2, 'Zn': 2, 'Mn': 2, 'Al': 3, 'Sb': 0, 'Cl': -1}. "
             "If this is unreasonable you should manually set oxidation_states"
         )
 
@@ -1387,19 +1411,14 @@ class InputTestCase(unittest.TestCase):
         self.assertDictEqual(
             extrinsic_dist.oxidation_states,
             {
-                "Cd": 7.0,
-                "Te": -20.0,
-                "Zn": 1.0,
-                "Mn": 9.0,
-                "Al": 3.0,
-                "Sb": 0.0,
+                "Cd": 7,
+                "Te": -20,
+                "Zn": 1,
+                "Mn": 9,
+                "Al": 3,
+                "Sb": 0,
                 "Cl": -1,
             },
-        )
-        mock_print.assert_called_once_with(
-            "Oxidation states for ['Al', 'Cl', 'Sb'] were not explicitly set, thus have been "
-            "guessed as {'Al': 3.0, 'Cl': -1, 'Sb': 0.0}. If this is unreasonable you should "
-            "manually set oxidation_states"
         )
 
         # test no print statement when all oxidation states set
@@ -1443,8 +1462,8 @@ class InputTestCase(unittest.TestCase):
             dist = input.Distortions(fake_extrinsic_interstitial_list)
         print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
-            "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2.0, "
-            "'Te': -2.0, 'Li': 1}. If this is unreasonable you should manually set "
+            "Oxidation states were not explicitly set, thus have been guessed as {'Cd': 2, "
+            "'Te': -2, 'Li': 1}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
 
@@ -1488,7 +1507,7 @@ class InputTestCase(unittest.TestCase):
             )
         print(mock_print.call_args_list)  # for debugging
         oxi_state_warning_message = (
-            "Oxidation states were not explicitly set, thus have been guessed as {'Cu': 0.0}. If "
+            "Oxidation states were not explicitly set, thus have been guessed as {'Cu': 0}. If "
             "this is unreasonable you should manually set oxidation_states"
         )
         try:
@@ -2524,7 +2543,7 @@ class InputTestCase(unittest.TestCase):
         print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "{'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
         pmg_defects = {
@@ -2639,7 +2658,7 @@ class InputTestCase(unittest.TestCase):
         print(mock_print.call_args_list)  # for debugging
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "{'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
         pmg_defects = {
@@ -2976,7 +2995,7 @@ class InputTestCase(unittest.TestCase):
         #         self.CP2K_DATA_DIR,
         #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
         #     )
-        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
+        # )  # most recent change was addition of explicit CHARGE setting (different position in input)
         self.assertEqual(test_input, generated_input)
         # Test input structure file
         generated_input_struct = Structure.from_file("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")
@@ -3017,7 +3036,7 @@ class InputTestCase(unittest.TestCase):
         #         self.CP2K_DATA_DIR,
         #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
         #     )
-        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
+        # )  # most recent change was addition of explicit CHARGE setting (different position in input)
         self.assertEqual(test_input, generated_input)
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
@@ -3670,7 +3689,7 @@ class InputTestCase(unittest.TestCase):
         # )
         mock_print.assert_any_call(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2.0, 'Te': -2.0}. If this is unreasonable you should manually set "
+            "{'Cd': 2, 'Te': -2}. If this is unreasonable you should manually set "
             "oxidation_states"
         )
         # self.assertDictEqual(

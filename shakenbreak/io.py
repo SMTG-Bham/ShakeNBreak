@@ -7,7 +7,6 @@ import contextlib
 import datetime
 import os
 import warnings
-from typing import Optional, Union
 
 import ase
 from ase.atoms import Atoms
@@ -22,9 +21,9 @@ aaa = AseAtomsAdaptor()
 
 def parse_energies(
     defect: str,
-    path: Optional[str] = ".",
-    code: Optional[str] = "vasp",
-    filename: Optional[str] = "OUTCAR",
+    path: str | None = ".",
+    code: str | None = "vasp",
+    filename: str | None = "OUTCAR",
     verbose: bool = False,
 ) -> None:
     """
@@ -298,7 +297,7 @@ def parse_energies(
                 f"often this is the result of an unreasonable charge state). If both checks pass, "
                 f"you likely need to adjust the `stdev` rattling parameter (can occur for "
                 f"hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials\n"
                 f"This often indicates a complex PES with multiple minima, thus energy-lowering "
                 f"distortions particularly likely, so important to test with reduced `stdev`!"
             )
@@ -344,7 +343,7 @@ def parse_energies(
                 f"problems with these relaxations. You should first check that no user INCAR setting is "
                 f"causing this issue. If not, you likely need to adjust the `stdev` rattling parameter ("
                 f"can occur for hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials."
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials."
             )
         else:
             warnings.warn(
@@ -382,7 +381,7 @@ def parse_energies(
 # Parsing output structures of different codes
 def read_vasp_structure(
     file_path: str,
-) -> Union[Structure, str]:
+) -> Structure | str:
     """
     Read VASP structure from ``file_path`` and convert to ``pymatgen`` Structure
     object.
@@ -417,7 +416,7 @@ def read_vasp_structure(
 
 def read_espresso_structure(
     filename: str,
-) -> Union[Structure, str]:
+) -> Structure | str:
     """
     Reads a structure from Quantum Espresso output and returns it as a
     ``pymatgen`` ``Structure``.
@@ -485,7 +484,7 @@ def read_espresso_structure(
     return structure
 
 
-def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, str]:
+def read_fhi_aims_structure(filename: str, format="aims") -> Structure | str:
     """
     Reads a structure from FHI-aims output and returns it as a
     ``pymatgen`` ``Structure``.
@@ -519,7 +518,7 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Union[Structure, st
 
 def read_cp2k_structure(
     filename: str,
-) -> Union[Structure, str]:
+) -> Structure | str:
     """
     Reads a structure from CP2K restart file and returns it as a
     ``pymatgen`` ``Structure``.
@@ -554,7 +553,7 @@ def read_cp2k_structure(
 
 def read_castep_structure(
     filename: str,
-) -> Union[Structure, str]:
+) -> Structure | str:
     """
     Reads a structure from ``CASTEP`` output (``.castep``) file and
     returns it as a ``pymatgen`` ``Structure``.
@@ -591,7 +590,7 @@ def parse_structure(
     code: str,
     structure_path: str,
     structure_filename: str,
-) -> Union[Structure, str]:
+) -> Structure | str:
     """
     Parses the output structure from different codes (VASP, CP2K, Quantum Espresso,
     CATSEP, FHI-aims) and converts it to a ``pymatgen`` ``Structure`` object.

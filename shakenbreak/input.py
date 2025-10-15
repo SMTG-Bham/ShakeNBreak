@@ -12,7 +12,6 @@ import shutil
 import warnings
 from importlib.metadata import version
 from pathlib import Path
-from typing import Optional, Union
 
 import ase
 import numpy as np
@@ -40,7 +39,7 @@ from pymatgen.io.vasp.sets import BadInputSetWarning
 from tqdm import tqdm
 
 from shakenbreak.analysis import _get_distortion_filename
-from shakenbreak.distortions import distort_and_rattle
+from shakenbreak.distortions import _get_stdev_and_d_min, distort_and_rattle
 from shakenbreak.io import parse_fhi_aims_input, parse_qe_input
 
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -290,9 +289,9 @@ def _write_distortion_metadata(
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
-    user_incar_settings: Optional[dict] = None,
-    user_potcar_functional: Optional[str] = "PBE",
-    user_potcar_settings: Optional[dict] = None,
+    user_incar_settings: dict | None = None,
+    user_potcar_functional: str | None = "PBE",
+    user_potcar_settings: dict | None = None,
     output_path: str = ".",
     **kwargs,
 ) -> str:
@@ -595,7 +594,7 @@ def _get_defect_entry_from_defect(
     return defect_entry
 
 
-def _most_common_oxi(element) -> int:
+def most_common_oxi(element) -> int:
     """
     Convenience function to get the most common oxidation state of an element, using pymatgen's
     elemental data.
@@ -613,10 +612,10 @@ def _most_common_oxi(element) -> int:
     oxi_probabilities = [(k, v) for k, v in comp_obj.oxi_prob.items() if k.element == element_obj]
     if oxi_probabilities:  # not empty
         most_common = max(oxi_probabilities, key=lambda x: x[1])[0]  # breaks if icsd oxi states is empty
-        return most_common.oxi_state
+        return int(most_common.oxi_state)
 
     if element_obj.common_oxidation_states:
-        return element_obj.common_oxidation_states[0]  # known common oxidation state
+        return int(element_obj.common_oxidation_states[0])  # known common oxidation state
 
     # no known common oxidation state, make guess and warn user
     guess_oxi = element_obj.oxidation_states[0] if element_obj.oxidation_states else 0
@@ -627,7 +626,7 @@ def _most_common_oxi(element) -> int:
         f"`oxidation_states` input parameter for `Distortions` if this is unreasonable!"
     )
 
-    return guess_oxi
+    return int(guess_oxi)
 
 
 def _calc_number_electrons(
@@ -787,7 +786,7 @@ def identify_defect(
     # doped if we wanted, but works fine as is.
     # identify defect site, structural information, and create defect object:
     try:
-        defect_type, comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
+        defect_type, _comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
     except RuntimeError as exc:
         raise ValueError(
             "Could not identify defect type from number of sites in structure: "
@@ -962,7 +961,6 @@ def identify_defect(
 
     # try perform auto site-matching regardless of whether defect_coords/defect_index were given,
     # so we can warn user if manual specification and auto site-matching give conflicting results
-    unrelaxed_defect_structure = None
     auto_matching_bulk_site_index = None
     auto_matching_defect_site_index = None
 
@@ -971,7 +969,7 @@ def identify_defect(
             _defect_type,
             auto_matching_bulk_site_index,
             auto_matching_defect_site_index,
-            unrelaxed_defect_structure,
+            _unrelaxed_defect_structure,
         ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
 
     except Exception as exc:
@@ -1086,7 +1084,7 @@ def identify_defect(
 def generate_defect_object(
     single_defect_dict: dict,
     bulk_dict: dict,
-    charges: Optional[list] = None,
+    charges: list | None = None,
     verbose: bool = False,
 ) -> Defect:
     """
@@ -1256,16 +1254,16 @@ def _find_sc_defect_coords(defect_entry):
 def distort_and_rattle_defect_entry(
     defect_entry: DefectEntry,
     num_nearest_neighbours: int,
-    distortion_factor: Union[float, str],
+    distortion_factor: float | str,
     local_rattle: bool = False,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    active_atoms: Optional[list] = None,
-    distorted_element: Optional[str] = None,
-    distorted_atoms: Optional[list] = None,
-    oxidation_states: Optional[dict] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
+    active_atoms: list | None = None,
+    distorted_element: str | None = None,
+    distorted_atoms: list | None = None,
+    oxidation_states: dict | None = None,
     verbose: bool = False,
-    dimer_bond_length: Optional[float] = None,
+    dimer_bond_length: float | None = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1315,7 +1313,8 @@ def distort_and_rattle_defect_entry(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at
@@ -1423,13 +1422,13 @@ def apply_snb_distortions(
     num_nearest_neighbours: int,
     bond_distortions: list,
     local_rattle: bool = False,
-    stdev: Optional[float] = None,
-    d_min: Optional[float] = None,
-    distorted_element: Optional[str] = None,
-    distorted_atoms: Optional[list] = None,
-    oxidation_states: Optional[dict] = None,
+    stdev: float | None = None,
+    d_min: float | None = None,
+    distorted_element: str | None = None,
+    distorted_atoms: list | None = None,
+    oxidation_states: dict | None = None,
     verbose: bool = False,
-    dimer_bond_length: Optional[float] = None,
+    dimer_bond_length: float | None = None,
     **mc_rattle_kwargs,
 ) -> dict:
     """
@@ -1476,7 +1475,8 @@ def apply_snb_distortions(
             Standard deviation (in Angstroms) of the Gaussian distribution
             from which random atomic displacement distances are drawn during
             rattling. Default is set to 10% of the bulk nearest neighbour
-            distance.
+            distance. Note that the average displacement distance will be
+            roughly equal to ``stdev * 1.6``.
         d_min (:obj:`float`, optional):
             Minimum interatomic distance (in Angstroms) in the rattled
             structure. Monte Carlo rattle moves that put atoms at distances
@@ -1604,15 +1604,15 @@ class Distortions:
 
     def __init__(
         self,
-        defect_entries: Union[DefectsGenerator, list, dict, DefectEntry],
-        oxidation_states: Optional[dict] = None,
-        dict_number_electrons_user: Optional[dict] = None,
+        defect_entries: DefectsGenerator | list | dict | DefectEntry,
+        oxidation_states: dict | None = None,
+        dict_number_electrons_user: dict | None = None,
         distortion_increment: float = 0.1,
-        bond_distortions: Optional[list] = None,
+        bond_distortions: list | None = None,
         local_rattle: bool = False,
-        distorted_elements: Optional[dict] = None,
-        distorted_atoms: Optional[list] = None,
-        dimer_bond_length: Optional[float] = None,
+        distorted_elements: dict | None = None,
+        distorted_atoms: list | None = None,
+        dimer_bond_length: float | None = None,
         **mc_rattle_kwargs,
     ):
         r"""
@@ -1726,7 +1726,8 @@ class Distortions:
                     Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
-                    in the bulk supercell.
+                    in the bulk supercell. Note that the average displacement
+                    distance will be roughly equal to ``stdev * 1.6``.
                 - d_min (:obj:`float`):
                     Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances
@@ -1858,12 +1859,11 @@ class Distortions:
             )
 
         list_of_defect_entries = next(iter(self.defects_dict.values()))
-        defect_object = list_of_defect_entries[0].defect
-        bulk_comp = defect_object.structure.composition
+        defect_entry = list_of_defect_entries[0]
         if "stdev" in mc_rattle_kwargs:
             self.stdev = mc_rattle_kwargs.pop("stdev")
         else:
-            bulk_primitive = defect_object.structure
+            bulk_primitive = defect_entry.defect.structure
             sorted_distances = np.sort(bulk_primitive.distance_matrix.flatten())
             # get first finite distance:
             try:
@@ -1873,16 +1873,13 @@ class Distortions:
                 sorted_distances = np.sort(bulk_supercell.distance_matrix.flatten())
                 min_distance = sorted_distances[sorted_distances > 0.5][0]
 
-            self.stdev = 0.1 * min_distance
-
-            if self.stdev > 0.4 or self.stdev < 0.02:
-                warnings.warn(
-                    f"Automatic bond-length detection gave a bulk bond length of {10*self.stdev} "
-                    f"\u212B and thus a rattle `stdev` of {self.stdev} ( = 10% bond length), "
-                    f"which is unreasonable. Reverting to 0.25 \u212B. If this is too large, "
-                    f"set `stdev` manually"
-                )
-                self.stdev = 0.25
+            self.stdev = _get_stdev_and_d_min(
+                [
+                    min_distance,
+                ],
+                d_min=np.inf,
+                stdev=None,
+            )[0]
 
         if not list(self.defects_dict.values()):
             raise IndexError(
@@ -1891,36 +1888,66 @@ class Distortions:
             )
 
         # Check if all expected oxidation states are provided
-        def guess_oxidation_states(bulk_comp):
-            for max_sites in (-1, None):
-                try:
-                    guessed_oxidation_states = bulk_comp.oxi_state_guesses(max_sites=max_sites)[0]
-                    if guessed_oxidation_states:
-                        return guessed_oxidation_states
-                except IndexError:
-                    continue
-            # pmg oxi state guessing can fail for single-element systems, intermetallics etc
-            return {elt.symbol: 0 for elt in bulk_comp.elements}
+        def guess_oxidation_states(bulk_structure):
+            struct_with_oxi = guess_and_set_oxi_states_with_timeout(
+                bulk_structure, break_early_if_expensive=True
+            )
+            if struct_with_oxi:  # False if guess_and_set_oxi_states_with_timeout fails
+                guessed_oxidation_states = {
+                    elt.symbol: int(elt.oxi_state) for elt in struct_with_oxi.elements
+                }
+                elts = [elt.symbol for elt in struct_with_oxi.elements]
+                # Check for elements with multiple ox states which have not been inputted
+                dupe_elts = {
+                    elt
+                    for elt in elts
+                    if elts.count(elt) > 1
+                    and (  # multiple occurrences
+                        not self.oxidation_states
+                        or elt not in self.oxidation_states  # no oxidation states specified by user
+                    )  # or, multiple-ox-state element no in user specs
+                }
+                if dupe_elts:  # duplicate elements, therefore multiple oxidation states
+                    warnings.warn(
+                        f"Multiple oxidation states have been guessed for {dupe_elts}. The most common "
+                        f"oxidation state will be used for these elements, which may not be appropriate!"
+                    )
+                    for elt in dupe_elts:  # take most common oxidation states
+                        likely_oxi = most_common_oxi(elt)
+                        guessed_oxidation_states[elt] = likely_oxi
+                return guessed_oxidation_states
 
-        guessed_oxidation_states = guess_oxidation_states(bulk_comp)
+            warnings.warn(
+                "Oxidation states could not be guessed for the bulk structure. The most common "
+                "oxidation state for each element will be used, which may not be appropriate!"
+            )
+            return {elt.symbol: most_common_oxi(elt.symbol) for elt in bulk_structure.elements}
+
+        # Only guess oxidation states if oxidation states are not fully supplied
+        if not self.oxidation_states or not all(
+            elt.symbol in self.oxidation_states for elt in defect_entry.defect.structure.elements
+        ):
+            guessed_oxidation_states = guess_oxidation_states(defect_entry.defect.structure)
+        else:  # All oxidation states for the bulk provided by user
+            guessed_oxidation_states = self.oxidation_states.copy()
 
         for list_of_defect_entries in self.defects_dict.values():
             defect = list_of_defect_entries[0].defect
             if defect.site.specie.symbol not in guessed_oxidation_states:
                 # extrinsic substituting/interstitial species not in bulk composition
                 extrinsic_specie = defect.site.specie.symbol
-                likely_substitution_oxi = _most_common_oxi(extrinsic_specie)
+                likely_substitution_oxi = most_common_oxi(extrinsic_specie)
                 guessed_oxidation_states[extrinsic_specie] = likely_substitution_oxi
 
-        if self.oxidation_states is None:
+        if not self.oxidation_states:
             print(
-                f"Oxidation states were not explicitly set, thus have been guessed as"
-                f" {guessed_oxidation_states}. If this is unreasonable you should manually set "
+                f"Oxidation states were not explicitly set, thus have been guessed as "
+                f"{guessed_oxidation_states}. If this is unreasonable you should manually set "
                 f"oxidation_states"
             )
             self.oxidation_states = guessed_oxidation_states
 
-        elif guessed_oxidation_states.keys() > self.oxidation_states.keys():
+        elif guessed_oxidation_states.keys() - self.oxidation_states.keys():
             # some oxidation states are missing, so use guessed versions for these and inform user
             missing_oxidation_states = {
                 k: v
@@ -1973,8 +2000,8 @@ class Distortions:
     def _parse_distorted_element(
         self,
         defect_name,
-        distorted_elements: Optional[dict],
-    ) -> Union[str, None, list[str]]:
+        distorted_elements: dict | None,
+    ) -> str | None | list[str]:
         """
         Parse the user-defined distorted elements for a given defect
         (if given).
@@ -2094,7 +2121,7 @@ class Distortions:
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
             f"{rounded_distortions}.",
-            f"Then, will rattle with a std dev of {stdev:.2f} \u212B \n",
+            f"Then, will rattle with a std dev of {stdev:.2f} \u212b \n",
         )
 
     def _get_bond_distortions(
@@ -2123,7 +2150,7 @@ class Distortions:
         charge: int,
         num_nearest_neighbours: int,
         distorted_atoms: list,
-        defect_site_index: Optional[int] = None,
+        defect_site_index: int | None = None,
         defect_type: str = "",
     ) -> dict:
         """
@@ -2224,8 +2251,8 @@ class Distortions:
     def write_distortion_metadata(
         self,
         output_path: str = ".",
-        defect: Optional[str] = None,
-        charge: Optional[int] = None,
+        defect: str | None = None,
+        charge: int | None = None,
     ) -> None:
         """
         Write distortion metadata to file.
@@ -2279,7 +2306,7 @@ class Distortions:
 
     def apply_distortions(
         self,
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Applies a range of bond distortions (given by ``self.bond_distortions``) and
@@ -2488,6 +2515,7 @@ class Distortions:
                         defect_dict["charges"][charge]["structures"]["Unperturbed"],
                         *list(defect_dict["charges"][charge]["structures"]["distortions"].values()),
                     ],
+                    strict=False,
                 ):
                     sign = "+" if charge > 0 else ""
                     folder_path = f"{output_path}/{defect_name}_{sign}{charge}/{dist}"
@@ -2498,11 +2526,11 @@ class Distortions:
 
     def write_vasp_files(
         self,
-        user_incar_settings: Optional[dict] = None,
-        user_potcar_functional: Optional[str] = "PBE",
-        user_potcar_settings: Optional[dict] = None,
+        user_incar_settings: dict | None = None,
+        user_potcar_functional: str | None = "PBE",
+        user_potcar_settings: dict | None = None,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         **kwargs,
     ) -> tuple[dict, dict]:
         r"""
@@ -2573,6 +2601,7 @@ class Distortions:
                         defect_dict["charges"][charge_state]["structures"]["Unperturbed"],
                         *list(defect_dict["charges"][charge_state]["structures"]["distortions"].values()),
                     ],
+                    strict=False,
                 ):
                     poscar_comment = self._generate_structure_comment(
                         defect_name=defect_name,
@@ -2607,12 +2636,12 @@ class Distortions:
 
     def write_espresso_files(
         self,
-        pseudopotentials: Optional[dict] = None,
-        input_parameters: Optional[str] = None,
-        input_file: Optional[str] = None,
-        write_structures_only: Optional[bool] = False,
+        pseudopotentials: dict | None = None,
+        input_parameters: str | None = None,
+        input_file: str | None = None,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         profile=None,
     ) -> tuple[dict, dict]:
         """
@@ -2748,10 +2777,10 @@ class Distortions:
 
     def write_cp2k_files(
         self,
-        input_file: Optional[str] = None,
-        write_structures_only: Optional[bool] = False,
+        input_file: str | None = None,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Generates input files for CP2K relaxations of all output
@@ -2789,8 +2818,7 @@ class Distortions:
             cp2k_input = Cp2kInput.from_file(input_file)
         elif os.path.exists(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp") and not write_structures_only:
             warnings.warn(
-                f"Specified input file {input_file} does not exist! Using"
-                " default CP2K input file "
+                f"Specified input file {input_file} does not exist! Using default CP2K input file "
                 "(see shakenbreak/shakenbreak/cp2k_input.inp)"
             )
             cp2k_input = Cp2kInput.from_file(f"{MODULE_DIR}/SnB_input_files/cp2k_input.inp")
@@ -2799,15 +2827,18 @@ class Distortions:
             verbose=verbose,
         )
 
-        # loop for each defect in dict
-        for folder_path, struct in self._prepare_distorted_defect_inputs(
-            distorted_defects_dict, output_path
+        for folder_path, (  # loop for each defect in dict
+            struct,
+            charge,
+        ) in self._prepare_distorted_defect_inputs(
+            distorted_defects_dict, output_path, include_charge_state=True
         ).items():
             struct.to(
                 fmt="cif",
                 filename=f"{folder_path}/structure.cif",
             )
             if not write_structures_only and cp2k_input:
+                cp2k_input["FORCE_EVAL"]["DFT"]["CHARGE"] = int(charge)  # set charge
                 cp2k_input.write_file(
                     input_filename="cp2k_input.inp",
                     output_dir=f"{folder_path}",
@@ -2817,10 +2848,10 @@ class Distortions:
 
     def write_castep_files(
         self,
-        input_file: Optional[str] = f"{MODULE_DIR}/SnB_input_files/castep.param",
-        write_structures_only: Optional[bool] = False,
+        input_file: str | None = f"{MODULE_DIR}/SnB_input_files/castep.param",
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
     ) -> tuple[dict, dict]:
         """
         Generates input ``.cell`` and ``.param`` files for CASTEP relaxations of
@@ -2895,11 +2926,11 @@ class Distortions:
 
     def write_fhi_aims_files(
         self,
-        input_file: Optional[str] = None,
+        input_file: str | None = None,
         ase_calculator=None,  # Aims or AimsTemplate
-        write_structures_only: Optional[bool] = False,
+        write_structures_only: bool | None = False,
         output_path: str = ".",
-        verbose: Optional[bool] = None,
+        verbose: bool | None = None,
         profile=None,
     ) -> tuple[dict, dict]:
         """
@@ -3033,14 +3064,14 @@ class Distortions:
         cls,
         defects: list,
         bulk: Structure,
-        oxidation_states: Optional[dict] = None,
+        oxidation_states: dict | None = None,
         padding: int = 1,
-        dict_number_electrons_user: Optional[dict] = None,
+        dict_number_electrons_user: dict | None = None,
         distortion_increment: float = 0.1,
-        bond_distortions: Optional[list] = None,
+        bond_distortions: list | None = None,
         local_rattle: bool = False,
-        distorted_elements: Optional[dict] = None,
-        distorted_atoms: Optional[list] = None,
+        distorted_elements: dict | None = None,
+        distorted_atoms: list | None = None,
         **mc_rattle_kwargs,
     ) -> "Distortions":
         """
@@ -3118,7 +3149,8 @@ class Distortions:
                     Standard deviation (in Å) of the Gaussian distribution
                     from which random atomic displacement distances are drawn during
                     rattling. Default is set to 10% of the nearest neighbour distance
-                    in the bulk supercell.
+                    in the bulk supercell. Note that the average displacement
+                    distance will be roughly equal to ``stdev * 1.6``.
                 - d_min (:obj:`float`):
                     Minimum interatomic distance (in Å) in the rattled
                     structure. Monte Carlo rattle moves that put atoms at distances

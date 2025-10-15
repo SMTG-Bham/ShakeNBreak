@@ -4,14 +4,15 @@ exclude: ^(docs|tests|shakenbreak/SnB_input_files|.github|CITATION*|MANIFEST*)
 repos:
   # Lint and format, isort, docstrings...
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.3.7
+    rev: v0.14.0
     hooks:
-      - id: ruff
-        args: [--fix]
+    - id: ruff-check
+      args: [ --fix ]
+#    - id: ruff-format
 
  # Remove trailing whitespace, leave empty line at end of file
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v6.0.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
@@ -26,14 +27,14 @@ repos:
 
 # Code formatting
   - repo: https://github.com/psf/black  # max line length 107 specified in pyproject.toml
-    rev: 24.2.0
+    rev: 25.9.0
     hooks:
       - id: black
         args: [--color]
 
 # Check code formatting
   - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.2
+    rev: 7.3.0
     hooks:
       - id: flake8
         args: [--max-line-length, "107", "--ignore=E121,E123,E126,E203,E226,E24,E704,W503,W504,F401,E203"]
