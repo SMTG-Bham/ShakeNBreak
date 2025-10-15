@@ -167,6 +167,7 @@ Please let us know if you have any issues with compatibility, or if you would li
 
 ## Acknowledgements
 `ShakeNBreak` has benefitted from feedback from many members of the Walsh and Scanlon research groups who have used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis, Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and Chris Savory.
+Further code contributions have been added by Wei Bo Ng (@hwbng).
 
 ## Contributing
 

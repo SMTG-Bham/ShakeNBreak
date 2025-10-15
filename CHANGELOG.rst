@@ -1,6 +1,13 @@
 Change Log
 ==========
 
+v3.4.3
+----------
+- Efficient oxidation state guessing using ``doped`` functions, along with handling of mixed-valence systems by @hwbng
+- Explicitly set charge in CP2K output files.
+- Minor bugfixes and robustness updates.
+
+
 v3.4.2
 ----------
 - Add polarons distortion tutorial; https://shakenbreak.readthedocs.io/en/latest/ShakeNBreak_Polaron_Workflow.html

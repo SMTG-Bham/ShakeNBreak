@@ -253,6 +253,7 @@ Acknowledgements
 used / are using it in their work, including Adair Nicolson, Xinwei Wang, Katarina Brlec, Joe Willis,
 Zhenzhu Li, Jiayi Cen, Lavan Ganeshkumar, Daniel Sykes, Luisa Herring-Rodriguez, Alex Squires, Sabrine Hachmioune and
 Chris Savory.
+Further code contributions have been added by Wei Bo Ng (@hwbng).
 
 Contributing
 ========================
