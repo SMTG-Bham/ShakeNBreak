@@ -50,6 +50,9 @@ def if_present_rm(path):
 
 class CLITestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
+    # TODO: If updating this in future, would be preferable to make a helper function which creates and
+    #  runs the CLI runner, captures stdout, stderr and warnings, and then prints and returns all these
+    #  (rather than having a lot of duplicated code)
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -161,6 +164,7 @@ class CLITestCase(unittest.TestCase):
                     "test_groundstate_all",
                     "Te_i_Td_Te2.83",
                     "test_groundstate_only_unp",
+                    "v_Ti_+3"
                 ]
             ):
                 if_present_rm(f"{self.EXAMPLE_RESULTS}/{i}")
@@ -3011,19 +3015,19 @@ Chosen VASP error message: {error_string}
         self.assertEqual(high_energies_dict, energies)  # energies still parsed, but all high energy
         # test print statement about not being fully relaxed
         self.assertIn("Bond_Distortion_-40.0% for v_Ti_+3 is not fully relaxed", result.output)
+        print([str(warning.message) for warning in w])  # for debugging
         self.assertTrue(len([i for i in w if i.category == UserWarning]) == 1)
         self.assertTrue(
             any(
                 [
-                    f"All distortions parsed for {defect} are >0.1 eV higher energy than "
-                    f"unperturbed, indicating problems with the relaxations. You should first "
-                    f"check if the calculations finished ok for this defect species and if this "
-                    f"defect charge state is reasonable (often this is the result of an "
-                    f"unreasonable charge state). If both checks pass, you likely need to adjust "
-                    f"the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
-                    f"materials); see "
-                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials\n"
-                    f"This often indicates a complex PES with multiple minima, "
+                    f"All distortions parsed for {defect} are >0.1 eV higher energy than unperturbed, "
+                    f"indicating problems with the relaxations. You should first check if the "
+                    f"calculations finished ok for this defect species and if this defect charge state "
+                    f"is reasonable (often this is the result of an unreasonable charge state). If both "
+                    f"checks pass, you likely need to adjust the `stdev` rattling parameter (can occur "
+                    f"for hard/ionic/magnetic materials); see "
+                    f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials"
+                    f"\nThis often indicates a complex PES with multiple minima, "
                     f"thus energy-lowering distortions particularly likely, so important to "
                     f"test with reduced `stdev`!" == str(i.message)
                     for i in w
@@ -3156,8 +3160,8 @@ Chosen VASP error message: {error_string}
                     "indicating problems with these relaxations. You should first check that no "
                     "user INCAR setting is causing this issue. If not, you likely need to adjust "
                     "the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
-                    "materials); see https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard"
-                    "-ionic-materials." == str(i.message)
+                    "materials); see "
+                    "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials." == str(i.message)
                     for i in w
                     if i.category == UserWarning
                 ]
@@ -3755,6 +3759,7 @@ Chosen VASP error message: {error_string}
             )
         defect = "v_Cd"  # in example results
         non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
+        print([str(i) for i in non_ignored_warnings])  # for debugging
         self.assertEqual(
             len([warning for warning in non_ignored_warnings if warning.category == UserWarning]),
             0,

@@ -611,8 +611,8 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"reasonable (often this is the result of an unreasonable charge state). If both checks "
                 f"pass, you likely need to adjust the `stdev` rattling parameter (can occur for "
                 f"hard/ionic/magnetic materials); see "
-                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-materials"
-                f"\nThis often indicates a complex PES with multiple minima, thus energy-lowering "
+                f"https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials\n"
+                f"This often indicates a complex PES with multiple minima, thus energy-lowering "
                 f"distortions particularly likely, so important to test with reduced `stdev`!"
             )
             self.assertTrue(any(str(warning.message) == warning_message for warning in user_warnings))

@@ -1337,7 +1337,7 @@ class InputTestCase(unittest.TestCase):
         
         self.assertEqual(
             str(warning_msg), 
-            "Warning: Multiple oxidation states have been guessed for {'Fe'}. The most common "
+            "Multiple oxidation states have been guessed for {'Fe'}. The most common "
             "oxidation state will be used for these elements, which may not be appropriate!"
         )
         print(mock_print.call_args_list)  # for debugging
@@ -2995,7 +2995,7 @@ class InputTestCase(unittest.TestCase):
         #         self.CP2K_DATA_DIR,
         #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input.inp",
         #     )
-        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
+        # )  # most recent change was addition of explicit CHARGE setting (different position in input)
         self.assertEqual(test_input, generated_input)
         # Test input structure file
         generated_input_struct = Structure.from_file("vac_1_Cd_0/Bond_Distortion_30.0%/structure.cif")
@@ -3036,7 +3036,7 @@ class InputTestCase(unittest.TestCase):
         #         self.CP2K_DATA_DIR,
         #         "vac_1_Cd_0/Bond_Distortion_30.0%/cp2k_input_user_parameters.inp",
         #     )
-        # )  # most recent change was switch to lean cp2k_input.inp output, with no comments
+        # )  # most recent change was addition of explicit CHARGE setting (different position in input)
         self.assertEqual(test_input, generated_input)
         # The input_file option is tested through the test for `generate_all()`
         # (in `test_cli.py`)
