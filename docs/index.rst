@@ -31,6 +31,10 @@ Welcome to ShakeNBreak!
 ``ShakeNBreak`` (``SnB``) is a defect structure-searching method employing
 chemically-guided bond distortions to locate ground-state and metastable
 structures of point defects in solid materials.
+``ShakeNBreak`` is open-source, developed by members of the 
+`Simulation of Advanced Materials <https://sam-lab.net>`_ lab at Cambridge, 
+the Scanlon group at Birmingham, the Walsh group at Imperial College and 
+contributors from across the globe.
 
 Main features include:
 
