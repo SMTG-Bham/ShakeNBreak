@@ -18,3 +18,4 @@ If your question is about general defect structure-searching methodology, please
 - [Defect Structure Searching Preview](https://doi.org/10.1016/j.matt.2021.06.003)
 - [Defect Structure Searching Main Paper](doi.org/10.1038/s41524-023-00973-1)
 - [Free Energies of Defects](https://doi.org/10.1039/D3CS00432E)
+- [Guidelines for Robust Defect Simulations](https://doi.org/10.26434/chemrxiv-2025-3lb5k)

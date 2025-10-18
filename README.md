@@ -36,6 +36,9 @@ We kindly ask that you cite the [code](https://doi.org/10.21105/joss.04817) and 
 - **YouTube Seminar (35 mins)**: [Seminar: Predicting the Atomic Structures of Defects](https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh)
 - [DeepWiki Code Overview & Workflow](https://deepwiki.com/SMTG-Bham/ShakeNBreak/1-overview)
 
+See the `doped` [Literature](https://doped.readthedocs.io/en/latest/#literature) section for recommended articles on
+defect modelling in general.
+
 ## Installation
 `ShakeNBreak` can be installed using `conda`:
 ```bash

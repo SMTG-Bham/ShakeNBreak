@@ -261,5 +261,6 @@ In particular, symmetry-breaking as a result of structural reconstruction from t
 (``Unperturbed``) high-symmetry structure can result in an increase in configurational degeneracy for
 the defect, which should be accounted for when later computing concentrations and Fermi level position.
 These considerations, as well as the importance of metastability and temperature effects for the free
-energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review
-paper: `Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`_.
+energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review:
+`Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`__
+and this perspective: `Guidelines for robust and reproducible point defect simulations in crystals <https://doi.org/10.26434/chemrxiv-2025-3lb5k>`__.
