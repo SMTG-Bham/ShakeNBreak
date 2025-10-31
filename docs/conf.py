@@ -128,10 +128,6 @@ nb_execution_mode = "off"
 nb_render_image_options = {"height": "300",}  # Reduce plots size
 #myst_render_markdown_format = "gfm"
 myst_heading_anchors = 2
-github_doc_root = "https://github.com/executablebooks/MyST-Parser/tree/master/docs/"
 def setup(app):
-    app.add_config_value("myst_parser_config", {
-            "url_resolver": lambda url: github_doc_root + url,
-            "auto_toc_tree_section": "Contents",
-            }, True)
+    app.add_config_value("myst_parser_config", {"auto_toc_tree_section": "Contents"}, True)
     app.add_transform(AutoStructify)
