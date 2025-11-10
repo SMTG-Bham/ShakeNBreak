@@ -4,6 +4,17 @@ Miscellaneous Tips & Tricks
 See the :code:`doped` `Tips page <https://doped.readthedocs.io/en/latest/Tips.html>`__ for general defect modelling tips
 & tricks!
 
+
+.. note::
+
+  FAQ: Why are only ``Rattled`` and ``Unperturbed`` generated for some charge states?
+
+  ``ShakeNBreak`` uses the change in valence electron count (i.e. 'excess charge') at the defect site to dictate the number 
+  of bonds to distort, which was found to be the best chemically-motivated strategy; see 
+  `the npj theory paper <https://www.nature.com/articles/s41524-023-00973-1>`__. For `fully-ionised` charge states (e.g. 
+  ``v_Cu_-1``) the excess charge is zero, and so no bonds are distorted and only rattling to break symmetry is trialled. 
+  These defect charge states are typically the most simple, and do not involve charge localisation.
+
 Tricky Relaxations
 -------------------
 
@@ -17,10 +28,12 @@ may require manual tuning from the user:
   :code:`NCORE` and/or :code:`KPAR`. Other errors related to forces / unreasonable interatomic distances (like
   :code:`EDDDAV` or :code:`ZPOTRF`), as well as cases with positive energies, are automatically handled by
   :code:`snb-run` (folder is renamed to :code:`Bond_Distortion_X_High_Energy` and subsequently ignored).
-    - If some relaxations are still not converging after multiple continuations, you should check the calculation output
-      files to see if this requires fixing. Often this may require changing a specific input file setting (e.g. in the
-      :code:`INCAR` for :code:`VASP`), and using the updated setting(s) for any other relaxations which are struggling
-      to converge.
+  
+  - If some relaxations are still not converging after multiple continuations, you should check the calculation output
+    files to see if this requires fixing. Often this may require changing a specific input file setting (e.g. in the
+    :code:`INCAR` for :code:`VASP`), and using the updated setting(s) for any other relaxations which are struggling
+    to converge.
+
 - For codes other than :code:`VASP`, forces errors or high / positive energies are not automatically handled, and so in
   the rare cases where this occurs, you should rename the folder(s) to :code:`Bond_Distortion_X_High_Energy` and
   :code:`ShakeNBreak` will subsequently ignore them.
@@ -28,13 +41,14 @@ may require manual tuning from the user:
 - If the calculation outputs show that the relaxation is proceeding fine, without any errors, just not converging to
   completion (i.e. residual forces), then :code:`ShakeNBreak` will consider the calculation converged if the energy is
   changing by <2 meV with >50 ionic steps. Alternatively, convergence of the forces can be aided by:
-    - Switching the ionic relaxation algorithm (e.g. change :code:`IBRION` to :code:`1` or :code:`3` in :code:`VASP`)
-    - Reducing the ionic step width (e.g. change :code:`POTIM` to :code:`0.02` in :code:`VASP`)
-    - Switching the electronic minimisation algorithm (e.g. change :code:`ALGO` to :code:`All` in :code:`VASP`), if
-      electronic concergence seems to be causing issues.
-    - Tightening/reducing the electronic convergence criterion (e.g. change :code:`EDIFF` to :code:`1e-7` in :code:`VASP`)
-    - Rattling the structure slightly, using the ``rattle`` function. An example of using this fucntion is
-      shown in the 'Bulk Phase Transformations' section below).
+  
+  - Switching the ionic relaxation algorithm (e.g. change :code:`IBRION` to :code:`1` or :code:`3` in :code:`VASP`)
+  - Reducing the ionic step width (e.g. change :code:`POTIM` to :code:`0.02` in :code:`VASP`)
+  - Switching the electronic minimisation algorithm (e.g. change :code:`ALGO` to :code:`All` in :code:`VASP`), if
+    electronic concergence seems to be causing issues.
+  - Tightening/reducing the electronic convergence criterion (e.g. change :code:`EDIFF` to :code:`1e-7` in :code:`VASP`)
+  - Rattling the structure slightly, using the ``rattle`` function. An example of using this fucntion is
+    shown in the 'Bulk Phase Transformations' section below).
 
 In the other rare case where all distortions yield high energies, relative to the :code:`Unperturbed` structure, this is
 typically indicative of an unreasonable defect charge state (with the extreme excess charge inducing many false local
@@ -43,7 +57,7 @@ not the case and the charge state is reasonable (see below).
 
 
 Hard/Ionic/Magnetic Materials
----------------------
+-----------------------------
 
 The default bond distortion range of -60% to +60%, and rattling standard deviation (:code:`stdev` = 10% of the bulk bond
 length) are reasonable choices for most materials, typically giving best performance, but in some rare cases these may

@@ -19,3 +19,6 @@ If your question is about general defect structure-searching methodology, please
 - [Defect Structure Searching Main Paper](doi.org/10.1038/s41524-023-00973-1)
 - [Free Energies of Defects](https://doi.org/10.1039/D3CS00432E)
 - [Guidelines for Robust Defect Simulations](https://doi.org/10.26434/chemrxiv-2025-3lb5k)
+
+FAQ: Why are only `Rattled` and `Unperturbed` generated for some charge states?
+> `ShakeNBreak` uses the change in valence electron count (i.e. 'excess charge') at the defect site to dictate the number of bonds to distort, which was found to be the best chemically-motivated strategy; see [the npj theory paper](https://www.nature.com/articles/s41524-023-00973-1). For _fully-ionised_ charge states (e.g. `v_Cu_-1`) the excess charge is zero, and so no bonds are distorted and only rattling to break symmetry is trialled. These defect charge states are typically the most simple, and do not involve charge localisation.
