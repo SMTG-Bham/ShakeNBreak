@@ -114,10 +114,8 @@ html_context = {
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.10", None),
-    "numpy": ("http://docs.scipy.org/doc/numpy/", None),
     "pymatgen": ("http://pymatgen.org/", None),
-    "matplotlib": ("http://matplotlib.org", None),
+    "doped": ("https://doped.readthedocs.io/en/latest/", None),
 }
 
 # -- Options for autodoc -----------------------------------------------------
@@ -131,3 +129,9 @@ myst_heading_anchors = 2
 def setup(app):
     app.add_config_value("myst_parser_config", {"auto_toc_tree_section": "Contents"}, True)
     app.add_transform(AutoStructify)
+
+# -- Global substitutions for external links ------------------------------------
+# These substitutions are available in all RST files
+rst_prolog = """
+.. |Structure| replace:: :class:`~pymatgen.core.structure.Structure`
+"""
