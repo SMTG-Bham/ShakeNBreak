@@ -486,7 +486,7 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(input.most_common_oxi("Si"), +4)
         self.assertEqual(input.most_common_oxi("Ca"), +2)
         self.assertEqual(input.most_common_oxi("Fe"), +3)
-        self.assertEqual(input.most_common_oxi("Ni"), 0)
+        self.assertEqual(input.most_common_oxi("Ni"), +2)
         self.assertEqual(input.most_common_oxi("Cu"), +1)
         self.assertEqual(input.most_common_oxi("Ag"), +1)
         self.assertEqual(input.most_common_oxi("Zn"), +2)
@@ -1337,8 +1337,8 @@ class InputTestCase(unittest.TestCase):
         
         self.assertEqual(
             str(warning_msg), 
-            "Multiple oxidation states have been guessed for {'Fe'}. The most common "
-            "oxidation state will be used for these elements, which may not be appropriate!"
+            "Multiple oxidation states have been guessed for {'Fe'}. The average oxidation state ("
+            "rounded to the nearest integer) will be used for these elements, which may not be appropriate!"
         )
         print(mock_print.call_args_list)  # for debugging
         mock_print.assert_called_once_with(
@@ -1390,13 +1390,13 @@ class InputTestCase(unittest.TestCase):
                 "Zn": 2,
                 "Mn": 2,
                 "Al": 3,
-                "Sb": 0,
+                "Sb": 3,
                 "Cl": -1,
             },
         )
         mock_print.assert_called_once_with(
             "Oxidation states were not explicitly set, thus have been guessed as "
-            "{'Cd': 2, 'Te': -2, 'Zn': 2, 'Mn': 2, 'Al': 3, 'Sb': 0, 'Cl': -1}. "
+            "{'Cd': 2, 'Te': -2, 'Zn': 2, 'Mn': 2, 'Al': 3, 'Sb': 3, 'Cl': -1}. "
             "If this is unreasonable you should manually set oxidation_states"
         )
 
@@ -1416,7 +1416,7 @@ class InputTestCase(unittest.TestCase):
                 "Zn": 1,
                 "Mn": 9,
                 "Al": 3,
-                "Sb": 0,
+                "Sb": 3,
                 "Cl": -1,
             },
         )
