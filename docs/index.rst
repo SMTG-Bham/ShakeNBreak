@@ -157,6 +157,7 @@ Studies using ``ShakeNBreak``
 - R\. Claes, A. G. Squires and D. O. Scanlon **Establishing Doping Limits for ZnGa₂O₄ for Ultra Wide Bandgap Semiconductor Applications** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-h3gsc>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics** `JPhys Energy <https://doi.org/10.1088/2515-7655/ade916>`__ 2025
 - K\. Talit et al. **Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO₃** `Physical Review Materials <https://doi.org/10.1103/hww6-snlj>`__ 2025
+- I\. Mosquera-Lois, A. Walsh **Dynamic Vacancy Levels in CsPbCl₃ Obey Equilibrium Defect Thermodynamics** `PRX Energy <https://doi.org/10.1103/dxmb-8s96>`__ 2025
 - B\. I. J. Johnston et al. **Enhanced cycling stability of LiNiO₂ cathodes through a Mg/W dual-cation modification strategy** `Journal of Materials Chemistry A <https://doi.org/10.1039/D5TA05316A>`__ 2025
 - Z\. Li and A. Walsh **Thermodynamics of Sulfur Vacancy Formation in the Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://pubs.acs.org/doi/10.1021/acs.jpcc.5c00828>`__ 2025
 - P\. Russell et al. **Computational prediction of Y-doped Cd₂Sb₂O₇ as a competitive Sb-based n-type Transparent Conducting Oxide** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-c1r3l>`__ 2025
@@ -174,6 +175,7 @@ Studies using ``ShakeNBreak``
 - Z\. Cai & C. Ma **Origin of oxygen partial pressure-dependent conductivity in SrTiO₃** `Applied Physics Letters <https://doi.org/10.1063/5.0245820>`__ 2025
 - R\. Desai et al. **Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.5c01597>`__ 2025
 - M\. Biswas et al. **Unified Graph-based Interatomic Potential for Perovskite Structure Optimization** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-g9sb9>`__ 2025
+- G\. Kalemai et al. **Flexible Inorganic/Organic Memristor Based on W-Doped MoOx/Poly(methyl methacrylate) Heterostructure** `Nanomaterials <https://doi.org/10.3390/nano15221707>`__ 2025
 - C\. Kaewmeechai, J. Strand & A. Shluger **Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga₂O₃** `Physica Status Solidi B <https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652>`__ 2025
 - W\. Gierlotka et al. **Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium** `Computational Materials Science <https://doi.org/10.1016/j.commatsci.2025.113934>`__ 2025
 - P\. Panagis Filippatos, T. J. P. Irons and K. Inzani **Revisiting intrinsic spin defects in hexagonal boron nitride with r2SCAN** `arXiv <http://dx.doi.org/10.48550/arXiv.2509.09002>`__ 2025

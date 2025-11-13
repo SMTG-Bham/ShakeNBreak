@@ -100,6 +100,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 - R. Claes, A. G. Squires and D. O. Scanlon **_Establishing Doping Limits for ZnGa<sub>2</sub>O<sub>4</sub> for Ultra Wide Bandgap Semiconductor Applications_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-h3gsc)
 - S. R. Kavanagh **_Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics_** [_JPhys Energy_](https://doi.org/10.1088/2515-7655/ade916) 2025
 - K. Talit et al. **_Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO<sub>3</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/hww6-snlj) 2025
+- I. Mosquera-Lois, A. Walsh **_Dynamic Vacancy Levels in CsPbCl<sub>3</sub> Obey Equilibrium Defect Thermodynamics_** [_PRX Energy_](https://doi.org/10.1103/dxmb-8s96) 2025
 - B. I. J. Johnston et al. **_Enhanced cycling stability of LiNiO<sub>2</sub> cathodes through a Mg/W dual-cation modification strategy_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D5TA05316A) 2025
 - Z. Li and A. Walsh **_Thermodynamics of Sulfur Vacancy Formation in the Chalcogenide Perovskite BaZrS<sub>3</sub>_** [_Journal of Physical Chemistry C_](https://pubs.acs.org/doi/10.1021/acs.jpcc.5c00828) 2025
 - P. Russell et al. **_Computational prediction of Y-doped Cd<sub>2</sub>Sb<sub>2</sub>O<sub>7</sub> as a competitive Sb-based n-type Transparent Conducting Oxide_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-c1r3l) 2025
@@ -108,8 +109,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 - M. A. Fadla et al. **_Tailoring the Electronic Properties of Monoclinic (In<sub>x</sub>Al<sub>1-x</sub>)<sub>2</sub>O<sub>3</sub> Alloys via Substitutional Donors and Acceptors_** [_Physical Review Materials_](https://doi.org/10.1103/78f8-j9m2) 2025
 - C. López et al. **_Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers_** [_ACS Energy Letters_](https://pubs.acs.org/doi/10.1021/acsenergylett.5c01267) 2025
 - K. Ogawa et al. **_Defect Tolerance via External Passivation in the Photocatalyst SrTiO<sub>3</sub>:Al_** [_Journal of the American Chemical Society_](https://doi.org/10.1021/jacs.5c07104) 2025
-- Y. Fu & H. Lohan et al. **_Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based
-Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Communications_](https://doi.org/10.1038/s41467-024-55254-2) 2025
+- Y. Fu & H. Lohan et al. **_Factors Enabling Delocalized Charge-Carriers in Pnictogen-Based Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Communications_](https://doi.org/10.1038/s41467-024-55254-2) 2025
 - Y. Liu **_Small hole polarons in yellow phase δ-CsPbI<sub>3</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/yr22-9j6r) 2025
 - S. R. Kavanagh et al. **_Intrinsic point defect tolerance in selenium for indoor and tandem photovoltaics_** [_Energy & Environmental Science_](https://doi.org/10.1039/D4EE04647A) 2025
 - J. Huang et al. **_Manganese in β-Ga<sub>2</sub>O<sub>3</sub>: a deep acceptor with a large nonradiative electron capture cross-section_** [_Journal of Physics D: Applied Physics_](https://doi.org/10.1088/1361-6463/adca42) 2025
@@ -118,6 +118,7 @@ Solar Absorbers: In-depth Investigation into CuSbSe<sub>2</sub>_** [_Nature Comm
 - Z. Cai & C. Ma **_Origin of oxygen partial pressure-dependent conductivity in SrTiO<sub>3</sub>_** [_Applied Physics Letters_](doi.org/10.1063/5.0245820) 2025
 - R. Desai et al. **_Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS<sub>3</sub>_** [_Journal of Physical Chemistry C_](https://doi.org/10.1021/acs.jpcc.5c01597) 2025
 - M. Biswas et al. **_Unified Graph-based Interatomic Potential for Perovskite Structure Optimization_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-g9sb9) 2025
+- G. Kalemai et al. **_Flexible Inorganic/Organic Memristor Based on W-Doped MoOx/Poly(methyl methacrylate) Heterostructure_** [_Nanomaterials_](https://doi.org/10.3390/nano15221707) 2025
 - C. Kaewmeechai, J. Strand & A. Shluger **_Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga<sub>2</sub>O<sub>3</sub>_** [_Physica Status Solidi B_](https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652) 2025 <!-- though didn't properly cite SnB or doped code papers... -->
 - W. Gierlotka et al. **_Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium_** [_Computational Materials Science_](https://doi.org/10.1016/j.commatsci.2025.113934) 2025 <!-- though didn't cite SnB code paper... -->
 - P. Panagis Filippatos, T. J. P. Irons and K. Inzani **_Revisiting intrinsic spin defects in hexagonal boron nitride with r2SCAN_** [_arXiv_](http://dx.doi.org/10.48550/arXiv.2509.09002) 2025
