@@ -162,7 +162,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=3.1",  # for StructureMatcher_scan_stol, for super-fast structure matching
+        "doped>=3.2.1",  # ``most_common_oxi`` now in ``doped.core``
     ],
     extras_require={
         "tests": [
