@@ -53,7 +53,7 @@ The code currently supports ``VASP``, ``CP2K``, ``Quantum-Espresso``, ``CASTEP``
 Code contributions to support additional solid-state packages are welcome!
 
 |
-.. image:: SnB_Supercell_Schematic_PES_2sec_Compressed.gif
+.. image:: Images/SnB_Supercell_Schematic_PES_2sec_Compressed.gif
    :width: 800px
 |
 
@@ -124,7 +124,7 @@ Command line interface
 Alternatively, the code can be used via the command line.
 
 |
-.. image:: SnB_CLI.gif
+.. image:: Images/SnB_CLI.gif
    :width: 800px
 |
 

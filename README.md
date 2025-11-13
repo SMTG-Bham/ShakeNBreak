@@ -8,8 +8,10 @@
 [![npj](https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf)](https://www.nature.com/articles/s41524-023-00973-1)
 
 # `ShakeNBreak` (`SnB`)
-<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/toc.png"></a> `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to
-locate ground-state and metastable structures of point defects in solid materials. [Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
+<a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="docs/Images/toc.png"></a>
+`ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state
+and metastable structures of point defects in solid materials.
+[Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
 
 `ShakeNBreak` is open-source, developed by members of the
 [Simulation of Advanced Materials](https://sam-lab.net) lab at Cambridge,
@@ -28,7 +30,7 @@ Main features include:
 
 The code currently supports `VASP`, `CP2K`, `Quantum-Espresso`, `CASTEP` & `FHI-aims`. Code contributions to support additional solid-state packages are welcome.
 
-![ShakeNBreak Summary](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
+![ShakeNBreak Summary](docs/Images/SnB_Supercell_Schematic_PES_2sec_Compressed.gif)
 
 ### Literature
 We kindly ask that you cite the [code](https://doi.org/10.21105/joss.04817) and [theory/method](https://doi.org/10.1038/s41524-023-00973-1) papers if you use `ShakeNBreak` in your work.
@@ -74,7 +76,7 @@ The font Montserrat ([Open Font License](https://scripts.sil.org/cms/scripts/pag
 
 ### Command line interface
 Alternatively, the code can be used via the command line:
-![ShakeNBreak CLI](https://raw.githubusercontent.com/SMTG-Bham/ShakeNBreak/main/docs/SnB_CLI.gif)
+![ShakeNBreak CLI](docs/Images/SnB_CLI.gif)
 
 The functions provided include:
 * [`snb-generate`](https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-generate): Generate distorted structures for a given defect

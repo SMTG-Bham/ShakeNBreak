@@ -82,7 +82,7 @@ the defect directory:
 
 which will generate a figure like the one below:
 
-.. image:: ./v_Cd_0.svg
+.. image:: ./Images/v_Cd_0.svg
     :width: 400px
 
 ..
@@ -95,7 +95,7 @@ structures, using the ``-cb``/``--colorbar`` flag:
 
     $ snb-plot -cb
 
-.. image:: ./v_Cd_0_colorbar.svg
+.. image:: ./Images/v_Cd_0_colorbar.svg
     :width: 450px
 
 ..
