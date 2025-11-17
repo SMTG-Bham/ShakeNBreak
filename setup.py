@@ -167,7 +167,7 @@ setup(
     extras_require={
         "tests": [
             "pytest>=7.1.3",
-            "pytest-mpl==0.17.0",
+            "pytest-mpl==0.18.0",
         ],
         "docs": [
             "sphinx",
