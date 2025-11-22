@@ -10,7 +10,6 @@ import datetime
 import os
 import shutil
 import warnings
-from importlib.metadata import version
 from pathlib import Path
 
 import ase
@@ -1022,28 +1021,7 @@ def identify_defect(
         "site": defect_site,
         "oxi_state": oxi_state if _bulk_oxi_states else "Undetermined",
     }
-    try:
-        defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError as exc:
-        # This means we have the old version of pymatgen-analysis-defects, where the class
-        # attributes were different (defect_site instead of site and no user_charges)
-        v_ana_def = version("pymatgen-analysis-defects")
-        v_pmg = version("pymatgen")
-        if v_ana_def < "2022.9.14":
-            raise TypeError(
-                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package (with `pip install "
-                "shakenbreak`) and try again."
-            ) from exc
-        if v_pmg < "2022.7.25":
-            raise TypeError(
-                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
-                f"Please update this package (with `pip install shakenbreak`) and try again."
-            ) from exc
-
-        raise exc
-
-    return defect
+    return MontyDecoder().process_decoded(for_monty_defect)
 
 
 def generate_defect_object(
@@ -1085,26 +1063,7 @@ def generate_defect_object(
         "site": defect_site,
         # "user_charges": single_defect_dict["charges"]  # doesn't work
     }
-    try:
-        defect = MontyDecoder().process_decoded(for_monty_defect)
-    except TypeError as exc:
-        # This means we have the old version of pymatgen-analysis-defects, where the class
-        # attributes were different (defect_site instead of site and no user_charges)
-        v_ana_def = version("pymatgen-analysis-defects")
-        v_pmg = version("pymatgen")
-        if v_ana_def < "2022.9.14":
-            raise TypeError(
-                f"You have the version {v_ana_def} of the package `pymatgen-analysis-defects`,"
-                " which is incompatible. Please update this package (with `pip install "
-                "shakenbreak`) and try again."
-            ) from exc
-        if v_pmg < "2022.7.25":
-            raise TypeError(
-                f"You have the version {v_pmg} of the package `pymatgen`, which is incompatible. "
-                f"Please update this package (with `pip install shakenbreak`) and try again."
-            ) from exc
-
-        raise exc
+    defect = MontyDecoder().process_decoded(for_monty_defect)
 
     # Specify defect charge states
     if isinstance(charges, list):  # Priority to charges argument
