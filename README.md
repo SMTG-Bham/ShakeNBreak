@@ -11,7 +11,9 @@
 <a href="https://shakenbreak.readthedocs.io/en/latest/"><img align="right" width="400" src="docs/Images/SnB_logo.png"></a>
 `ShakeNBreak` is a defect structure-searching method employing chemically-guided bond distortions to locate ground-state
 and metastable structures of point defects in solid materials.
-[Docs here!](https://shakenbreak.readthedocs.io/en/latest/)
+
+- [**`ShakeNBreak` Documentation Site**](https://shakenbreak.readthedocs.io/en/latest/)
+- [**Questions Related to `ShakeNBreak`**](https://matsci.org/c/shake-n-break/71) and [Instructions](https://matsci.org/t/questions-related-to-shakenbreak/66449)
 
 `ShakeNBreak` is open-source, developed by members of the
 [Simulation of Advanced Materials](https://sam-lab.net) lab at Cambridge,

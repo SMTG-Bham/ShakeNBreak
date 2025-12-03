@@ -247,8 +247,8 @@ If this does not solve your issue, please check the specific cases noted below.
 The next recommended step is to search through the ``ShakeNBreak``
 `GitHub Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ (use the GitHub search bar on the top
 right) to see if your issue/question has been asked before. If your problem is still not solved, then
-please contact the developers through the
-`GitHub Issues <https://github.com/SMTG-Bham/ShakeNBreak/issues>`_ page.
+please post your issue on the `ShakeNBreak MatSci community forum <https://matsci.org/c/shake-n-break/71>`__; see
+`instructions here <https://matsci.org/t/questions-related-to-shakenbreak/66449>`__.
 
 - For any issues relating to installation, please see the `Installation`_ page.
 
