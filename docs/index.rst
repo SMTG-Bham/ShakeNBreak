@@ -36,7 +36,7 @@ structures of point defects in solid materials.
 the Scanlon group at Birmingham, the Walsh group at Imperial College and 
 contributors from across the globe.
 
-For questions related to `ShakeNBreak`, please post on the 
+For questions related to ``ShakeNBreak``, please post on the 
 `ShakeNBreak MatSci community forum <https://matsci.org/c/shake-n-break/71>`__, and see 
 `instructions here <https://matsci.org/t/questions-related-to-shakenbreak/66449>`__.
 
