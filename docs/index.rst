@@ -159,6 +159,7 @@ Studies using ``ShakeNBreak``
 
 - A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-3lb5k>`__ 2025
 - R\. Claes, A. G. Squires and D. O. Scanlon **Establishing Doping Limits for ZnGa₂O₄ for Ultra Wide Bandgap Semiconductor Applications** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-h3gsc>`__ 2025
+- Y\. Liu, S. Chae and E. Kioupakis **Origin of shallow n-type doping in AlN and Al-rich AlGaN** `arXiv <https://arxiv.org/abs/2512.03390>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics** `JPhys Energy <https://doi.org/10.1088/2515-7655/ade916>`__ 2025
 - K\. Talit et al. **Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO₃** `Physical Review Materials <https://doi.org/10.1103/hww6-snlj>`__ 2025
 - I\. Mosquera-Lois, A. Walsh **Dynamic Vacancy Levels in CsPbCl₃ Obey Equilibrium Defect Thermodynamics** `PRX Energy <https://doi.org/10.1103/dxmb-8s96>`__ 2025
@@ -181,7 +182,9 @@ Studies using ``ShakeNBreak``
 - M\. Biswas et al. **Unified Graph-based Interatomic Potential for Perovskite Structure Optimization** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-g9sb9>`__ 2025
 - G\. Kalemai et al. **Flexible Inorganic/Organic Memristor Based on W-Doped MoOx/Poly(methyl methacrylate) Heterostructure** `Nanomaterials <https://doi.org/10.3390/nano15221707>`__ 2025
 - C\. Kaewmeechai, J. Strand & A. Shluger **Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga₂O₃** `Physica Status Solidi B <https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652>`__ 2025
+- Y\. Gong Wang et al. **Influence of Vanadium and Chromium Doping on the Thermoelectric Performance of AgSbTe₂** `Physica Scripta <https://doi.org/10.1088/1402-4896/ae26ec>`__ 2025
 - W\. Gierlotka et al. **Thermodynamics of point defects in the AlSb phase and its influence on phase equilibrium** `Computational Materials Science <https://doi.org/10.1016/j.commatsci.2025.113934>`__ 2025
+- P\. Panagis Filippatos et al. **Ab initio investigation of the Cr substitutional defect in α-quartz for quantum applications** `Journal of Applied Physics <https://doi.org/10.1063/5.0303245>`__ 2025
 - P\. Panagis Filippatos, T. J. P. Irons and K. Inzani **Revisiting intrinsic spin defects in hexagonal boron nitride with r2SCAN** `arXiv <http://dx.doi.org/10.48550/arXiv.2509.09002>`__ 2025
 - P\. Panagis Filippatos, A. Chroneos and N. Kelaidis **A first-principles investigation of halogen doped diamond and its application to quantum technologies** `Journal of Applied Physics <https://doi.org/10.1063/5.0279139>`__ 2025 
 - W\. D. Neilson et al. **Oxygen Potential, Uranium Diffusion, and Defect Chemistry in UO** :sub:`2±x` **: A Density Functional Theory Study** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.4c06580>`__ 2024
@@ -209,12 +212,7 @@ Studies using ``ShakeNBreak``
 - C\. J. Krajewska et al. **Enhanced visible light absorption in layered Cs₃Bi₂Br₉ through mixed-valence Sn(II)/Sn(IV) doping** `Chemical Science <https://doi.org/10.1039/D1SC03775G>`__ 2021 (Early version)
 - (News & Views): A. Mannodi-Kanakkithodi **The devil is in the defects** `Nature Physics <https://doi.org/10.1038/s41567-023-02049-9>`__ 2023 (`Free-to-read link <https://t.co/EetpnRgjzh>`__)
 
-.. Wenzhen paper
 .. Oba book
-.. BiOI
-.. Kumagai collab paper
-.. Sykes Magnetic oxide polarons
-.. Kat YTOS
 
 License and Citation
 ========================
