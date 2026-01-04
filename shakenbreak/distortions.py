@@ -6,7 +6,6 @@ import warnings
 
 import numpy as np
 from ase.neighborlist import NeighborList
-from hiphive.structure_generation.rattle import _probability_mc_rattle, generate_mc_rattled_structures
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
 from pymatgen.core.bonds import get_bond_length
@@ -563,6 +562,9 @@ def rattle(
     sorted_distances = np.sort(distance_matrix[distance_matrix > 0.8].flatten())
     stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
+    # restrict hiphive import to within rattle function here, to minimise dependencies (namely numba)
+    from hiphive.structure_generation.rattle import generate_mc_rattled_structures
+
     try:
         rattled_ase_struct = generate_mc_rattled_structures(
             ase_struct,
@@ -905,6 +907,9 @@ def _local_mc_rattle_displacements(
     nbr_list.update(atoms_rattle)
 
     # run Monte Carlo
+    # restrict hiphive import to within rattle function here, to minimise dependencies (namely numba)
+    from hiphive.structure_generation.rattle import _probability_mc_rattle
+
     for _ in range(n_iter):
         for i in active_atoms:
             i_nbrs = np.setdiff1d(nbr_list.get_neighbors(i)[0], [i])
@@ -967,7 +972,8 @@ def _generate_local_mc_rattled_structures(
     the magnitude of the final displacements is not *directly*
     connected to ``rattle_std``.
 
-    This function has been adapted from https://gitlab.com/materials-modeling/hiphive
+    This function has been adapted from
+    https://gitlab.com/materials-modeling/hiphive
 
     Warning:
         Repeatedly calling this function *without* providing different
