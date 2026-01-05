@@ -101,6 +101,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 ## Studies using `ShakeNBreak`
 
 - D. J. Keeble **_Detection and identification of vacancy defects in antimony selenide_** [_Nature Communications_](https://doi.org/10.1038/s41467-025-68153-x) 2026
+- L. Tian et al. **_Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts_** [_Chemical Science_](https://doi.org/10.1039/D5SC08101G) 2026
 - A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-3lb5k)
 - S. R. Kavanagh **_Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics_** [_JPhys Energy_](https://doi.org/10.1088/2515-7655/ade916) 2025
 - R. Claes, A. G. Squires and D. O. Scanlon **_Establishing Doping Limits for ZnGa<sub>2</sub>O<sub>4</sub> for Ultra Wide Bandgap Semiconductor Applications_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-h3gsc)
@@ -112,7 +113,6 @@ and/or papers listed in the [Literature](#literature) section above useful.
 - Z. Li and A. Walsh **_Thermodynamics of Sulfur Vacancy Formation in the Chalcogenide Perovskite BaZrS<sub>3</sub>_** [_Journal of Physical Chemistry C_](https://pubs.acs.org/doi/10.1021/acs.jpcc.5c00828) 2025
 - P. Russell et al. **_Computational prediction of Y-doped Cd<sub>2</sub>Sb<sub>2</sub>O<sub>7</sub> as a competitive Sb-based n-type Transparent Conducting Oxide_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-c1r3l) 2025
 - X. Wang et al. **_Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app_** [_arXiv_](https://doi.org/10.48550/arXiv.2507.19670) 2025
-- L. Tian et al. **_Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-bhf0z) 2025
 - M. A. Fadla et al. **_Tailoring the Electronic Properties of Monoclinic (In<sub>x</sub>Al<sub>1-x</sub>)<sub>2</sub>O<sub>3</sub> Alloys via Substitutional Donors and Acceptors_** [_Physical Review Materials_](https://doi.org/10.1103/78f8-j9m2) 2025
 - C. López et al. **_Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers_** [_ACS Energy Letters_](https://pubs.acs.org/doi/10.1021/acsenergylett.5c01267) 2025
 - K. Ogawa et al. **_Defect Tolerance via External Passivation in the Photocatalyst SrTiO<sub>3</sub>:Al_** [_Journal of the American Chemical Society_](https://doi.org/10.1021/jacs.5c07104) 2025
