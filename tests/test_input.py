@@ -593,7 +593,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [32, 41])
+        idx = np.isin(rattling_atom_indices, [32, 41])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure
@@ -644,7 +644,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 64)  # not including index 64 which is Int_Cd_2
-        idx = np.in1d(rattling_atom_indices, [9, 21])
+        idx = np.isin(rattling_atom_indices, [9, 21])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Cd indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             output["distorted_structure"],
@@ -773,7 +773,7 @@ class InputTestCase(unittest.TestCase):
         )  # Shouldn't match because rattling not done yet
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [41, 32])
+        idx = np.isin(rattling_atom_indices, [41, 32])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
         output["distorted_structure"] = rattle(  # overwrite with distorted and rattle
             # structure

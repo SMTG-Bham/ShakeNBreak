@@ -789,7 +789,7 @@ def distort_and_rattle(
         if "defect_site_index" in bond_distorted_defect:  # only present if not vacancy
             distorted_atom_indices += [bond_distorted_defect["defect_site_index"]]
         rattling_atom_indices = np.arange(0, len(structure))
-        idx = np.in1d(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
+        idx = np.isin(rattling_atom_indices, distorted_atom_indices)  # returns True for matching indices
         active_atoms = rattling_atom_indices[~idx]  # remove matching indices
 
     if local_rattle:

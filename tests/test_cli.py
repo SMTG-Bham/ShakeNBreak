@@ -50,9 +50,27 @@ def if_present_rm(path):
 
 class CLITestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
-    # TODO: If updating this in future, would be preferable to make a helper function which creates and
-    #  runs the CLI runner, captures stdout, stderr and warnings, and then prints and returns all these
-    #  (rather than having a lot of duplicated code)
+    def _run_cli(self, args, **kwargs):
+        """
+        Run the CLI with a fresh runner, capture stdout/stderr/warnings, print them, and return them.
+        """
+        runner = CliRunner()
+        kwargs.setdefault("catch_exceptions", False)
+        with warnings.catch_warnings(record=True) as w:
+            result = runner.invoke(snb, args, **kwargs)
+        stdout = getattr(result, "stdout", None)
+        if stdout is None:
+            stdout = result.output
+        stderr = getattr(result, "stderr", None)
+        if stderr is None:
+            stderr = ""
+        if stdout:
+            print(stdout)
+        if stderr:
+            print(stderr)
+        for warning in w:
+            print(str(warning.message))
+        return result, stdout, stderr, w
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -242,11 +260,7 @@ class CLITestCase(unittest.TestCase):
         Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
         """
-        runner = CliRunner()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, stdout, stderr, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -257,7 +271,6 @@ class CLITestCase(unittest.TestCase):
                     f"{self.previous_default_rattle_settings_config}",  # previous default
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
@@ -328,10 +341,7 @@ class CLITestCase(unittest.TestCase):
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present, but different
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -340,7 +350,6 @@ class CLITestCase(unittest.TestCase):
                     "-c",
                     "0",
                 ],
-                catch_exceptions=False,
             )  # non-verbose this time
         self.assertEqual(result.exit_code, 0)
         self.assertIn(  # printed with medium-level verbosity
@@ -412,10 +421,7 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings now gives no warnings / info messages (about
         # distortion_metadata):
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -424,7 +430,6 @@ class CLITestCase(unittest.TestCase):
                     "-c",
                     "0",
                 ],
-                catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
@@ -459,18 +464,14 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings but with more charge states, so previous distortion_metadata
         # is a subset of current one, so no warnings / info messages (about distortion_metadata):
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
                     "-b",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
                 ],  # default charge state range
-                catch_exceptions=False,
-            )
+                            )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
@@ -511,10 +512,7 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings but with less charge states, so new distortion_metadata
         # is a subset of old one, so no warnings / info messages (about distortion_metadata):
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -523,7 +521,6 @@ class CLITestCase(unittest.TestCase):
                     "-c",
                     "0",
                 ],
-                catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
@@ -563,10 +560,7 @@ class CLITestCase(unittest.TestCase):
         # test rerunning with same settings but with different distortion mesh, so combines without warning
         with open("test_config.yml", "w") as fp:
             fp.write("distortion_increment: 0.05")
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -577,7 +571,6 @@ class CLITestCase(unittest.TestCase):
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
@@ -612,9 +605,7 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -707,10 +698,7 @@ class CLITestCase(unittest.TestCase):
         # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
         # using Int_Cd because V_Cd is at (0,0,0) so fractional and Cartesian coordinates the same
         self.tearDown()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
@@ -724,7 +712,6 @@ class CLITestCase(unittest.TestCase):
                     0.0,  # 0.8125,
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         self.assertEqual(result.exit_code, 0)
         warning_message = (
@@ -753,10 +740,7 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_coords working even when slightly off correct site
         self.tearDown()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
@@ -793,27 +777,23 @@ class CLITestCase(unittest.TestCase):
         # test defect_coords working even when significantly off (~2.2 Å) correct site,
         # with rattled bulk
         self.tearDown()
-        with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
-            rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
-            result = runner.invoke(
-                snb,
-                [
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
-                    "-b",
-                    "Rattled_Bulk_CdTe_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.9,  # 0.8125,  # actual Int_Cd_2 site
-                    0.3,  # 0.1875,
-                    0.9,  # 0.8125,
-                    "-v",
-                ],
-                catch_exceptions=False,
-            )
+        rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
+        rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
+        result, _, _, w = self._run_cli([
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                "-b",
+                "Rattled_Bulk_CdTe_POSCAR",
+                "-c",
+                "0",
+                "--defect-coords",
+                0.9,  # 0.8125,  # actual Int_Cd_2 site
+                0.3,  # 0.1875,
+                0.9,  # 0.8125,
+                "-v",
+            ],
+        )
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -835,27 +815,23 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_coords working even when slightly off correct site with V_Cd and rattled bulk
         self.tearDown()
-        with warnings.catch_warnings(record=True) as w:
-            rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
-            rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
-            result = runner.invoke(
-                snb,
-                [
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    "Rattled_Bulk_CdTe_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.025,
-                    0.025,
-                    0.025,  # close just not quite 0,0,0
-                    "-v",
-                ],
-                catch_exceptions=False,
-            )
+        rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
+        rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
+        result, _, _, w = self._run_cli([
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                "Rattled_Bulk_CdTe_POSCAR",
+                "-c",
+                "0",
+                "--defect-coords",
+                0.025,
+                0.025,
+                0.025,  # close just not quite 0,0,0
+                "-v",
+            ],
+        )
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -871,10 +847,7 @@ class CLITestCase(unittest.TestCase):
 
         # test distortion dict info with defect_coords slightly off correct site with V_Cd
         if_present_rm("distortion_metadata.json")
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -888,7 +861,6 @@ class CLITestCase(unittest.TestCase):
                     0.025,  # close just not quite 0,0,0
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
@@ -972,9 +944,7 @@ class CLITestCase(unittest.TestCase):
         np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
 
         # test defect ID with tricky DX centre defect
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_as_1_Te_on_Cd_-2_DX_Relaxed_CONTCAR",
@@ -983,7 +953,6 @@ class CLITestCase(unittest.TestCase):
                 "-c 0",
                 "-v",
             ],
-            catch_exceptions=False,
         )
         self.assertEqual(result.exit_code, 0)
         self.assertIn(
@@ -1023,16 +992,13 @@ class CLITestCase(unittest.TestCase):
 
         # test padding functionality:
         # default padding = 1
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
                 "-b",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
             ],
-            catch_exceptions=False,
         )
         # check print info message:
         # self.assertIn(
@@ -1060,9 +1026,7 @@ class CLITestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(f"{defect_name}_-4"))
 
         # test padding explicitly set
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1071,7 +1035,6 @@ class CLITestCase(unittest.TestCase):
                 "-p",
                 "4",
             ],
-            catch_exceptions=False,
         )
         # check print info message:
         self.assertIn(
@@ -1098,10 +1061,7 @@ class CLITestCase(unittest.TestCase):
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1111,7 +1071,6 @@ class CLITestCase(unittest.TestCase):
                 "--config",
                 "test_config.yml",  # to give oxi states for no output
             ],
-            catch_exceptions=False,
         )
         print(result.output)  # for debugging
         assert not result.stdout  # no printed output (exclude tqdm in stderr)
@@ -1136,10 +1095,7 @@ POTCAR:
   Te: Te_GW"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1174,9 +1130,7 @@ oxidation_states:
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1221,9 +1175,7 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
@@ -1311,9 +1263,7 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1362,9 +1312,7 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1407,9 +1355,7 @@ seed: 42
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1459,10 +1405,7 @@ nonsense_key: nonsense_value"""
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
 
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate",
                     "-d",
                     f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1493,7 +1436,6 @@ nonsense_key: nonsense_value"""
         # Create a folder for defect files / directories
         defects_dir = "pesky_defects"
         os.mkdir(defects_dir)
-        runner = CliRunner()
         defect_name = "v_Cd_Td_Te2.83"
         os.mkdir(f"{defects_dir}/{defect_name}")  # non-standard defect name
         shutil.copyfile(
@@ -1510,10 +1452,7 @@ POTCAR:
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate_all",
                     "-d",
                     f"{defects_dir}/",
@@ -1523,7 +1462,6 @@ POTCAR:
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
@@ -1627,11 +1565,7 @@ POTCAR:
         """  # previous default
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        with warnings.catch_warnings(record=True) as w:
-            runner = CliRunner()
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate_all",
                     "-d",
                     f"{defects_dir}/",
@@ -1641,7 +1575,6 @@ POTCAR:
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
@@ -1696,10 +1629,7 @@ POTCAR:
                 """  # previous default
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate_all",
                     "-d",
                     f"{defects_dir}/",
@@ -1709,7 +1639,6 @@ POTCAR:
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
@@ -1764,10 +1693,7 @@ POTCAR:
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate_all",
                     "-d",
                     f"{defects_dir}/",
@@ -1777,7 +1703,6 @@ POTCAR:
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
@@ -1828,10 +1753,7 @@ POTCAR:
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "generate_all",
                     "-d",
                     f"{defects_dir}/",
@@ -1841,7 +1763,6 @@ POTCAR:
                     "--config",
                     "test_config.yml",
                 ],
-                catch_exceptions=False,
             )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
@@ -1887,9 +1808,7 @@ POTCAR:
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
             f"{defects_dir}/{defect_name}_POSCAR",
         )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "generate_all",
                 "-d",
                 f"{defects_dir}/",
@@ -2683,7 +2602,6 @@ Chosen VASP error message: {error_string}
         # All OUTCAR's present in distortion directories
         # Energies file already present
         defect = "v_Ti_0"
-        runner = CliRunner()
 
         def _parse_v_Ti_and_check_output(verbose=False):
             with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
@@ -2692,7 +2610,7 @@ Chosen VASP error message: {error_string}
             args = ["parse", "-d", defect, "-p", self.EXAMPLE_RESULTS]
             if verbose:
                 args.append("-v")
-            result = runner.invoke(snb, args, catch_exceptions=True)
+            result, _, _, _ = self._run_cli(args, catch_exceptions=True)
             print(f"Output: {result.output}")
             if verbose:
                 self.assertIn(
@@ -2728,17 +2646,13 @@ Chosen VASP error message: {error_string}
         # Test when OUTCAR not present in one of the distortion directories
         defect = "vac_1_Ti_0"  # folder in self.VASP_DIR
         self.copy_v_Ti_OUTCARs()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "parse",
                     "-d",
                     defect,
                     "-p",
                     self.VASP_DIR,
                 ],
-                catch_exceptions=False,
             )
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
@@ -2766,14 +2680,11 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}_0",
             f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_0",
         )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/pesky_defects",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(
             os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
@@ -2784,12 +2695,9 @@ Chosen VASP error message: {error_string}
         defect = "v_Ti"
         os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
         os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1")
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(
             os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
@@ -2804,16 +2712,13 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
             f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
         )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
                 "-d",
                 defect_name,
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(
             os.path.exists(
@@ -2823,8 +2728,7 @@ Chosen VASP error message: {error_string}
 
         # test warning when nothing parsed because defect folder not recognised
         os.chdir(self.EXAMPLE_RESULTS)
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(snb, ["parse", "-d", "defect"], catch_exceptions=True)
+        result, _, _, w = self._run_cli(["parse", "-d", "defect"], catch_exceptions=True)
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
@@ -2838,8 +2742,7 @@ Chosen VASP error message: {error_string}
 
         # Test warning when run with no arguments in top-level folder
         os.chdir(self.EXAMPLE_RESULTS)
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(snb, ["parse"], catch_exceptions=True)
+        result, _, _, w = self._run_cli(["parse"], catch_exceptions=True)
         print([str(warning.message) for warning in w])  # for debugging
         self.assertFalse(any([warning.category == UserWarning for warning in w]))
         self.assertFalse(any(os.path.exists(i) for i in os.listdir() if i.endswith(".yaml")))
@@ -2852,16 +2755,13 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy",
         )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
                 "-p",
                 self.EXAMPLE_RESULTS,
             ],
-            catch_exceptions=False,
         )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         self.assertEqual(test_energies, energies)  # no Bond_Distortion_-20.0% results
@@ -2891,16 +2791,13 @@ Chosen VASP error message: {error_string}
         ) as trout:
             for line in truncated:
                 trout.write(line)
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
                 "-p",
                 self.EXAMPLE_RESULTS,
             ],
-            catch_exceptions=False,
         )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         self.assertNotEqual(test_energies, energies)  # Bond_Distortion_-20.0%_not_converged now included
@@ -2945,16 +2842,13 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(residual_forces_outcar_string)
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
                 "-p",
                 self.EXAMPLE_RESULTS,
             ],
-            catch_exceptions=False,
         )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         self.assertNotEqual(test_energies, energies)  # Bond_Distortion_-20.0%_residual_forces now included
@@ -2995,17 +2889,13 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(high_energy_outcar_string)
 
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "parse",
                     "-d",
                     defect,
                     "-p",
                     self.EXAMPLE_RESULTS,
                 ],
-                catch_exceptions=False,
             )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         high_energies_dict = {
@@ -3052,17 +2942,13 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(low_energy_outcar_string)
 
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "parse",
                     "-d",
                     defect,
                     "-p",
                     self.EXAMPLE_RESULTS,
                 ],
-                catch_exceptions=False,
             )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         low_energies_dict = {
@@ -3084,17 +2970,13 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_0.0%",
         )  # now 3 parsed distortions with energies <-0.1 eV lower than unperturbed
 
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "parse",
                     "-d",
                     defect,
                     "-p",
                     self.EXAMPLE_RESULTS,
                 ],
-                catch_exceptions=False,
             )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         low_energies_dict = {
@@ -3135,17 +3017,13 @@ Chosen VASP error message: {error_string}
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
             if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
         ]  # remove yaml files so we reparse the energies
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "parse",
                     "-d",
                     defect,
                     "-p",
                     self.EXAMPLE_RESULTS,
                 ],
-                catch_exceptions=False,
             )
         self.assertTrue(  # yaml file still created, but also warning shown
             os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
@@ -3171,14 +3049,11 @@ Chosen VASP error message: {error_string}
 
     def test_parse_codes(self):
         """Test parse() function when using codes different from VASP."""
-        runner = CliRunner()
         defect = "vac_1_Cd_0"
 
         # CP2K
         code = "cp2k"
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
@@ -3187,7 +3062,6 @@ Chosen VASP error message: {error_string}
                 "--code",
                 code,
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
@@ -3205,9 +3079,7 @@ Chosen VASP error message: {error_string}
 
         # CASTEP
         code = "castep"
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
@@ -3216,7 +3088,6 @@ Chosen VASP error message: {error_string}
                 "--code",
                 code,
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
@@ -3229,9 +3100,7 @@ Chosen VASP error message: {error_string}
 
         # Espresso
         code = "quantum_espresso"
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
@@ -3240,7 +3109,6 @@ Chosen VASP error message: {error_string}
                 "--code",
                 "espresso",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
@@ -3258,9 +3126,7 @@ Chosen VASP error message: {error_string}
 
         # FHI-aims
         code = "fhi_aims"
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "parse",
                 "-d",
                 defect,
@@ -3269,7 +3135,6 @@ Chosen VASP error message: {error_string}
                 "--code",
                 "fhi-aims",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
         with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
@@ -3285,17 +3150,13 @@ Chosen VASP error message: {error_string}
         defect = "v_Ti_0"
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "analyse",
                 "-d",
                 defect,
                 "-p",
                 self.EXAMPLE_RESULTS,
             ],
-            catch_exceptions=False,
         )
         self.assertIn("Comparing structures to Unperturbed...", result.output)
         self.assertIn(
@@ -3328,14 +3189,11 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/pesky_defects/v_Ti_0",
         )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "analyse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/pesky_defects",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(
             os.path.exists(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect_name}/{defect_name}.csv")
@@ -3344,9 +3202,7 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         # Test non-existent defect
         name = "v_Ti_-2"
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "analyse",
                 "--defect",
                 name,
@@ -3373,17 +3229,13 @@ Chosen VASP error message: {error_string}
         )
         with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.yaml", "w") as f:
             f.write("")
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "analyse",
                 "-d",
                 defect,
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}",
             ],
-            catch_exceptions=False,
         )
         self.assertIn("Comparing structures to Unperturbed...", result.output)
         self.assertIn(
@@ -3405,10 +3257,7 @@ Chosen VASP error message: {error_string}
         os.chdir(self.VASP_TIO2_DATA_DIR)
         self.copy_v_Ti_OUTCARs()
         defect_name = "vac_1_Ti_0"
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "analyse",
                 ],
                 catch_exceptions=True,
@@ -3435,7 +3284,7 @@ Chosen VASP error message: {error_string}
 
         # Test no exception when run with no arguments in top-level folder
         os.chdir(self.EXAMPLE_RESULTS)
-        result = runner.invoke(snb, ["analyse"])
+        result, _, _, _ = self._run_cli(["analyse"])
         self.assertFalse(
             any(os.path.exists(i) for i in os.listdir() if (i.endswith(".csv") or i.endswith(".yaml")))
         )
@@ -3448,11 +3297,7 @@ Chosen VASP error message: {error_string}
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect_name = "v_Ti"
         defect = "v_Ti_0"
-        runner = CliRunner()
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, stdout, stderr, w = self._run_cli([
                     "plot",
                     "-d",
                     defect,
@@ -3468,7 +3313,6 @@ Chosen VASP error message: {error_string}
                     "-nt",  # No title
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
@@ -3496,10 +3340,7 @@ Chosen VASP error message: {error_string}
         # test with new doped naming
         defect = "Te_i_Td_Te2.83_+2"
         shutil.copytree(f"{self.EXAMPLE_RESULTS}/v_Ti_0", f"{self.EXAMPLE_RESULTS}/{defect}")
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "plot",
                     "-d",
                     defect,
@@ -3556,17 +3397,13 @@ Chosen VASP error message: {error_string}
         }
         with open(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json", "w") as f:
             f.write(json.dumps(fake_distortion_metadata, indent=4))
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "plot",
                     "-p",
                     self.EXAMPLE_RESULTS,
                     "-f",
                     "png",
                 ],
-                catch_exceptions=False,
             )
         self.assertTrue(
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect_name}_0/{defect_name}_0.png"))
@@ -3592,13 +3429,9 @@ Chosen VASP error message: {error_string}
 
         # Test plotting from inside the defect folder
         os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "plot",
                 ],
-                catch_exceptions=False,
             )
         self.assertNotIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
@@ -3631,10 +3464,7 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
             f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
         )
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "plot",
                     "-p",
                     f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
@@ -3643,7 +3473,6 @@ Chosen VASP error message: {error_string}
                     "-cb",
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
@@ -3683,10 +3512,7 @@ Chosen VASP error message: {error_string}
             "w",
         ) as f:
             f.write(json.dumps(fake_distortion_metadata, indent=4))
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "plot",
                     "-p",
                     f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder",
@@ -3695,7 +3521,6 @@ Chosen VASP error message: {error_string}
                     "-cb",
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         self.assertTrue(
             len([warning for warning in w if warning.category == UserWarning]) == 0
@@ -3708,15 +3533,13 @@ Chosen VASP error message: {error_string}
 
         # Test no exception when run with no arguments in top-level folder
         os.chdir(self.EXAMPLE_RESULTS)
-        result = runner.invoke(snb, ["plot", "-v"])
+        result, _, _, _ = self._run_cli(["plot", "-v"])
         self.assertIn("Plot saved to v_Ti_0/v_Ti_0.png", result.output)
         self.assertTrue(os.path.exists("v_Ti_0/v_Ti_0.png"))  # parsed successfully
         self.tearDown()
 
         # Test 'all' behaviour, with --min_energy option
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "plot",
                 "-min",
                 "1",
@@ -3725,7 +3548,6 @@ Chosen VASP error message: {error_string}
                 "-f",
                 "png",
             ],
-            catch_exceptions=False,
         )
         defect = "v_Ti_0"
         self.assertTrue(  # energy diff of 3.2 eV larger than min_energy
@@ -3745,17 +3567,12 @@ Chosen VASP error message: {error_string}
 
     def test_regenerate(self):
         """Test regenerate() function"""
-        with warnings.catch_warnings(record=True) as w:
-            runner = CliRunner()
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "regenerate",
                     "-p",
                     self.EXAMPLE_RESULTS,
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         defect = "v_Cd"  # in example results
         non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
@@ -3829,16 +3646,12 @@ Chosen VASP error message: {error_string}
                     f"{defect}_0/Bond_Distortion_-48.0%_High_Energy",
                 ),
             )
-        with warnings.catch_warnings(record=True) as w:
-            result = runner.invoke(
-                snb,
-                [
+        result, _, _, w = self._run_cli([
                     "regenerate",
                     "-p",
                     self.EXAMPLE_RESULTS,
                     "-v",
                 ],
-                catch_exceptions=False,
             )
         non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
@@ -3870,9 +3683,7 @@ Chosen VASP error message: {error_string}
 
         # test FileNotFoundError raised when no defect folders found
         os.chdir(self.DATA_DIR)
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "regenerate",
                 "-v",
             ],
@@ -3891,15 +3702,11 @@ Chosen VASP error message: {error_string}
         """Test groundstate() function"""
         # Test default behaviour
         defect = "vac_1_Cd_0"
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
         self.assertIn(
@@ -3912,10 +3719,7 @@ Chosen VASP error message: {error_string}
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
         # Test keywords: groundstate_filename and directory
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3924,7 +3728,6 @@ Chosen VASP error message: {error_string}
                 "--groundstate_filename",
                 "Groundstate_CONTCAR",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(
             os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate/Groundstate_CONTCAR")
@@ -3941,10 +3744,7 @@ Chosen VASP error message: {error_string}
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
 
         # Test non existent structure file
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3963,7 +3763,7 @@ Chosen VASP error message: {error_string}
 
         # test running within a single defect directory and specifying no arguments
         os.chdir(f"{self.VASP_CDTE_DATA_DIR}/{defect}")  # vac_1_Cd_0
-        result = runner.invoke(snb, ["groundstate"], catch_exceptions=False)
+        result, _, _, _ = self._run_cli(["groundstate"])
         self.assertTrue(os.path.exists("Groundstate/POSCAR"))
         self.assertIn(
             f"{defect}: Ground state structure (found with -0.55 distortion) saved to"
@@ -3976,9 +3776,7 @@ Chosen VASP error message: {error_string}
 
         # test error when no defect folders found
         self.tearDown()
-        result = runner.invoke(
-            snb,
-            ["groundstate"],  # use cwd which has no defect directories
+        result, _, _, _ = self._run_cli(["groundstate"],  # use cwd which has no defect directories
             catch_exceptions=True,
         )
         self.assertIsInstance(result.exception, FileNotFoundError)
@@ -4001,14 +3799,11 @@ Chosen VASP error message: {error_string}
                     f"{defect}/Bond_Distortion_-48.0%_High_Energy",
                 ),
             )
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
         gs_structure = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR")
@@ -4019,12 +3814,9 @@ Chosen VASP error message: {error_string}
         # test energies parsed if no energies file present
         defect = "v_Ti_0"
         os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # run from within defect folder
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/Groundstate/POSCAR"))
         self.assertIn(
@@ -4042,15 +3834,12 @@ Chosen VASP error message: {error_string}
 
         # test non-verbose output
         defect = "vac_1_Cd_0"  # in VASP_CDTE_DATA_DIR
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
                 "-nv",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate/POSCAR"))
         self.assertFalse(result.output)  # no output (No "Parsing..." or "Groundstate structure
@@ -4065,12 +3854,9 @@ Chosen VASP error message: {error_string}
         os.chdir("test_groundstate_all")
         defect = "v_Ti_1"
         shutil.copytree("../v_Ti_0", defect)
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"{defect}/Groundstate/POSCAR"))
         self.assertIn(
@@ -4094,12 +3880,9 @@ Chosen VASP error message: {error_string}
         dumpfn({"distortions": {}, "Unperturbed": -822.66563022}, "v_Ti_0.yaml")  # only Unperturbed
         # parsed as all high energy
 
-        result = runner.invoke(
-            snb,
-            [
+        result, _, _, _ = self._run_cli([
                 "groundstate",
             ],
-            catch_exceptions=False,
         )
         self.assertTrue(os.path.exists(f"Groundstate/POSCAR"))
         gs_structure = Structure.from_file(f"Groundstate/POSCAR")
@@ -4109,30 +3892,26 @@ Chosen VASP error message: {error_string}
 
     def test_mag(self):
         """Test the snb-mag command"""
-        runner = CliRunner()
-        result = runner.invoke(
-            snb,
-            ["mag", "-v", "-o", f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR"],
-            catch_exceptions=False,
+        result, _, _, _ = self._run_cli(["mag", "-v", "-o", f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR"],
         )
         self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
         self.assertEqual(result.exit_code, 1)
 
         # test defaulting to current OUTCAR:
         os.chdir(f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed")
-        result = runner.invoke(snb, ["mag", "-v"], catch_exceptions=False)
+        result, _, _, _ = self._run_cli(["mag", "-v"])
         self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
         self.assertEqual(result.exit_code, 1)
 
         # test quiet output when no args set (no help message printed!)
-        result = runner.invoke(snb, ["mag"], catch_exceptions=False)
+        result, _, _, _ = self._run_cli(["mag"])
         self.assertFalse(result.output)
         self.assertEqual(result.exit_code, 1)
 
         # test ISPIN =2 OUTCAR with mag below threshold
         with open("INCAR", "w") as f:
             f.write("ISPIN = 2")
-        result = runner.invoke(snb, ["mag", "-v", "-t", "1"], catch_exceptions=False)
+        result, _, _, _ = self._run_cli(["mag", "-v", "-t", "1"])
         self.assertIn("Magnetisation is below threshold (<1.0 μB/atom)", result.output)
         self.assertEqual(result.exit_code, 0)
 
