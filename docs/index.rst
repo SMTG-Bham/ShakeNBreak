@@ -23,7 +23,6 @@
 
 .. image:: https://img.shields.io/badge/npj%20Comput%20Mater%20-Mosquera--Lois%2C%20I.%2C%20Kavanagh%2C%20S.R.%2C%20Walsh%2C%20A.%20%26%20Scanlon%2C%20D.O.%20--%202023-9cf
     :target: https://www.nature.com/articles/s41524-023-00973-1
-|
 
 Welcome to ShakeNBreak!
 =======================================
@@ -56,10 +55,8 @@ Main features include:
 The code currently supports ``VASP``, ``CP2K``, ``Quantum-Espresso``, ``CASTEP`` and ``FHI-aims``.
 Code contributions to support additional solid-state packages are welcome!
 
-|
 .. image:: Images/SnB_Supercell_Schematic_PES_2sec_Compressed.gif
    :width: 800px
-|
 
 Literature
 ------------------------
@@ -127,10 +124,8 @@ Command line interface
 
 Alternatively, the code can be used via the command line.
 
-|
 .. image:: Images/SnB_CLI.gif
    :width: 800px
-|
 
 The functions provided include:
 

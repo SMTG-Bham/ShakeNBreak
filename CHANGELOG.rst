@@ -144,9 +144,10 @@ v3.2.0
 ----------
 - Following the major release of ``doped`` ``v2.0``, now compatible with the new ``pymatgen``
   defects code (``pymatgen>2022.7.25``), this update:
-    - Allows input of ``doped`` ``DefectsGenerator`` object to ``Distortions``
-    - Updates the tutorials to reflect the current recommended workflow of generating defects
-      with ``doped`` and then applying ``ShakeNBreak``, no longer requiring separate virtual environments 🎉
+
+  - Allows input of ``doped`` ``DefectsGenerator`` object to ``Distortions``
+  - Updates the tutorials to reflect the current recommended workflow of generating defects
+    with ``doped`` and then applying ``ShakeNBreak``, no longer requiring separate virtual environments 🎉
 
 v3.1.0
 ----------
@@ -239,13 +240,8 @@ v22.11.29
 v22.11.18
 ----------
 
-Add docs plots.
-
-
-v22.11.18
-----------
-
-Docs tutorial update.
+(b). Add docs plots.
+(a). Docs tutorial update.
 
 
 v22.11.17

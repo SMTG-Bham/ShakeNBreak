@@ -2277,15 +2277,17 @@ class Distortions:
             :obj:`tuple`:
                 Tuple of a dictionary with the distorted and undistorted structures
                 for each charge state of each defect, in the format:
-                ```
-                {'defect_name': {
-                    'charges': {
-                        {charge_state}: {
-                            'structures': {...},
+
+                .. code-block:: python
+
+                    {'defect_name': {
+                        'charges': {
+                            {charge_state}: {
+                                'structures': {...},
+                            },
                         },
-                    },
-                }}
-                ```
+                    }}
+
                 and dictionary with distortion parameters for each defect.
         """
         if verbose is not False:  # medium level verbosity

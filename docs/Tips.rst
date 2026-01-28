@@ -75,13 +75,15 @@ in response to bond distortion. If this issue occurs, it will manifest as:
   multiple energy minima, thus energy-lowering distortions particularly likely, so important to test these cases with
   reduced :code:`stdev`! Typically the largest rattle standard deviation for which the relaxations run without issue is
   best for performance in terms of finding groundstate structures.
-    - Note that strongly-correlated / magnetic materials in particular can be extremely sensitive to large structural
-      noise, and so these typically require rattle standard deviations (:code:`stdev`) ≤ 0.05 Å.
+
+  - Note that strongly-correlated / magnetic materials in particular can be extremely sensitive to large structural
+    noise, and so these typically require rattle standard deviations (:code:`stdev`) ≤ 0.05 Å.
 
 - High energies / non-converging calculations for the ±60% endpoints. As mentioned in :ref:`Tricky Relaxations` above,
   these are automatically handled by :code:`snb-run` for :code:`VASP` and so no changes are required, but for other
   codes you should rename the folder(s) to :code:`Bond_Distortion_X_High_Energy` and :code:`ShakeNBreak` will
   subsequently ignore them.
+
 .. Here you should adjust the distortion range to exclude these points (e.g. :code:`bond_distortions = np.arange(-0.5, 0.501, 0.1)`), or just ignore these calculations.
 
 If you are unsure but suspect this could be an issue for your material, the best strategy is typically to begin the
@@ -145,7 +147,7 @@ particularly useful in certain cases if:
   added when preprinted).
 
 Bulk Phase Transformations
-------------------
+---------------------------
 
 If you perform :code:`ShakeNBreak` calculations with a supercell structure for which a lower energy polymorph exists
 (i.e. by using a bulk structure which has imaginary phonon modes), often the symmetry-breaking introduced by
