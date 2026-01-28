@@ -100,9 +100,9 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_Nature Reviews Materials_](https://doi.org/10.1038/s41578-025-00879-y) 2026
 - D. J. Keeble **_Detection and identification of vacancy defects in antimony selenide_** [_Nature Communications_](https://doi.org/10.1038/s41467-025-68153-x) 2026
 - L. Tian et al. **_Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts_** [_Chemical Science_](https://doi.org/10.1039/D5SC08101G) 2026
-- A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-3lb5k)
 - S. R. Kavanagh **_Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics_** [_JPhys Energy_](https://doi.org/10.1088/2515-7655/ade916) 2025
 - R. Claes, A. G. Squires and D. O. Scanlon **_Establishing Doping Limits for ZnGa<sub>2</sub>O<sub>4</sub> for Ultra Wide Bandgap Semiconductor Applications_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-h3gsc)
 - Y. Liu, S. Chae and E. Kioupakis **_Origin of shallow n-type doping in AlN and Al-rich AlGaN_** [_arXiv_](https://arxiv.org/abs/2512.03390) 2025

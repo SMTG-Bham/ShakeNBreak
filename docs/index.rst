@@ -152,9 +152,9 @@ and/or papers listed in the :ref:`Literature <literature>` section useful.
 Studies using ``ShakeNBreak``
 =============================
 
+- A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `Nature Reviews Materials <https://doi.org/10.1038/s41578-025-00879-y>`__ 2026
 - D\. J. Keeble **Detection and identification of vacancy defects in antimony selenide** `Nature Communications <https://doi.org/10.1038/s41467-025-68153-x>`__ 2026
 - L\. Tian et al. **Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts** `Chemical Science <https://doi.org/10.1039/D5SC08101G>`__ 2026
-- A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-3lb5k>`__ 2025
 - S\. R. Kavanagh **Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics** `JPhys Energy <https://doi.org/10.1088/2515-7655/ade916>`__ 2025
 - R\. Claes, A. G. Squires and D. O. Scanlon **Establishing Doping Limits for ZnGa₂O₄ for Ultra Wide Bandgap Semiconductor Applications** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-h3gsc>`__ 2025
 - Y\. Liu, S. Chae and E. Kioupakis **Origin of shallow n-type doping in AlN and Al-rich AlGaN** `arXiv <https://arxiv.org/abs/2512.03390>`__ 2025

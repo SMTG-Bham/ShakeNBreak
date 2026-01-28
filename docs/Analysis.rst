@@ -263,4 +263,4 @@ the defect, which should be accounted for when later computing concentrations an
 These considerations, as well as the importance of metastability and temperature effects for the free
 energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review:
 `Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`__
-and this perspective: `Guidelines for robust and reproducible point defect simulations in crystals <https://doi.org/10.26434/chemrxiv-2025-3lb5k>`__.
+and this perspective: `Guidelines for robust and reproducible point defect simulations in crystals <https://doi.org/10.1038/s41578-025-00879-y>`__.
