@@ -204,7 +204,7 @@ v23.02.02
 
 
 v23.01.25
---------
+----------
 
 - Specify ``pandas`` version in requirements.txt to equal or higher than 1.1.0
 - Refactor ``snb-regenerate`` to execute when no arguments are specified (rather than showing help message)
@@ -228,7 +228,7 @@ v22.12.1
 
 
 v22.11.29
---------
+----------
 
 - Add example notebook showing how to generate interstitials and apply SnB to them.
 - Fix typo in example notebook and docs.
@@ -237,19 +237,19 @@ v22.11.29
 
 
 v22.11.18
---------
+----------
 
 Add docs plots.
 
 
 v22.11.18
---------
+----------
 
 Docs tutorial update.
 
 
 v22.11.17
---------
+----------
 
 - Refactor ``Distortions()`` to a list or simple-format dict of ``Defect`` objects as input.
   Same for ``Distortions.from_structures()``
@@ -283,12 +283,12 @@ v22.11.1
 
 
 v22.10.14
---------
+----------
 
 Just bumping version number to test updated GH Actions ``pip-install-test`` workflow.
 
 v22.10.13
---------
+----------
 
 - Updated defect name handling to work for all conventions
 - More robust ``snb-generate`` and plotting behaviour

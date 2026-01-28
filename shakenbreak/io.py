@@ -26,7 +26,7 @@ def parse_energies(
     filename: str | None = "OUTCAR",
     verbose: bool = False,
 ) -> None:
-    """
+    r"""
     Parse final energy for all distortions present in the given defect
     directory and write them to a ``yaml`` file in the defect directory.
     Returns the ``energies_file`` path.
@@ -46,7 +46,7 @@ def parse_energies(
             Filename of the output file, if different from the ShakeNBreak defaults
             that are defined in the default input files:
             (i.e. vasp: "OUTCAR", cp2k: "relax.out", espresso: "espresso.out",
-            castep: "*.castep", fhi-aims: "aims.out")
+            castep: "\*.castep", fhi-aims: "aims.out")
             Defaults to the ``ShakeNBreak`` default filenames.
         verbose (:obj:`bool`):
             If True, print information about renamed/saved-over files.
