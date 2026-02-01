@@ -153,10 +153,13 @@ Studies using ``ShakeNBreak``
 =============================
 
 - A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `Nature Reviews Materials <https://doi.org/10.1038/s41578-025-00879-y>`__ 2026
+- X\. Wang et al. **Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app** `npj Computational Materials <https://doi.org/10.1038/s41524-025-01936-4>`__ 2026
 - D\. J. Keeble **Detection and identification of vacancy defects in antimony selenide** `Nature Communications <https://doi.org/10.1038/s41467-025-68153-x>`__ 2026
+- E\. I. Jaffal et al. **Investigating mechanical properties through defect chemistry in hard binary phosphide material Ta₃P** `Solid State Communications <https://doi.org/10.1016/j.ssc.2025.116250>`__ 2026
 - L\. Tian et al. **Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts** `Chemical Science <https://doi.org/10.1039/D5SC08101G>`__ 2026
+- M\. Biswas et al. **Unified Graph-based Interatomic Potential for Perovskite Structure Optimization** `Journal of Chemical Information and Modeling <https://doi.org/10.1021/acs.jcim.5c01611>`__ 2026
 - S\. R. Kavanagh **Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics** `JPhys Energy <https://doi.org/10.1088/2515-7655/ade916>`__ 2025
-- R\. Claes, A. G. Squires and D. O. Scanlon **Establishing Doping Limits for ZnGa₂O₄ for Ultra Wide Bandgap Semiconductor Applications** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-h3gsc>`__ 2025
+- R\. Claes, A. G. Squires and D. O. Scanlon **Establishing Doping Limits for ZnGa₂O₄ for Ultrawide-Band-Gap Semiconductor Applications** `ACS Applied Materials & Interfaces <https://doi.org/10.1021/acsami.5c19146>`__ 2025
 - Y\. Liu, S. Chae and E. Kioupakis **Origin of shallow n-type doping in AlN and Al-rich AlGaN** `arXiv <https://arxiv.org/abs/2512.03390>`__ 2025
 - J\. Zhou et al. **Breaking the 800 mV open-circuit voltage barrier in antimony sulfide photovoltaics** `arXiv <https://doi.org/10.48550/arXiv.2512.18100>`__ 2025
 - K\. Talit et al. **Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO₃** `Physical Review Materials <https://doi.org/10.1103/hww6-snlj>`__ 2025
@@ -164,7 +167,6 @@ Studies using ``ShakeNBreak``
 - B\. I. J. Johnston et al. **Enhanced cycling stability of LiNiO₂ cathodes through a Mg/W dual-cation modification strategy** `Journal of Materials Chemistry A <https://doi.org/10.1039/D5TA05316A>`__ 2025
 - Z\. Li and A. Walsh **Thermodynamics of Sulfur Vacancy Formation in the Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://pubs.acs.org/doi/10.1021/acs.jpcc.5c00828>`__ 2025
 - P\. Russell et al. **Computational prediction of Y-doped Cd₂Sb₂O₇ as a competitive Sb-based n-type Transparent Conducting Oxide** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-c1r3l>`__ 2025
-- X\. Wang et al. **Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app** `arXiv <https://doi.org/10.48550/arXiv.2507.19670>`__ 2025
 - M\. A. Fadla et al. **Tailoring the Electronic Properties of Monoclinic (In** :sub:`x` **Al** :sub:`1-x` **)₂O₃ Alloys via Substitutional Donors and Acceptors** `Physical Review Materials <https://doi.org/10.1103/78f8-j9m2>`__ 2025
 - C\. López et al. **Chalcogen Vacancies Rule Charge Recombination in Pnictogen Chalcohalide Solar-Cell Absorbers** `ACS Energy Letters <https://pubs.acs.org/doi/10.1021/acsenergylett.5c01267>`__ 2025
 - K\. Ogawa et al. **Defect Tolerance via External Passivation in the Photocatalyst SrTiO₃:Al** `Journal of the American Chemical Society <https://doi.org/10.1021/jacs.5c07104>`__ 2025
@@ -176,7 +178,6 @@ Studies using ``ShakeNBreak``
 - X\. Zhao et al. **Trace Yb doping-induced cationic vacancy clusters enhance thermoelectrics in p-type PbTe** `Applied Physics Letters <https://doi.org/10.1063/5.0249058>`__ 2025
 - Z\. Cai & C. Ma **Origin of oxygen partial pressure-dependent conductivity in SrTiO₃** `Applied Physics Letters <https://doi.org/10.1063/5.0245820>`__ 2025
 - R\. Desai et al. **Exploring the Defect Landscape and Dopability of Chalcogenide Perovskite BaZrS₃** `Journal of Physical Chemistry C <https://doi.org/10.1021/acs.jpcc.5c01597>`__ 2025
-- M\. Biswas et al. **Unified Graph-based Interatomic Potential for Perovskite Structure Optimization** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-g9sb9>`__ 2025
 - G\. Kalemai et al. **Flexible Inorganic/Organic Memristor Based on W-Doped MoOx/Poly(methyl methacrylate) Heterostructure** `Nanomaterials <https://doi.org/10.3390/nano15221707>`__ 2025
 - C\. Kaewmeechai, J. Strand & A. Shluger **Structure and Migration Mechanisms of Oxygen Interstitial Defects in β-Ga₂O₃** `Physica Status Solidi B <https://onlinelibrary.wiley.com/doi/10.1002/pssb.202400652>`__ 2025
 - Y\. Gong Wang et al. **Influence of Vanadium and Chromium Doping on the Thermoelectric Performance of AgSbTe₂** `Physica Scripta <https://doi.org/10.1088/1402-4896/ae26ec>`__ 2025
