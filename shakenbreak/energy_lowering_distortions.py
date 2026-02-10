@@ -12,11 +12,9 @@ import pandas as pd
 from ase.io import write as ase_write
 from doped.utils.plotting import format_defect_name
 from pymatgen.core.structure import Structure
-from pymatgen.io.ase import AseAtomsAdaptor
 
-from shakenbreak import analysis, io
-
-aaa = AseAtomsAdaptor()
+from shakenbreak import analysis
+from shakenbreak.io import parse_energies, parse_structure
 
 
 def _format_distortion_directory_name(
@@ -436,7 +434,7 @@ def get_energy_lowering_distortions(
                     # ignore parsing warnings in case energies already parsed and output files deleted,
                     # _only_ if energies file already exists
                     warnings.simplefilter("ignore", category=UserWarning)
-                energies_file = io.parse_energies(defect_species, output_path, code, verbose=verbose)
+                energies_file = parse_energies(defect_species, output_path, code, verbose=verbose)
                 defect_species = energies_file.rsplit("/", 1)[-1].replace(
                     ".yaml", ""
                 )  # in case '+' removed
@@ -462,7 +460,7 @@ def get_energy_lowering_distortions(
                 # format distortion label to the one used in file name
                 # (e.g. from 0.1 to Bond_Distortion_10.0%)
                 with warnings.catch_warnings(record=True) as w:
-                    gs_struct = io.parse_structure(
+                    gs_struct = parse_structure(
                         code=code,
                         structure_path=f"{output_path}/{defect_species}/{bond_distortion}",
                         structure_filename=structure_filename,
@@ -536,7 +534,7 @@ def get_energy_lowering_distortions(
                     # structure
                     bond_distortion = analysis._get_distortion_filename(distortion)
                     with warnings.catch_warnings(record=True) as w:
-                        struct = io.parse_structure(
+                        struct = parse_structure(
                             code=code,
                             structure_path=f"{output_path}/{defect_species}/{bond_distortion}",
                             structure_filename=structure_filename,
@@ -1001,7 +999,7 @@ def _copy_espresso_files(
         with open(f"{output_path}/{defect_species}/Unperturbed/{input_filename}") as f:
             params = f.read()  # Read input parameters
         # Write distorted structure in QE format, to then update input file
-        atoms = aaa.get_atoms(distorted_structure)
+        atoms = distorted_structure.to_ase_atoms()
         ase_write(
             filename=f"{distorted_dir}/{input_filename}",
             images=atoms,
@@ -1029,7 +1027,7 @@ def _copy_espresso_files(
             ) as f:
                 params = f.read()  # Read input parameters
             # Write distorted structure in QE format, to then update input file
-            atoms = aaa.get_atoms(distorted_structure)
+            atoms = distorted_structure.to_ase_atoms()
             ase_write(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
@@ -1051,7 +1049,7 @@ def _copy_espresso_files(
                 f"found in {output_path}/{defect_species}, so just writing "
                 f"distorted structure file to {distorted_dir} directory."
             )
-            atoms = aaa.get_atoms(distorted_structure)
+            atoms = distorted_structure.to_ase_atoms()
             ase_write(
                 filename=f"{distorted_dir}/{input_filename}",
                 images=atoms,
@@ -1115,7 +1113,7 @@ def _copy_castep_files(
     """
     if not input_filename:
         input_filename = "castep.param"
-    atoms = aaa.get_atoms(distorted_structure)
+    atoms = distorted_structure.to_ase_atoms()
     ase_write(
         filename=f"{distorted_dir}/castep.cell", images=atoms, format="castep-cell"
     )  # Write structure
@@ -1157,7 +1155,7 @@ def _copy_fhi_aims_files(
     """
     if not input_filename:
         input_filename = "control.in"
-    atoms = aaa.get_atoms(distorted_structure)
+    atoms = distorted_structure.to_ase_atoms()
     ase_write(
         filename=f"{distorted_dir}/geometry.in",
         images=atoms,
@@ -1250,7 +1248,7 @@ def write_groundstate_structure(
                 # ignore parsing warnings in case energies already parsed and output files deleted,
                 # _only_ if energies file already exists
                 warnings.simplefilter("ignore", category=UserWarning)
-            energies_file = io.parse_energies(defect_species, output_path, verbose=verbose)
+            energies_file = parse_energies(defect_species, output_path, verbose=verbose)
             defect_species = energies_file.rsplit("/", 1)[-1].replace(".yaml", "")  # in case '+' removed
 
         if energies_file is None:
