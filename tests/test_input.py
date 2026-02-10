@@ -1114,7 +1114,7 @@ class InputTestCase(unittest.TestCase):
             }
         else:  # test POTCAR warning
             print([str(warning.message) for warning in w])
-            # assert len(w) == 2  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
+            assert len(w) == 2  # general POTCAR warning and NELECT/NUPDOWN INCAR warning
             assert any(
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
