@@ -82,7 +82,7 @@ html_context = {
 # -- Options for intersphinx extension ---------------------------------------
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
-    "pymatgen": ("http://pymatgen.org/", None),
+    "pymatgen": ("https://pymatgen.org/", None),
     "doped": ("https://doped.readthedocs.io/en/latest/", None),
 }
 

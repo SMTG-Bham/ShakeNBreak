@@ -88,7 +88,6 @@ class IoTestCase(unittest.TestCase):
                 "quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.out",
             )
         )
-        print(structure_from_espresso_output)
         self.assertTrue(
             _cached_calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
                 0

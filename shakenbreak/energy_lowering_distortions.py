@@ -545,7 +545,7 @@ def get_energy_lowering_distortions(
                             # problem parsing structure, user will have received appropriate
                             # warning from io.read_vasp_structure()
                             print(
-                                f"Problem parsing final, low-energy structure for {gs_distortion} bond "
+                                f"Problem parsing final, low-energy structure for {distortion} bond "
                                 f"distortion of {defect_species} at {output_path}/{defect_species}"
                                 f"/{bond_distortion}/{structure_filename}. This species will be skipped "
                                 f"and will not be included in low_energy_defects (check relaxation "
