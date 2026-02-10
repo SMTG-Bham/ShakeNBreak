@@ -168,6 +168,11 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     distortions_wout_high_energy = {
         k: v for k, v in defect_energies_dict["distortions"].items() if "High_Energy" not in str(k)
     }  # ignored *High_Energy* distortions, as these have positive energies or major errors (unreliable)
+    if not distortions_wout_high_energy:
+        if "Unperturbed" in defect_energies_dict:
+            return 0, "Unperturbed"
+        return None, "Not converged"
+
     lowest_E_distortion = min(
         distortions_wout_high_energy.values()
     )  # lowest energy obtained with bond distortions

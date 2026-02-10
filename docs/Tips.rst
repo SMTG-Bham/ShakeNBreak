@@ -45,9 +45,9 @@ may require manual tuning from the user:
   - Switching the ionic relaxation algorithm (e.g. change :code:`IBRION` to :code:`1` or :code:`3` in :code:`VASP`)
   - Reducing the ionic step width (e.g. change :code:`POTIM` to :code:`0.02` in :code:`VASP`)
   - Switching the electronic minimisation algorithm (e.g. change :code:`ALGO` to :code:`All` in :code:`VASP`), if
-    electronic concergence seems to be causing issues.
+    electronic convergence seems to be causing issues.
   - Tightening/reducing the electronic convergence criterion (e.g. change :code:`EDIFF` to :code:`1e-7` in :code:`VASP`)
-  - Rattling the structure slightly, using the ``rattle`` function. An example of using this fucntion is
+  - Rattling the structure slightly, using the ``rattle`` function. An example of using this function is
     shown in the 'Bulk Phase Transformations' section below).
 
 In the other rare case where all distortions yield high energies, relative to the :code:`Unperturbed` structure, this is

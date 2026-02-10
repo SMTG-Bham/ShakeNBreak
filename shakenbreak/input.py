@@ -1821,6 +1821,8 @@ class Distortions:
             struct_with_oxi = guess_and_set_oxi_states_with_timeout(
                 bulk_structure, break_early_if_expensive=True
             )
+            if struct_with_oxi is None:
+                return {}
             guessed_oxidation_states = {
                 elt.symbol: round(
                     np.mean(

@@ -21,7 +21,7 @@ questions have been answered before:
 
 If your question is about general defect structure-searching methodology, please refer to the following papers, and other relevant literature:
 - [Defect Structure Searching Preview](https://doi.org/10.1016/j.matt.2021.06.003)
-- [Defect Structure Searching Main Paper](doi.org/10.1038/s41524-023-00973-1)
+- [Defect Structure Searching Main Paper](https://doi.org/10.1038/s41524-023-00973-1)
 - [Guidelines for Robust Defect Simulations](https://doi.org/10.1038/s41578-025-00879-y)
 - [Free Energies of Defects](https://doi.org/10.1039/D3CS00432E)
 

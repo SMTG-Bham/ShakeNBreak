@@ -907,7 +907,7 @@ def _local_mc_rattle_displacements(
     nbr_list.update(atoms_rattle)
 
     # run Monte Carlo
-    # restrict hiphive import to within rattle function here, to minimise dependencies (namely numba)
+    # restrict hiphive import to within (local) rattle fn here, to minimise dependencies (namely numba)
     from hiphive.structure_generation.rattle import _probability_mc_rattle
 
     for _ in range(n_iter):

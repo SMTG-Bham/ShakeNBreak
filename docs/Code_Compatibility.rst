@@ -26,7 +26,7 @@ while structure files for essentially all DFT/ML codes can be easily generated u
 :meth:`~pymatgen.core.structure.IStructure.to()` method for ``pymatgen`` 
 |Structure|\s or `ase I/O methods <https://wiki.fysik.dtu.dk/ase/ase/io/io.html#ase.io.write>`__, with the
 |Structure| objects used in :code:`ShakeNBreak`.
-Direct output parsing (e.g. via ``snb-parse``) is currently supported for ``VASP``, while future updates to support
+Direct output parsing (e.g. via ``snb-parse``) is currently supported for ``VASP``, while updates to support
 other codes may be added in the future.
 
 Please let us know if you have any issues with compatibility, or if you would like to see any additional features added
