@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+v3.4.4
+----------
+- Update ``doped`` requirement and use latest ``doped`` oxidation state functions.
+- Restrict ``hiphive`` imports to within functions, to reduce dependence on dependencies (primarily
+  ``numba``, which can often lag behind latest ``numpy``).
+- Remove deprecated ``pymatgen`` version check code.
+- Code cleanup, docs updates & minor bugfixes for extreme edge cases.
+
+
 v3.4.3
 ----------
 - Efficient oxidation state guessing using ``doped`` functions, along with handling of mixed-valence systems by @hwbng
