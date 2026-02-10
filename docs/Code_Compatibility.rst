@@ -16,8 +16,18 @@ structures), **but also** can take in :code:`pymatgen` :code:`Structure` objects
 structure files (e.g. :code:`POSCAR`\s for :code:`VASP`) as inputs. As such, it should be compatible with any defect code
 (such as `doped <https://doped.readthedocs.io>`_, `pydefect <https://github.com/kumagai-group/pydefect>`_,
 `PyCDT <https://github.com/mbkumar/pycdt>`_, `PyLada <https://github.com/pylada/pylada-defects>`_,
-`DASP <http://hzwtech.com/files/software/DASP/htmlEnglish/index.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
+`DASP <https://hzwtech.com/files/software/dasp/EN/1.html>`_, `Spinney <https://gitlab.com/Marrigoni/spinney/-/tree/master>`_,
 `DefAP <https://github.com/DefAP/defap>`_, `PyDEF <https://github.com/PyDEF2/PyDEF-2.0>`_...) that generates these files.
+
+The vast majority of the code in :code:`ShakeNBreak` is agnostic to the underlying energy calculator / electronic
+structure (i.e. DFT/ML) code used to calculate the raw energies of defect supercells. 
+Direct input file generation is supported for ``VASP``, ``Quantum Espresso``, ``CP2K``, ``FHI-aims`` and ``CASTEP``, 
+while structure files for essentially all DFT/ML codes can be easily generated using the
+:meth:`~pymatgen.core.structure.IStructure.to()` method for ``pymatgen`` 
+|Structure|\s or `ase I/O methods <https://wiki.fysik.dtu.dk/ase/ase/io/io.html#ase.io.write>`__, with the
+|Structure| objects used in :code:`ShakeNBreak`.
+Direct output parsing (e.g. via ``snb-parse``) is currently supported for ``VASP``, while updates to support
+other codes may be added in the future.
 
 Please let us know if you have any issues with compatibility, or if you would like to see any additional features added
 to :code:`ShakeNBreak` to make it more compatible with your code.

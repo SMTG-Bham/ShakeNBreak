@@ -165,30 +165,36 @@ def get_gs_distortion(defect_energies_dict: dict) -> tuple:
     if not defect_energies_dict["distortions"] and "Unperturbed" in defect_energies_dict:
         return 0, "Unperturbed"
 
+    distortions_wout_high_energy = {
+        k: v for k, v in defect_energies_dict["distortions"].items() if "High_Energy" not in str(k)
+    }  # ignored *High_Energy* distortions, as these have positive energies or major errors (unreliable)
+    if not distortions_wout_high_energy:
+        if "Unperturbed" in defect_energies_dict:
+            return 0, "Unperturbed"
+        return None, "Not converged"
+
     lowest_E_distortion = min(
-        defect_energies_dict["distortions"].values()
+        distortions_wout_high_energy.values()
     )  # lowest energy obtained with bond distortions
     if "Unperturbed" in defect_energies_dict:
-        if list(defect_energies_dict["distortions"].keys()) == ["Rattled"]:  # If only Rattled
-            energy_diff = (
-                defect_energies_dict["distortions"]["Rattled"] - defect_energies_dict["Unperturbed"]
-            )
+        if list(distortions_wout_high_energy.keys()) == ["Rattled"]:  # If only Rattled
+            energy_diff = distortions_wout_high_energy["Rattled"] - defect_energies_dict["Unperturbed"]
             gs_distortion = "Rattled" if energy_diff < 0 else "Unperturbed"
         else:
             energy_diff = lowest_E_distortion - defect_energies_dict["Unperturbed"]
             if (
                 lowest_E_distortion < defect_energies_dict["Unperturbed"]
-            ):  # if energy lower than Unperturbed
-                gs_distortion = list(defect_energies_dict["distortions"].keys())[
-                    list(defect_energies_dict["distortions"].values()).index(lowest_E_distortion)
-                ]  # bond distortion that led to ground-state
+            ):  # if energy lower than Unperturbed; get corresponding key (bond distortion)
+                gs_distortion = next(
+                    k for k, v in distortions_wout_high_energy.items() if v == lowest_E_distortion
+                )
             else:
                 gs_distortion = "Unperturbed"
     else:
         energy_diff = None
-        gs_distortion = list(defect_energies_dict["distortions"].keys())[
-            list(defect_energies_dict["distortions"].values()).index(lowest_E_distortion)
-        ]
+        gs_distortion = next(
+            k for k, v in distortions_wout_high_energy.items() if v == lowest_E_distortion
+        )
 
     return energy_diff, gs_distortion
 

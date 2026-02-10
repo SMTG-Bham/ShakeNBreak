@@ -82,7 +82,7 @@ the defect directory:
 
 which will generate a figure like the one below:
 
-.. image:: ./v_Cd_0.svg
+.. image:: ./Images/v_Cd_0.svg
     :width: 400px
 
 ..
@@ -95,7 +95,7 @@ structures, using the ``-cb``/``--colorbar`` flag:
 
     $ snb-plot -cb
 
-.. image:: ./v_Cd_0_colorbar.svg
+.. image:: ./Images/v_Cd_0_colorbar.svg
     :width: 450px
 
 ..
@@ -112,7 +112,7 @@ Again if we want to plot the results for **all** defects present in a given/curr
 just run ``snb-plot`` from the top-level directory containing the defect folders.
 
 .. TIP::
-    See ``snb-plot -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_
+    See ``snb-plot -h`` or `the CLI docs for snb-plot <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-plot>`_
     for details on the options available for this command.
 
 Second round of structure searching
@@ -176,7 +176,7 @@ for the code specified with the flag ``--code`` (default = :code:`VASP`).
             |--- Bond_Distortion_-30.0%_from_0 <-- Distortion from the neutral charge state
 
 .. TIP::
-    See ``snb-regenerate -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate>`_
+    See ``snb-regenerate -h`` or `the CLI docs for snb-regenerate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-regenerate>`_
     for details on the options available for this command.
 
 Saving the ground state structures
@@ -229,7 +229,7 @@ This command will generate a ``Groundstate`` directory within each defect folder
                     |--- POSCAR <-- Ground state structure
 
 .. TIP::
-    See ``snb-groundstate -h`` or `the CLI docs <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
+    See ``snb-groundstate -h`` or `the CLI docs for snb-groundstate <https://shakenbreak.readthedocs.io/en/latest/shakenbreak.cli.html#snb-groundstate>`_
     for details on the options available for this command.
 
 Further Defect Analysis
@@ -246,7 +246,7 @@ defect analysis codes such as `easyunfold <https://smtg-bham.github.io/easyunfol
 electronic structure of defects in your material),
 `py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_ (to analyse defect concentrations, doping
 and Fermi level tuning), or `nonrad <https://nonrad.readthedocs.io/en/latest/>`_ /
-`CarrierCapture.jl<https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
+`CarrierCapture.jl <https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
 (to analyse non-radiative electron-hole recombination at defects).
 
 .. NOTE::
@@ -261,5 +261,6 @@ In particular, symmetry-breaking as a result of structural reconstruction from t
 (``Unperturbed``) high-symmetry structure can result in an increase in configurational degeneracy for
 the defect, which should be accounted for when later computing concentrations and Fermi level position.
 These considerations, as well as the importance of metastability and temperature effects for the free
-energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review
-paper: `Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`_.
+energies (and thus concentrations) for certain defects/systems are discussed in this Tutorial Review:
+`Imperfections are not 0 K: free energy of point defects in crystals (Chem Soc Rev 2023) <https://doi.org/10.1039/D3CS00432E>`__
+and this perspective: `Guidelines for robust and reproducible point defect simulations in crystals <https://doi.org/10.1038/s41578-025-00879-y>`__.

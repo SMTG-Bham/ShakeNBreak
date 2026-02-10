@@ -151,3 +151,6 @@ conda_packaging.md
 .pytest_cache/
 shakenbreak/__pycache__/
 tests/__pycache__/
+
+# Cursor
+.cursor/

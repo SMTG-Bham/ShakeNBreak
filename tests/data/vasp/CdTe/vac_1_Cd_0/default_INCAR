@@ -10,6 +10,7 @@ HFSCREEN = 0.208
 IBRION = 2
 ICHARG = 1
 ICORELEVEL = 0  # needed if using the kumagai-oba (efnv) anisotropic charge correction scheme
+ISEARCH = 1
 ISIF = 2
 ISMEAR = 0
 ISPIN = 2

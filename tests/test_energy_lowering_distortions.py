@@ -8,7 +8,10 @@ import ase
 import numpy as np
 from monty.serialization import dumpfn, loadfn
 
-from shakenbreak import analysis, distortions, energy_lowering_distortions, io
+from shakenbreak import energy_lowering_distortions
+from shakenbreak.analysis import _cached_calculate_atomic_disp
+from shakenbreak.distortions import rattle
+from shakenbreak.io import read_structure_w_ase
 from doped.utils.efficiency import Structure, Composition, PeriodicSite
 from test_cli import if_present_rm
 
@@ -651,7 +654,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR_original",
         )
         struct = Structure.from_file(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR")
-        struct_rattled = distortions.rattle(struct, stdev=0.35)
+        struct_rattled = rattle(struct, stdev=0.35)
         struct_rattled.to(
             fmt="POSCAR",
             filename=f"{self.VASP_CDTE_DATA_DIR}/{defect}/Bond_Distortion_-10.0%/CONTCAR",
@@ -1008,7 +1011,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/structure.cif",
             )
         )
-        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test copying over Quantum Espresso input files
         shutil.move(  # avoid overwriting yaml file
@@ -1058,7 +1061,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
         ) as f:
             atoms = ase.io.espresso.read_espresso_in(f)
         struct = Structure.from_ase_atoms(atoms)
-        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test copying over FHI-aims input files when the input files are only
         # present in one distortion directory (different from Unperturbed)
@@ -1101,13 +1104,13 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
             )
         )
         # Check structure
-        struct = io.read_fhi_aims_structure(
+        struct = read_structure_w_ase(
             os.path.join(
                 self.FHI_AIMS_DATA_DIR,
                 "vac_1_Cd_-1/Bond_Distortion_-55.0%_from_0/geometry.in",
             )
         )
-        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
         # Test CASTEP input files
         shutil.move(  # avoid overwriting yaml file
@@ -1161,7 +1164,7 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 )
             )
         )
-        self.assertTrue(analysis._cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
+        self.assertTrue(_cached_calculate_atomic_disp(struct, self.V_Cd_minus_0pt55_structure)[0] < 0.01)
 
 
 if __name__ == "__main__":

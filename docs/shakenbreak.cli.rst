@@ -16,7 +16,11 @@ See the `Structure generation <https://shakenbreak.readthedocs.io/en/latest/Gene
 `Analysis & plotting <https://shakenbreak.readthedocs.io/en/latest/Analysis.html>`_ Tutorials pages for an overview of
 their usage.
 
-
 .. click:: shakenbreak.cli:snb
    :prog: snb
    :nested: full
+
+.. automodule:: shakenbreak.cli
+    :members:
+    :undoc-members:
+    :show-inheritance:

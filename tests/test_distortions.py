@@ -243,7 +243,7 @@ class DistortionTestCase(unittest.TestCase):
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
 
         rattling_atom_indices = np.arange(0, 63)
-        idx = np.in1d(rattling_atom_indices, [32, 41])
+        idx = np.isin(rattling_atom_indices, [32, 41])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
 
         self.assertEqual(
@@ -282,7 +282,7 @@ class DistortionTestCase(unittest.TestCase):
         d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
 
         rattling_atom_indices = np.arange(0, 64)  # not including index 64 which is Int_Cd_2
-        idx = np.in1d(rattling_atom_indices, [9, 21])
+        idx = np.isin(rattling_atom_indices, [9, 21])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Cd indices
 
         self.assertEqual(

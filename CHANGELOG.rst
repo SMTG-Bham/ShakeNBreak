@@ -1,6 +1,15 @@
 Change Log
 ==========
 
+v3.4.4
+----------
+- Update ``doped`` requirement and use latest ``doped`` oxidation state functions.
+- Restrict ``hiphive`` imports to within functions, to reduce dependence on dependencies (primarily
+  ``numba``, which can often lag behind latest ``numpy``).
+- Remove deprecated ``pymatgen`` version check code.
+- Code cleanup, docs updates & minor bugfixes for extreme edge cases.
+
+
 v3.4.3
 ----------
 - Efficient oxidation state guessing using ``doped`` functions, along with handling of mixed-valence systems by @hwbng
@@ -144,9 +153,10 @@ v3.2.0
 ----------
 - Following the major release of ``doped`` ``v2.0``, now compatible with the new ``pymatgen``
   defects code (``pymatgen>2022.7.25``), this update:
-    - Allows input of ``doped`` ``DefectsGenerator`` object to ``Distortions``
-    - Updates the tutorials to reflect the current recommended workflow of generating defects
-      with ``doped`` and then applying ``ShakeNBreak``, no longer requiring separate virtual environments 🎉
+
+  - Allows input of ``doped`` ``DefectsGenerator`` object to ``Distortions``
+  - Updates the tutorials to reflect the current recommended workflow of generating defects
+    with ``doped`` and then applying ``ShakeNBreak``, no longer requiring separate virtual environments 🎉
 
 v3.1.0
 ----------
@@ -204,7 +214,7 @@ v23.02.02
 
 
 v23.01.25
---------
+----------
 
 - Specify ``pandas`` version in requirements.txt to equal or higher than 1.1.0
 - Refactor ``snb-regenerate`` to execute when no arguments are specified (rather than showing help message)
@@ -228,7 +238,7 @@ v22.12.1
 
 
 v22.11.29
---------
+----------
 
 - Add example notebook showing how to generate interstitials and apply SnB to them.
 - Fix typo in example notebook and docs.
@@ -237,19 +247,14 @@ v22.11.29
 
 
 v22.11.18
---------
+----------
 
-Add docs plots.
-
-
-v22.11.18
---------
-
-Docs tutorial update.
+(b). Add docs plots.
+(a). Docs tutorial update.
 
 
 v22.11.17
---------
+----------
 
 - Refactor ``Distortions()`` to a list or simple-format dict of ``Defect`` objects as input.
   Same for ``Distortions.from_structures()``
@@ -283,12 +288,12 @@ v22.11.1
 
 
 v22.10.14
---------
+----------
 
 Just bumping version number to test updated GH Actions ``pip-install-test`` workflow.
 
 v22.10.13
---------
+----------
 
 - Updated defect name handling to work for all conventions
 - More robust ``snb-generate`` and plotting behaviour
