@@ -8,8 +8,7 @@ import datetime
 import os
 import warnings
 
-import ase
-from ase.atoms import Atoms
+from ase.io import read
 from monty.re import regrep
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
@@ -25,7 +24,7 @@ def parse_energies(
     code: str | None = "vasp",
     filename: str | None = "OUTCAR",
     verbose: bool = False,
-) -> None:
+) -> str:
     r"""
     Parse final energy for all distortions present in the given defect
     directory and write them to a ``yaml`` file in the defect directory.
@@ -394,106 +393,35 @@ def read_vasp_structure(
         :obj:`Structure`:
             ``pymatgen`` ``Structure`` object
     """
-    abs_path_formatted = file_path.replace("\\", "/")  # for Windows compatibility
-    if not os.path.isfile(abs_path_formatted):
+    filename = file_path.replace("\\", "/")  # for Windows compatibility
+    if not os.path.isfile(filename):
         # check if there's an equivalent high-energy folder, and if so don't warn
-        if not os.path.exists(abs_path_formatted.rsplit("/", 1)[0] + "_High_Energy"):
+        if not os.path.exists(filename.rsplit("/", 1)[0] + "_High_Energy"):
             warnings.warn(
-                f"{abs_path_formatted} file doesn't exist, storing as "
-                f"'Not converged'. Check path & relaxation"
+                f"{filename} file doesn't exist, storing as 'Not converged'. Check path & relaxation."
             )
         return "Not converged"
 
     try:
-        return Structure.from_file(abs_path_formatted)
-    except Exception:
+        return Structure.from_file(filename)
+    except Exception as exc:
         warnings.warn(
-            f"Problem obtaining structure from: {abs_path_formatted}, "
-            f"storing as 'Not converged'. Check file & relaxation"
+            f"Problem parsing structure from {filename}; {exc!r}. Storing as "
+            f"'Not converged'. Check file & relaxation."
         )
         return "Not converged"
 
 
-def read_espresso_structure(
+def read_structure_w_ase(
     filename: str,
 ) -> Structure | str:
     """
-    Reads a structure from Quantum Espresso output and returns it as a
-    ``pymatgen`` ``Structure``.
+    Reads a structure from ``QE``/``FHI-aims``/``CP2K``/``CASTEP`` output file,
+    using ``ASE``, and return it as a ``pymatgen`` ``Structure``.
 
     Args:
         filename (:obj:`str`):
-            Path to the Quantum Espresso output file.
-
-    Returns:
-        :obj:`Structure`:
-            ``pymatgen`` ``Structure`` object
-    """
-    # ase.io.espresso functions seem a bit buggy, so we use the following implementation
-    if os.path.exists(filename):
-        with open(filename, encoding="utf-8") as f:
-            file_content = f.read()
-    else:
-        warnings.warn(
-            f"{filename} file doesn't exist, storing as 'Not converged'. Check path & relaxation"
-        )
-        structure = "Not converged"
-    try:
-        if "Begin final coordinates" in file_content:
-            file_content = file_content.split("Begin final coordinates")[-1]  # last geometry
-        if "End final coordinates" in file_content:
-            file_content = file_content.split("End final coordinates")[0]  # last geometry
-        # Parse cell parameters and atomic positions
-        cell_lines = [
-            line
-            for line in file_content.split("CELL_PARAMETERS (angstrom)")[1]
-            .split("ATOMIC_POSITIONS (angstrom)")[0]
-            .split("\n")
-            if line != "" and line != " " and line != "   "
-        ]
-        atomic_positions = file_content.split("ATOMIC_POSITIONS (angstrom)")[1]
-        # Cell parameters
-        cell_lines_processed = [
-            [float(number) for number in line.split()] for line in cell_lines if len(line.split()) == 3
-        ]
-        # Atomic positions
-        atomic_positions_processed = [
-            line.split() for line in atomic_positions.split("\n") if len(line.split()) >= 4
-        ]
-        coordinates = [[float(entry) for entry in line[1:4]] for line in atomic_positions_processed]
-        symbols = [entry[0] for entry in atomic_positions_processed if entry not in ["", " ", "  "]]
-        # Check parsing is ok
-        for entry in coordinates:
-            assert len(entry) == 3  # Encure 3 numbers (xyz) are parsed from coordinates section
-        assert len(symbols) == len(coordinates)  # Same number of atoms and coordinates
-        atoms = Atoms(
-            symbols=symbols,
-            positions=coordinates,
-            cell=cell_lines_processed,
-            pbc=True,
-        )
-        aaa = AseAtomsAdaptor()
-        structure = aaa.get_structure(atoms)
-        structure = structure.get_sorted_structure()  # Sort by atom type
-    except Exception:
-        warnings.warn(
-            f"Problem parsing structure from: {filename}, storing as 'Not "
-            f"converged'. Check file & relaxation"
-        )
-        structure = "Not converged"
-    return structure
-
-
-def read_fhi_aims_structure(filename: str, format="aims") -> Structure | str:
-    """
-    Reads a structure from FHI-aims output and returns it as a
-    ``pymatgen`` ``Structure``.
-
-    Args:
-        filename (:obj:`str`):
-            Path to the FHI-aims output file.
-        format (:obj:`str`):
-            either aims-output (output file) aims (geometry file)
+            Path to the output file.
 
     Returns:
         :obj:`Structure`:
@@ -502,85 +430,13 @@ def read_fhi_aims_structure(filename: str, format="aims") -> Structure | str:
     if not os.path.exists(filename):
         raise FileNotFoundError(f"File {filename} does not exist!")
     try:
-        aaa = AseAtomsAdaptor()
-        atoms = ase.io.read(filename=filename, format=format)
-        structure = aaa.get_structure(atoms)
-        structure = structure.get_sorted_structure()  # Sort sites by
-        # electronegativity
-    except Exception:
+        atoms = read(filename=filename)
+        structure = Structure.from_ase_atoms(atoms)
+        structure = structure.get_sorted_structure()  # sort sites by EN
+    except Exception as exc:
         warnings.warn(
-            f"Problem parsing structure from: {filename}, storing as 'Not "
-            f"converged'. Check file & relaxation"
-        )
-        structure = "Not converged"
-    return structure
-
-
-def read_cp2k_structure(
-    filename: str,
-) -> Structure | str:
-    """
-    Reads a structure from CP2K restart file and returns it as a
-    ``pymatgen`` ``Structure``.
-
-    Args:
-        filename (:obj:`str`):
-            Path to the cp2k restart file.
-
-    Returns:
-        :obj:`Structure`:
-            ``pymatgen`` ``Structure`` object
-    """
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"File {filename} does not exist!")
-    try:
-        aaa = AseAtomsAdaptor()
-        atoms = ase.io.read(
-            filename=filename,
-            format="cp2k-restart",
-        )
-        structure = aaa.get_structure(atoms)
-        structure = structure.get_sorted_structure()  # Sort sites by
-        # electronegativity
-    except Exception:
-        warnings.warn(
-            f"Problem parsing structure from: {filename}, storing as 'Not "
-            f"converged'. Check file & relaxation"
-        )
-        structure = "Not converged"
-    return structure
-
-
-def read_castep_structure(
-    filename: str,
-) -> Structure | str:
-    """
-    Reads a structure from ``CASTEP`` output (``.castep``) file and
-    returns it as a ``pymatgen`` ``Structure``.
-
-    Args:
-        filename (:obj:`str`):
-            Path to the ``CASTEP`` output file.
-
-    Returns:
-        :obj:`Structure`:
-            ``pymatgen`` ``Structure`` object
-    """
-    if not os.path.exists(filename):
-        raise FileNotFoundError(f"File {filename} does not exist!")
-    try:
-        aaa = AseAtomsAdaptor()
-        atoms = ase.io.read(
-            filename=filename,
-            format="castep-castep",
-        )
-        structure = aaa.get_structure(atoms)
-        structure = structure.get_sorted_structure()  # Sort sites by
-        # electronegativity
-    except Exception:
-        warnings.warn(
-            f"Problem parsing structure from: {filename}, storing as 'Not "
-            f"converged'. Check file & relaxation"
+            f"Problem parsing structure from {filename}; {exc!r}. Storing as "
+            f"'Not converged'. Check file & relaxation."
         )
         structure = "Not converged"
     return structure
@@ -620,28 +476,17 @@ def parse_structure(
         if not structure_filename:
             structure_filename = "CONTCAR"
         structure = read_vasp_structure(f"{structure_path}/{structure_filename}")
-    elif code.lower() == "espresso":
-        if not structure_filename:
+    else:
+        if code.lower() == "espresso" and not structure_filename:
             structure_filename = "espresso.out"
-        structure = read_espresso_structure(f"{structure_path}/{structure_filename}")
-    elif code.lower() == "cp2k":
-        if not structure_filename:
+        elif code.lower() == "cp2k" and not structure_filename:
             structure_filename = "cp2k.restart"
-        structure = read_cp2k_structure(
-            filename=f"{structure_path}/{structure_filename}",
-        )
-    elif code.lower() == "fhi-aims":
-        if not structure_filename:
+        elif code.lower() == "fhi-aims" and not structure_filename:
             structure_filename = "geometry.in.next_step"
-        structure = read_fhi_aims_structure(
-            filename=f"{structure_path}/{structure_filename}",
-        )
-    elif code.lower() == "castep":
-        if not structure_filename:
+        elif code.lower() == "castep" and not structure_filename:
             structure_filename = "castep.castep"
-        structure = read_castep_structure(
-            filename=f"{structure_path}/{structure_filename}",
-        )
+
+        structure = read_structure_w_ase(f"{structure_path}/{structure_filename}")
     return structure
 
 

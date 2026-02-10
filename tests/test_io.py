@@ -8,10 +8,7 @@ from shakenbreak.analysis import _cached_calculate_atomic_disp
 from shakenbreak.io import (
     parse_fhi_aims_input,
     parse_qe_input,
-    read_castep_structure,
-    read_cp2k_structure,
-    read_espresso_structure,
-    read_fhi_aims_structure,
+    read_structure_w_ase,
     read_vasp_structure,
 )
 
@@ -56,9 +53,9 @@ class IoTestCase(unittest.TestCase):
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
             )
             warning_message = (
-                f"Problem obtaining structure from: "
-                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}, storing as 'Not "
-                f"converged'. Check file & relaxation"
+                f"Problem parsing structure from "
+                f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}; "
+                f"KeyError('lattice'). Storing as 'Not converged'. Check file & relaxation."
             )
             user_warnings = [
                 warning for warning in w if warning.category == UserWarning
@@ -81,16 +78,17 @@ class IoTestCase(unittest.TestCase):
             self.assertEqual(output, V_Cd_struc)
 
     def test_read_espresso_structure(self):
-        """Test `read_espresso_structure` function."""
+        """Test reading of Quantum Espresso structure outputs."""
         structure_from_cif = Structure.from_file(
             os.path.join(self.DATA_DIR, "quantum_espresso/espresso_structure.cif")
         )
-        structure_from_espresso_output = read_espresso_structure(
+        structure_from_espresso_output = read_structure_w_ase(
             os.path.join(
                 self.DATA_DIR,
                 "quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.out",
             )
         )
+        print(structure_from_espresso_output)
         self.assertTrue(
             _cached_calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
                 0
@@ -99,33 +97,32 @@ class IoTestCase(unittest.TestCase):
         )
 
     def test_read_cp2k_structure(self):
-        "Test read_cp2k_structure() function."
+        "Test reading of CP2k structure outputs."
         path = os.path.join(self.DATA_DIR, "cp2k/cp2k.restart")
-        structure = read_cp2k_structure(path)
+        structure = read_structure_w_ase(path)
         test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "cp2k/POSCAR"))
         self.assertEqual(test_structure, structure)
 
     def test_read_castep_structure(self):
-        "Test read_castep_structure() function."
+        "Test reading of CASTEP structure outputs."
         path = os.path.join(self.DATA_DIR, "castep/Si2-cellopt-aniso.castep")
-        structure = read_castep_structure(path)
+        structure = read_structure_w_ase(path)
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "castep/POSCAR")
         )
         self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
 
     def test_read_fhi_aims_structure(self):
-        "Test read_cp2k_structure() function."
-        # Test parsing from output file
+        "Test reading of FHI-aims structure outputs."
         path = os.path.join(self.DATA_DIR, "fhi_aims/Si_opt.out")
-        structure = read_fhi_aims_structure(path, format="aims-output")
+        structure = read_structure_w_ase(path)
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "fhi_aims/POSCAR")
         )
         self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
         # Test parsing geometry.in file
         path = os.path.join(self.DATA_DIR, "fhi_aims/geometry.in")
-        structure = read_fhi_aims_structure(path, format="aims")
+        structure = read_structure_w_ase(path)
         test_structure = Structure.from_file(
             os.path.join(self.DATA_DIR, "fhi_aims/POSCAR_geom")
         )
