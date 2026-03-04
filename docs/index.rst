@@ -1,18 +1,10 @@
-.. shakenbreak documentation master file, created by
-   sphinx-quickstart on Tue Aug  2 22:08:04 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 .. image:: https://github.com/SMTG-Bham/ShakeNBreak/actions/workflows/test.yml/badge.svg
  :target: https://github.com/SMTG-Bham/ShakeNBreak/actions
-
-.. image:: https://readthedocs.org/projects/shakenbreak/badge/?version=latest&style=flat
- :target: https://shakenbreak.readthedocs.io/en/latest/
 
 .. image:: https://img.shields.io/pypi/v/shakenbreak
  :target: https://pypi.org/project/shakenbreak
 
-.. image:: https://img.shields.io/conda/pn/conda-forge/shakenbreak?label=conda
+.. image:: https://img.shields.io/conda/vn/conda-forge/shakenbreak?label=conda
  :target: https://anaconda.org/conda-forge/shakenbreak
 
 .. image:: https://joss.theoj.org/papers/10.21105/joss.04817/status.svg
