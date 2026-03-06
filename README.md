@@ -101,6 +101,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 ## Studies using `ShakeNBreak`
 
 - A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_Nature Reviews Materials_](https://doi.org/10.1038/s41578-025-00879-y) 2026
+- X. Wang, I. Mosquera-Lois and A. Walsh **_Multi-fidelity Machine Learning Interatomic Potentials for Charged Point Defects_** [_arXiv_](https://doi.org/10.48550/arXiv.2603.05238) 2026
 - R. Claes, K. Li, A. G. Squires and D. O. Scanlon **_Screening ASb<sub>2</sub>O<sub>6</sub> (A = Mg, Ca, Sr, Ba, Cd) for High Performance Transparent Conducting Oxides_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-39bbf) 2026
 - X. Wang et al. **_Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app_** [_npj Computational Materials_](https://doi.org/10.1038/s41524-025-01936-4) 2026
 - D. J. Keeble **_Detection and identification of vacancy defects in antimony selenide_** [_Nature Communications_](https://doi.org/10.1038/s41467-025-68153-x) 2026
