@@ -145,6 +145,7 @@ Studies using ``ShakeNBreak``
 =============================
 
 - A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `Nature Reviews Materials <https://doi.org/10.1038/s41578-025-00879-y>`__ 2026
+- R\. Claes, K. Li, A. G. Squires and D. O. Scanlon **Screening ASb₂O₆ (A = Mg, Ca, Sr, Ba, Cd) for High Performance Transparent Conducting Oxides** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-39bbf>`__ 2026
 - X\. Wang et al. **Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app** `npj Computational Materials <https://doi.org/10.1038/s41524-025-01936-4>`__ 2026
 - D\. J. Keeble **Detection and identification of vacancy defects in antimony selenide** `Nature Communications <https://doi.org/10.1038/s41467-025-68153-x>`__ 2026
 - E\. I. Jaffal et al. **Investigating mechanical properties through defect chemistry in hard binary phosphide material Ta₃P** `Solid State Communications <https://doi.org/10.1016/j.ssc.2025.116250>`__ 2026
