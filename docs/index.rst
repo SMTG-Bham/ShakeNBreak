@@ -145,6 +145,7 @@ Studies using ``ShakeNBreak``
 =============================
 
 - A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `Nature Reviews Materials <https://doi.org/10.1038/s41578-025-00879-y>`__ 2026
+- L\. Zhang, M. Zhou and A. M. Ganose **Dopability limits in Al-rich AlGaN alloys for far-UVC LEDs** `arXiv <https://doi.org/10.48550/arXiv.2603.16310>`__ 2026
 - X\. Wang, I. Mosquera-Lois and A. Walsh **Multi-fidelity Machine Learning Interatomic Potentials for Charged Point Defects** `arXiv <https://doi.org/10.48550/arXiv.2603.05238>`__ 2026
 - R\. Claes, K. Li, A. G. Squires and D. O. Scanlon **Screening ASb₂O₆ (A = Mg, Ca, Sr, Ba, Cd) for High Performance Transparent Conducting Oxides** `ChemRxiv <https://doi.org/10.26434/chemrxiv-2025-39bbf>`__ 2026
 - X\. Wang et al. **Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app** `npj Computational Materials <https://doi.org/10.1038/s41524-025-01936-4>`__ 2026
