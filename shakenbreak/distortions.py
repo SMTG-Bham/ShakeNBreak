@@ -7,7 +7,6 @@ import warnings
 import numpy as np
 from ase.neighborlist import NeighborList
 from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
-from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
 from pymatgen.core.bonds import get_bond_length
 from pymatgen.core.structure import PeriodicNeighbor, Structure
 from pymatgen.util.typing import SpeciesLike
@@ -350,6 +349,10 @@ def get_dimer_bond_length(
         with contextlib.suppress(TypeError):
             pmg_bond_length = get_bond_length(species_1, species_2)
     if (w and any("No order" in str(warn.message) for warn in w)) or pmg_bond_length is None:
+        try:
+            from pymatgen.core.molecule_structure_comparator import CovalentRadius
+        except ImportError:  # pymatgen <2026.3; can remove when doped/SnB pmg requirement is >=2026.3.23
+            from pymatgen.analysis.molecule_structure_comparator import CovalentRadius
         # use CovalentRadius values, rather than pmg defaulting to atomic radii
         return CovalentRadius.radius[str(species_1)] + CovalentRadius.radius[str(species_2)]
 

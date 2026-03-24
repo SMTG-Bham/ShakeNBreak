@@ -487,7 +487,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # spot check:
         self.assertEqual(round(disp_dict[-0.2], 3), 25.851)
         self.assertEqual(round(disp_dict[-0.4], 3), 26.247)
-        self.assertEqual(round(disp_dict["Unperturbed"], 3), 25.874)
+        self.assertEqual(round(disp_dict["Unperturbed"], 3), 26.127)
 
         # test kwargs:
         max_dist_dict = analysis.calculate_struct_comparison(defect_structures_dict, "max_dist", stol=0.01)
@@ -592,7 +592,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         # spot check:
         self.assertEqual(struct_comparison_df.iloc[16].to_list(), [-0.2, 25.851, 1.29, 0.0])
         self.assertEqual(struct_comparison_df.iloc[8].to_list(), [-0.4, 26.247, 0.999, -0.75])
-        self.assertEqual(struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 25.874, 1.314, 0.0])
+        self.assertEqual(struct_comparison_df.iloc[-1].to_list(), ["Unperturbed", 26.127, 1.288, 0.0])
 
         # test kwargs:
         with warnings.catch_warnings(record=True) as w:
