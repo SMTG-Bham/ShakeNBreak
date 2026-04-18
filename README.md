@@ -105,6 +105,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 - L. Zhang, M. Zhou and A. M. Ganose **_Dopability limits in Al-rich AlGaN alloys for far-UVC LEDs_** [_arXiv_](https://doi.org/10.48550/arXiv.2603.16310) 2026
 - X. Wang, I. Mosquera-Lois and A. Walsh **_Multi-fidelity Machine Learning Interatomic Potentials for Charged Point Defects_** [_arXiv_](https://doi.org/10.48550/arXiv.2603.05238) 2026
 - R. Claes, K. Li, A. G. Squires and D. O. Scanlon **_Screening ASb<sub>2</sub>O<sub>6</sub> (A = Mg, Ca, Sr, Ba, Cd) for High Performance Transparent Conducting Oxides_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-39bbf) 2026
+- K. Li, R. Claes, A. G. Squires and D. O. Scanlon **_Resonant Doping in Binary Sb(V)-oxide Sb<sub>2</sub>O<sub>5</sub> for High-Mobility Transparent Conductors_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv.15001890/v1) 2026
 - X. Wang et al. **_Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app_** [_npj Computational Materials_](https://doi.org/10.1038/s41524-025-01936-4) 2026
 - D. J. Keeble **_Detection and identification of vacancy defects in antimony selenide_** [_Nature Communications_](https://doi.org/10.1038/s41467-025-68153-x) 2026
 - E. I. Jaffal et al. **_Investigating mechanical properties through defect chemistry in hard binary phosphide material Ta<sub>3</sub>P_** [_Solid State Communications_](https://doi.org/10.1016/j.ssc.2025.116250) 2026
