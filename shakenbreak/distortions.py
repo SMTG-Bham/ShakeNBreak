@@ -6,8 +6,8 @@ import warnings
 
 import numpy as np
 from ase.neighborlist import NeighborList
-from pymatgen.analysis.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.bonds import get_bond_length
+from pymatgen.core.local_env import CrystalNN, MinimumDistanceNN
 from pymatgen.core.structure import PeriodicNeighbor, Structure
 from pymatgen.util.typing import SpeciesLike
 
@@ -344,7 +344,6 @@ def get_dimer_bond_length(
             The estimated dimer bond length between the two species.
     """
     with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
         pmg_bond_length = None
         with contextlib.suppress(TypeError):
             pmg_bond_length = get_bond_length(species_1, species_2)
