@@ -1064,7 +1064,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             dist_dict["distortion_parameters"]["distorted_atoms"],
-            [[33, "Te"], [57, "Se"]],
+            [[57, "Se"], [33, "Te"]],
         )
 
     # test create_folder and create_vasp_input simultaneously:
@@ -3400,7 +3400,7 @@ class InputTestCase(unittest.TestCase):
         output = dist.apply_distortions()
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[33, "Te"], [57, "Se"]],
+            [[57, "Se"], [33, "Te"]],
         )
         # Test when user doesn't specify enough neighbours to distort
         dist = input.Distortions(
@@ -3427,7 +3427,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[59, "Se"], [49, "Se"]],
+            [[57, "Se"], [62, "Se"]],
         )
 
     def test_local_rattle(

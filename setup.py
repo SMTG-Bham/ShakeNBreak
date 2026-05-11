@@ -14,6 +14,8 @@ path_to_file = os.path.dirname(os.path.abspath(__file__))
 # See https://stackoverflow.com/questions/34193900/how-do-i-distribute-fonts-with-my-python-package
 def _install_custom_font():
     """Install ShakeNBreak custom font."""
+    # Note: In future may need to move this function to plotting code, and use pyproject.toml
+    # installation only
     print("Trying to install ShakeNBreak custom font...")
     # Try to install custom font
     try:
@@ -120,9 +122,9 @@ with open("README.md", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.4.4",
-    description="Package to generate and analyse distorted defect structures, in order to "
-    "identify ground-state and metastable defect configurations.",
+    version="3.4.5",
+    description="Generate and analyse distorted defect structures, to identify ground-state and "
+    "metastable defect configurations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois & Seán R. Kavanagh",
@@ -162,7 +164,7 @@ setup(
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=3.2.1",  # ``most_common_oxi`` now in ``doped.core``
+        "doped>=4",  # parameter re-ordering in internal doped site matching functions & pmg-core refactor
     ],
     extras_require={
         "tests": [
