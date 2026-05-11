@@ -754,7 +754,11 @@ def identify_defect(
     # supercell rather than primitive cell structures, for then creating the defect entries downstream etc)
     # identify defect site, structural information, and create defect object:
     try:
-        defect_type, _comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)
+        with warnings.catch_warnings():  # TODO: Remove catch once doped v4.1 released
+            warnings.filterwarnings("ignore", ".*parameter ordering")
+            defect_type, _comp_diff = get_defect_type_and_composition_diff(
+                defect_structure, bulk_structure
+            )
     except RuntimeError as exc:
         raise ValueError(
             "Could not identify defect type from number of sites in structure: "
@@ -933,12 +937,14 @@ def identify_defect(
     auto_matching_defect_site_index = None
 
     try:
-        (
-            _defect_type,
-            auto_matching_bulk_site_index,
-            auto_matching_defect_site_index,
-            _unrelaxed_defect_structure,
-        ) = get_defect_type_site_idxs_and_unrelaxed_structure(bulk_structure, defect_structure)
+        with warnings.catch_warnings():  # TODO: Remove catch once doped v4.1 released
+            warnings.filterwarnings("ignore", ".*parameter ordering")
+            (
+                _defect_type,
+                auto_matching_bulk_site_index,
+                auto_matching_defect_site_index,
+                _unrelaxed_defect_structure,
+            ) = get_defect_type_site_idxs_and_unrelaxed_structure(defect_structure, bulk_structure)
 
     except Exception as exc:
         # failed auto-site matching, rely on user input or raise error if no user input

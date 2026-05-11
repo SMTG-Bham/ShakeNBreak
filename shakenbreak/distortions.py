@@ -411,7 +411,7 @@ def apply_dimer_distortion(
     input_structure = Structure.from_ase_atoms(input_structure_ase)
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="No oxidation states")
-        warnings.filterwarnings("ignore", message="CrystalNN")
+        warnings.filterwarnings("ignore", message=".*CrystalNN")
         cnn = CrystalNN()
         sites = [d["site"] for d in cnn.get_nn_info(input_structure, defect_site_index)]
 
