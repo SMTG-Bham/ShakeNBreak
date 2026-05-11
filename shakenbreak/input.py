@@ -28,9 +28,9 @@ from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects import thermo
 from pymatgen.analysis.defects.supercells import get_sc_fromstruct
-from pymatgen.analysis.structure_matcher import ElementComparator
+from pymatgen.core.entries import ComputedStructureEntry
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.core.structure_matcher import ElementComparator
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.cp2k.inputs import Cp2kInput
 from pymatgen.io.vasp.inputs import Kpoints
@@ -726,8 +726,10 @@ def identify_defect(
     oxi_state=None,
 ) -> Defect:
     """
-    By comparing the defect and bulk structures, identify the defect present and its
-    site in the supercell, and generate a ``doped`` ``Defect`` object from this.
+    By comparing the defect and bulk structures, identify the defect present
+    and its site in the supercell, and generate a ``doped`` ``Defect`` object
+    from this **with the defect structure/site corresponding to the `supercell`
+    structure, not the primitive cell as default in ``doped``**.
 
     Args:
         defect_structure (:obj:`Structure`):
@@ -746,8 +748,10 @@ def identify_defect(
 
     Returns: :obj:`Defect`
     """
-    # Note: Could replace much of the code in this function with the defect_from_structures function from
-    # doped if we wanted, but works fine as is.
+    # Note: Could replace much of the code in this function with the ``defect_from_structures`` /
+    # ``defect_and_info_from_structures`` functions from doped if we wanted, but works fine as is,
+    # and this would require a bit of work (handling of the defect index / coords inputs, using the
+    # supercell rather than primitive cell structures, for then creating the defect entries downstream etc)
     # identify defect site, structural information, and create defect object:
     try:
         defect_type, _comp_diff = get_defect_type_and_composition_diff(bulk_structure, defect_structure)

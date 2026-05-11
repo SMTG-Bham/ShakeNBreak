@@ -152,7 +152,7 @@ setup(
     python_requires=">=3.10",  # dictated by "pymatgen>=2025.5.2" requirement in doped
     install_requires=[
         "numpy",
-        "pymatgen",  # requirement set by doped
+        "pymatgen-core",  # requirement set by doped
         "pymatgen-analysis-defects",  # requirement set by doped
         "matplotlib>=3.6",
         "ase",

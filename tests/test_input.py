@@ -19,7 +19,7 @@ from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
 from pymatgen.core.periodic_table import DummySpecies
 from pymatgen.core.structure import Composition, PeriodicSite, Structure
-from pymatgen.entries.computed_entries import ComputedStructureEntry
+from pymatgen.core.entries import ComputedStructureEntry
 from pymatgen.io.ase import AseAtomsAdaptor
 from pymatgen.io.vasp.inputs import (Incar, Kpoints, Poscar, Potcar,
                                      UnknownPotcarWarning)
@@ -1064,7 +1064,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             dist_dict["distortion_parameters"]["distorted_atoms"],
-            [[57, "Se"], [33, "Te"]],
+            [[33, "Te"], [57, "Se"]],
         )
 
     # test create_folder and create_vasp_input simultaneously:
@@ -3400,7 +3400,7 @@ class InputTestCase(unittest.TestCase):
         output = dist.apply_distortions()
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[57, "Se"], [33, "Te"]],
+            [[33, "Te"], [57, "Se"]],
         )
         # Test when user doesn't specify enough neighbours to distort
         dist = input.Distortions(
@@ -3427,7 +3427,7 @@ class InputTestCase(unittest.TestCase):
         )
         self.assertEqual(
             output[1]["defects"]["v_Cd_C1_Se2.68"]["charges"][0]["distorted_atoms"],
-            [[57, "Se"], [62, "Se"]],
+            [[59, "Se"], [49, "Se"]],
         )
 
     def test_local_rattle(
@@ -3578,7 +3578,7 @@ class InputTestCase(unittest.TestCase):
         """
         Test from_structures() method of Distortion() class.
 
-        Implicitly, this also tests the functionality of `input.identify_defect()`
+        Implicitly, this also tests the functionality of ``input.identify_defect()``
         """
         # Test normal behaviour (no defect_index or defect_coords), with `defect_entries` as a single
         # structure
