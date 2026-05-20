@@ -101,20 +101,28 @@ and/or papers listed in the [Literature](#literature) section above useful.
 ## Studies using `ShakeNBreak`
 
 - A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_Nature Reviews Materials_](https://doi.org/10.1038/s41578-025-00879-y) 2026
+- N.-R. Skogemyr **_First-Principles Defect Thermodynamics of MgSnN<sub>2</sub>: Origin and Suppression of Unintentional n-Type Conductivity_** [_MSc Thesis, Linköping University_](https://urn.kb.se/resolve?urn=urn:nbn:se:liu:diva-224510) 2026
+- R. Bedford et al. **_Impact of the U parameter on the predicted defect chemistry of materials: The example of PuO<sub>2±x</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/w8xw-ghmh) 2026
+- R. Claes, P. P. Russell, A. G. Squires and D. O. Scanlon **_Optimizing the Thermoelectric Performance of the Earth-Abundant Layered Phosphide BaCuP through Defect Engineering_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv.15005826/v1) 2026
+- Y. Liu, S. Chae and E. Kioupakis **_Origin of shallow n-type doping in AlN_** [_npj Computational Materials_](https://doi.org/10.1038/s41524-026-02192-w) 2026
+- J. Kangsabanik, K. Tolborg, T. Olsen and K. S. Thygesen **_Defect Tolerance in Trigonal Selenium Photovoltaics_** [_arXiv_](https://doi.org/10.48550/arXiv.2606.11403) 2026
+- N. Kawashima and S. Botti **_Intrinsic point defects and Frenkel pair formation in photovoltaic absorber Zn<sub>3</sub>P<sub>2</sub>: regulating p-type conductivity_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/d6ta03447k) 2026
 - P. P. Filippatos and A. Chroneos **_Carbon substitutional spin defects in bulk hBN using r2SCAN_** [_Low Temperature Physics_](https://doi.org/10.1063/10.0043202) 2026
+- X. Lei et al. **_Enhanced antibonding coupling enables optical transparency in p-type semiconductors by orbital engineering_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0342323) 2026
 - W. Yang et al. **_Electronic origins of p-type transparent conductivity in SrCu<sub>2</sub>O<sub>2</sub>_** [_Applied Physics Letters_](https://doi.org/10.1063/5.0324820) 2026
+- M. Birare, A. Dębski, W. Gąsior and W. Gierlotka **_Defect Thermodynamics and the Intrinsic Stability Window of Mg<sub>3</sub>Sb<sub>2</sub>_** [_Metals_](https://doi.org/10.3390/met16050558) 2026
 - L. Zhang, M. Zhou and A. M. Ganose **_Dopability limits in Al-rich AlGaN alloys for far-UVC LEDs_** [_arXiv_](https://doi.org/10.48550/arXiv.2603.16310) 2026
 - X. Wang, I. Mosquera-Lois and A. Walsh **_Multi-fidelity Machine Learning Interatomic Potentials for Charged Point Defects_** [_arXiv_](https://doi.org/10.48550/arXiv.2603.05238) 2026
-- R. Claes, K. Li, A. G. Squires and D. O. Scanlon **_Screening ASb<sub>2</sub>O<sub>6</sub> (A = Mg, Ca, Sr, Ba, Cd) for High Performance Transparent Conducting Oxides_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv-2025-39bbf) 2026
+- R. Claes et al. **_Screening ASb<sub>2</sub>O<sub>6</sub> (A = Mg, Ca, Sr, Ba, or Cd) for High-Performance Transparent Conducting Oxides_** [_Chemistry of Materials_](https://doi.org/10.1021/acs.chemmater.6c00854) 2026
 - K. Li, R. Claes, A. G. Squires and D. O. Scanlon **_Resonant Doping in Binary Sb(V)-oxide Sb<sub>2</sub>O<sub>5</sub> for High-Mobility Transparent Conductors_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv.15001890/v1) 2026
 - X. Wang et al. **_Making atomistic materials calculations accessible with the AiiDAlab Quantum ESPRESSO app_** [_npj Computational Materials_](https://doi.org/10.1038/s41524-025-01936-4) 2026
 - D. J. Keeble **_Detection and identification of vacancy defects in antimony selenide_** [_Nature Communications_](https://doi.org/10.1038/s41467-025-68153-x) 2026
 - E. I. Jaffal et al. **_Investigating mechanical properties through defect chemistry in hard binary phosphide material Ta<sub>3</sub>P_** [_Solid State Communications_](https://doi.org/10.1016/j.ssc.2025.116250) 2026
 - L. Tian et al. **_Optical Spectroscopic Determination of Photoexcited Small-Polaron Hopping in Transition Metal Oxide Photocatalysts_** [_Chemical Science_](https://doi.org/10.1039/D5SC08101G) 2026
 - M. Biswas et al. **_Unified Graph-based Interatomic Potential for Perovskite Structure Optimization_** [_Journal of Chemical Information and Modeling_](https://doi.org/10.1021/acs.jcim.5c01611) 2026
+- J. Tang, P. Xu, S. Guo and S. Qiu **_First-principles study of defect-induced luminescence mechanism in ternary nitride Li<sub>3</sub>AlN<sub>2</sub>_** [_Journal of Chemical Sciences_](https://doi.org/10.1007/s12039-026-02533-8) 2026
 - S. R. Kavanagh **_Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics_** [_JPhys Energy_](https://doi.org/10.1088/2515-7655/ade916) 2025
 - R. Claes, A. G. Squires and D. O. Scanlon **_Establishing Doping Limits for ZnGa<sub>2</sub>O<sub>4</sub> for Ultrawide-Band-Gap Semiconductor Applications_** [_ACS Applied Materials & Interfaces_](https://doi.org/10.1021/acsami.5c19146) 2025
-- Y. Liu, S. Chae and E. Kioupakis **_Origin of shallow n-type doping in AlN and Al-rich AlGaN_** [_arXiv_](https://arxiv.org/abs/2512.03390) 2025
 - J. Zhou et al. **_Breaking the 800 mV open-circuit voltage barrier in antimony sulfide photovoltaics_** [_arXiv_](https://doi.org/10.48550/arXiv.2512.18100) 2025
 - K. Talit et al. **_Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO<sub>3</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/hww6-snlj) 2025
 - I. Mosquera-Lois, A. Walsh **_Dynamic Vacancy Levels in CsPbCl<sub>3</sub> Obey Equilibrium Defect Thermodynamics_** [_PRX Energy_](https://doi.org/10.1103/dxmb-8s96) 2025
