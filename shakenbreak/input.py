@@ -458,7 +458,7 @@ def _create_vasp_input(
     single_defect_dict = next(iter(distorted_defect_dict.values()))
 
     num_elements = len(single_defect_dict["Defect Structure"].composition.elements)
-    incar_settings.update({"ROPT": ("1e-3 " * num_elements).rstrip()})
+    incar_settings.update({"ROPT": f"{num_elements}*1e-3"})
 
     dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
         single_defect_dict["Defect Structure"],

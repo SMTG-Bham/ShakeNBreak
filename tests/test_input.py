@@ -214,6 +214,7 @@ class InputTestCase(unittest.TestCase):
         # get example INCAR:
         cls.V_Cd_INCAR_file = os.path.join(cls.VASP_CDTE_DATA_DIR, "vac_1_Cd_0/default_INCAR")
         cls.V_Cd_INCAR = Incar.from_file(cls.V_Cd_INCAR_file)
+        assert cls.V_Cd_INCAR["ROPT"] == [1e-3]*2  # previous issue with ROPT
 
         # Setup distortion parameters
         cls.V_Cd_distortion_parameters = {
