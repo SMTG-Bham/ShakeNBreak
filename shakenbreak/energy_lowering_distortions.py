@@ -734,11 +734,10 @@ def compare_struct_to_distortions(
             matching_sub_df["Bond Distortion"].apply(lambda x: "Dimer" in str(x))
         ]  # if present, otherwise empty
         sorted_distorted_df = matching_sub_df[
-            matching_sub_df["Bond Distortion"].apply(
-                lambda x: isinstance(x, float)
-            )  # if present, otherwise empty
+            matching_sub_df["Bond Distortion"].apply(lambda x: isinstance(x, float))  # if present
         ].sort_values(
-            by="Bond Distortion", key=abs
+            by="Bond Distortion",
+            key=lambda s: s.astype(float).abs(),
         )  # sort values by distortion magnitude
 
         string_vals_sorted_distorted_df = matching_sub_df[
@@ -751,18 +750,19 @@ def compare_struct_to_distortions(
         imported_sorted_distorted_float_df = imported_sorted_distorted_df.copy()
         if not imported_sorted_distorted_float_df.empty:
             # convert "X%_from_Y" strings to floats and then sort
-            # needs to be done this way because 'key' in pd.sort_values()
-            # needs to be vectorised...
             # if '%' in key then convert to float, else convert to 0 (for Rattled or Unperturbed)
-            imported_sorted_distorted_float_df["Bond Distortion"] = imported_sorted_distorted_df[
-                "Bond Distortion"
-            ].apply(lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0)
+            imported_sorted_distorted_float_df["Bond Distortion"] = (
+                imported_sorted_distorted_df["Bond Distortion"]
+                .apply(lambda x: float(x.split("%")[0]) / 100 if "%" in x else 0.0)
+                .astype(float)  # force NumPy float64, avoid Arrow string/double surprises
+            )
             imported_sorted_distorted_float_df = imported_sorted_distorted_float_df.sort_values(
-                by="Bond Distortion", key=abs
+                by="Bond Distortion",
+                key=abs,
             )
 
-        # first unperturbed, then rattled, then dimer, then distortions sorted by
-        # initial distortion magnitude from low to high (if present)
+        # first unperturbed, then rattled, then dimer, then distortions sorted by initial distortion
+        # magnitude from low to high (if present)
         sorted_matching_df = pd.concat(
             [
                 unperturbed_df.dropna(axis=1, how="all"),
@@ -783,10 +783,9 @@ def compare_struct_to_distortions(
                 struc_key,
             )
 
-        # check if struc_key is in defect_structures_dict (corresponding to match in
-        # unperturbed_df, rattled_df or sorted_distorted_df but not
-        # imported_sorted_distorted_df
-        # as keys have been reformatted to floats rather than strings for this)
+        # check if struc_key is in defect_structures_dict (corresponding to match in unperturbed_df,
+        # rattled_df or sorted_distorted_df but not imported_sorted_distorted_df, as keys have been
+        # reformatted to floats rather than strings for this)
         if struc_key in defect_structures_dict:
             return (  # T/F, matching structure, energy_diff, distortion factor
                 True,
