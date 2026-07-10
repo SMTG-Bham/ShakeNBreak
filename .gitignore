@@ -152,5 +152,10 @@ conda_packaging.md
 shakenbreak/__pycache__/
 tests/__pycache__/
 
-# Cursor
+# Cursor / Agents
 .cursor/
+.cursorrules
+.code-review-graph/
+CLAUDE.md
+.claude/
+.github/
