@@ -5,13 +5,6 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
-[tool.pytest.ini_options]
-filterwarnings = [  # later entries take precedence over earlier ones
-    "error::DeprecationWarning",
-    "error::PendingDeprecationWarning",
-    "error::FutureWarning",
-]
-
 [tool.black]
 line-length = 107
 
@@ -62,3 +55,14 @@ lint.ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D102"]
+
+[tool.pytest.ini_options]
+filterwarnings = [  # later entries take precedence over earlier ones
+    "error::DeprecationWarning",  # throw errors with Deprecation/Future warnings, to track
+    "error::PendingDeprecationWarning",
+    "error::FutureWarning",
+    # ASE >3.29 deprecates built-in FHI-aims IO (moving to the ``ase-io-aims`` plugin, but move still in progress,
+    # nothing currently broken and we may switch to using doped FHI-aims tools in the near future, so we haven't
+    # refactored yet). We still want users to see this warning for now, so suppress it in tests only:
+    "ignore:FHI-aims IO is moving:FutureWarning",
+]  # if needed to pass CI, can add warnings catch and ignore if running locally (POTCARs available), w/note to remove
