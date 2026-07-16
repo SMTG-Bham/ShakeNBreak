@@ -63,7 +63,7 @@ def read_defects_directories(output_path: str = "./") -> dict:
     list_subdirectories = list(next(os.walk(output_path))[1])  # Only subdirectories in current directory
     for i in list_subdirectories.copy():  # make copy of list for iterating over and removing elements
         try:
-            formatted_name = format_defect_name(i, include_site_info_in_name=False)
+            formatted_name = format_defect_name(i, include_site_info=False)
             if formatted_name is None:  # defect folder name not recognised, remove from list
                 list_subdirectories.remove(i)
         except ValueError:  # defect folder name not recognised, remove from list

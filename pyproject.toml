@@ -5,6 +5,13 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.pytest.ini_options]
+filterwarnings = [  # later entries take precedence over earlier ones
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
+    "error::FutureWarning",
+]
+
 [tool.black]
 line-length = 107
 

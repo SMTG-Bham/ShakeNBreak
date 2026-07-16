@@ -1,6 +1,5 @@
 import copy
 import datetime
-import filecmp
 import json
 import os
 import re
@@ -11,14 +10,15 @@ import warnings
 
 import numpy as np
 import yaml
+
 # Click
 from click.testing import CliRunner
 from doped.vasp import _test_potcar_functional_choice
 from monty.serialization import dumpfn, loadfn
+
 # Pymatgen
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import (Incar, Kpoints, Poscar, Potcar,
-                                     UnknownPotcarWarning)
+from pymatgen.io.vasp.inputs import Incar, Kpoints, Poscar, Potcar, UnknownPotcarWarning
 
 from shakenbreak.cli import snb
 from shakenbreak.distortions import rattle
@@ -50,6 +50,7 @@ def if_present_rm(path):
 
 class CLITestCase(unittest.TestCase):
     """Test ShakeNBreak structure distortion helper functions"""
+
     def _run_cli(self, args, **kwargs):
         """
         Run the CLI with a fresh runner, capture stdout/stderr/warnings, print them, and return them.
@@ -126,7 +127,8 @@ class CLITestCase(unittest.TestCase):
     def tearDown(self):
         os.chdir(os.path.dirname(__file__))
         for i in [
-            "parsed_defects_dict.json",
+            "SnB_generate_Defect.json",
+            "SnB_generate_all_defects_dict.json",
             "distortion_metadata.json",
             "test_config.yml",
             "job_file",
@@ -182,7 +184,7 @@ class CLITestCase(unittest.TestCase):
                     "test_groundstate_all",
                     "Te_i_Td_Te2.83",
                     "test_groundstate_only_unp",
-                    "v_Ti_+3"
+                    "v_Ti_+3",
                 ]
             ):
                 if_present_rm(f"{self.EXAMPLE_RESULTS}/{i}")
@@ -260,18 +262,19 @@ class CLITestCase(unittest.TestCase):
         Implicitly, the `snb-generate` tests also test the functionality of
         `input.identify_defect()`
         """
-        result, stdout, stderr, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c 0",
-                    "--config",
-                    f"{self.previous_default_rattle_settings_config}",  # previous default
-                    "-v",
-                ],
-            )
+        result, stdout, stderr, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--config",
+                f"{self.previous_default_rattle_settings_config}",  # previous default
+                "-v",
+            ],
+        )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert not non_potcar_warnings  # no warnings other than POTCAR warnings
@@ -303,15 +306,15 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         self.assertIn("--Distortion -40.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
 
@@ -341,16 +344,17 @@ class CLITestCase(unittest.TestCase):
 
         # Test recognises distortion_metadata.json:
         if_present_rm(f"{defect_name}_0")  # but distortion_metadata.json still present, but different
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                ],
-            )  # non-verbose this time
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+            ],
+        )  # non-verbose this time
         self.assertEqual(result.exit_code, 0)
         self.assertIn(  # printed with medium-level verbosity
             "Auto site-matching identified "
@@ -379,8 +383,8 @@ class CLITestCase(unittest.TestCase):
         self.assertNotIn("--Distortion -60.0%", result.output)
         self.assertNotIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         current_datetime_wo_minutes = datetime.datetime.now().strftime(
@@ -421,16 +425,17 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings now gives no warnings / info messages (about
         # distortion_metadata):
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+            ],
+        )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
@@ -464,14 +469,15 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings but with more charge states, so previous distortion_metadata
         # is a subset of current one, so no warnings / info messages (about distortion_metadata):
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                ],  # default charge state range
-                            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+            ],  # default charge state range
+        )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
@@ -512,16 +518,17 @@ class CLITestCase(unittest.TestCase):
 
         # test rerunning with same settings but with less charge states, so new distortion_metadata
         # is a subset of old one, so no warnings / info messages (about distortion_metadata):
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+            ],
+        )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
@@ -560,18 +567,19 @@ class CLITestCase(unittest.TestCase):
         # test rerunning with same settings but with different distortion mesh, so combines without warning
         with open("test_config.yml", "w") as fp:
             fp.write("distortion_increment: 0.05")
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         print([str(warning.message) for warning in w])  # for debugging
         non_potcar_warnings = [warning for warning in w if "POTCAR" not in str(warning.message)]
         assert len(non_potcar_warnings) == 1  # only overwriting structures warning
@@ -605,7 +613,8 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_index option:
         self.tearDown()
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -690,7 +699,7 @@ class CLITestCase(unittest.TestCase):
             },
         }
         # check defects from old metadata file are in new metadata file
-        with open("distortion_metadata.json", "r") as metadata_file:
+        with open("distortion_metadata.json") as metadata_file:
             metadata = json.load(metadata_file)
         print(metadata, wrong_site_V_Cd_dict)  # for debugging
         np.testing.assert_equal(metadata, wrong_site_V_Cd_dict)
@@ -698,21 +707,22 @@ class CLITestCase(unittest.TestCase):
         # test warning with defect_coords option but wrong site: (matches Cd site in bulk)
         # using Int_Cd because V_Cd is at (0,0,0) so fractional and Cartesian coordinates the same
         self.tearDown()
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.0,  # 0.8125,  # actual Int_Cd_2 site
-                    0.0,  # 0.1875,
-                    0.0,  # 0.8125,
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+                "--defect-coords",
+                0.0,  # 0.8125,  # actual Int_Cd_2 site
+                0.0,  # 0.1875,
+                0.0,  # 0.8125,
+                "-v",
+            ],
+        )
         self.assertEqual(result.exit_code, 0)
         warning_message = (
             "Coordinates (0.0, 0.0, 0.0) were specified for (auto-determined) interstitial "
@@ -728,8 +738,8 @@ class CLITestCase(unittest.TestCase):
         defect_site_index = 0
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
+            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
             result.output,
         )
         defect_name = "Cd_i_C3v_Cd2.71"
@@ -740,21 +750,22 @@ class CLITestCase(unittest.TestCase):
 
         # test defect_coords working even when slightly off correct site
         self.tearDown()
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.8,  # 0.8125,  # actual Int_Cd_2 site
-                    0.15,  # 0.1875,
-                    0.85,  # 0.8125,
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+                "--defect-coords",
+                0.8,  # 0.8125,  # actual Int_Cd_2 site
+                0.15,  # 0.1875,
+                0.85,  # 0.8125,
+                "-v",
+            ],
+        )
         self.assertEqual(result.exit_code, 0)
         if w:
             # Check no problems in identifying the defect site
@@ -765,8 +776,8 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
+            "            Original Neighbour Distances: [(2.71, 10, 'Cd'), (2.71, 22, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 10, 'Cd'), (1.09, 22, 'Cd')]",
             result.output,
         )
         self.assertEqual(
@@ -779,7 +790,8 @@ class CLITestCase(unittest.TestCase):
         self.tearDown()
         rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
         rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
-        result, _, _, w = self._run_cli([
+        result, _, _, w = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
@@ -808,8 +820,8 @@ class CLITestCase(unittest.TestCase):
 
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            + "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, 'Cd')]",
+            "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, 'Cd')]",
             result.output,
         )
 
@@ -817,7 +829,8 @@ class CLITestCase(unittest.TestCase):
         self.tearDown()
         rattled_bulk = rattle(self.CdTe_bulk_struc, stdev=0.25, d_min=2.25)  # previous default
         rattled_bulk.to(filename="./Rattled_Bulk_CdTe_POSCAR", fmt="POSCAR")
-        result, _, _, w = self._run_cli([
+        result, _, _, w = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -838,30 +851,31 @@ class CLITestCase(unittest.TestCase):
             self.assertNotIn("Coordinates", str(w[0].message))
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            f"\tDefect Site Index / Frac Coords: [0.016 0.017 0.001]\n"  # rattled position
-            + "            Original Neighbour Distances: [(2.33, 41, 'Te'), (2.73, 32, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(0.93, 41, 'Te'), (1.09, 32, 'Te')]",
+            "\tDefect Site Index / Frac Coords: [0.016 0.017 0.001]\n"  # rattled position
+            "            Original Neighbour Distances: [(2.33, 41, 'Te'), (2.73, 32, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(0.93, 41, 'Te'), (1.09, 32, 'Te')]",
             result.output,
         )
         self.assertNotIn("Auto site-matching", result.output)
 
         # test distortion dict info with defect_coords slightly off correct site with V_Cd
         if_present_rm("distortion_metadata.json")
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c",
-                    "0",
-                    "--defect-coords",
-                    0.025,
-                    0.025,
-                    0.025,  # close just not quite 0,0,0
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c",
+                "0",
+                "--defect-coords",
+                0.025,
+                0.025,
+                0.025,  # close just not quite 0,0,0
+                "-v",
+            ],
+        )
         defect_name = "v_Cd_Td_Te2.83"
         self.assertEqual(result.exit_code, 0)
         if w:
@@ -870,8 +884,8 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.13, 32, 'Te'), (1.13, 41, 'Te')]",
             result.output,
         )
         self.assertNotIn("Auto site-matching", result.output)
@@ -939,12 +953,13 @@ class CLITestCase(unittest.TestCase):
             },
         }
         # check defects from old metadata file are in new metadata file
-        with open("distortion_metadata.json", "r") as metadata_file:
+        with open("distortion_metadata.json") as metadata_file:
             metadata = json.load(metadata_file)
         np.testing.assert_equal(metadata, spec_coords_V_Cd_dict)
 
         # test defect ID with tricky DX centre defect
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_as_1_Te_on_Cd_-2_DX_Relaxed_CONTCAR",
@@ -983,16 +998,17 @@ class CLITestCase(unittest.TestCase):
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: 0\n"
-            + "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), "
+            "            Original Neighbour Distances: [(2.83, 33, 'Te'), (2.83, 42, 'Te'), "
             "(2.83, 52, 'Te'), (2.83, 63, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te'), "
+            "            Distorted Neighbour Distances:\n\t[(1.13, 33, 'Te'), (1.13, 42, 'Te'), "
             "(1.13, 52, 'Te'), (1.13, 63, 'Te')]",
             result.output,
         )
 
         # test padding functionality:
         # default padding = 1
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1026,7 +1042,8 @@ class CLITestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(f"{defect_name}_-4"))
 
         # test padding explicitly set
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1061,7 +1078,8 @@ class CLITestCase(unittest.TestCase):
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1095,7 +1113,8 @@ POTCAR:
   Te: Te_GW"""
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1130,7 +1149,8 @@ oxidation_states:
         """
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1175,7 +1195,8 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_Int_Cd_2_POSCAR",
@@ -1247,7 +1268,7 @@ local_rattle: False
             },
         }
         # check defects from old metadata file are in new metadata file
-        with open("distortion_metadata.json", "r") as metadata_file:
+        with open("distortion_metadata.json") as metadata_file:
             metadata = json.load(metadata_file)
         print(metadata, kwarged_Int_Cd_2_dict)  # for debugging
         np.testing.assert_equal(metadata, kwarged_Int_Cd_2_dict)
@@ -1263,7 +1284,8 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1312,7 +1334,8 @@ local_rattle: False
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1355,7 +1378,8 @@ seed: 42
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate",
                 "-d",
                 f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
@@ -1372,8 +1396,8 @@ seed: 42
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
         self.assertNotIn("Defect vac_1_Cd in charge state: +1", result.output)
-        # test parsed defects json
-        parsed_defects_dict = loadfn("parsed_defects_dict.json")
+        # test parsed Defect json
+        defect = loadfn("SnB_generate_Defect.json")
         vac = generate_defect_object(
             self.cdte_doped_defect_dict["vacancies"][0],
             self.cdte_doped_defect_dict["bulk"],
@@ -1382,15 +1406,15 @@ seed: 42
             ],  # CLI charge
         )  # Vacancy object
         self.assertEqual(
-            parsed_defects_dict.defect_site_index,
+            defect.defect_site_index,
             vac.defect_site_index,
         )
         self.assertEqual(
-            parsed_defects_dict.user_charges,
+            defect.user_charges,
             vac.user_charges,
         )
         self.assertEqual(
-            list(parsed_defects_dict.defect_site.frac_coords),
+            list(defect.defect_site.frac_coords),
             list(vac.defect_site.frac_coords),
         )
 
@@ -1405,19 +1429,20 @@ nonsense_key: nonsense_value"""
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
 
-        result, _, _, w = self._run_cli([
-                    "generate",
-                    "-d",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-c 0",
-                    "--config",
-                    "test_config.yml",
-                    "--name",
-                    "vac_1_Cd",  # to match saved json
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate",
+                "-d",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-c 0",
+                "--config",
+                "test_config.yml",
+                "--name",
+                "vac_1_Cd",  # to match saved json
+            ],
+        )
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Defect vac_1_Cd in charge state: 0", result.output)
         self.assertNotIn("Defect vac_1_Cd in charge state: -1", result.output)
@@ -1452,19 +1477,23 @@ POTCAR:
         with open("test_config.yml", "w+") as fp:
             fp.write(test_yml)
 
-        result, _, _, w = self._run_cli([
-                    "generate_all",
-                    "-d",
-                    f"{defects_dir}/",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-v",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
+        self.assertTrue(os.path.exists("SnB_generate_all_defects_dict.json"))
+        defects_dict = loadfn("SnB_generate_all_defects_dict.json")
+        self.assertIn(defect_name, defects_dict)
         self.assertIn("Auto site-matching identified", result.output)
         self.assertIn("Oxidation states were not explicitly set", result.output)
         self.assertIn(
@@ -1486,8 +1515,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te')]",
             result.output,
         )
         self.assertIn(
@@ -1497,8 +1526,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         self.assertIn(
@@ -1508,8 +1537,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te'), (2.83, 51, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te'), (3.68, 51, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te'), (2.83, 51, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te'), (3.68, 51, 'Te')]",
             result.output,
         )
         self.assertNotIn(f"Defect {defect_name} in charge state: +2.", result.output)  # old default
@@ -1565,17 +1594,18 @@ POTCAR:
         """  # previous default
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        result, _, _, w = self._run_cli([
-                    "generate_all",
-                    "-d",
-                    f"{defects_dir}/",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-v",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Auto site-matching identified", result.output)
@@ -1593,8 +1623,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1629,17 +1659,18 @@ POTCAR:
                 """  # previous default
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        result, _, _, w = self._run_cli([
-                    "generate_all",
-                    "-d",
-                    f"{defects_dir}/",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-v",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Auto site-matching identified", result.output)
@@ -1657,8 +1688,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1693,17 +1724,18 @@ POTCAR:
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        result, _, _, w = self._run_cli([
-                    "generate_all",
-                    "-d",
-                    f"{defects_dir}/",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-v",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Auto site-matching identified", result.output)
@@ -1727,8 +1759,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1744,7 +1776,7 @@ POTCAR:
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
             f"{defects_dir}/{defect_name}/POSCAR",
         )
-        test_yml = f"""
+        test_yml = """
         defects:
             V_Cd:
                 charges: [0,]
@@ -1753,17 +1785,18 @@ POTCAR:
         """
         with open("test_config.yml", "w") as fp:
             fp.write(test_yml)
-        result, _, _, w = self._run_cli([
-                    "generate_all",
-                    "-d",
-                    f"{defects_dir}/",
-                    "-b",
-                    f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
-                    "-v",
-                    "--config",
-                    "test_config.yml",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "generate_all",
+                "-d",
+                f"{defects_dir}/",
+                "-b",
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_Bulk_Supercell_POSCAR",
+                "-v",
+                "--config",
+                "test_config.yml",
+            ],
+        )
         # Test outputs
         self.assertEqual(result.exit_code, 0)
         self.assertIn("Auto site-matching identified", result.output)
@@ -1791,8 +1824,8 @@ POTCAR:
         self.assertIn("--Distortion 30.0%", result.output)
         self.assertIn(
             "\tDefect Site Index / Frac Coords: [0. 0. 0.]\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(3.68, 32, 'Te'), (3.68, 41, 'Te')]",
             result.output,
         )
         for dist in ["Unperturbed", "Bond_Distortion_30.0%"]:
@@ -1808,7 +1841,8 @@ POTCAR:
             f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_POSCAR",
             f"{defects_dir}/{defect_name}_POSCAR",
         )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "generate_all",
                 "-d",
                 f"{defects_dir}/",
@@ -2204,8 +2238,7 @@ Chosen VASP error message: {error_string}
 
         # Test no rerun when energy initially drops, but then flatlines (considered converged)
         flatlining_outcar_string = (
-            (
-                """
+            """
         energy  without entropy=     -675.21988502  energy(sigma->0) =      -675.21988502
         energy  without entropy=     -676.21988502  energy(sigma->0) =      -676.21988502
         energy  without entropy=     -677.21988502  energy(sigma->0) =      -677.21988502
@@ -2213,14 +2246,11 @@ Chosen VASP error message: {error_string}
         energy  without entropy=     -679.21988502  energy(sigma->0) =      -679.21988502
         energy  without entropy=     -680.21988502  energy(sigma->0) =      -680.21988502
         """
-            )
-            + (
-                """
+        ) + (
+            """
         energy  without entropy=     -680.21988502  energy(sigma->0) =      -680.21988502
         """
-            )
-            * 70
-        )
+        ) * 70
         with open("Bond_Distortion_10.0%/OUTCAR", "w") as fp:
             fp.write(flatlining_outcar_string)
         proc = subprocess.Popen(
@@ -2440,7 +2470,7 @@ Chosen VASP error message: {error_string}
         self.assertFalse(os.path.exists("Bond_Distortion_10.0%_High_Energy"))
         self.assertTrue(os.path.exists("Bond_Distortion_10.0%"))
         self.assertIn(
-            "Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO " "to All.",
+            "Bond_Distortion_10.0% is showing poor electronic convergence, changing ALGO to All.",
             out,
         )
         self.assertIn("Bond_Distortion_10.0% not (fully) relaxed, saving files and rerunning", out)
@@ -2486,7 +2516,7 @@ Chosen VASP error message: {error_string}
                 fp.write("ISPIN = 2")
 
         shutil.copyfile("Unperturbed/OUTCAR", "Unperturbed/OUTCAR_orig")
-        with open("Unperturbed/OUTCAR", "r") as f:
+        with open("Unperturbed/OUTCAR") as f:
             outcar_string = f.read()
         final_mag_string = outcar_string[-5870:]
         edited_final_mag_string = re.sub(r"[0-9]\.\d+", "0.000", final_mag_string)  # zero magnetisation
@@ -2502,12 +2532,12 @@ Chosen VASP error message: {error_string}
         out = str(proc.communicate()[0])
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertIn("Unperturbed fully relaxed", out)
-        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+        with open("Bond_Distortion_-40.0%/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # no change in INCAR as run was fully converged
-        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+        self.assertEqual(len(os.listdir("Bond_Distortion_-40.0%")), 3)  # no new files
 
-        with open(f"Unperturbed/INCAR", "r") as fp:
+        with open("Unperturbed/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # ISPIN not changed in INCAR
         self.assertEqual(
@@ -2536,25 +2566,25 @@ Chosen VASP error message: {error_string}
         self.assertIn("this vac_1_Ti_0_Unperturbed job_file", out)  # job submit command
         self.assertIn("Unperturbed not (fully) relaxed, saving files and rerunning", out)
 
-        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+        with open("Bond_Distortion_-40.0%/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # no change in INCAR as run was fully converged
         self.assertEqual(len(os.listdir("Bond_Distortion_-40.0%")), 3)  # no new files
 
-        with open(f"Unperturbed/INCAR", "r") as fp:
+        with open("Unperturbed/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn(
             "ISPIN = 1  # atomic magnetization in previous run below threshold",
             incar_string,
         )  # INCAR changed to ISPIN = 1
-        self.assertEqual(len(os.listdir(f"Unperturbed")), 9)  # New files
+        self.assertEqual(len(os.listdir("Unperturbed")), 9)  # New files
 
         files = os.listdir("Unperturbed")
         saved_files = [file for file in files if "on" in file and "CAR_" in file]
         self.assertEqual(len(saved_files), 3)  # INCAR, CONTCAR, OUTCAR
         self.assertEqual(len([i for i in saved_files if "INCAR" in i]), 1)
         old_incar = [i for i in saved_files if "INCAR" in i][0]
-        with open(f"Unperturbed/{old_incar}", "r") as fp:
+        with open(f"Unperturbed/{old_incar}") as fp:
             old_incar_string = fp.read()
         self.assertIn("ISPIN = 2", old_incar_string)  # Old INCAR unchanged from ISPIN = 2
         self.assertEqual(len([i for i in saved_files if "CONTCAR" in i]), 1)
@@ -2563,7 +2593,7 @@ Chosen VASP error message: {error_string}
             os.remove(f"Unperturbed/{i}")
 
         # test case of ISPIN = 1 OUTCAR (doesn't crash or anything), with snb-run
-        with open(f"Unperturbed/INCAR", "w") as fp:  # put INCAR back to ISPIN = 2
+        with open("Unperturbed/INCAR", "w") as fp:  # put INCAR back to ISPIN = 2
             fp.write("ISPIN = 2")
         ispin1_outcar_string = re.sub(
             "ISPIN  =      2    spin polarized calculation?",
@@ -2581,16 +2611,16 @@ Chosen VASP error message: {error_string}
         out = str(proc.communicate()[0])
         self.assertIn("Bond_Distortion_-40.0% fully relaxed", out)
         self.assertNotIn("Unperturbed fully relaxed", out)
-        with open(f"Bond_Distortion_-40.0%/INCAR", "r") as fp:
+        with open("Bond_Distortion_-40.0%/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # no change in INCAR as run was fully converged
-        self.assertEqual(len(os.listdir(f"Bond_Distortion_-40.0%")), 3)  # no new files
+        self.assertEqual(len(os.listdir("Bond_Distortion_-40.0%")), 3)  # no new files
 
-        with open(f"Unperturbed/INCAR", "r") as fp:
+        with open("Unperturbed/INCAR") as fp:
             incar_string = fp.read()
         self.assertIn("ISPIN = 2", incar_string)  # ISPIN not changed in ICNAR
         self.assertEqual(
-            len(os.listdir(f"Unperturbed")), 10
+            len(os.listdir("Unperturbed")), 10
         )  # new files as calc being rerun, but without changing ISPIN
 
     def test_parse(self):
@@ -2646,14 +2676,15 @@ Chosen VASP error message: {error_string}
         # Test when OUTCAR not present in one of the distortion directories
         defect = "vac_1_Ti_0"  # folder in self.VASP_DIR
         self.copy_v_Ti_OUTCARs()
-        result, _, _, w = self._run_cli([
-                    "parse",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.VASP_DIR,
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.VASP_DIR,
+            ],
+        )
         self.assertEqual(w[0].category, UserWarning)
         self.assertEqual(
             "No output file in Bond_Distortion_10.0% directory",
@@ -2680,7 +2711,8 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}_0",
             f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_0",
         )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/pesky_defects",
@@ -2695,7 +2727,8 @@ Chosen VASP error message: {error_string}
         defect = "v_Ti"
         os.remove(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1/{defect}_-1.yaml")
         os.chdir(f"{self.EXAMPLE_RESULTS}/pesky_defects/{defect}_-1")
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
             ],
         )
@@ -2712,7 +2745,8 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
             f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
         )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
@@ -2722,7 +2756,7 @@ Chosen VASP error message: {error_string}
         )
         self.assertTrue(
             os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}" f"/{defect_name}.yaml"
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/{defect_name}.yaml"
             )
         )
 
@@ -2755,7 +2789,8 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-40.0%",
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_High_Energy",
         )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -2780,7 +2815,6 @@ Chosen VASP error message: {error_string}
         )
         with open(
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_-20.0%_not_converged/OUTCAR",
-            "r",
         ) as f:
             lines = f.readlines()
             truncated = lines[:5000]
@@ -2791,7 +2825,8 @@ Chosen VASP error message: {error_string}
         ) as trout:
             for line in truncated:
                 trout.write(line)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -2842,7 +2877,8 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(residual_forces_outcar_string)
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -2889,14 +2925,15 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(high_energy_outcar_string)
 
-        result, _, _, w = self._run_cli([
-                    "parse",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+        )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         high_energies_dict = {
             "distortions": {-0.4: -675.21988502},
@@ -2942,14 +2979,15 @@ Chosen VASP error message: {error_string}
         ) as f:
             f.write(low_energy_outcar_string)
 
-        result, _, _, w = self._run_cli([
-                    "parse",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+        )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         low_energies_dict = {
             "distortions": {-0.4: -1175.0},
@@ -2970,14 +3008,15 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect}/Bond_Distortion_0.0%",
         )  # now 3 parsed distortions with energies <-0.1 eV lower than unperturbed
 
-        result, _, _, w = self._run_cli([
-                    "parse",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+        )
         energies = loadfn(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         low_energies_dict = {
             "distortions": {-0.4: -1175.0, 0.0: -1175.0, 0.4: -1175.0},
@@ -3017,14 +3056,15 @@ Chosen VASP error message: {error_string}
             for file in os.listdir(f"{self.EXAMPLE_RESULTS}/{defect}")
             if os.path.isfile(f"{self.EXAMPLE_RESULTS}/{defect}/{file}")
         ]  # remove yaml files so we reparse the energies
-        result, _, _, w = self._run_cli([
-                    "parse",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "parse",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+            ],
+        )
         self.assertTrue(  # yaml file still created, but also warning shown
             os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml")
         )
@@ -3039,7 +3079,8 @@ Chosen VASP error message: {error_string}
                     "user INCAR setting is causing this issue. If not, you likely need to adjust "
                     "the `stdev` rattling parameter (can occur for hard/ionic/magnetic "
                     "materials); see "
-                    "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials." == str(i.message)
+                    "https://shakenbreak.readthedocs.io/en/latest/Tips.html#hard-ionic-magnetic-materials."
+                    == str(i.message)
                     for i in w
                     if i.category == UserWarning
                 ]
@@ -3053,7 +3094,8 @@ Chosen VASP error message: {error_string}
 
         # CP2K
         code = "cp2k"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -3064,9 +3106,10 @@ Chosen VASP error message: {error_string}
             ],
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r"
-        ) as new:
+        with (
+            open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml") as test,
+            open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml") as new,
+        ):
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         # for updating file, due to small numerical updates etc:
@@ -3079,7 +3122,8 @@ Chosen VASP error message: {error_string}
 
         # CASTEP
         code = "castep"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -3090,9 +3134,10 @@ Chosen VASP error message: {error_string}
             ],
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r"
-        ) as new:
+        with (
+            open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml") as test,
+            open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml") as new,
+        ):
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
@@ -3100,7 +3145,8 @@ Chosen VASP error message: {error_string}
 
         # Espresso
         code = "quantum_espresso"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -3111,9 +3157,10 @@ Chosen VASP error message: {error_string}
             ],
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r"
-        ) as new:
+        with (
+            open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml") as test,
+            open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml") as new,
+        ):
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         # for updating file, due to small numerical updates etc:
@@ -3126,7 +3173,8 @@ Chosen VASP error message: {error_string}
 
         # FHI-aims
         code = "fhi_aims"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "parse",
                 "-d",
                 defect,
@@ -3137,20 +3185,22 @@ Chosen VASP error message: {error_string}
             ],
         )
         self.assertTrue(os.path.exists(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml"))
-        with open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml", "r") as test, open(
-            f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml", "r"
-        ) as new:
+        with (
+            open(f"{self.DATA_DIR}/{code}/{defect}/test_{defect}.yaml") as test,
+            open(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml") as new,
+        ):
             test_yaml = yaml.safe_load(test)
             new_yaml = yaml.safe_load(new)
         self.assertDictEqual(test_yaml, new_yaml)
         os.remove(f"{self.DATA_DIR}/{code}/{defect}/{defect}.yaml")
 
     def test_analyse(self):
-        "Test analyse() function"
+        """Test analyse() function"""
         defect = "v_Ti_0"
         with open(f"{self.EXAMPLE_RESULTS}/{defect}/{defect}.yaml", "w") as f:
             f.write("")
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "analyse",
                 "-d",
                 defect,
@@ -3167,8 +3217,8 @@ Chosen VASP error message: {error_string}
             file = f.read()
         csv_content = (
             ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
-            + "0,-0.4,5.315,0.88,-3.26\n"
-            + "1,Unperturbed,0.0,0.0,0.0\n"
+            "0,-0.4,5.315,0.88,-3.26\n"
+            "1,Unperturbed,0.0,0.0,0.0\n"
         )
 
         self.assertEqual(csv_content, file)
@@ -3189,7 +3239,8 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/v_Ti_0",
             f"{self.EXAMPLE_RESULTS}/pesky_defects/v_Ti_0",
         )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "analyse",
                 "-p",
                 f"{self.EXAMPLE_RESULTS}/pesky_defects",
@@ -3202,7 +3253,8 @@ Chosen VASP error message: {error_string}
         shutil.rmtree(f"{self.EXAMPLE_RESULTS}/pesky_defects/")
         # Test non-existent defect
         name = "v_Ti_-2"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "analyse",
                 "--defect",
                 name,
@@ -3229,7 +3281,8 @@ Chosen VASP error message: {error_string}
         )
         with open(f"{self.EXAMPLE_RESULTS}/{defect}_defect_folder/{defect}/{defect}.yaml", "w") as f:
             f.write("")
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "analyse",
                 "-d",
                 defect,
@@ -3246,8 +3299,8 @@ Chosen VASP error message: {error_string}
             file = f.read()
         csv_content = (
             ",Bond Distortion,Σ{Displacements} (Å),Max Distance (Å),Δ Energy (eV)\n"
-            + "0,-0.4,5.315,0.88,-3.26\n"
-            + "1,Unperturbed,0.0,0.0,0.0\n"
+            "0,-0.4,5.315,0.88,-3.26\n"
+            "1,Unperturbed,0.0,0.0,0.0\n"
         )
 
         self.assertEqual(csv_content, file)
@@ -3257,16 +3310,17 @@ Chosen VASP error message: {error_string}
         os.chdir(self.VASP_TIO2_DATA_DIR)
         self.copy_v_Ti_OUTCARs()
         defect_name = "vac_1_Ti_0"
-        result, _, _, w = self._run_cli([
-                    "analyse",
-                ],
-                catch_exceptions=True,
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "analyse",
+            ],
+            catch_exceptions=True,
+        )
         self.assertTrue(any([warning.category == UserWarning for warning in w]))
         self.assertTrue(
             any(
                 [
-                    str(warning.message) == "No output file in Bond_Distortion_10.0% " "directory"
+                    str(warning.message) == "No output file in Bond_Distortion_10.0% directory"
                     for warning in w
                 ]
             )
@@ -3297,23 +3351,24 @@ Chosen VASP error message: {error_string}
         # --defect, --path, --format,  --units, --colorbar, --metric, --no_title, --verbose
         defect_name = "v_Ti"
         defect = "v_Ti_0"
-        result, stdout, stderr, w = self._run_cli([
-                    "plot",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "--units",
-                    "meV",
-                    "--format",
-                    "png",
-                    "--colorbar",
-                    "--metric",
-                    "disp",
-                    "-nt",  # No title
-                    "-v",
-                ],
-            )
+        result, stdout, stderr, w = self._run_cli(
+            [
+                "plot",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "--units",
+                "meV",
+                "--format",
+                "png",
+                "--colorbar",
+                "--metric",
+                "disp",
+                "-nt",  # No title
+                "-v",
+            ],
+        )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
             "and unperturbed: -3.26 eV.",
@@ -3340,15 +3395,16 @@ Chosen VASP error message: {error_string}
         # test with new doped naming
         defect = "Te_i_Td_Te2.83_+2"
         shutil.copytree(f"{self.EXAMPLE_RESULTS}/v_Ti_0", f"{self.EXAMPLE_RESULTS}/{defect}")
-        result, _, _, w = self._run_cli([
-                    "plot",
-                    "-d",
-                    defect,
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "plot",
+                "-d",
+                defect,
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-v",
+            ],
+        )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
             "and unperturbed: -3.26 eV.",
@@ -3397,14 +3453,15 @@ Chosen VASP error message: {error_string}
         }
         with open(f"{self.EXAMPLE_RESULTS}/distortion_metadata.json", "w") as f:
             f.write(json.dumps(fake_distortion_metadata, indent=4))
-        result, _, _, w = self._run_cli([
-                    "plot",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "-f",
-                    "png",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "plot",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-f",
+                "png",
+            ],
+        )
         self.assertTrue(
             os.path.exists(os.path.join(self.EXAMPLE_RESULTS, f"{defect_name}_0/{defect_name}_0.png"))
         )
@@ -3429,10 +3486,11 @@ Chosen VASP error message: {error_string}
 
         # Test plotting from inside the defect folder
         os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # vac_1_Ti_0
-        result, _, _, w = self._run_cli([
-                    "plot",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "plot",
+            ],
+        )
         self.assertNotIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
             "and unperturbed: -3.26 eV.",
@@ -3464,16 +3522,17 @@ Chosen VASP error message: {error_string}
             f"{self.EXAMPLE_RESULTS}/{defect_name}",
             f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
         )
-        result, _, _, w = self._run_cli([
-                    "plot",
-                    "-p",
-                    f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
-                    "-d",
-                    defect_name,
-                    "-cb",
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "plot",
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}",
+                "-d",
+                defect_name,
+                "-cb",
+                "-v",
+            ],
+        )
         self.assertIn(
             f"{defect}: Energy difference between minimum, found with -0.4 bond distortion, "
             "and unperturbed: -3.26 eV.",
@@ -3495,33 +3554,29 @@ Chosen VASP error message: {error_string}
             )
         )
         self.assertTrue(
-            os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder" f"/{defect_name}/v_Ti_0.png"
-            )
+            os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/v_Ti_0.png")
         )
         self.assertTrue(
-            os.path.exists(
-                f"{self.EXAMPLE_RESULTS}/" f"{defect_name}_defect_folder/" f"{defect_name}/v_Ti_0.yaml"
-            )
+            os.path.exists(f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/v_Ti_0.yaml")
         )
 
         # test distortion_metadata parsed fine when in defect folder (not above):
         with open(
-            f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/"
-            f"distortion_metadata.json",
+            f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder/{defect_name}/distortion_metadata.json",
             "w",
         ) as f:
             f.write(json.dumps(fake_distortion_metadata, indent=4))
-        result, _, _, w = self._run_cli([
-                    "plot",
-                    "-p",
-                    f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder",
-                    "-d",
-                    defect_name,
-                    "-cb",
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "plot",
+                "-p",
+                f"{self.EXAMPLE_RESULTS}/{defect_name}_defect_folder",
+                "-d",
+                defect_name,
+                "-cb",
+                "-v",
+            ],
+        )
         self.assertTrue(
             len([warning for warning in w if warning.category == UserWarning]) == 0
         )  # verbose, but no distortion_metadata warning
@@ -3539,7 +3594,8 @@ Chosen VASP error message: {error_string}
         self.tearDown()
 
         # Test 'all' behaviour, with --min_energy option
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "plot",
                 "-min",
                 "1",
@@ -3567,13 +3623,14 @@ Chosen VASP error message: {error_string}
 
     def test_regenerate(self):
         """Test regenerate() function"""
-        result, _, _, w = self._run_cli([
-                    "regenerate",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "regenerate",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-v",
+            ],
+        )
         defect = "v_Cd"  # in example results
         non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         print([str(i) for i in non_ignored_warnings])  # for debugging
@@ -3646,13 +3703,14 @@ Chosen VASP error message: {error_string}
                     f"{defect}_0/Bond_Distortion_-48.0%_High_Energy",
                 ),
             )
-        result, _, _, w = self._run_cli([
-                    "regenerate",
-                    "-p",
-                    self.EXAMPLE_RESULTS,
-                    "-v",
-                ],
-            )
+        result, _, _, w = self._run_cli(
+            [
+                "regenerate",
+                "-p",
+                self.EXAMPLE_RESULTS,
+                "-v",
+            ],
+        )
         non_ignored_warnings = [warning for warning in w if "Subfolders with" not in str(warning.message)]
         self.assertEqual(
             len([warning for warning in non_ignored_warnings if warning.category == UserWarning]),
@@ -3683,7 +3741,8 @@ Chosen VASP error message: {error_string}
 
         # test FileNotFoundError raised when no defect folders found
         os.chdir(self.DATA_DIR)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "regenerate",
                 "-v",
             ],
@@ -3702,7 +3761,8 @@ Chosen VASP error message: {error_string}
         """Test groundstate() function"""
         # Test default behaviour
         defect = "vac_1_Cd_0"
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3719,7 +3779,8 @@ Chosen VASP error message: {error_string}
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/Groundstate")
 
         # Test keywords: groundstate_filename and directory
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3744,7 +3805,8 @@ Chosen VASP error message: {error_string}
         if_present_rm(f"{self.VASP_CDTE_DATA_DIR}/{defect}/My_Groundstate")
 
         # Test non existent structure file
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3776,7 +3838,8 @@ Chosen VASP error message: {error_string}
 
         # test error when no defect folders found
         self.tearDown()
-        result, _, _, _ = self._run_cli(["groundstate"],  # use cwd which has no defect directories
+        result, _, _, _ = self._run_cli(
+            ["groundstate"],  # use cwd which has no defect directories
             catch_exceptions=True,
         )
         self.assertIsInstance(result.exception, FileNotFoundError)
@@ -3790,16 +3853,17 @@ Chosen VASP error message: {error_string}
         # test "*High_Energy*" ignored and doesn't cause errors
         defect = "vac_1_Cd_0"  # in self.VASP_CDTE_DATA_DIR
         if not os.path.exists(
-            os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-48.0%_High_Energy")
+            os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-48.0%_High_Energy")
         ):
             shutil.copytree(
-                os.path.join(self.EXAMPLE_RESULTS, f"v_Cd_0/Bond_Distortion_-60.0%"),
+                os.path.join(self.EXAMPLE_RESULTS, "v_Cd_0/Bond_Distortion_-60.0%"),
                 os.path.join(
                     self.VASP_CDTE_DATA_DIR,
                     f"{defect}/Bond_Distortion_-48.0%_High_Energy",
                 ),
             )
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3814,7 +3878,8 @@ Chosen VASP error message: {error_string}
         # test energies parsed if no energies file present
         defect = "v_Ti_0"
         os.chdir(f"{self.EXAMPLE_RESULTS}/{defect}")  # run from within defect folder
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
             ],
         )
@@ -3834,7 +3899,8 @@ Chosen VASP error message: {error_string}
 
         # test non-verbose output
         defect = "vac_1_Cd_0"  # in VASP_CDTE_DATA_DIR
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
                 "-p",
                 self.VASP_CDTE_DATA_DIR,
@@ -3854,7 +3920,8 @@ Chosen VASP error message: {error_string}
         os.chdir("test_groundstate_all")
         defect = "v_Ti_1"
         shutil.copytree("../v_Ti_0", defect)
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
             ],
         )
@@ -3880,19 +3947,21 @@ Chosen VASP error message: {error_string}
         dumpfn({"distortions": {}, "Unperturbed": -822.66563022}, "v_Ti_0.yaml")  # only Unperturbed
         # parsed as all high energy
 
-        result, _, _, _ = self._run_cli([
+        result, _, _, _ = self._run_cli(
+            [
                 "groundstate",
             ],
         )
-        self.assertTrue(os.path.exists(f"Groundstate/POSCAR"))
-        gs_structure = Structure.from_file(f"Groundstate/POSCAR")
-        V_Ti_minus0pt4_structure = Structure.from_file(f"Unperturbed/CONTCAR")
+        self.assertTrue(os.path.exists("Groundstate/POSCAR"))
+        gs_structure = Structure.from_file("Groundstate/POSCAR")
+        V_Ti_minus0pt4_structure = Structure.from_file("Unperturbed/CONTCAR")
         self.assertEqual(gs_structure, V_Ti_minus0pt4_structure)
         self.tearDown()  # return to test file directory
 
     def test_mag(self):
         """Test the snb-mag command"""
-        result, _, _, _ = self._run_cli(["mag", "-v", "-o", f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR"],
+        result, _, _, _ = self._run_cli(
+            ["mag", "-v", "-o", f"{self.EXAMPLE_RESULTS}/v_Ti_0/Unperturbed/OUTCAR"],
         )
         self.assertIn("Magnetisation is above threshold (>0.01 μB/atom)", result.output)
         self.assertEqual(result.exit_code, 1)

@@ -12,17 +12,16 @@ import shutil
 import warnings
 from pathlib import Path
 
-import ase
 import numpy as np
+from ase import io
+from ase.calculators.aims import Aims, AimsProfile, AimsTemplate
 from ase.calculators.castep import Castep
-from doped import _ignore_pmg_warnings
+from ase.calculators.espresso import EspressoProfile, EspressoTemplate
 from doped.core import Defect, DefectEntry, guess_and_set_oxi_states_with_timeout, most_common_oxi
 from doped.generation import DefectsGenerator, name_defect_entries
+from doped.utils import _ignore_pmg_warnings
 from doped.utils.efficiency import StructureMatcher_scan_stol
-from doped.utils.parsing import (
-    get_defect_type_and_composition_diff,
-    get_defect_type_site_idxs_and_unrelaxed_structure,
-)
+from doped.utils.parsing import get_defect_type_and_composition_diff, get_defect_type_and_site_indices
 from doped.vasp import DefectDictSet
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
@@ -409,8 +408,7 @@ def _create_vasp_input(
                 == f"{defect_name_wout_charge}{letter}_{'+' if charge_state > 0 else ''}{charge_state}"
             )
             prev_dir_name = (
-                f"{defect_name_wout_charge}{last_letter}_{'+' if charge_state > 0 else ''}"
-                f"{charge_state}"
+                f"{defect_name_wout_charge}{last_letter}_{'+' if charge_state > 0 else ''}{charge_state}"
             )
             if last_letter == "":  # rename prev defect folder
                 new_prev_dir_name = (
@@ -939,12 +937,18 @@ def identify_defect(
     try:
         with warnings.catch_warnings():  # TODO: Remove catch once doped v4.1 released
             warnings.filterwarnings("ignore", ".*parameter ordering")
-            (
-                _defect_type,
-                auto_matching_bulk_site_index,
-                auto_matching_defect_site_index,
-                _unrelaxed_defect_structure,
-            ) = get_defect_type_site_idxs_and_unrelaxed_structure(defect_structure, bulk_structure)
+            (_defect_type, missing_bulk_site_indices, additional_defect_site_indices) = (
+                get_defect_type_and_site_indices(defect_structure, bulk_structure)
+            )
+            # TODO: Update to use missing_bulk_site_indices and additional_defect_site_indices to handle
+            #  defect complexes (e.g. like https://www.nature.com/articles/s41524-026-02192-w); for now
+            #  just taking first of each and assuming single point defect:
+            auto_matching_bulk_site_index = (
+                missing_bulk_site_indices[0] if missing_bulk_site_indices else None
+            )
+            auto_matching_defect_site_index = (
+                additional_defect_site_indices[0] if additional_defect_site_indices else None
+            )
 
     except Exception as exc:
         # failed auto-site matching, rely on user input or raise error if no user input
@@ -1477,7 +1481,7 @@ def apply_snb_distortions(
         if not isinstance(raw_distortion, str):
             distortion_factor = 1 + raw_distortion
             # +0 ensures positive zero (not "-0.0%"):
-            formatted_distortion = f"{round(raw_distortion, ndigits=3)+0:.1%}"
+            formatted_distortion = f"{round(raw_distortion, ndigits=3) + 0:.1%}"
         else:  # setting distortion_factor to "Dimer" selects Dimer distortion with distort_and_rattle
             distortion_factor = "Dimer" if raw_distortion.lower() == "dimer" else 0
             formatted_distortion = raw_distortion
@@ -2057,7 +2061,9 @@ class Distortions:
         stdev: float,
     ) -> None:
         """Print applied bond distortions and rattle standard deviation."""
-        rounded_distortions = [f"{round(i, 3)+0}" if isinstance(i, float) else i for i in bond_distortions]
+        rounded_distortions = [
+            f"{round(i, 3) + 0}" if isinstance(i, float) else i for i in bond_distortions
+        ]
         print(
             "Applying ShakeNBreak...",
             "Will apply the following bond distortions:",
@@ -2133,7 +2139,7 @@ class Distortions:
         frac_coords = self.distortion_metadata["defects"][defect_name]["unique_site"]
         approx_coords = f"~[{frac_coords[0]:.1f},{frac_coords[1]:.1f},{frac_coords[2]:.1f}]"
         return (
-            str(key_distortion.split("_")[-1])  # Get distortion factor (-60.%) or 'Rattled'
+            str(key_distortion.rsplit("_", maxsplit=1)[-1])  # Get distortion factor (-60.%) or 'Rattled'
             + " N(Distort)="
             + str(
                 self.distortion_metadata["defects"][defect_name]["charges"][charge][
@@ -2580,12 +2586,12 @@ class Distortions:
     def write_espresso_files(
         self,
         pseudopotentials: dict | None = None,
-        input_parameters: str | None = None,
+        input_parameters: dict | None = None,
         input_file: str | None = None,
         write_structures_only: bool | None = False,
         output_path: str = ".",
         verbose: bool | None = None,
-        profile=None,
+        profile: EspressoProfile | None = None,
     ) -> tuple[dict, dict]:
         """
         Generates input files for Quantum Espresso relaxations of all output
@@ -2608,7 +2614,7 @@ class Distortions:
                 ShakeNBreak defaults (see
                 ``shakenbreak/SnB_input_files/qe_input.yaml``).
                 If both ``input_parameters`` and ``input_file`` are provided,
-                the input_parameters will be used.
+                the ``input_parameters`` dict will be used.
                 (Default: None)
             write_structures_only (:obj:`bool`, optional):
                 Whether to only write the structure files (in CIF format)
@@ -2622,9 +2628,10 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: None -- medium level verbosity)
-            profile (:obj:`BaseProfile`, optional):
-                ASE profile object to use for the ``Espresso()`` calculator
-                class, if using ase>=3.23. If ``None`` (default), set to
+            profile (:obj:`EspressoProfile`, optional):
+                ASE ``EspressoProfile`` for the QE executable / pseudopotential
+                directory (used by ``EspressoTemplate.write_input``).
+                If ``None`` (default), set to
                 ``EspressoProfile(command="pw.x", pseudo_dir=".")``.
 
         Returns:
@@ -2632,14 +2639,7 @@ class Distortions:
                 Tuple of dictionaries with new defects_dict (containing the
                 distorted structures) and defect distortion parameters.
         """
-        try:
-            old_ase = False  # >=3.23
-            from ase.calculators.espresso import EspressoProfile, EspressoTemplate
-        except ImportError:
-            old_ase = True
-            from ase.calculators.espresso import Espresso
-        if not old_ase:
-            profile = profile or EspressoProfile(command="pw.x", pseudo_dir=".")
+        profile = profile or EspressoProfile(command="pw.x", pseudo_dir=".")
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
         )
@@ -2675,7 +2675,7 @@ class Distortions:
                 warnings.warn(
                     "Since `pseudopotentials` have not been specified, will only write input structures."
                 )
-                ase.io.write(
+                io.write(
                     filename=f"{folder_path}/espresso.pwi",
                     images=atoms,
                     format="espresso-in",
@@ -2686,35 +2686,18 @@ class Distortions:
             else:
                 # write complete input file
                 default_input_parameters["SYSTEM"]["tot_charge"] = charge  # Update defect charge
-                if old_ase:
-                    calc = Espresso(
-                        pseudopotentials=pseudopotentials,
-                        tstress=False,
-                        tprnfor=True,
-                        kpts=(1, 1, 1),
-                        input_data=default_input_parameters,
-                    )
-                    calc.write_input(atoms)
-                    os.replace(
-                        "./espresso.pwi",
-                        f"{folder_path}/espresso.pwi",
-                    )
-
-                else:  # ase >= 3.23
-                    template = EspressoTemplate()
-                    template.write_input(
-                        profile=profile,
-                        directory=Path(folder_path),
-                        atoms=atoms,
-                        parameters={
-                            "tstress": False,
-                            "tprnfor": True,
-                            "pseudopotentials": pseudopotentials,
-                            "kpts": (1, 1, 1),
-                            "input_data": default_input_parameters,
-                        },
-                        properties=None,
-                    )
+                template = EspressoTemplate()
+                template.write_input(
+                    profile=profile,
+                    directory=Path(folder_path),
+                    atoms=atoms,
+                    parameters={
+                        "pseudopotentials": pseudopotentials,
+                        "kpts": (1, 1, 1),
+                        "input_data": default_input_parameters,
+                    },
+                    properties=None,
+                )
 
         return distorted_defects_dict, self.distortion_metadata
 
@@ -2841,7 +2824,7 @@ class Distortions:
             atoms = aaa.get_atoms(struct)
 
             if write_structures_only:
-                ase.io.write(
+                io.write(
                     filename=f"{folder_path}/castep.cell",
                     images=atoms,
                     format="castep-cell",
@@ -2856,11 +2839,10 @@ class Distortions:
                     calc.initialize()  # this writes the .param file
                 except Exception:
                     warnings.warn(
-                        "Problem setting up the CASTEP `.param` file. "
-                        "Only structures will be written "
-                        "as `castep.cell` files."
+                        "Problem setting up the CASTEP `.param` file. Only structures will be written as "
+                        "`castep.cell` files."
                     )
-                    ase.io.write(
+                    io.write(
                         filename=(f"{folder_path}/castep.cell"),
                         images=atoms,
                         format="castep-cell",
@@ -2870,11 +2852,12 @@ class Distortions:
     def write_fhi_aims_files(
         self,
         input_file: str | None = None,
-        ase_calculator=None,  # Aims or AimsTemplate
+        aims: Aims | None = None,
         write_structures_only: bool | None = False,
         output_path: str = ".",
         verbose: bool | None = None,
-        profile=None,
+        profile: AimsProfile | None = None,
+        ase_calculator: Aims | None = None,  # TODO: Remove in v3.4.6
     ) -> tuple[dict, dict]:
         """
         Generates input geometry and control files for FHI-aims relaxations
@@ -2883,18 +2866,20 @@ class Distortions:
         See the ``Distortions.apply_distortions()`` docstring for info on
         the distortion generation approach.
 
-        Note that if using ASE >= 3.23 and not ``write_structures_only``, the
-        ``$AIMS_SPECIES_DIR`` environment variable must be set.
+        Note that if ``write_structures_only`` is ``False``, either
+        ``$AIMS_SPECIES_DIR`` must be set or ``profile`` must supply
+        ``default_species_directory`` (species defaults are appended to
+        ``control.in`` by ASE).
 
         Args:
             input_file (:obj:`str`, optional):
                 Path to FHI-aims input file, to overwrite/update
                 ``shakenbreak`` default ones.
-                If both ``input_file`` and ``ase_calculator`` are provided,
-                the ase_calculator will be used.
-            ase_calculator (:obj:`Aims`, :obj:`AimsTemplate`, optional):
-                Either an ``Aims`` (ASE calculator) or ``AimsTemplate`` object
-                to obtain parameters from, for FHI-aims calculations.
+                If both ``input_file`` and ``aims`` are provided, ``aims`` will
+                be used.
+            aims (:obj:`Aims`, optional):
+                ASE ``Aims`` calculator whose ``.parameters`` are used for
+                FHI-aims ``control.in`` settings.
                 If not set, ``ShakeNBreak`` default values will be used.
                 Recommended to check these!
                 (Default: None)
@@ -2909,26 +2894,32 @@ class Distortions:
                 Whether to print distortion information (bond atoms and
                 distances).
                 (Default: None -- medium level verbosity)
-            profile (:obj:`BaseProfile`, optional):
-                ASE profile object to use for the ``Aims()`` calculator
-                class, if using ase>=3.23. If ``None`` (default), set to
+            profile (:obj:`AimsProfile`, optional):
+                ASE ``AimsProfile`` for the FHI-aims executable / species
+                directory (used by ``AimsTemplate.write_input``).
+                If ``None`` (default), set to
                 ``AimsProfile(command="fhiaims.x")``.
+            ase_calculator (:obj:`Aims`, optional):
+                Deprecated alias for ``aims``. Will be removed in
+                ShakeNBreak v3.4.6.
 
         Returns:
             :obj:`tuple`:
                 Tuple of dictionaries with new defects_dict (containing the
                 distorted structures) and defect distortion parameters.
         """
-        try:
-            old_ase = False  # >=3.23
-            from ase.calculators.aims import AimsProfile, AimsTemplate
-        except ImportError:
-            old_ase = True
-            from ase.calculators.aims import Aims
+        if ase_calculator is not None:
+            warnings.warn(
+                "The `ase_calculator` argument of `write_fhi_aims_files` is deprecated and will be "
+                "removed in ShakeNBreak v3.4.6. Use `aims` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )  # TODO: Remove in v3.4.6
+            if aims is None:
+                aims = ase_calculator
 
-        if not old_ase:
-            profile = profile or AimsProfile(command="fhiaims.x")
-            template = AimsTemplate()
+        profile = profile or AimsProfile(command="fhiaims.x")
+        template = AimsTemplate()
 
         distorted_defects_dict, self.distortion_metadata = self.apply_distortions(
             verbose=verbose,
@@ -2936,7 +2927,7 @@ class Distortions:
         aaa = AseAtomsAdaptor()
         parameters = {}
 
-        if input_file and not ase_calculator:
+        if input_file and not aims:
             parameters = parse_fhi_aims_input(input_file)
             parameters.update({"k_grid": (1, 1, 1)})
 
@@ -2952,8 +2943,8 @@ class Distortions:
                 # By default symmetry is not preserved
             }
 
-        if ase_calculator:
-            parameters = ase_calculator.parameters
+        if aims:
+            parameters = aims.parameters
 
         # loop for each defect in dict
         for folder_path, (
@@ -2977,7 +2968,7 @@ class Distortions:
             atoms = aaa.get_atoms(struct)
             dist = folder_path.split("/")[-1]
 
-            ase.io.write(
+            io.write(
                 filename=f"{folder_path}/geometry.in",
                 images=atoms,
                 format="aims",
@@ -2985,20 +2976,13 @@ class Distortions:
             )  # write input structure file
 
             if not write_structures_only:
-                if old_ase:
-                    ase_calculator = Aims(**parameters)  # parameters is in the format key: (value, value)
-                    ase_calculator.write_control(
-                        filename=f"{folder_path}/control.in",
-                        atoms=atoms,
-                    )  # write parameters file
-                else:
-                    template.write_input(
-                        profile=profile,
-                        directory=Path(folder_path),
-                        atoms=atoms,
-                        parameters=parameters,
-                        properties=[],
-                    )
+                template.write_input(
+                    profile=profile,
+                    directory=Path(folder_path),
+                    atoms=atoms,
+                    parameters=parameters,
+                    properties=[],
+                )
 
         return distorted_defects_dict, self.distortion_metadata
 

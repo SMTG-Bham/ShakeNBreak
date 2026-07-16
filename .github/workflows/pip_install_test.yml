@@ -18,7 +18,7 @@ jobs:
 
       matrix:
         os: [ ubuntu-latest, macos-14 ]
-        python-version: [ '3.11', '3.14' ]  # lowest and highest supported Python versions; 3.10 should still be possible, but latest ``pymatgen`` (2026) only supports 3.11-3.14
+        python-version: [ '3.11', '3.14' ]  # lowest and highest supported Python versions
 
     runs-on: ${{matrix.os}}
 
