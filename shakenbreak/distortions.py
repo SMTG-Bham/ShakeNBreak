@@ -492,7 +492,7 @@ def rattle(
     verbose: bool = False,
     n_iter: int = 1,
     active_atoms: list | None = None,
-    nbr_cutoff: float = 5,
+    nbr_cutoff: float | None = None,
     width: float = 0.1,
     max_attempts: int = 5000,
     max_disp: float = 2.0,
@@ -531,7 +531,7 @@ def rattle(
         nbr_cutoff (:obj:`float`):
             The radial cutoff distance (in Angstroms) used to construct the
             list of atomic neighbours for checking interatomic distances.
-            (Default: 5)
+            Defaults to ``2 * d_min``.
         width (:obj:`float`):
             Width of the Monte Carlo rattling error function, in Angstroms.
             (Default: 0.1)
@@ -552,14 +552,15 @@ def rattle(
             Rattled ``pymatgen`` ``Structure`` object
     """
     ase_struct = structure.to_ase_atoms()
-    if active_atoms is not None:
-        # select only the distances involving active_atoms
-        distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
-    else:
-        distance_matrix = structure.distance_matrix
+    if stdev is None or d_min is None:
+        if active_atoms is not None:
+            # select only the distances involving active_atoms
+            distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
+        else:
+            distance_matrix = structure.distance_matrix
 
-    sorted_distances = np.sort(distance_matrix[distance_matrix > 0.8].flatten())
-    stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
+        sorted_distances = np.sort(distance_matrix[distance_matrix > 0.8].flatten())
+        stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     # restrict hiphive import to within rattle function here, to minimise dependencies (namely numba)
     from hiphive.structure_generation.rattle import generate_mc_rattled_structures
@@ -1034,7 +1035,7 @@ def local_mc_rattle(
     verbose: bool | None = False,
     n_iter: int = 1,
     active_atoms: list | None = None,
-    nbr_cutoff: float = 5,
+    nbr_cutoff: float | None = None,
     width: float = 0.1,
     max_attempts: int = 5000,
     max_disp: float = 2.0,
@@ -1078,7 +1079,7 @@ def local_mc_rattle(
         nbr_cutoff (:obj:`float`):
             The radial cutoff distance (in Angstroms) used to construct the
             list of atomic neighbours for checking interatomic distances.
-            (Default: 5)
+            Defaults to ``2 * d_min``.
         width (:obj:`float`):
             Width of the Monte Carlo rattling error function, in Angstroms.
             (Default: 0.1)
@@ -1102,13 +1103,15 @@ def local_mc_rattle(
         frac_coords = np.array(frac_coords)
 
     ase_struct = structure.to_ase_atoms()
-    if active_atoms is not None:
-        # select only the distances involving active_atoms
-        distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
-    else:
-        distance_matrix = structure.distance_matrix
+    if stdev is None or d_min is None:
+        if active_atoms is not None:
+            # select only the distances involving active_atoms
+            distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
+        else:
+            distance_matrix = structure.distance_matrix
 
-    sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
+        sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
+        stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
         ase_struct.append("V")  # fake "V" at vacancy
@@ -1118,8 +1121,6 @@ def local_mc_rattle(
         raise ValueError(
             "Insufficient information to apply local rattle, no `site_index` or `frac_coords` provided."
         )
-
-    stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     try:
         local_rattled_ase_struct = _generate_local_mc_rattled_structures(
