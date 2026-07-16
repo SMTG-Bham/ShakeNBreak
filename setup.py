@@ -141,7 +141,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
@@ -151,13 +150,13 @@ setup(
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.10",  # dictated by "pymatgen>=2025.5.2" requirement in doped
+    python_requires=">=3.11",  # dictated by "pymatgen>=2026.7.16" requirement
     install_requires=[
         "numpy",
-        "pymatgen-core",  # requirement set by doped
+        "pymatgen-core>=2026.7.16",  # ROPT fix; https://github.com/materialsproject/pymatgen-core/pull/69
         "pymatgen-analysis-defects",  # requirement set by doped
         "matplotlib>=3.6",
-        "ase",
+        "ase>=3.23",  #
         "pandas>=1.1.0",
         "seaborn",
         "hiphive>=1.0",  # nbr_cutoff not defined in previous versions of mc_rattle
