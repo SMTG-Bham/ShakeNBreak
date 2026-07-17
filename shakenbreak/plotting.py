@@ -682,7 +682,7 @@ def _format_colorbar(
     )
     cbar.ax.tick_params(size=0)
     cbar.outline.set_visible(False)
-    cmap_label = r"$\Sigma$ Disp $(\AA)$" if metric == "disp" else r"$d_{max}$ $(\AA)$"  # else max_dist
+    cmap_label = r"$\Sigma$Disp $(\AA)$" if metric == "disp" else r"$d_{max}$ $(\AA)$"  # else max_dist
     cbar.ax.set_title(cmap_label, size="medium", loc="center", ha="center", va="center", pad=20.5)
     ticks = [vmin, vmedium, vmax] if vmin != vmax else [vmedium]
     cbar.set_ticks(ticks)
