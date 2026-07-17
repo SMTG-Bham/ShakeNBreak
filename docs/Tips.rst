@@ -90,6 +90,33 @@ If you are unsure but suspect this could be an issue for your material, the best
 calculations with the default settings for one defect, then parse the results and :code:`ShakeNBreak` will warn you if
 this issue is occurring – if not, all good!
 
+Accelerating ``ShakeNBreak`` Relaxations
+----------------------------------------
+In most cases, the additional computational cost of ``ShakeNBreak`` geometry relaxations is relatively small compared 
+to that of the final fully-converged geometry relaxations (with full `k`-point sampling, potential inclusion of SOC,
+tighter relaxation convergence parameters etc.). However, in some cases the ``ShakeNBreak`` relaxations can become more
+costly in relative terms, such as with large supercells (where Γ-only `k`-point sampling is already very well-converged)
+and/or with large basis sets (e.g. high plane-wave energy cutoff (``ENCUT``) requirements, typical for oxides for instance).
+The default relaxation parameters used by ``ShakeNBreak`` (for ``VASP``) are already tuned to accelerate relaxations while
+retaining sufficient (qualitative) accuracy, but there are a couple of more advanced acceleration options if relaxations
+are still too slow/costly:
+
+- **Reduce basis set:** Internally we have seen that the basis set (e.g. plane-wave energy cutoff for periodic DFT; ``ENCUT`` 
+  in ``VASP``) can often be reduced to significantly accelerate relaxations while retaining good qualitative accuracy for 
+  comparing the energies of different relaxed defect geometries. For instance, with ``VASP`` relaxations we have found that
+  reducing ``ENCUT`` to ~70% of the converged value can greatly speeds up relaxations without sacrificing qualitative 
+  accuracy across a number of cases [Batnaran, B. Computational Study of the Key Imperfections in Energy Materials. Master's 
+  thesis, Univ. College London (2022)].
+
+- **Perform structure-searching in smaller supercells:** Often we may want to use a very large supercell for the final 
+  fully-converged defect formation energy / electronic structure calculations, to minimise any finite-size effects. However,
+  in many cases, the supercell size required for defect structure-searching may be much smaller. In these cases, it would be
+  prudent to perform structure-searching calculations in the smaller supercell to identify distinct possible ground and 
+  metastable defect geometries, before continuing the final converged relaxations in the larger supercell with just this
+  reduced set of geometries. 
+  To aid this advanced approach, the stenciling functions in ``doped``, which allow the re-generation of (relaxed) defect 
+  structures in arbitrary supercells, can be very useful. See the ``doped``
+  `stenciling tutorial <https://doped.readthedocs.io/en/latest/stenciling_tutorial.html>`__ for examples and discussion.
 
 Polarons
 ---------

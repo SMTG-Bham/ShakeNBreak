@@ -75,6 +75,17 @@ check_many_outcars() {
 }
 
 SnB_run_loop() {
+  # Parse Unperturbed energy once (reused for all distortions):
+  if [ -f Unperturbed/OUTCAR.gz ] && [ ! -f Unperturbed/OUTCAR ]; then
+    echo "Unzipping OUTCAR for Unperturbed, needed for checking relaxation"
+    gzip -d Unperturbed/OUTCAR.gz
+  fi
+  if [ -f Unperturbed/OUTCAR ] && (($(grep -c entropy= Unperturbed/OUTCAR) > 0)); then
+    unperturbed_energy=$(grep entropy= Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
+  else
+    unperturbed_energy=10000
+  fi
+
   for i in ?(*Distortion*|*Unperturbed*|*attled*|*imer*)/; do # for each distortion
     current_time=false  # catch if files saved or not
     if [ "$i" == "?(*Distortion*|*Unperturbed*|*attled*|*imer*)/" ]; then
@@ -89,15 +100,11 @@ SnB_run_loop() {
       echo "Unzipping OUTCAR for ${i%/}, needed for checking relaxation"
       gzip -d "${i}"/OUTCAR.gz
     fi
-    if [ ! -f "${i}"/OUTCAR ] || { ! grep -q "required accuracy" "${i}"/OUTCAR && ! grep -q "considering this converged" "${i}"/OUTCAR; }; then  # check calculation not converged
+    # Convergence note is near EOF; tail avoids full-file scans on large OUTCARs
+    if [ ! -f "${i}"/OUTCAR ] || ! tail -n 5000 "${i}"/OUTCAR | grep -qE "required accuracy|considering this converged"; then  # check calculation not converged
       builtin cd "$i" || return
       if [ ! -f "${job_filepath}" ] && [ ! "$job_in_cwd" = false ]; then
         "cp" ../"${job_filepath}" "./${job_filename}" 2>/dev/null  || "cp" ../../"${job_filepath}" "./${job_filename}" 2>/dev/null || return
-      fi
-      if [ -f "../Unperturbed/OUTCAR" ] && (($(grep -c entropy= ../Unperturbed/OUTCAR) > 0)); then
-        unperturbed_energy=$(grep entropy= ../Unperturbed/OUTCAR | awk '{print $NF}' | tail -1)
-      else
-        unperturbed_energy=10000
       fi
       if [ -f OUTCAR ]; then # if OUTCAR exists so rerunning rather than 1st run
         # count number of ionic steps with positive energies, after the first 5 ionic steps

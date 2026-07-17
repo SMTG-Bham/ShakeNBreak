@@ -30,5 +30,5 @@ NSW = 300
 NUPDOWN = 0
 PREC = Accurate
 PRECFOCK = Fast
-ROPT = 1e-3 1e-3
+ROPT = 2*1e-3
 SIGMA = 0.05

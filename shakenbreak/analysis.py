@@ -15,7 +15,7 @@ import pandas as pd
 from doped.utils.efficiency import Element, Structure, StructureMatcher_scan_stol
 from doped.utils.parsing import get_outcar
 from monty.serialization import loadfn
-from pymatgen.analysis.local_env import CrystalNN
+from pymatgen.core.local_env import CrystalNN
 from pymatgen.io.vasp.outputs import Outcar
 
 from shakenbreak.io import parse_structure, read_vasp_structure

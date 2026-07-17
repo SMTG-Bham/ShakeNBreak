@@ -9,18 +9,10 @@ from copy import deepcopy
 from subprocess import call
 
 import click
-from doped.core import guess_and_set_oxi_states_with_timeout
-from doped.generation import get_defect_name_from_entry
-from doped.utils.parsing import get_outcar
-from doped.utils.plotting import format_defect_name
 
 # Monty and pymatgen
 from monty.serialization import dumpfn, loadfn
 from pymatgen.core.structure import Structure
-from pymatgen.io.vasp.inputs import Incar
-
-# ShakeNBreak
-from shakenbreak import analysis, energy_lowering_distortions, input, io, plotting
 
 
 def _parse_defect_dirs(path) -> list:
@@ -34,6 +26,48 @@ def _parse_defect_dirs(path) -> list:
             for dist in ["Rattled", "Unperturbed", "Bond_Distortion", "Dimer"]
         )  # only parse defect directories that contain distortion folders
     ]
+
+
+def _write_code_input_files(
+    Dist,
+    code,
+    *,
+    input_file=None,
+    user_potcar_settings=None,
+    pseudopotentials=None,
+    verbose=None,
+):
+    """Write relaxation input files for ``code`` via a ``Distortions`` instance."""
+    code = code.lower()
+    kwargs = {"verbose": verbose}
+    if input_file:  # don't pass None — CASTEP default is a package path
+        kwargs["input_file"] = input_file
+
+    if code == "vasp":
+        user_incar_settings = None
+        if input_file:
+            from pymatgen.io.vasp.inputs import Incar  # moved to avoid slow import for snb-run
+
+            user_incar_settings = dict(Incar.from_file(input_file))
+            if not user_incar_settings:
+                warnings.warn(
+                    f"Input file {input_file} specified but no valid INCAR tags found. "
+                    f"Should be in the format of VASP INCAR file."
+                )
+        return Dist.write_vasp_files(
+            verbose=verbose,
+            user_potcar_settings=user_potcar_settings,
+            user_incar_settings=user_incar_settings,
+        )
+    if code == "cp2k":
+        return Dist.write_cp2k_files(**kwargs)
+    if code in ("espresso", "quantum_espresso", "quantum-espresso", "quantumespresso"):
+        return Dist.write_espresso_files(pseudopotentials=pseudopotentials, **kwargs)
+    if code == "castep":
+        return Dist.write_castep_files(**kwargs)
+    if code in ("fhi-aims", "fhi_aims", "fhiaims"):
+        return Dist.write_fhi_aims_files(**kwargs)
+    return None
 
 
 def CommandWithConfigFile(
@@ -191,6 +225,9 @@ def generate(
     Generate the trial distortions and input files for structure-searching
     for a given defect.
     """
+    # resolve SnB input imports here to avoid slow imports for snb-run
+    from shakenbreak.input import Distortions, _get_defect_entry_from_defect, identify_defect
+
     user_settings = loadfn(config) if config is not None else {}
     # Parse POTCARs/pseudopotentials from config file, if specified
     user_potcar_functional = user_settings.pop("POTCAR_FUNCTIONAL", "PBE")
@@ -244,7 +281,7 @@ def generate(
 
     # Note that here the Defect.defect_structure is the defect ``supercell``
     # structure, not the defect ``primitive`` structure.
-    defect_object = input.identify_defect(
+    defect_object = identify_defect(
         defect_structure=defect_struct,
         bulk_structure=bulk_struct,
         defect_index=defect_index,
@@ -289,11 +326,12 @@ def generate(
 
     # Refactor Defect into list of DefectEntry objects
     defect_entries = [
-        input._get_defect_entry_from_defect(defect_object, c)
-        for c in defect_object.get_charge_states(padding)
+        _get_defect_entry_from_defect(defect_object, c) for c in defect_object.get_charge_states(padding)
     ]
 
     if name is None:
+        from doped.generation import get_defect_name_from_entry  # moved to avoid slow import for snb-run
+
         name = get_defect_name_from_entry(defect_entries[0], relaxed=False)
 
     # if user_charges not set for all defects, print info about how charge states will be determined
@@ -302,78 +340,21 @@ def generate(
             "Defect charge states will be set to the range: 0 - {Defect oxidation state}, "
             f"with a `padding = {padding}` on either side of this range."
         )
-    Dist = input.Distortions(
+    Dist = Distortions(
         defect_entries={
             name: defect_entries,  # So that user can specify defect name.
         },
         **user_settings,
     )
-    if code.lower() == "vasp":
-        if input_file:
-            incar = Incar.from_file(input_file)
-            user_incar_settings = incar.as_dict()
-            [user_incar_settings.pop(key, None) for key in ["@class", "@module"]]
-            if not user_incar_settings:
-                warnings.warn(
-                    f"Input file {input_file} specified but no valid INCAR tags found. "
-                    f"Should be in the format of VASP INCAR file."
-                )
-        else:
-            user_incar_settings = None
-        distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
-            verbose=verbose,
-            user_potcar_settings=user_potcar_settings,
-            user_incar_settings=user_incar_settings,
-        )
-    elif code.lower() == "cp2k":
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-                verbose=verbose,
-            )
-    elif code.lower() in [
-        "espresso",
-        "quantum_espresso",
-        "quantum-espresso",
-        "quantumespresso",
-    ]:
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-                verbose=verbose,
-                pseudopotentials=pseudopotentials,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-                verbose=verbose,
-                pseudopotentials=pseudopotentials,
-            )
-    elif code.lower() == "castep":
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-                verbose=verbose,
-            )
-    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-                verbose=verbose,
-            )
-    # Save Defect objects to file
-    dumpfn(defect_object, "./parsed_defects_dict.json")
+    _write_code_input_files(
+        Dist,
+        code,
+        input_file=input_file,
+        user_potcar_settings=user_potcar_settings,
+        pseudopotentials=pseudopotentials,
+        verbose=verbose,
+    )
+    dumpfn(defect_object, "./SnB_generate_Defect.json")  # Save Defect object to file
 
 
 @snb.command(
@@ -464,6 +445,17 @@ def generate_all(
     bulk_struct = Structure.from_file(bulk)
     # try parsing the bulk oxidation states first, for later assigning defect "oxi_state"s (i.e.
     # fully ionised charge states):
+    # resolve doped / SnB imports here to avoid slow imports for snb-run
+    from doped.core import guess_and_set_oxi_states_with_timeout
+    from doped.utils.plotting import format_defect_name
+
+    from shakenbreak.input import (
+        Distortions,
+        _get_defect_entry_from_defect,
+        _get_defects_dict_from_defects_entries,
+        identify_defect,
+    )
+
     if bulk_struct_w_oxi := guess_and_set_oxi_states_with_timeout(
         bulk_struct, break_early_if_expensive=True
     ):
@@ -552,10 +544,10 @@ def generate_all(
             # if user didn't specify defect names in config file,
             # check if defect filename is recognised
             try:
-                defect_name = format_defect_name(defect, include_site_info_in_name=False)
+                defect_name = format_defect_name(defect, include_site_info=False)
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = format_defect_name(f"{defect}_0", include_site_info_in_name=False)
+                    defect_name = format_defect_name(f"{defect}_0", include_site_info=False)
             if defect_name:
                 defect_name = defect
 
@@ -620,7 +612,7 @@ def generate_all(
 
         # Check if indices are provided in config file
         defect_index, defect_coords = parse_defect_position(defect_name, defect_settings)
-        defect_object = input.identify_defect(
+        defect_object = identify_defect(
             defect_structure=defect_struct,
             bulk_structure=bulk_struct,
             defect_index=defect_index,
@@ -647,9 +639,9 @@ def generate_all(
         # Add defect entry to full defects_dict
         # If charges were not specified by user, set them using padding
         for charge in defect_object.get_charge_states(padding=padding):
-            defect_entries.append(input._get_defect_entry_from_defect(defect_object, charge))
+            defect_entries.append(_get_defect_entry_from_defect(defect_object, charge))
 
-    defects_dict = input._get_defects_dict_from_defects_entries(defect_entries)
+    defects_dict = _get_defects_dict_from_defects_entries(defect_entries)
     # if user_charges not set for all defects, print info about how charge states will be
     # determined
     if all(not defect_entry_list[0].defect.user_charges for defect_entry_list in defects_dict.values()):
@@ -658,74 +650,16 @@ def generate_all(
             f"with a `padding = {padding}` on either side of this range."
         )
     # Apply distortions and write input files
-    Dist = input.Distortions(defects_dict, **user_settings)
-    if code.lower() == "vasp":
-        if input_file:
-            incar = Incar.from_file(input_file)
-            user_incar_settings = incar.as_dict()
-            [user_incar_settings.pop(key, None) for key in ["@class", "@module"]]
-            if user_incar_settings == {}:
-                warnings.warn(
-                    f"Input file {input_file} specified but no valid INCAR tags found. "
-                    f"Should be in the format of VASP INCAR file."
-                )
-        else:
-            user_incar_settings = None
-        distorted_defects_dict, distortion_metadata = Dist.write_vasp_files(
-            verbose=verbose,
-            user_potcar_settings=user_potcar_settings,
-            user_incar_settings=user_incar_settings,
-        )
-    elif code.lower() == "cp2k":
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_cp2k_files(
-                verbose=verbose,
-            )
-    elif code.lower() in [
-        "espresso",
-        "quantum_espresso",
-        "quantum-espresso",
-        "quantumespresso",
-    ]:
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-                verbose=verbose,
-                pseudopotentials=pseudopotentials,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_espresso_files(
-                verbose=verbose,
-                pseudopotentials=pseudopotentials,
-            )
-    elif code.lower() == "castep":
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_castep_files(
-                verbose=verbose,
-            )
-    elif code.lower() in ["fhi-aims", "fhi_aims", "fhiaims"]:
-        if input_file:
-            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-                verbose=verbose,
-                input_file=input_file,
-            )
-        else:
-            distorted_defects_dict, distortion_metadata = Dist.write_fhi_aims_files(
-                verbose=verbose,
-            )
-
-        # Dump dict with parsed defects to json
-        dumpfn(defects_dict, "./parsed_defects_dict.json")
+    Dist = Distortions(defects_dict, **user_settings)
+    _write_code_input_files(
+        Dist,
+        code,
+        input_file=input_file,
+        user_potcar_settings=user_potcar_settings,
+        pseudopotentials=pseudopotentials,
+        verbose=verbose,
+    )
+    dumpfn(defects_dict, "./SnB_generate_all_defects_dict.json")  # Save defects_dict to file
 
 
 @snb.command(
@@ -845,8 +779,10 @@ def parse(defect, path, code, verbose):
     Can be run within a single defect folder, or in the top-level directory (either
     specifying ``defect`` or looping through all defect folders).
     """
+    from shakenbreak.io import parse_energies  # moved to avoid slow import for snb-run
+
     if defect:
-        _ = io.parse_energies(defect, path, code, verbose=verbose)
+        _ = parse_energies(defect, path, code, verbose=verbose)
     elif (
         _running_in_defect_dir(
             path=path,
@@ -860,7 +796,7 @@ def parse(defect, path, code, verbose):
             cwd = os.getcwd()
             defect = cwd.split("/")[-1]
             path = cwd.rsplit("/", 1)[0]
-            _ = io.parse_energies(defect, path, code, verbose=verbose)
+            _ = parse_energies(defect, path, code, verbose=verbose)
         except Exception as exc:
             raise Exception(
                 f"Could not parse defect '{defect}' in directory '{path}'. Please either specify "
@@ -871,7 +807,7 @@ def parse(defect, path, code, verbose):
 
     else:
         defect_dirs = _parse_defect_dirs(path)
-        _ = [io.parse_energies(defect, path, code, verbose=verbose) for defect in defect_dirs]
+        _ = [parse_energies(defect, path, code, verbose=verbose) for defect in defect_dirs]
 
 
 @snb.command(
@@ -891,8 +827,7 @@ def parse(defect, path, code, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder(s). "
-    "Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folder(s). Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
@@ -930,6 +865,9 @@ def analyse(defect, path, code, ref_struct, verbose):
     Can be run within a single defect folder, or in the top-level directory (either
     specifying ``defect`` or looping through all defect folders).
     """
+    # resolve SnB analysis and io imports here to avoid slow imports for snb-run:
+    from shakenbreak.analysis import compare_structures, get_energies, get_structures
+    from shakenbreak.io import parse_energies
 
     def analyse_single_defect(defect, path, code, ref_struct, verbose):
         if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
@@ -939,14 +877,10 @@ def analyse(defect, path, code, ref_struct, verbose):
             if not os.path.exists(f"{path}/{defect}") or not os.path.exists(path):
                 raise FileNotFoundError(f"Could not find {orig_defect_name} in the directory {path}.")
 
-        _ = io.parse_energies(defect, path, code, verbose=verbose)
-        defect_energies_dict = analysis.get_energies(
-            defect_species=defect, output_path=path, verbose=verbose
-        )
-        defect_structures_dict = analysis.get_structures(
-            defect_species=defect, output_path=path, code=code
-        )
-        dataframe = analysis.compare_structures(
+        _ = parse_energies(defect, path, code, verbose=verbose)
+        defect_energies_dict = get_energies(defect_species=defect, output_path=path, verbose=verbose)
+        defect_structures_dict = get_structures(defect_species=defect, output_path=path, code=code)
+        dataframe = compare_structures(
             defect_structures_dict=defect_structures_dict,
             defect_energies_dict=defect_energies_dict,
             ref_structure=ref_struct,
@@ -1024,8 +958,7 @@ def analyse(defect, path, code, ref_struct, verbose):
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folder(s). "
-    "Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folder(s). Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
@@ -1128,6 +1061,11 @@ def plot(
     Can be run within a single defect folder, or in the top-level directory
     (either specifying ``defect`` or looping through all defect folders).
     """
+    # resolve SnB plotting and io imports here to avoid slow imports for snb-run:
+    from shakenbreak.analysis import get_energies
+    from shakenbreak.io import parse_energies
+    from shakenbreak.plotting import plot_all_defects, plot_defect
+
     if style_file is None:
         style_file = f"{os.path.dirname(os.path.abspath(__file__))}/shakenbreak.mplstyle"
 
@@ -1150,13 +1088,13 @@ def plot(
         for defect in defect_dirs:
             if verbose:
                 print(f"Parsing {defect}...")
-            _ = io.parse_energies(defect, path, code, verbose=verbose)
+            _ = parse_energies(defect, path, code, verbose=verbose)
         # Create defects_dict (matching defect name to charge states)
         defects_wout_charge = [defect.rsplit("_", 1)[0] for defect in defect_dirs]
         defects_dict = {defect_wout_charge: [] for defect_wout_charge in defects_wout_charge}
         for defect in defect_dirs:
             defects_dict[defect.rsplit("_", 1)[0]].append(int(defect.rsplit("_", 1)[1]))
-        return plotting.plot_all_defects(
+        return plot_all_defects(
             defect_charges_dict=defects_dict,
             output_path=path,
             add_colorbar=colorbar,
@@ -1181,14 +1119,14 @@ def plot(
     else:
         orig_path = None
     try:
-        energies_file = io.parse_energies(defect, path, code, verbose=verbose)
+        energies_file = parse_energies(defect, path, code, verbose=verbose)
         defect_species = energies_file.rsplit("/", 1)[-1].replace(".yaml", "")  # in case '+' removed
-        defect_energies_dict = analysis.get_energies(
+        defect_energies_dict = get_energies(
             defect_species=defect_species,
             output_path=path,
             verbose=verbose,
         )
-        plotting.plot_defect(
+        plot_defect(
             defect_species=defect_species,
             energies_dict=defect_energies_dict,
             output_path=path,
@@ -1203,14 +1141,14 @@ def plot(
         )
     except Exception:
         try:
-            energies_file = io.parse_energies(defect, orig_path, code, verbose=verbose)
+            energies_file = parse_energies(defect, orig_path, code, verbose=verbose)
             defect_species = energies_file.rsplit("/", 1)[-1].replace(".yaml", "")  # in case '+' removed
-            defect_energies_dict = analysis.get_energies(
+            defect_energies_dict = get_energies(
                 defect_species=defect_species,
                 output_path=orig_path,
                 verbose=verbose,
             )
-            plotting.plot_defect(
+            plot_defect(
                 defect_species=defect_species,
                 energies_dict=defect_energies_dict,
                 output_path=orig_path,
@@ -1240,8 +1178,7 @@ def plot(
 @click.option(
     "--path",
     "-p",
-    help="Path to the top-level directory containing the defect folders."
-    " Defaults to current directory.",
+    help="Path to the top-level directory containing the defect folders. Defaults to current directory.",
     type=click.Path(exists=True, dir_okay=True),
     default=".",
 )
@@ -1299,6 +1236,8 @@ def regenerate(path, code, filename, min_energy, metastable, verbose):
     found for multiple charge states. Defect folder names should end with
     charge state after an underscore (e.g. ``vac_1_Cd_0`` or ``Va_Cd_0`` etc).
     """
+    from shakenbreak import energy_lowering_distortions  # moved to avoid slow import for snb-run
+
     if path == ".":
         path = os.getcwd()  # more verbose error if no defect folders found in path
     defect_charges_dict = energy_lowering_distortions.read_defects_directories(output_path=path)
@@ -1324,20 +1263,23 @@ def _running_in_defect_dir(path: str = ".", warning_substring: str = ""):
     warning_substring = warning_substring or (
         "the groundstate structure from the distortion folders in this directory will be generated."
     )
-    if any(
-        dir
-        for dir in os.listdir()
-        if os.path.isdir(dir)
-        and any(substring in dir for substring in ["Bond_Distortion", "Rattled", "Unperturbed", "Dimer"])
-    ):  # distortion subfolders in cwd
-        # check if defect folders also in cwd
-        for dir in [dir for dir in os.listdir() if os.path.isdir(dir)]:
+    distortion_substrings = ("Bond_Distortion", "Rattled", "Unperturbed", "Dimer")
+    dirs = [d for d in os.listdir() if os.path.isdir(d)]
+    if not any(any(s in d for s in distortion_substrings) for d in dirs):
+        return False
+
+    # otherwise need to use ``format_defect_name`` to parse the defect folder names:
+    other_dirs = [d for d in dirs if not any(s in d for s in distortion_substrings)]
+    if other_dirs:
+        from doped.utils.plotting import format_defect_name  # moved to avoid slow import for snb-run
+
+        for dir in other_dirs:
             defect_name = None
             try:
-                defect_name = format_defect_name(dir, include_site_info_in_name=False)
+                defect_name = format_defect_name(dir, include_site_info=False)
             except Exception:
                 with contextlib.suppress(Exception):
-                    defect_name = format_defect_name(f"{dir}_0", include_site_info_in_name=False)
+                    defect_name = format_defect_name(f"{dir}_0", include_site_info=False)
             if defect_name:  # recognised defect folder found in cwd, warn user and proceed
                 # assuming they want to just parse the distortion folders in cwd
                 warnings.warn(
@@ -1346,9 +1288,7 @@ def _running_in_defect_dir(path: str = ".", warning_substring: str = ""):
                 )
                 break
 
-        return True  # current directory is the defect folder
-
-    return False
+    return True  # current directory is the defect folder
 
 
 @snb.command(
@@ -1412,6 +1352,8 @@ def groundstate(
     (e.g. geometry optimisations performed with VASP). If using a different code,
     please specify the name of the structure/output files.
     """
+    from shakenbreak.energy_lowering_distortions import write_groundstate_structure  # avoid slow imports
+
     # determine if running from within a defect directory or from the top level directory
     if (
         _running_in_defect_dir(
@@ -1423,7 +1365,7 @@ def groundstate(
         )
         and path == "."
     ):
-        energy_lowering_distortions.write_groundstate_structure(
+        write_groundstate_structure(
             all=False,
             output_path=os.getcwd(),
             groundstate_folder=directory,
@@ -1435,7 +1377,7 @@ def groundstate(
         return
 
     # otherwise, assume top level directory is the path
-    energy_lowering_distortions.write_groundstate_structure(
+    write_groundstate_structure(
         output_path=path,
         groundstate_folder=directory,
         groundstate_filename=groundstate_filename,
@@ -1479,8 +1421,10 @@ def mag(outcar, threshold, verbose):
     VASP calculation are below a certain threshold, by pulling this data from the OUTCAR.
     Returns a shell exit status of 0 if magnetisation is below the threshold and 1 if above.
     """
+    from pymatgen.io.vasp.outputs import Outcar
+
     try:
-        outcar_obj = get_outcar(outcar)
+        outcar_obj = Outcar(outcar)
         abs_mag_values = [abs(m["tot"]) for m in outcar_obj.magnetization]
 
         if (

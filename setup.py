@@ -14,6 +14,8 @@ path_to_file = os.path.dirname(os.path.abspath(__file__))
 # See https://stackoverflow.com/questions/34193900/how-do-i-distribute-fonts-with-my-python-package
 def _install_custom_font():
     """Install ShakeNBreak custom font."""
+    # Note: In future may need to move this function to plotting code, and use pyproject.toml
+    # installation only
     print("Trying to install ShakeNBreak custom font...")
     # Try to install custom font
     try:
@@ -120,9 +122,9 @@ with open("README.md", encoding="utf-8") as file:
 
 setup(
     name="shakenbreak",
-    version="3.4.4",
-    description="Package to generate and analyse distorted defect structures, in order to "
-    "identify ground-state and metastable defect configurations.",
+    version="3.4.5",
+    description="Generate and analyse distorted defect structures, to identify ground-state and "
+    "metastable defect configurations.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Irea Mosquera-Lois & Seán R. Kavanagh",
@@ -139,7 +141,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
@@ -149,20 +150,20 @@ setup(
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.10",  # dictated by "pymatgen>=2025.5.2" requirement in doped
+    python_requires=">=3.11",  # dictated by "pymatgen>=2026.7.16" requirement
     install_requires=[
         "numpy",
-        "pymatgen",  # requirement set by doped
+        "pymatgen-core>=2026.7.16",  # ROPT fix; https://github.com/materialsproject/pymatgen-core/pull/69
         "pymatgen-analysis-defects",  # requirement set by doped
         "matplotlib>=3.6",
-        "ase",
+        "ase>=3.23",  #
         "pandas>=1.1.0",
         "seaborn",
         "hiphive>=1.0",  # nbr_cutoff not defined in previous versions of mc_rattle
         "monty",
         "click>8.0",
         "importlib_metadata",
-        "doped>=3.2.1",  # ``most_common_oxi`` now in ``doped.core``
+        "doped>=4",  # parameter re-ordering in internal doped site matching functions & pmg-core refactor
     ],
     extras_require={
         "tests": [

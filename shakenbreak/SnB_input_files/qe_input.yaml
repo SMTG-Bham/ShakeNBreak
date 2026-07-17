@@ -2,6 +2,8 @@ CONTROL:
   calculation: relax
   nstep: 300 # Number of ionic optimization steps
   title: espresso
+  tprnfor: true
+  tstress: false
 ELECTRONS:
   ecutwfc: 33.0
 SYSTEM:

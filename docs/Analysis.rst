@@ -246,7 +246,7 @@ defect analysis codes such as `easyunfold <https://smtg-bham.github.io/easyunfol
 electronic structure of defects in your material),
 `py-sc-fermi <https://py-sc-fermi.readthedocs.io/en/latest/>`_ (to analyse defect concentrations, doping
 and Fermi level tuning), or `nonrad <https://nonrad.readthedocs.io/en/latest/>`_ /
-`CarrierCapture.jl <https://wmd-group.github.io/CarrierCapture.jl/dev/>`_
+`CarrierCapture.py <https://wmd-group.github.io/CarrierCapture.py/>`__
 (to analyse non-radiative electron-hole recombination at defects).
 
 .. NOTE::
