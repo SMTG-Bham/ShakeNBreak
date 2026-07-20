@@ -22,7 +22,7 @@ from doped.generation import DefectsGenerator, name_defect_entries
 from doped.utils import _ignore_pmg_warnings
 from doped.utils.efficiency import StructureMatcher_scan_stol
 from doped.utils.parsing import get_defect_type_and_composition_diff, get_defect_type_and_site_indices
-from doped.vasp import DefectDictSet
+from doped.vasp import DefectDictSet  # TODO: Update after doped.io refactor (& doped.vasp usage in tests)
 from monty.json import MontyDecoder
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects import thermo

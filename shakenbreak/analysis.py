@@ -13,7 +13,7 @@ from functools import lru_cache
 import numpy as np
 import pandas as pd
 from doped.utils.efficiency import Element, Structure, StructureMatcher_scan_stol
-from doped.utils.parsing import get_outcar
+from doped.utils.parsing import get_outcar  # TODO: Update after doped.io refactor
 from monty.serialization import loadfn
 from pymatgen.core.local_env import CrystalNN
 from pymatgen.io.vasp.outputs import Outcar
