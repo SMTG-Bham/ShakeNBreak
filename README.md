@@ -100,6 +100,8 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- J. Zhou et al. **_Antimony sulfide photovoltaics with high open-circuit voltage not limited by self-trapped excitons_** [_Nature Communications_](https://doi.org/10.1038/s41467-026-76845-1) 2026
+- X. Pan et al. **_Understanding the Origins of Self-Recoverable Mechanoluminescence for Rational Materials Design_** [_Journal of the American Chemical Society_](https://doi.org/10.1021/jacs.6c07144) 2026
 - A. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **_Guidelines for robust and reproducible point defect simulations in crystals_** [_Nature Reviews Materials_](https://doi.org/10.1038/s41578-025-00879-y) 2026
 - N.-R. Skogemyr **_First-Principles Defect Thermodynamics of MgSnN<sub>2</sub>: Origin and Suppression of Unintentional n-Type Conductivity_** [_MSc Thesis, Linköping University_](https://urn.kb.se/resolve?urn=urn:nbn:se:liu:diva-224510) 2026
 - R. Bedford et al. **_Impact of the U parameter on the predicted defect chemistry of materials: The example of PuO<sub>2±x</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/w8xw-ghmh) 2026
@@ -123,7 +125,6 @@ and/or papers listed in the [Literature](#literature) section above useful.
 - J. Tang, P. Xu, S. Guo and S. Qiu **_First-principles study of defect-induced luminescence mechanism in ternary nitride Li<sub>3</sub>AlN<sub>2</sub>_** [_Journal of Chemical Sciences_](https://doi.org/10.1007/s12039-026-02533-8) 2026
 - S. R. Kavanagh **_Identifying Split Vacancy Defects with Machine-Learned Foundation Models and Electrostatics_** [_JPhys Energy_](https://doi.org/10.1088/2515-7655/ade916) 2025
 - R. Claes, A. G. Squires and D. O. Scanlon **_Establishing Doping Limits for ZnGa<sub>2</sub>O<sub>4</sub> for Ultrawide-Band-Gap Semiconductor Applications_** [_ACS Applied Materials & Interfaces_](https://doi.org/10.1021/acsami.5c19146) 2025
-- J. Zhou et al. **_Breaking the 800 mV open-circuit voltage barrier in antimony sulfide photovoltaics_** [_arXiv_](https://doi.org/10.48550/arXiv.2512.18100) 2025
 - K. Talit et al. **_Structural and electronic properties of Ti- and Ca-doped hexagonal TbInO<sub>3</sub>_** [_Physical Review Materials_](https://doi.org/10.1103/hww6-snlj) 2025
 - I. Mosquera-Lois, A. Walsh **_Dynamic Vacancy Levels in CsPbCl<sub>3</sub> Obey Equilibrium Defect Thermodynamics_** [_PRX Energy_](https://doi.org/10.1103/dxmb-8s96) 2025
 - B. I. J. Johnston et al. **_Enhanced cycling stability of LiNiO<sub>2</sub> cathodes through a Mg/W dual-cation modification strategy_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/D5TA05316A) 2025
