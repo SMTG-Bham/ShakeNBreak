@@ -3008,7 +3008,7 @@ class Distortions:
         arguments.
 
         Args:
-            defects (:obj:`list_or_Structure`):
+            defects (:obj:`list` or :obj:`Structure`):
                 List of defect structures, or a single defect structure for
                 which to generate distorted structures. If auto site-matching
                 fails, the fractional coordinates or index of the defect site

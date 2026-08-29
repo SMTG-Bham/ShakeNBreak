@@ -382,7 +382,7 @@ def apply_dimer_distortion(
             Index of defect site (for non vacancy defects), using ``python``
             / ``pymatgen`` 0-indexing.
             Defaults to None.
-        frac_coords (Optional[np.array]):
+        frac_coords (Optional[np.ndarray]):
             Fractional coordinates of the defect site in the structure (for
             vacancies).
             Defaults to None.
@@ -395,7 +395,7 @@ def apply_dimer_distortion(
             Defaults to False.
 
     Returns:
-        obj:`Structure`:
+        :obj:`Structure`:
             Distorted dimer structure
     """
     if frac_coords is not None and not isinstance(frac_coords, np.ndarray):

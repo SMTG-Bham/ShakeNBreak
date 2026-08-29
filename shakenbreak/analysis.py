@@ -122,7 +122,7 @@ def _format_distortion_names(
             distortion label used for file names.
 
     Returns:
-        distortion (:obj:`float`` or :obj:`float`):
+        distortion (:obj:`float` or :obj:`str`):
             distortion factor (e.g. -0.6, 0.0, +0.6) or string (e.g.
             "Unperturbed"/"Rattled"/"-60.0%_from_+2"/"Rattled_from_-1")
     """
@@ -600,7 +600,7 @@ def calculate_struct_comparison(
             ('disp') or the maximum distance between matched
             atoms ('max_dist', default).
             (Default: "max_dist")
-        ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
+        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
             ``defect_structures_dict`` (e.g. '-0.4' for ``"Bond_Distortion_-40.0%"``)
@@ -706,7 +706,7 @@ def compare_structures(
         defect_energies_dict (:obj:`dict`):
             Dictionary matching distortion to final energy (eV), as
             produced by ``_organize_data()``.
-        ref_structure (:obj:`str`` or :obj:`float`` or :obj:`Structure`):
+        ref_structure (:obj:`str` or :obj:`float` or :obj:`Structure`):
             Structure to use as a reference for comparison (to compute
             atomic displacements). Either as a key from
             ``defect_structures_dict`` (e.g. '-0.4' for ``"Bond_Distortion_-40.0%"``)
@@ -1004,7 +1004,7 @@ def get_site_magnetizations(
         threshold (:obj:`float`, optional):
             Magnetization threshold to consider site.
             (Default: 0.1)
-        defect_site (:obj:`int`` or :obj:`list`, optional):
+        defect_site (:obj:`int` or :obj:`list`, optional):
             Site index or fractional coordinates of the defect. If not
             specified, will try to read from distortion_metadata.json.
             If this file is not present, will not include the distance

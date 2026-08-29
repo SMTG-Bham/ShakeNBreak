@@ -138,7 +138,7 @@ We recommend at least looking through the :ref:`Tutorials <tutorials>` when firs
 You may also find the
 `YouTube Overview (10 mins) <https://www.youtube.com/watch?v=aqXlyLofLSU&ab_channel=Se%C3%A1nR.Kavanagh>`__,
 `YouTube Seminar (35 mins) <https://www.youtube.com/watch?v=u7CdhI_1S18&ab_channel=Se%C3%A1nR.Kavanagh>`__
-and/or papers listed in the :ref:`Literature <literature>` section useful.
+and/or papers listed in the :ref:`index:Literature` section useful.
 
 
 Studies using ``ShakeNBreak``

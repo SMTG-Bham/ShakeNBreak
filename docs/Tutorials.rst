@@ -49,7 +49,7 @@ and their use is exemplified in the following pages:
 Getting help
 ~~~~~~~~~~~~~~~~~~~~~~
 Beyond the :ref:`documentation <cli_commands>`, we can get a full list of accepted flags and
-their description using the :mod:`--help` or :mod:`-h` flag, e.g.:
+their description using the ``--help`` or ``-h`` flag, e.g.:
 
 .. code-block:: bash
 

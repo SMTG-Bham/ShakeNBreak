@@ -24,6 +24,7 @@ release = "3.4.4"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.coverage",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
@@ -84,7 +85,34 @@ html_context = {
 intersphinx_mapping = {
     "pymatgen": ("https://pymatgen.org/", None),
     "doped": ("https://doped.readthedocs.io/en/latest/", None),
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "ase": ("https://docs.ase-lib.org/", None),
 }
+
+nitpicky = True  # Warn (loudly) about unresolvable cross-references
+# ``ShakeNBreak`` docstrings hand-write short type names in their ``Args:``/``Returns:`` sections (e.g.
+# ``Structure``, ``np.ndarray``, ``3x3 matrix``), which -- along with the ``py:class`` references autodoc
+# generates from type annotations -- can never be resolved, so these are ignored. Only the docstring type
+# slots (``py:class``/``py:obj``; SnB writes ``:obj:`` roles by hand, unlike ``doped``'s napoleon-generated
+# ``py:class``) are muted here, keeping explicit ``:meth:``/``:func:``/``:attr:`` references loud:
+nitpick_ignore_regex = [  # note: these are full-match (i.e. ``re.fullmatch``) patterns:
+    ("py:(class|obj)", r"[^.]+"),  # bare type names; e.g. ``Structure``, ``PathLike``, ``SpeciesLike``...
+    ("py:(class|obj)", r".*\s.*"),  # prose type descriptions; e.g. ``3x3 matrix``, ``2D sequence``...
+    ("py:(class|obj)", r"(np|pd|plt|mpl|go)\..*"),  # abbreviated module names in docstring types
+    ("py:class", r"pathlib\._local\..*"),  # ``pathlib.Path`` annotations, with python >= 3.13
+    # packages with no Sphinx inventories to link against:
+    ("py:.*", r"(monty|tqdm|sympy|pydefect|vise|plotly|dscribe)\..*"),
+    # ``ase`` (mapped above) publishes its calculator classes (e.g. ``Aims``) in its inventory, but not
+    # their ``*Profile`` companions, so references to the latter are unresolvable and render as literal text:
+    ("py:(class|obj)", r"ase\.calculators\..*Profile"),
+]
+
+# -- Options for autosectionlabel -------------------------------------------
+# prefix auto-generated section labels with the document name, to avoid clashes
+autosectionlabel_prefix_document = True
 
 # -- Options for autodoc -----------------------------------------------------
 autoclass_content="both"

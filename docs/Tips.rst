@@ -65,7 +65,7 @@ need to be adjusted. This can be the case with extremely hard/ionic/oxide materi
 in response to bond distortion. If this issue occurs, it will manifest as:
 
 - If the rattle standard deviation is too large, it may result in high energies for each distorted & rattled structure
-  (consistently higher energy than the unperturbed structure). As mentioned in :ref:`Tricky Relaxations` above,
+  (consistently higher energy than the unperturbed structure). As mentioned in :ref:`Tips:Tricky Relaxations` above,
   :code:`ShakeNBreak` will print a warning in these cases, and often it is the result of unreasonable defect charge
   states. If the calculations have finished ok and the defect charge states are reasonable, then you likely need to
   reduce the rattle standard deviation (:code:`stdev`) to 7.5% of the bulk bond length (or 5% if this still causes
@@ -79,9 +79,9 @@ in response to bond distortion. If this issue occurs, it will manifest as:
   - Note that strongly-correlated / magnetic materials in particular can be extremely sensitive to large structural
     noise, and so these typically require rattle standard deviations (:code:`stdev`) ≤ 0.05 Å.
 
-- High energies / non-converging calculations for the ±60% endpoints. As mentioned in :ref:`Tricky Relaxations` above,
-  these are automatically handled by :code:`snb-run` for :code:`VASP` and so no changes are required, but for other
-  codes you should rename the folder(s) to :code:`Bond_Distortion_X_High_Energy` and :code:`ShakeNBreak` will
+- High energies / non-converging calculations for the ±60% endpoints. As mentioned in :ref:`Tips:Tricky Relaxations`
+  above, these are automatically handled by :code:`snb-run` for :code:`VASP` and so no changes are required, but for
+  other codes you should rename the folder(s) to :code:`Bond_Distortion_X_High_Energy` and :code:`ShakeNBreak` will
   subsequently ignore them.
 
 .. Here you should adjust the distortion range to exclude these points (e.g. :code:`bond_distortions = np.arange(-0.5, 0.501, 0.1)`), or just ignore these calculations.
