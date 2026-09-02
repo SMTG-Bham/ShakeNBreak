@@ -144,6 +144,7 @@ and/or papers listed in the :ref:`index:Literature` section useful.
 Studies using ``ShakeNBreak``
 =============================
 
+- S\. Mu et al. **Halide donors in monoclinic- and corundum-phase Ga₂O₃ and Al₂O₃** `arXiv <https://doi.org/10.48550/arXiv.2608.30680>`__ 2026
 - J\. Zhou et al. **Antimony sulfide photovoltaics with high open-circuit voltage not limited by self-trapped excitons** `Nature Communications <https://doi.org/10.1038/s41467-026-76845-1>`__ 2026
 - X\. Pan et al. **Understanding the Origins of Self-Recoverable Mechanoluminescence for Rational Materials Design** `Journal of the American Chemical Society <https://doi.org/10.1021/jacs.6c07144>`__ 2026
 - A\. G. Squires, S. R. Kavanagh, A. Walsh and D. O. Scanlon **Guidelines for robust and reproducible point defect simulations in crystals** `Nature Reviews Materials <https://doi.org/10.1038/s41578-025-00879-y>`__ 2026
