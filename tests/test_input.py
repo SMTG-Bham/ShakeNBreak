@@ -3287,7 +3287,7 @@ class InputTestCase(unittest.TestCase):
         self.assertEqual(len([warning for warning in w if warning.category == UserWarning]), 5)
         message_1 = (
             "Bond_Distortion_-100.0% for defect vac_1_Cd gives an interatomic "
-            "distance less than 1.0 Å (0.0 Å), which is likely to give explosive "
+            "distance less than 1.0 Å (0.00 Å), which is likely to give explosive "
             "forces. Omitting this distortion."
         )
         message_2 = (

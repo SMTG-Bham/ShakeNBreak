@@ -212,7 +212,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                 np.array([0, 0, 0]),
             )
             mock_print.assert_any_call(
-                "Local order parameters (i.e. resemblance to given " "structural motif, via CrystalNN):"
+                "Local order parameters (i.e. resemblance to given structural motif, via CrystalNN):"
             )
             mock_print.assert_called_with("\nBond-lengths (in \u212b) to nearest neighbours: ")
 
@@ -226,11 +226,11 @@ class AnalyseDefectsTestCase(unittest.TestCase):
                         4: "trigonal pyramidal",
                     },
                     "Factor": {
-                        0: round(0.21944138045080427, 2),
-                        1: round(0.8789337233604618, 2),
-                        2: round(0.11173135591518825, 2),
-                        3: round(0.3876174560001795, 2),
-                        4: round(0.3965691083975486, 2),
+                        0: round(0.18992264730264244, 2),
+                        1: round(0.9347971259749529, 2),
+                        2: round(0.07369391796367482, 2),
+                        3: round(0.3902786521435, 2),
+                        4: round(0.4003689448069779, 2),
                     },
                 }
             )
@@ -238,9 +238,10 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             expected_V_Cd_crystalNN_bonding_df = pd.DataFrame(
                 {
                     "Element": {0: "Te", 1: "Te", 2: "Te", 3: "Te"},
-                    "Distance (\u212b)": {0: "1.42", 1: "1.42", 2: "2.62", 3: "3.01"},
+                    "Distance (\u212b)": {0: "1.32", 1: "1.45", 2: "2.64", 3: "3.04"},
                 }
-            )
+            )  # NN distance for the two distorted Te neighbours is not equal here, due to rigid shift of
+            # rattled structure to zero the net translation (drift)
             pd.testing.assert_frame_equal(expected_V_Cd_crystalNN_bonding_df, output[1])
             self.assertEqual(len(output), 2)
 
@@ -531,9 +532,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError) as e:
-            analysis.calculate_struct_comparison(
-                defect_structures_dict, metric="metwhat"  # https://youtu.be/DmH1prySUpA
-            )
+            analysis.calculate_struct_comparison(defect_structures_dict, metric="metwhat")
         self.assertIn("Invalid metric 'metwhat'. Must be one of 'disp' or 'max_dist'.", str(e.exception))
 
     def test_compare_structures(self):
@@ -575,7 +574,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
             struct_comparison_df = analysis.compare_structures(
                 defect_structures_dict, defect_energies_dict, ref_structure=-0.4
             )
-            mock_print.assert_called_with("Comparing structures to -40.0% bond distorted " "structure...")
+            mock_print.assert_called_with("Comparing structures to -40.0% bond distorted structure...")
         # spot check:
         self.assertEqual(struct_comparison_df.iloc[16].to_list(), [-0.2, 5.75, 0.801, 0.0])
         self.assertEqual(struct_comparison_df.iloc[8].to_list(), [-0.4, 0.0, 0.0, -0.75])
@@ -669,9 +668,7 @@ class AnalyseDefectsTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             output = analysis.compare_structures(unconverged_structures_dict, defect_energies_dict)
 
-            warning_message = (
-                "All structures in defect_structures_dict are not converged. " "Returning None."
-            )
+            warning_message = "All structures in defect_structures_dict are not converged. Returning None."
             user_warnings = [warning for warning in w if warning.category == UserWarning]
             self.assertEqual(len(user_warnings), 1)
             self.assertIn(warning_message, str(user_warnings[0].message))

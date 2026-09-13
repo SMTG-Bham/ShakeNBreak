@@ -613,7 +613,38 @@ def rattle(
                 f"smaller than this present), setting d_min to {reduced_d_min:.2f} \u212b for this defect."
             )
 
-    return Structure.from_ase_atoms(rattled_ase_struct)
+    return _remove_net_translation(Structure.from_ase_atoms(rattled_ase_struct), structure)
+
+
+def _remove_net_translation(rattled_structure: Structure, structure: Structure) -> Structure:
+    """
+    Shift all sites in ``rattled_structure`` so that the mean atomic
+    displacement relative to ``structure`` is zero, removing the net (random)
+    translation (drift) introduced by rattling.
+
+    Rattle displacements are drawn independently for each site, so their mean
+    does not vanish; it is a random vector of magnitude
+    ~``1.6 * stdev / sqrt(N)`` (e.g. ~0.03 Å on average). Shows up as a
+    spurious uniform shift when comparing relaxed defect and bulk supercells.
+
+    Args:
+        rattled_structure (:obj:`~pymatgen.core.structure.Structure`):
+            Rattled structure, **with sites in the same order as
+            ``structure``.**
+        structure (:obj:`~pymatgen.core.structure.Structure`):
+            Reference (un-rattled) structure.
+
+    Returns:
+        :obj:`Structure`:
+            ``rattled_structure``, translated to zero net displacement.
+    """
+    # Cartesian difference is exact here; nothing on the rattling path re-images coordinates
+    # (``ase``/``hiphive`` displace positions in place, and ``Structure.from_ase_atoms`` does not
+    # wrap), so there are no periodic images to unwrap:
+    mean_disp = (rattled_structure.cart_coords - structure.cart_coords).mean(axis=0)
+    return rattled_structure.translate_sites(
+        range(len(rattled_structure)), -mean_disp, frac_coords=False, to_unit_cell=False
+    )
 
 
 def _get_stdev_and_d_min(
@@ -1103,14 +1134,13 @@ def local_mc_rattle(
         frac_coords = np.array(frac_coords)
 
     ase_struct = structure.to_ase_atoms()
-    if stdev is None or d_min is None:
-        if active_atoms is not None:
-            # select only the distances involving active_atoms
-            distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
-        else:
-            distance_matrix = structure.distance_matrix
+    if active_atoms is not None:  # select only the distances involving active_atoms:
+        distance_matrix = structure.distance_matrix[active_atoms, :][:, active_atoms]
+    else:
+        distance_matrix = structure.distance_matrix
 
-        sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
+    sorted_distances = np.sort(distance_matrix[distance_matrix > 0.5].flatten())
+    if stdev is None or d_min is None:
         stdev, d_min = _get_stdev_and_d_min(sorted_distances, stdev, d_min)
 
     if isinstance(frac_coords, np.ndarray):  # Only for vacancies!
@@ -1167,4 +1197,4 @@ def local_mc_rattle(
 
     if isinstance(frac_coords, np.ndarray):
         local_rattled_ase_struct.pop(-1)  # remove fake V from vacancy structure
-    return Structure.from_ase_atoms(local_rattled_ase_struct)
+    return _remove_net_translation(Structure.from_ase_atoms(local_rattled_ase_struct), structure)

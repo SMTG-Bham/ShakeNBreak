@@ -112,11 +112,11 @@ class CLITestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_Rattled_POSCAR")
         )
         previous_default_rattle_settings = {"stdev": 0.25, "seed": 42}
-        with open("previous_default_rattle_settings.yaml", "w") as fp:
-            yaml.dump(previous_default_rattle_settings, fp)
         self.previous_default_rattle_settings_config = os.path.join(
             os.path.dirname(__file__), "previous_default_rattle_settings.yaml"
         )
+        with open(self.previous_default_rattle_settings_config, "w") as fp:
+            yaml.dump(previous_default_rattle_settings, fp)  # write to same file
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         warnings.filterwarnings("ignore", category=UnknownPotcarWarning)
 
@@ -135,7 +135,6 @@ class CLITestCase(unittest.TestCase):
             "previous_default_rattle_settings.yaml",
         ]:
             if_present_rm(i)
-        if_present_rm("../previous_default_rattle_settings.yaml")
         for i in os.listdir("."):
             if "distortion_metadata" in i:
                 os.remove(i)
@@ -820,8 +819,8 @@ class CLITestCase(unittest.TestCase):
 
         self.assertIn(
             f"\tDefect Site Index / Frac Coords: {defect_site_index}\n"
-            "            Original Neighbour Distances: [(2.49, 10, 'Cd'), (2.59, 22, 'Cd')]\n"
-            "            Distorted Neighbour Distances:\n\t[(1.0, 10, 'Cd'), (1.04, 22, 'Cd')]",
+            "            Original Neighbour Distances: [(2.45, 10, 'Cd'), (2.62, 22, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(0.98, 10, 'Cd'), (1.05, 22, 'Cd')]",
             result.output,
         )
 
@@ -851,7 +850,7 @@ class CLITestCase(unittest.TestCase):
             self.assertNotIn("Coordinates", str(w[0].message))
         self.assertIn("--Distortion -60.0%", result.output)
         self.assertIn(
-            "\tDefect Site Index / Frac Coords: [0.016 0.017 0.001]\n"  # rattled position
+            "\tDefect Site Index / Frac Coords: [0.013 0.014 0.004]\n"  # rattled position
             "            Original Neighbour Distances: [(2.33, 41, 'Te'), (2.73, 32, 'Te')]\n"
             "            Distorted Neighbour Distances:\n\t[(0.93, 41, 'Te'), (1.09, 32, 'Te')]",
             result.output,

@@ -2392,7 +2392,7 @@ class Distortions:
                         if verbose is True:  # high level verbosity
                             warnings.warn(
                                 f"{dist} for defect {defect_name} gives an interatomic distance "
-                                f"less than 1.0 Å ({shortest_interatomic_distance:.2} Å), "
+                                f"less than 1.0 Å ({shortest_interatomic_distance:.2f} Å), "
                                 f"which is likely to give explosive forces. Omitting this "
                                 f"distortion."
                             )

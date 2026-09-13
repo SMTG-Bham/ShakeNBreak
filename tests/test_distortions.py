@@ -367,7 +367,8 @@ class DistortionTestCase(unittest.TestCase):
     def test_apply_dimer_distortion_V_Te(self):
         """Test apply_dimer_distortion function"""
         output = distortions.apply_dimer_distortion(
-            self.V_Cd_struc, site_index=len(self.V_Cd_struc) - 1  # Te
+            self.V_Cd_struc,
+            site_index=len(self.V_Cd_struc) - 1,  # Te
         )
         self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
         self.assertEqual(output["num_distorted_neighbours"], 2)
@@ -428,6 +429,77 @@ class DistortionTestCase(unittest.TestCase):
         self.assertGreater(
             min_dist, 1.5
         )  # Si-O dimer bond length is larger than min_dist in orig structure
+
+    def test_rattle_removes_net_translation(self):
+        """
+        Test that rattling leaves zero net atomic displacement (i.e. no rigid
+        translation of the supercell), and that removing it is an exact
+        isometry (all interatomic distances unchanged).
+        """
+
+        def _mean_disp(rattled, ref):  # unwrapped mean displacement, in Cartesian Å
+            frac_disp = rattled.frac_coords - ref.frac_coords
+            frac_disp -= np.round(frac_disp)  # undo any periodic wrapping
+            return np.linalg.norm(frac_disp.mean(axis=0) @ ref.lattice.matrix)
+
+        struc = self.V_Cd_minus0pt5_struc  # 63-atom CdTe vacancy supercell
+        vac_coords = np.array([0, 0, 0])  # V_Cd frac coords
+        active_atoms = list(range(0, len(struc), 2))  # subset, to test the ``active_atoms`` path
+        rattled_strucs = {
+            "rattle": distortions.rattle(struc, stdev=0.25, d_min=2.25, seed=42),
+            "rattle, active_atoms": distortions.rattle(
+                struc, stdev=0.25, d_min=2.25, seed=42, active_atoms=active_atoms
+            ),
+            "local_mc_rattle, site_index": distortions.local_mc_rattle(
+                struc, site_index=0, stdev=0.25, d_min=2.25, seed=42
+            ),
+            "local_mc_rattle, frac_coords": distortions.local_mc_rattle(
+                struc, frac_coords=vac_coords, stdev=0.25, d_min=2.25, seed=42
+            ),
+        }
+
+        for name, rattled in rattled_strucs.items():
+            with self.subTest(rattle=name):
+                self.assertEqual(len(rattled), len(struc))
+                self.assertAlmostEqual(_mean_disp(rattled, struc), 0, places=10)
+                # rattling actually did something (i.e. we haven't just returned the input):
+                self.assertGreater(np.abs(rattled.cart_coords - struc.cart_coords).max(), 0.01)
+
+        # re-centring is a rigid translation, so it must leave all interatomic distances (and hence
+        # ``d_min`` and the applied bond distortions) exactly unchanged. Test the un-recentred case
+        # directly, by feeding ``_remove_net_translation`` a structure with a known net offset:
+        rattled = rattled_strucs["rattle"]
+        offset = rattled.copy()
+        offset.translate_sites(
+            range(len(offset)), [0.3, -0.15, 0.07], frac_coords=False, to_unit_cell=False
+        )
+        self.assertAlmostEqual(_mean_disp(offset, struc), np.linalg.norm([0.3, -0.15, 0.07]), places=10)
+
+        recentred = distortions._remove_net_translation(offset, struc)
+        self.assertAlmostEqual(_mean_disp(recentred, struc), 0, places=10)
+        self.assertLess(np.abs(recentred.distance_matrix - rattled.distance_matrix).max(), 1e-10)
+
+    def test_local_mc_rattle_d_min_fallback_with_explicit_stdev(self):
+        """
+        Test the reduced-``d_min`` fallback in ``local_mc_rattle`` when both
+        ``stdev`` and ``d_min`` are explicitly provided.
+
+        Previously failed due to a hidden bug.
+        """
+        # heavily distorted structure, so the initial ``d_min`` cannot be satisfied and the fallback
+        # (``sorted_distances[0] + stdev``) is triggered:
+        distorted = distortions.distort(self.V_Cd_struc, 2, 0.2, frac_coords=np.array([0, 0, 0]))[
+            "distorted_structure"
+        ]
+        self.assertLess(np.sort(distorted.distance_matrix[distorted.distance_matrix > 0.5])[0], 1.0)
+
+        with warnings.catch_warnings(record=True) as w:
+            rattled = distortions.local_mc_rattle(
+                distorted, frac_coords=np.array([0, 0, 0]), stdev=0.25, d_min=2.25, verbose=True, seed=42
+            )
+
+        self.assertEqual(len(rattled), len(distorted))
+        self.assertTrue(any("Initial rattle with d_min 2.25" in str(i.message) for i in w))
 
 
 if __name__ == "__main__":
