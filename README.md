@@ -100,6 +100,8 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- N. Singh, V. Agarwal and D. Ghosh **_Deep Learning the Defect Landscape: Long-Timescale Vacancy Dynamics in Lead-Free Double Perovskites_** [_ACS Applied Energy Materials_](https://doi.org/10.1021/acsaem.6c02409) 2026
+- H. Lee et al. **_Identification and Structural Decomposition of Hidden Defect Configurations: A Case Study of Charged Oxygen Divacancies in HfO<sub>2</sub>_** [_arXiv_](https://doi.org/10.48550/arXiv.2610.04892) 2026
 - S. Mu et al. **_Halide donors in monoclinic- and corundum-phase Ga<sub>2</sub>O<sub>3</sub> and Al<sub>2</sub>O<sub>3</sub>_** [_arXiv_](https://doi.org/10.48550/arXiv.2608.30680) 2026
 - J. Zhou et al. **_Antimony sulfide photovoltaics with high open-circuit voltage not limited by self-trapped excitons_** [_Nature Communications_](https://doi.org/10.1038/s41467-026-76845-1) 2026
 - X. Pan et al. **_Understanding the Origins of Self-Recoverable Mechanoluminescence for Rational Materials Design_** [_Journal of the American Chemical Society_](https://doi.org/10.1021/jacs.6c07144) 2026
