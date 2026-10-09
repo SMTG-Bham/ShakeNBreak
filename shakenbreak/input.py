@@ -283,11 +283,11 @@ def _write_distortion_metadata(
             )
     dumpfn(obj=new_metadata, fn=filepath, indent=4)
 
-
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
     user_incar_settings: dict | None = None,
+    user_kpoints_settings: dict | Kpoints | None = None,
     user_potcar_functional: str | None = "PBE",
     user_potcar_settings: dict | None = None,
     output_path: str = ".",
@@ -304,6 +304,10 @@ def _create_vasp_input(
         user_incar_settings (:obj:`dict`):
             Dictionary of user VASP INCAR settings, to overwrite/update the
             ``doped`` defaults.
+        user_kpoints_settings (dict or Kpoints):
+            Dictionary of user KPOINTS settings (e.g.
+            ``{"reciprocal_density": 64}``) or a ``Kpoints`` object.
+            (Default: None, Γ-only)
         user_potcar_functional (str):
             POTCAR functional to use. Default is "PBE" and if this fails,
             tries "PBE_52", then "PBE_54".
@@ -458,16 +462,19 @@ def _create_vasp_input(
     num_elements = len(single_defect_dict["Defect Structure"].composition.elements)
     incar_settings.update({"ROPT": f"{num_elements}*1e-3"})
 
-    dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
-        single_defect_dict["Defect Structure"],
-        charge_state=single_defect_dict["Charge State"],
-        user_incar_settings=incar_settings,
-        user_kpoints_settings=Kpoints().from_dict(
+    if not user_kpoints_settings:
+        user_kpoints_settings = Kpoints().from_dict(
             {
                 "comment": "Γ-only KPOINTS from ShakeNBreak",
                 "generation_style": "Gamma",
             }
-        ),
+        )
+
+    dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
+        single_defect_dict["Defect Structure"],
+        charge_state=single_defect_dict["Charge State"],
+        user_incar_settings=incar_settings,
+        user_kpoints_settings=user_kpoints_settings,
         user_potcar_functional=user_potcar_functional,
         user_potcar_settings=potcar_settings,
         poscar_comment=None,
@@ -2476,6 +2483,7 @@ class Distortions:
     def write_vasp_files(
         self,
         user_incar_settings: dict | None = None,
+        user_kpoints_settings: dict | Kpoints | None = None,
         user_potcar_functional: str | None = "PBE",
         user_potcar_settings: dict | None = None,
         output_path: str = ".",
@@ -2498,6 +2506,10 @@ class Distortions:
                 ``INCAR`` settings are. Note that any flags that aren't numbers or
                 True/False need to be input as strings with quotation marks
                 (e.g. ``{"ALGO": "All"}``). (Default: None)
+            user_kpoints_settings (dict or Kpoints):
+                Dictionary of user KPOINTS settings (e.g.
+                ``{"reciprocal_density": 64}``) or a ``Kpoints`` object.
+                (Default: None, Γ-only)
             user_potcar_functional (str):
                 POTCAR functional to use. Default is "PBE" and if this fails,
                 tries "PBE_52", then "PBE_54".
@@ -2569,6 +2581,7 @@ class Distortions:
                     defect_name=defect_species,
                     distorted_defect_dict=charged_defect_dict,
                     user_incar_settings=user_incar_settings,
+                    user_kpoints_settings=user_kpoints_settings,
                     user_potcar_functional=user_potcar_functional,
                     user_potcar_settings=user_potcar_settings,
                     output_path=output_path,
