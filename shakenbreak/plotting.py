@@ -29,25 +29,22 @@ def _install_custom_font():
     # Find where matplotlib stores its True Type fonts
     mpl_data_dir = os.path.dirname(mpl.matplotlib_fname())
     mpl_fonts_dir = os.path.join(mpl_data_dir, "fonts", "ttf")
-    custom_fonts = [
-        font
-        for font in font_manager.findSystemFonts(fontpaths=mpl_fonts_dir, fontext="ttf")
-        if "montserrat" in font.lower()
+    fonts_dir = MODULE_DIR
+    ttf_fonts = [  # check per file, so newly-added font files (e.g. Bold) are also installed
+        file_name
+        for file_name in os.listdir(fonts_dir)
+        if ".ttf" in file_name and not os.path.exists(os.path.join(mpl_fonts_dir, file_name))
     ]
-    if not custom_fonts:  # If custom hasn't been installed, install it
+    if ttf_fonts:  # If custom fonts haven't been installed, install them
         print("Trying to install ShakeNBreak custom font...")
         try:
             # Copy the font file to matplotlib's True Type font directory
-            fonts_dir = MODULE_DIR
-            ttf_fonts = [file_name for file_name in os.listdir(fonts_dir) if ".ttf" in file_name]
             try:
                 for font in ttf_fonts:  # must be in ttf format for matplotlib
                     old_path = os.path.join(fonts_dir, font)
                     new_path = os.path.join(mpl_fonts_dir, font)
                     shutil.copyfile(old_path, new_path)
                     print("Copying " + old_path + " -> " + new_path)
-                if not ttf_fonts:
-                    print(f"No ttf fonts found in the {fonts_dir} directory.")
             except Exception:
                 pass
 
@@ -63,9 +60,9 @@ def _install_custom_font():
             if not any("fontlist" in file_name.lower() for file_name in mpl_cache_dir_ls):
                 print("Couldn't find matplotlib cache, so will continue.")
 
-            # Add font to MAtplotlib Fontmanager
+            # Add font to Matplotlib Fontmanager
+            font_manager._load_fontmanager(try_read_cache=False)  # rebuild on-disk cache with new fonts
             for font in ttf_fonts:
-                font_manager._load_fontmanager(try_read_cache=False)
                 font_manager.fontManager.addfont(f"{fonts_dir}/{font}")
                 print(f"Adding {font} font to matplotlib fonts.")
 
