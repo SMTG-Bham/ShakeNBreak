@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          # TODO: temporary until doped v4 released:
+          git clone --depth 1 --branch develop https://github.com/SMTG-Bham/doped.git "$RUNNER_TEMP/doped"
+          pip install --no-deps "$RUNNER_TEMP/doped"
           pip install -e .[tests]
 
       - name: Check package versions
