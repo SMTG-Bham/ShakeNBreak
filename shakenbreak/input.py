@@ -6,7 +6,7 @@ as well as input files to run Gamma point relaxations with ``VASP``, ``CP2K``,
 
 import contextlib
 import copy
-import datetime
+import datetime as dt
 import os
 import shutil
 import warnings
@@ -124,7 +124,7 @@ def _write_distortion_metadata(
                     }
 
             if old_metadata and old_metadata != new_metadata:
-                current_datetime = datetime.datetime.now().strftime(
+                current_datetime = dt.datetime.now().strftime(
                     "%Y-%m-%d-%H-%M"
                 )  # current time for renaming old metadata file
 
@@ -937,7 +937,7 @@ def identify_defect(
     try:
         with warnings.catch_warnings():  # TODO: Remove catch once doped v4.1 released
             warnings.filterwarnings("ignore", ".*parameter ordering")
-            (_defect_type, missing_bulk_site_indices, additional_defect_site_indices) = (
+            _defect_type, missing_bulk_site_indices, additional_defect_site_indices = (
                 get_defect_type_and_site_indices(defect_structure, bulk_structure)
             )
             # TODO: Update to use missing_bulk_site_indices and additional_defect_site_indices to handle
@@ -1946,7 +1946,7 @@ class Distortions:
         self,
         defect_name,
         distorted_elements: dict | None,
-    ) -> str | None | list[str]:
+    ) -> str | list[str] | None:
         """
         Parse the user-defined distorted elements for a given defect
         (if given).

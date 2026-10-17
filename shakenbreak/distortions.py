@@ -314,11 +314,9 @@ def distort(
         site_index_or_frac_coords = (
             site_index if site_index is not None else np.around(frac_coords, decimals=3)
         )
-        print(
-            f"""\tDefect Site Index / Frac Coords: {site_index_or_frac_coords}
+        print(f"""\tDefect Site Index / Frac Coords: {site_index_or_frac_coords}
             Original Neighbour Distances: {nearest_info}
-            Distorted Neighbour Distances:\n\t{distorted_info}"""
-        )
+            Distorted Neighbour Distances:\n\t{distorted_info}""")
 
     return bond_distorted_defect
 
@@ -476,12 +474,10 @@ def apply_dimer_distortion(
         bond_distorted_defect["defect_frac_coords"] = frac_coords
     if verbose:
         original_distance = round(structure.get_distance(site_indexes[0], site_indexes[1]), 2)
-        print(
-            f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
+        print(f"""\tDefect Site Index / Frac Coords: {site_index or np.around(frac_coords, decimals=3)}
             Dimer Distorted Neighbours: {distorted_atoms}
             Original Distance: {original_distance}
-            Distorted Neighbour Distances: {dimer_bond_length:.2f} Å"""
-        )
+            Distorted Neighbour Distances: {dimer_bond_length:.2f} Å""")
     return bond_distorted_defect
 
 

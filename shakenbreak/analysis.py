@@ -247,7 +247,7 @@ def _sort_data(energies_file: str, verbose: bool = True, min_e_diff: float = 0.0
         warnings.warn(f"No distortion results parsed from {energies_file}")
 
     energy_diff, gs_distortion = get_gs_distortion(defect_energies_dict)
-    defect_name = energies_file.split("/")[-1].split(".yaml")[0]
+    defect_name = energies_file.rsplit("/", maxsplit=1)[-1].split(".yaml", maxsplit=1)[0]
     if verbose:
         if energy_diff and float(energy_diff) < -min_e_diff:
             print(
@@ -693,7 +693,7 @@ def compare_structures(
     display_df: bool = True,
     verbose: bool = True,
     **sm_kwargs,
-) -> None | pd.DataFrame:
+) -> pd.DataFrame | None:
     """
     Compare final bond-distorted structures with either 'Unperturbed' or
     a specified structure (``ref_structure``), and calculate the summed

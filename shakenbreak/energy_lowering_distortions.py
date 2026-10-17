@@ -1310,7 +1310,7 @@ def write_groundstate_structure(
                     verbose=verbose,
                 )
     else:
-        species = output_path.split("/")[-1]
+        species = output_path.rsplit("/", maxsplit=1)[-1]
         output_path = output_path.rsplit("/", 1)[0]
 
         _write_single_groundstate(
