@@ -4,7 +4,7 @@ energy-lowering distortions.
 """
 
 import contextlib
-import datetime
+import datetime as dt
 import os
 import shutil
 import warnings
@@ -457,7 +457,7 @@ def _save_plot(
     plot_filepath = f"{os.path.join(defect_dir, defect_name)}.{save_format}"
     # If plot already exists, rename to <defect>_<datetime>.<format>
     if os.path.exists(plot_filepath):
-        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")  # keep copy of old plot file
+        current_datetime = dt.datetime.now().strftime("%Y-%m-%d-%H-%M")  # keep copy of old plot file
         os.rename(
             plot_filepath,
             f"{os.path.join(defect_dir, defect_name)}_{current_datetime}.{save_format}",

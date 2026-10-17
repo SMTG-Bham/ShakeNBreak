@@ -7,9 +7,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.black]
 line-length = 107
+extend-exclude = 'tests/Test_Dimer\.ipynb'  # not valid nbformat (also excluded in .pre-commit-config.yaml)
 
 [tool.ruff]
 line-length = 107
+extend-exclude = ["tests/Test_Dimer.ipynb"]  # not valid nbformat, so can't be parsed
 lint.pydocstyle.convention = "google"
 lint.isort.split-on-trailing-comma = false
 lint.select = [  # from pymatgen

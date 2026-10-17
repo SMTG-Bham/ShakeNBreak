@@ -8,16 +8,17 @@ import warnings
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 from monty.serialization import loadfn
-from pymatgen.core.structure import Structure, Lattice
-from pymatgen.core.sites import PeriodicSite
 from pymatgen.core.periodic_table import Element
+from pymatgen.core.sites import PeriodicSite
+from pymatgen.core.structure import Lattice, Structure
 
-from shakenbreak import distortions, analysis
+from shakenbreak import analysis, distortions
 
 
 class DistortionTestCase(unittest.TestCase):
-    """Test shakenbreak structure distortion functions"""
+    """Test shakenbreak structure distortion functions."""
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -56,14 +57,8 @@ class DistortionTestCase(unittest.TestCase):
             os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_Int_Cd_2_-60%_Distortion_NN_10_POSCAR")
         )
         # Confirm correct structures and json dict:
-        self.assertEqual(
-            self.V_Cd_struc,
-            self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"],
-        )
-        self.assertEqual(
-            self.Int_Cd_2_struc,
-            self.cdte_defect_dict["interstitials"][1]["supercell"]["structure"],
-        )
+        assert self.V_Cd_struc == self.cdte_defect_dict["vacancies"][0]["supercell"]["structure"]
+        assert self.Int_Cd_2_struc == self.cdte_defect_dict["interstitials"][1]["supercell"]["structure"]
 
         self.K4MnFe2F12_struc = Structure.from_file(os.path.join(self.DATA_DIR, "vasp/K4MnFe2F12_POSCAR"))
 
@@ -80,46 +75,46 @@ class DistortionTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_distort_V_Cd(self, mock_print):
-        """Test bond distortion function for V_Cd"""
+        """Test bond distortion function for V_Cd."""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords)
-        self.assertEqual(output["distorted_structure"], self.V_Cd_minus0pt5_struc)
-        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
+        assert output["distorted_structure"] == self.V_Cd_minus0pt5_struc
+        assert output["undistorted_structure"] == self.V_Cd_struc
+        assert output["num_distorted_neighbours"] == 2
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
-        self.assertEqual(output.get("defect_site_index"), None)
-        self.assertEqual(output["distorted_atoms"], [[32, "Te"], [41, "Te"]])
+        assert output.get("defect_site_index") is None
+        assert output["distorted_atoms"] == [[32, "Te"], [41, "Te"]]
         distortions.distort(self.V_Cd_struc, 2, 0.5, frac_coords=vac_coords, verbose=True)
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-            + "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.42, 32, 'Te'), (1.42, 41, 'Te')]"
+            "            Original Neighbour Distances: [(2.83, 32, 'Te'), (2.83, 41, 'Te')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.42, 32, 'Te'), (1.42, 41, 'Te')]"
         )
 
         # Test if num_nearest_neighbours = 0 that nothing happens:
         output = distortions.distort(self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords)
-        self.assertEqual(output["distorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 0)
+        assert output["distorted_structure"] == self.V_Cd_struc
+        assert output["undistorted_structure"] == self.V_Cd_struc
+        assert output["num_distorted_neighbours"] == 0
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
-        self.assertEqual(output.get("defect_site_index"), None)
-        self.assertCountEqual(output["distorted_atoms"], [])
+        assert output.get("defect_site_index") is None
+        assert output["distorted_atoms"] == []
         distortions.distort(self.V_Cd_struc, 0, 0.5, frac_coords=vac_coords, verbose=True)
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
-            + "            Original Neighbour Distances: []\n"
-            + "            Distorted Neighbour Distances:\n\t[]"
+            "            Original Neighbour Distances: []\n"
+            "            Distorted Neighbour Distances:\n\t[]"
         )
 
     def test_distort_negative_factor(self):
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
-        with self.assertRaises(ValueError) as e:
-            output = distortions.distort(self.V_Cd_struc, 2, -0.5, frac_coords=vac_coords)
-        self.assertEqual(
-            "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond "
-            "distortions) cannot be less than zero! Note that input `bond_distortions` are converted to "
-            "distortion factors as: `distortion_factor = 1 + bond_distortion`.",
-            str(e.exception),
+        with pytest.raises(ValueError) as e:
+            distortions.distort(self.V_Cd_struc, 2, -0.5, frac_coords=vac_coords)
+        assert (
+            str(e.value)
+            == "Bond distortion factor (i.e. factor to multiply inter-atomic distances to get bond"
+            " distortions) cannot be less than zero! Note that input `bond_distortions` are converted"
+            " to distortion factors as: `distortion_factor = 1 + bond_distortion`."
         )
 
     @patch("builtins.print")
@@ -141,17 +136,17 @@ class DistortionTestCase(unittest.TestCase):
         structure = Structure.from_sites(sites)
         vac_coords = np.array([0.5, 0.5, 0.5])  # centre of octahedral coordination
         output = distortions.distort(structure, 2, 0.5, frac_coords=vac_coords, verbose=True)
-        self.assertEqual(output["undistorted_structure"], structure)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
+        assert output["undistorted_structure"] == structure
+        assert output["num_distorted_neighbours"] == 2
         np.testing.assert_array_equal(output["defect_frac_coords"], vac_coords)
-        self.assertEqual(output.get("defect_site_index"), None)
-        self.assertEqual(output["distorted_atoms"], [[1, "H"], [2, "H"]])
+        assert output.get("defect_site_index") is None
+        assert output["distorted_atoms"] == [[1, "H"], [2, "H"]]
 
         # get min distance in distorted structure:
         # (would be 1.5 Å if trans NN combo distorted, but shorter for cis distortion combo)
         dist_matrix = output["distorted_structure"].distance_matrix.flatten()
         min_dist = np.min(dist_matrix[dist_matrix > 0])
-        self.assertAlmostEqual(min_dist, 1.06, places=2)
+        assert np.isclose(min_dist, 1.06, rtol=0, atol=5e-3)
 
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {vac_coords}\n"
@@ -161,20 +156,20 @@ class DistortionTestCase(unittest.TestCase):
 
     @patch("builtins.print")
     def test_distort_Int_Cd_2(self, mock_print):
-        """Test bond distortion function for Int_Cd_2"""
+        """Test bond distortion function for Int_Cd_2."""
         site_index = 64  # Cd interstitial site index (python indexing)
         output = distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=False)
-        self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_struc)
-        self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertEqual(output["defect_site_index"], site_index)
-        self.assertEqual(output.get("defect_frac_coords"), None)
-        self.assertEqual(output["distorted_atoms"], [[9, "Cd"], [21, "Cd"]])
+        assert output["distorted_structure"] == self.Int_Cd_2_minus0pt6_struc
+        assert output["undistorted_structure"] == self.Int_Cd_2_struc
+        assert output["num_distorted_neighbours"] == 2
+        assert output["defect_site_index"] == site_index
+        assert output.get("defect_frac_coords") is None
+        assert output["distorted_atoms"] == [[9, "Cd"], [21, "Cd"]]
         distortions.distort(self.Int_Cd_2_struc, 2, 0.4, site_index=site_index, verbose=True)
         mock_print.assert_called_with(
             f"\tDefect Site Index / Frac Coords: {site_index}\n"
-            + "            Original Neighbour Distances: [(2.71, 9, 'Cd'), (2.71, 21, 'Cd')]\n"
-            + "            Distorted Neighbour Distances:\n\t[(1.09, 9, 'Cd'), (1.09, 21, 'Cd')]"
+            "            Original Neighbour Distances: [(2.71, 9, 'Cd'), (2.71, 21, 'Cd')]\n"
+            "            Distorted Neighbour Distances:\n\t[(1.09, 9, 'Cd'), (1.09, 21, 'Cd')]"
         )
 
         # test correct behaviour with odd parameters input:
@@ -186,13 +181,12 @@ class DistortionTestCase(unittest.TestCase):
             site_index=site_index,
             verbose=True,
         )
-        self.assertEqual(output["distorted_structure"], self.Int_Cd_2_minus0pt6_NN_10_struc_rattled)
-        self.assertEqual(output["undistorted_structure"], self.Int_Cd_2_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 10)
-        self.assertEqual(output["defect_site_index"], site_index)
-        self.assertEqual(output.get("defect_frac_coords"), None)
-        self.assertCountEqual(
-            output["distorted_atoms"],
+        assert output["distorted_structure"] == self.Int_Cd_2_minus0pt6_NN_10_struc_rattled
+        assert output["undistorted_structure"] == self.Int_Cd_2_struc
+        assert output["num_distorted_neighbours"] == 10
+        assert output["defect_site_index"] == site_index
+        assert output.get("defect_frac_coords") is None
+        assert sorted(output["distorted_atoms"]) == sorted(
             [
                 [9, "Cd"],
                 [21, "Cd"],
@@ -204,7 +198,7 @@ class DistortionTestCase(unittest.TestCase):
                 [1, "Cd"],
                 [2, "Cd"],
                 [4, "Cd"],
-            ],
+            ]
         )
         mock_print.assert_called_with(
             "\tDefect Site Index / Frac Coords: 64\n"
@@ -217,12 +211,12 @@ class DistortionTestCase(unittest.TestCase):
         )
 
     def test_distorted_element_error(self):
-        """Test error message when non-existent element symbol provided"""
+        """Test error message when non-existent element symbol provided."""
         site_index = 64  # Cd interstitial site index (python indexing)
         for missing_element in ["C", "O", "H", "N", "S", "P", "X"]:
             for num_neighbours in range(8):
                 for distortion_factor in np.arange(-0.6, 0.61, 0.1):
-                    with self.assertRaises(ValueError) as e:
+                    with pytest.raises(ValueError) as e:
                         distortions.distort(
                             self.Int_Cd_2_struc,  # cause error for no `missing_element` neighbours
                             num_nearest_neighbours=num_neighbours,
@@ -231,14 +225,13 @@ class DistortionTestCase(unittest.TestCase):
                             distorted_element=missing_element,
                         )
 
-                    self.assertEqual(
-                        f"No atoms of `distorted_element` = ['{missing_element}'] found in the defect "
-                        f"structure, cannot apply bond distortions.",
-                        str(e.exception),
+                    assert (
+                        f"No atoms of `distorted_element` = ['{missing_element}'] found in the defect"
+                        " structure, cannot apply bond distortions." == str(e.value)
                     )
 
     def test_rattle_V_Cd(self):
-        """Test structure rattle function for V_Cd"""
+        """Test structure rattle function for V_Cd."""
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.V_Cd_struc) + 20]
 
@@ -246,38 +239,32 @@ class DistortionTestCase(unittest.TestCase):
         idx = np.isin(rattling_atom_indices, [32, 41])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Te indices
 
-        self.assertEqual(
+        assert (
             distortions.rattle(
-                self.V_Cd_minus0pt5_struc,
-                stdev=0.25,
-                d_min=d_min,
-                active_atoms=rattling_atom_indices,
-            ),
-            self.V_Cd_minus0pt5_struc_rattled,
+                self.V_Cd_minus0pt5_struc, stdev=0.25, d_min=d_min, active_atoms=rattling_atom_indices
+            )
+            == self.V_Cd_minus0pt5_struc_rattled
         )
-        self.assertEqual(
+        assert (
             distortions.rattle(
-                self.V_Cd_minus0pt5_struc,
-                stdev=0.1,
-                d_min=d_min,
-                active_atoms=rattling_atom_indices,
-            ),
-            self.V_Cd_minus0pt5_struc_0pt1_rattled,
+                self.V_Cd_minus0pt5_struc, stdev=0.1, d_min=d_min, active_atoms=rattling_atom_indices
+            )
+            == self.V_Cd_minus0pt5_struc_0pt1_rattled
         )
 
         # test default d_min setting:
-        self.assertEqual(
+        assert (
             distortions.rattle(
                 self.V_Cd_minus0pt5_struc,
                 stdev=0.1,
                 # d_min=d_min,
                 active_atoms=rattling_atom_indices,
-            ),
-            self.V_Cd_minus0pt5_struc_0pt1_rattled,
+            )
+            == self.V_Cd_minus0pt5_struc_0pt1_rattled
         )
 
     def test_rattle_Int_Cd_2(self):
-        """Test structure rattle function for Int_Cd_2"""
+        """Test structure rattle function for Int_Cd_2."""
         sorted_distances = np.sort(self.Int_Cd_2_struc.distance_matrix.flatten())
         d_min = 0.8 * sorted_distances[len(self.Int_Cd_2_struc) + 20]
 
@@ -285,37 +272,37 @@ class DistortionTestCase(unittest.TestCase):
         idx = np.isin(rattling_atom_indices, [9, 21])
         rattling_atom_indices = rattling_atom_indices[~idx]  # removed distorted Cd indices
 
-        self.assertEqual(
+        assert (
             distortions.rattle(
                 self.Int_Cd_2_minus0pt6_struc,
                 d_min=d_min,
                 active_atoms=rattling_atom_indices,
                 stdev=0.28333683853583164,  # 10% of CdTe bond length, default
                 seed=40,  # distortion_factor * 100, default
-            ),
-            self.Int_Cd_2_minus0pt6_struc_rattled,
+            )
+            == self.Int_Cd_2_minus0pt6_struc_rattled
         )
 
         # test defaults:
-        self.assertEqual(
+        assert (
             distortions.rattle(
                 self.Int_Cd_2_minus0pt6_struc,
                 # d_min=d_min,  # default
                 active_atoms=rattling_atom_indices,
                 # stdev=0.28333683853583164,  # 10% of CdTe bond length, default
                 seed=40,  # distortion_factor * 100, default
-            ),
-            self.Int_Cd_2_minus0pt6_struc_rattled,
+            )
+            == self.Int_Cd_2_minus0pt6_struc_rattled
         )
 
     def test_rattle_kwargs(
         self,
     ):  # test all possible kwargs and explicitly check output
-        """Test structure rattle function with all possible kwargs"""
+        """Test structure rattle function with all possible kwargs."""
         rattling_atom_indices = np.arange(0, 31)  # Only rattle Cd
         sorted_distances = np.sort(self.V_Cd_struc.distance_matrix.flatten())
         bulk_bond_length = sorted_distances[len(self.V_Cd_struc) + 20]
-        self.assertEqual(bulk_bond_length, 2.8333683853583165)
+        assert bulk_bond_length == 2.8333683853583165
 
         V_Cd_kwarg_rattled = distortions.rattle(
             self.V_Cd_minus0pt5_struc,
@@ -330,7 +317,7 @@ class DistortionTestCase(unittest.TestCase):
             seed=20,
         )
 
-        self.assertEqual(V_Cd_kwarg_rattled, self.V_Cd_minus0pt5_struc_kwarged)
+        assert V_Cd_kwarg_rattled == self.V_Cd_minus0pt5_struc_kwarged
 
     def test_rattle_bulk_K4MnFe2F12(self):
         # failed with previous rattle code
@@ -338,12 +325,12 @@ class DistortionTestCase(unittest.TestCase):
         rattled_struc = distortions.rattle(self.K4MnFe2F12_struc)
         rattled_distances = rattled_struc.distance_matrix[rattled_struc.distance_matrix > 0]
 
-        self.assertAlmostEqual(min(rattled_distances), 1.6166697059123376)
-        self.assertAlmostEqual(np.mean(rattled_distances), 3.4581277362842666)
-        self.assertAlmostEqual(np.sort(rattled_distances.flatten())[3], 1.7410986565232485)
+        assert np.isclose(min(rattled_distances), 1.6166697059123376, rtol=0, atol=5e-8)
+        assert np.isclose(np.mean(rattled_distances), 3.4581277362842666, rtol=0, atol=5e-8)
+        assert np.isclose(np.sort(rattled_distances.flatten())[3], 1.7410986565232485, rtol=0, atol=5e-8)
 
     def test_apply_dimer_distortion(self):
-        """Test apply_dimer_distortion function"""
+        """Test apply_dimer_distortion function."""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.apply_dimer_distortion(self.V_Cd_struc, frac_coords=vac_coords)
         # to update dimer structure (last change was switch to ``get_dimer_bond_length`` default):
@@ -351,10 +338,10 @@ class DistortionTestCase(unittest.TestCase):
         #         self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_Dimer_Distortion_Unrattled_POSCAR"
         #     )
         # )
-        self.assertEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
-        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertTrue(output["distorted_atoms"] == [[32, "Te"], [41, "Te"]])
+        assert output["distorted_structure"] == self.V_Cd_dimer_distortion
+        assert output["undistorted_structure"] == self.V_Cd_struc
+        assert output["num_distorted_neighbours"] == 2
+        assert output["distorted_atoms"] == [[32, "Te"], [41, "Te"]]
         # Check that 2 Te are separated by 2 Å
         homo_bonds = analysis.get_homoionic_bonds(
             output["distorted_structure"],
@@ -362,17 +349,17 @@ class DistortionTestCase(unittest.TestCase):
                 "Te",
             ],
         )
-        self.assertEqual(homo_bonds, {"Te(32)": {"Te(41)": "2.76 A"}})
+        assert homo_bonds == {"Te(32)": {"Te(41)": "2.76 A"}}
 
     def test_apply_dimer_distortion_V_Te(self):
-        """Test apply_dimer_distortion function"""
+        """Test apply_dimer_distortion function."""
         output = distortions.apply_dimer_distortion(
             self.V_Cd_struc,
             site_index=len(self.V_Cd_struc) - 1,  # Te
         )
-        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertTrue(output["distorted_atoms"] == [[10, "Cd"], [20, "Cd"]])
+        assert output["undistorted_structure"] == self.V_Cd_struc
+        assert output["num_distorted_neighbours"] == 2
+        assert output["distorted_atoms"] == [[10, "Cd"], [20, "Cd"]]
         # Check that 2 Te are separated by 2 Å
         homo_bonds = analysis.get_homoionic_bonds(
             output["distorted_structure"],
@@ -380,25 +367,25 @@ class DistortionTestCase(unittest.TestCase):
                 "Cd",
             ],
         )
-        self.assertEqual(homo_bonds, {"Cd(10)": {"Cd(20)": "2.88 A"}})
+        assert homo_bonds == {"Cd(10)": {"Cd(20)": "2.88 A"}}
 
     def test_get_dimer_bond_length(self):
-        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "O"), 1.48)
-        self.assertAlmostEqual(distortions.get_dimer_bond_length("H", "H"), 1.07)
-        self.assertAlmostEqual(distortions.get_dimer_bond_length("S", "S"), 2.06)
-        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "N"), 1.51)
-        self.assertAlmostEqual(distortions.get_dimer_bond_length("O", "S"), 1.57)
+        assert np.isclose(distortions.get_dimer_bond_length("O", "O"), 1.48, rtol=0, atol=5e-8)
+        assert np.isclose(distortions.get_dimer_bond_length("H", "H"), 1.07, rtol=0, atol=5e-8)
+        assert np.isclose(distortions.get_dimer_bond_length("S", "S"), 2.06, rtol=0, atol=5e-8)
+        assert np.isclose(distortions.get_dimer_bond_length("O", "N"), 1.51, rtol=0, atol=5e-8)
+        assert np.isclose(distortions.get_dimer_bond_length("O", "S"), 1.57, rtol=0, atol=5e-8)
 
     def test_apply_dimer_distortion_custom_bond_length(self):
-        """Test apply_dimer_distortion function"""
+        """Test apply_dimer_distortion function."""
         vac_coords = np.array([0, 0, 0])  # Cd vacancy fractional coordinates
         output = distortions.apply_dimer_distortion(
             self.V_Cd_struc, frac_coords=vac_coords, dimer_bond_length=1
         )
-        self.assertNotEqual(output["distorted_structure"], self.V_Cd_dimer_distortion)
-        self.assertEqual(output["undistorted_structure"], self.V_Cd_struc)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertTrue(output["distorted_atoms"] == [[32, "Te"], [41, "Te"]])
+        assert output["distorted_structure"] != self.V_Cd_dimer_distortion
+        assert output["undistorted_structure"] == self.V_Cd_struc
+        assert output["num_distorted_neighbours"] == 2
+        assert output["distorted_atoms"] == [[32, "Te"], [41, "Te"]]
         # Check that 2 Te are separated by 1 Å
         homo_bonds = analysis.get_homoionic_bonds(
             output["distorted_structure"],
@@ -406,7 +393,7 @@ class DistortionTestCase(unittest.TestCase):
                 "Te",
             ],
         )
-        self.assertEqual(homo_bonds, {"Te(32)": {"Te(41)": "1.0 A"}})
+        assert homo_bonds == {"Te(32)": {"Te(41)": "1.0 A"}}
 
     def test_apply_dimer_distortion_less_than_2_CNN_NN(self):
         """
@@ -420,15 +407,13 @@ class DistortionTestCase(unittest.TestCase):
             self.V_Si_HfSiO_interface_entry.defect_supercell,
             frac_coords=self.V_Si_HfSiO_interface_entry.defect_supercell_site.frac_coords,
         )
-        self.assertEqual(output["undistorted_structure"], self.V_Si_HfSiO_interface_entry.defect_supercell)
-        self.assertEqual(output["num_distorted_neighbours"], 2)
-        self.assertEqual(output["distorted_atoms"], [[82, "Si"], [177, "O"]])
+        assert output["undistorted_structure"] == self.V_Si_HfSiO_interface_entry.defect_supercell
+        assert output["num_distorted_neighbours"] == 2
+        assert output["distorted_atoms"] == [[82, "Si"], [177, "O"]]
 
         dist_matrix = output["distorted_structure"].distance_matrix.flatten()
         min_dist = np.min(dist_matrix[dist_matrix > 0])
-        self.assertGreater(
-            min_dist, 1.5
-        )  # Si-O dimer bond length is larger than min_dist in orig structure
+        assert min_dist > 1.5  # Si-O dimer bond length is larger than min_dist in orig structure
 
     def test_rattle_removes_net_translation(self):
         """
@@ -460,10 +445,10 @@ class DistortionTestCase(unittest.TestCase):
 
         for name, rattled in rattled_strucs.items():
             with self.subTest(rattle=name):
-                self.assertEqual(len(rattled), len(struc))
-                self.assertAlmostEqual(_mean_disp(rattled, struc), 0, places=10)
+                assert len(rattled) == len(struc)
+                assert np.isclose(_mean_disp(rattled, struc), 0, rtol=0, atol=5e-11)
                 # rattling actually did something (i.e. we haven't just returned the input):
-                self.assertGreater(np.abs(rattled.cart_coords - struc.cart_coords).max(), 0.01)
+                assert np.abs(rattled.cart_coords - struc.cart_coords).max() > 0.01
 
         # re-centring is a rigid translation, so it must leave all interatomic distances (and hence
         # ``d_min`` and the applied bond distortions) exactly unchanged. Test the un-recentred case
@@ -473,11 +458,13 @@ class DistortionTestCase(unittest.TestCase):
         offset.translate_sites(
             range(len(offset)), [0.3, -0.15, 0.07], frac_coords=False, to_unit_cell=False
         )
-        self.assertAlmostEqual(_mean_disp(offset, struc), np.linalg.norm([0.3, -0.15, 0.07]), places=10)
+        assert np.isclose(
+            _mean_disp(offset, struc), np.linalg.norm([0.3, -0.15, 0.07]), rtol=0, atol=5e-11
+        )
 
         recentred = distortions._remove_net_translation(offset, struc)
-        self.assertAlmostEqual(_mean_disp(recentred, struc), 0, places=10)
-        self.assertLess(np.abs(recentred.distance_matrix - rattled.distance_matrix).max(), 1e-10)
+        assert np.isclose(_mean_disp(recentred, struc), 0, rtol=0, atol=5e-11)
+        assert np.abs(recentred.distance_matrix - rattled.distance_matrix).max() < 1e-10
 
     def test_local_mc_rattle_d_min_fallback_with_explicit_stdev(self):
         """
@@ -491,16 +478,12 @@ class DistortionTestCase(unittest.TestCase):
         distorted = distortions.distort(self.V_Cd_struc, 2, 0.2, frac_coords=np.array([0, 0, 0]))[
             "distorted_structure"
         ]
-        self.assertLess(np.sort(distorted.distance_matrix[distorted.distance_matrix > 0.5])[0], 1.0)
+        assert np.sort(distorted.distance_matrix[distorted.distance_matrix > 0.5])[0] < 1.0
 
         with warnings.catch_warnings(record=True) as w:
             rattled = distortions.local_mc_rattle(
                 distorted, frac_coords=np.array([0, 0, 0]), stdev=0.25, d_min=2.25, verbose=True, seed=42
             )
 
-        self.assertEqual(len(rattled), len(distorted))
-        self.assertTrue(any("Initial rattle with d_min 2.25" in str(i.message) for i in w))
-
-
-if __name__ == "__main__":
-    unittest.main()
+        assert len(rattled) == len(distorted)
+        assert any("Initial rattle with d_min 2.25" in str(i.message) for i in w)

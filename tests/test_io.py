@@ -1,21 +1,17 @@
+"""Tests for the ``shakenbreak.io`` module."""
+
 import os
 import unittest
 import warnings
-
-from pymatgen.core.structure import Structure, Composition, IStructure, PeriodicSite
-
-from shakenbreak.analysis import _cached_calculate_atomic_disp
-from shakenbreak.io import (
-    parse_fhi_aims_input,
-    parse_qe_input,
-    read_structure_w_ase,
-    read_vasp_structure,
-)
 
 # use doped efficiency functions for speed (speeds up structure matching dramatically):
 from doped.utils.efficiency import Composition as doped_Composition
 from doped.utils.efficiency import IStructure as doped_IStructure
 from doped.utils.efficiency import PeriodicSite as doped_PeriodicSite
+from pymatgen.core.structure import Composition, IStructure, PeriodicSite, Structure
+
+from shakenbreak.analysis import _cached_calculate_atomic_disp
+from shakenbreak.io import parse_fhi_aims_input, parse_qe_input, read_structure_w_ase, read_vasp_structure
 
 Composition.__instances__ = {}
 Composition.__eq__ = doped_Composition.__eq__
@@ -27,7 +23,8 @@ IStructure.__eq__ = doped_IStructure.__eq__
 
 class IoTestCase(unittest.TestCase):
     """Test functions in shakenbreak.io.
-    Note that io.parse_energies is tested via test_cli.py"""
+    Note that io.parse_energies is tested via test_cli.py.
+    """
 
     def setUp(self):
         self.DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -38,44 +35,33 @@ class IoTestCase(unittest.TestCase):
         with warnings.catch_warnings(record=True) as w:
             output = read_vasp_structure("fake_file")
             warning_message = (
-                "fake_file file doesn't exist, storing as 'Not converged'. Check "
-                "path & relaxation"
+                "fake_file file doesn't exist, storing as 'Not converged'. Check path & relaxation"
             )
-            user_warnings = [
-                warning for warning in w if warning.category == UserWarning
-            ]
-            self.assertEqual(len(user_warnings), 1)
-            self.assertIn(warning_message, str(user_warnings[0].message))
-            self.assertEqual(output, "Not converged")
+            user_warnings = [warning for warning in w if warning.category is UserWarning]
+            assert len(user_warnings) == 1
+            assert warning_message in str(user_warnings[0].message)
+            assert output == "Not converged"
 
         with warnings.catch_warnings(record=True) as w:
             output = read_vasp_structure(
                 os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_sub_1_In_on_Cd_1.yaml")
             )
             warning_message = (
-                f"Problem parsing structure from "
+                "Problem parsing structure from "
                 f"{os.path.join(self.VASP_CDTE_DATA_DIR, 'CdTe_sub_1_In_on_Cd_1.yaml')}; "
-                f"KeyError('lattice'). Storing as 'Not converged'. Check file & relaxation."
+                "KeyError('lattice'). Storing as 'Not converged'. Check file & relaxation."
             )
-            user_warnings = [
-                warning for warning in w if warning.category == UserWarning
-            ]
-            self.assertEqual(len(user_warnings), 1)
-            self.assertIn(warning_message, str(user_warnings[0].message))
-            self.assertEqual(output, "Not converged")
+            user_warnings = [warning for warning in w if warning.category is UserWarning]
+            assert len(user_warnings) == 1
+            assert warning_message in str(user_warnings[0].message)
+            assert output == "Not converged"
 
         with warnings.catch_warnings(record=True) as w:
-            output = read_vasp_structure(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            V_Cd_struc = Structure.from_file(
-                os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR")
-            )
-            user_warnings = [
-                warning for warning in w if warning.category == UserWarning
-            ]
-            self.assertEqual(len(user_warnings), 0)
-            self.assertEqual(output, V_Cd_struc)
+            output = read_vasp_structure(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"))
+            V_Cd_struc = Structure.from_file(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_POSCAR"))
+            user_warnings = [warning for warning in w if warning.category is UserWarning]
+            assert len(user_warnings) == 0
+            assert output == V_Cd_struc
 
     def test_read_espresso_structure(self):
         """Test reading of Quantum Espresso structure outputs."""
@@ -88,47 +74,36 @@ class IoTestCase(unittest.TestCase):
                 "quantum_espresso/vac_1_Cd_0/Bond_Distortion_30.0%/espresso.out",
             )
         )
-        self.assertTrue(
-            _cached_calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[
-                0
-            ]
-            < 0.01
-        )
+        assert _cached_calculate_atomic_disp(structure_from_cif, structure_from_espresso_output)[0] < 0.01
 
     def test_read_cp2k_structure(self):
-        "Test reading of CP2k structure outputs."
+        """Test reading of CP2k structure outputs."""
         path = os.path.join(self.DATA_DIR, "cp2k/cp2k.restart")
         structure = read_structure_w_ase(path)
         test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "cp2k/POSCAR"))
-        self.assertEqual(test_structure, structure)
+        assert test_structure == structure
 
     def test_read_castep_structure(self):
-        "Test reading of CASTEP structure outputs."
+        """Test reading of CASTEP structure outputs."""
         path = os.path.join(self.DATA_DIR, "castep/Si2-cellopt-aniso.castep")
         structure = read_structure_w_ase(path)
-        test_structure = Structure.from_file(
-            os.path.join(self.DATA_DIR, "castep/POSCAR")
-        )
-        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "castep/POSCAR"))
+        assert _cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01
 
     def test_read_fhi_aims_structure(self):
-        "Test reading of FHI-aims structure outputs."
+        """Test reading of FHI-aims structure outputs."""
         path = os.path.join(self.DATA_DIR, "fhi_aims/Si_opt.out")
         structure = read_structure_w_ase(path)
-        test_structure = Structure.from_file(
-            os.path.join(self.DATA_DIR, "fhi_aims/POSCAR")
-        )
-        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "fhi_aims/POSCAR"))
+        assert _cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01
         # Test parsing geometry.in file
         path = os.path.join(self.DATA_DIR, "fhi_aims/geometry.in")
         structure = read_structure_w_ase(path)
-        test_structure = Structure.from_file(
-            os.path.join(self.DATA_DIR, "fhi_aims/POSCAR_geom")
-        )
-        self.assertTrue(_cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01)
+        test_structure = Structure.from_file(os.path.join(self.DATA_DIR, "fhi_aims/POSCAR_geom"))
+        assert _cached_calculate_atomic_disp(test_structure, structure)[0] < 0.01
 
     def test_parse_qe_input(self):
-        "Test parse_qe_input() function."
+        """Test parse_qe_input() function."""
         path = os.path.join(self.DATA_DIR, "quantum_espresso/qe.in")
         params = parse_qe_input(path)
         test_params = {
@@ -143,10 +118,10 @@ class IoTestCase(unittest.TestCase):
             "ELECTRONS": {"conv_thr": "1d-7"},
             "ATOMIC_SPECIES": {"Si": "1.00 Si.vbc"},
         }
-        self.assertEqual(test_params, params)
+        assert test_params == params
 
     def test_parse_fhi_aims_input(self):
-        "Test parse_fhi_aims_input() function."
+        """Test parse_fhi_aims_input() function."""
         path = os.path.join(self.DATA_DIR, "fhi_aims/control.in")
         params = parse_fhi_aims_input(path)
         test_params = {
@@ -157,4 +132,4 @@ class IoTestCase(unittest.TestCase):
             "sc_iter_limit": 100.0,
             "relax_geometry": ["bfgs", 0.001],
         }
-        self.assertEqual(test_params, params)
+        assert test_params == params

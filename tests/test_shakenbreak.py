@@ -1,3 +1,5 @@
+"""Integration tests of the full ShakeNBreak workflow."""
+
 import copy
 import os
 import shutil
@@ -95,7 +97,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         """Test full ShakeNBreak workflow, for the tricky case where at least 2
         _different_energy-lowering distortions are found for other charge states
         (y and z) that are then to be tested for a different charge state (x),
-        then reparsed and plotted successfully
+        then reparsed and plotted successfully.
         """
         oxidation_states = {"Cd": +2, "Te": -2}
         reduced_V_Cd = copy.copy(self.V_Cd)
@@ -110,7 +112,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             {"vac_1_Cd": reduced_V_Cd_entries},
             oxidation_states=oxidation_states,
         )
-        distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
+        _distortion_defect_dict, _structures_defect_dict = dist.write_vasp_files(
             user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
@@ -125,17 +127,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             defect_charges_dict
         )
 
-        self.assertEqual(
-            sorted([[0], [-1]]),  # sort to ensure order is the same
-            sorted([subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([[0], [-1]]) == sorted(  # sort to ensure order is the same
+            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]]
         )
-        self.assertEqual(
-            sorted([sorted(tuple({-2, -1})), sorted(tuple({0, -2}))]),
-            sorted(
-                [sorted(tuple(subdict["excluded_charges"])) for subdict in low_energy_defects["vac_1_Cd"]]
-            ),
-        )
-        # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
+        assert sorted([sorted({-2, -1}), sorted({0, -2})]) == sorted(
+            [sorted(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
+        )  # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
         with patch("builtins.print") as mock_print:
             self.write_retest_inputs_and_check_print_calls(
@@ -154,15 +151,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # test correct structures written
         gen_struc = Structure.from_file("vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0/POSCAR")
         gen_struc.remove_oxidation_states()
-        self.assertEqual(
-            self.V_Cd_minus_0pt55_structure,
-            gen_struc,
-        )
+        assert self.V_Cd_minus_0pt55_structure == gen_struc
         gen_struc = Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_-1/POSCAR")
         gen_struc.remove_oxidation_states()
-        self.assertEqual(
-            Structure.from_file(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")),
-            gen_struc,
+        assert (
+            Structure.from_file(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"))
+            == gen_struc
         )
 
         V_Cd_m1_dict_w_distortion = {
@@ -231,13 +225,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 "As ./vac_1_Cd_-2/Bond_Distortion_-55.0%_from_0 already exists, it's assumed this "
                 "structure has already been tested. Skipping...",
             )
-        self.assertEqual(
-            sorted([sorted((-2,)), sorted((0, -1))]),  # sort to make sure order is the same
-            sorted([sorted(tuple(subdict["charges"])) for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([sorted((-2,)), sorted((0, -1))]) == sorted(  # sort to make sure order is the same
+            [sorted(subdict["charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
         )
-        self.assertEqual(
-            sorted([tuple({0}), tuple({-2})]),
-            sorted([tuple(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([tuple({0}), tuple({-2})]) == sorted(
+            [tuple(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
         )
 
     def test_SnB_integration_with_old_naming(self):
@@ -255,7 +247,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         dist = input.Distortions(
             {"vac_1_Cd": reduced_V_Cd_entries},
         )
-        distortion_defect_dict, structures_defect_dict = dist.write_vasp_files(
+        _distortion_defect_dict, _structures_defect_dict = dist.write_vasp_files(
             user_incar_settings={"ENCUT": 212, "IBRION": 0, "EDIFF": 1e-4},
             verbose=False,
         )
@@ -279,15 +271,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
             defect_charges_dict
         )
 
-        self.assertEqual(
-            sorted([[0], [1]]),  # sort to ensure order is the same
-            sorted([subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([[0], [1]]) == sorted(  # sort to ensure order is the same
+            [subdict["charges"] for subdict in low_energy_defects["vac_1_Cd"]]
         )
-        self.assertEqual(
-            sorted([sorted(tuple({2, 1})), sorted(tuple({0, 2}))]),
-            sorted(
-                [sorted(tuple(subdict["excluded_charges"])) for subdict in low_energy_defects["vac_1_Cd"]]
-            ),
+        assert sorted([sorted({2, 1}), sorted({0, 2})]) == sorted(
+            [sorted(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
         )
         # So the dimer (0) and polaron (-1) structures should be generated and tested for -2
 
@@ -308,15 +296,12 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
         # test correct structures written
         gen_struc = Structure.from_file("vac_1_Cd_2/Bond_Distortion_-55.0%_from_0/POSCAR")
         gen_struc.remove_oxidation_states()
-        self.assertEqual(
-            self.V_Cd_minus_0pt55_structure,
-            gen_struc,
-        )
+        assert self.V_Cd_minus_0pt55_structure == gen_struc
         gen_struc = Structure.from_file("vac_1_Cd_0/Bond_Distortion_-7.5%_from_+1/POSCAR")
         gen_struc.remove_oxidation_states()
-        self.assertEqual(
-            Structure.from_file(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR")),
-            gen_struc,
+        assert (
+            Structure.from_file(os.path.join(self.VASP_CDTE_DATA_DIR, "CdTe_V_Cd_-1_vgam_POSCAR"))
+            == gen_struc
         )
 
         V_Cd_m1_dict_w_distortion = {
@@ -385,13 +370,11 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 "As ./vac_1_Cd_2/Bond_Distortion_-55.0%_from_0 already exists, it's assumed this "
                 "structure has already been tested. Skipping...",
             )
-        self.assertEqual(
-            sorted([sorted((2,)), sorted((0, 1))]),  # sort to make sure order is the same
-            sorted([sorted(tuple(subdict["charges"])) for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([sorted((2,)), sorted((0, 1))]) == sorted(  # sort to make sure order is the same
+            [sorted(subdict["charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
         )
-        self.assertEqual(
-            sorted([tuple({0}), tuple({2})]),
-            sorted([tuple(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]),
+        assert sorted([tuple({0}), tuple({2})]) == sorted(
+            [tuple(subdict["excluded_charges"]) for subdict in low_energy_defects["vac_1_Cd"]]
         )
 
     # Now we test parsing of final energies and plotting
@@ -428,10 +411,10 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         # Parse final energies from OUTCAR files and write them to yaml files
         energies_file = io.parse_energies(defect=defect_dir, path="./")
-        self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))  # energies_file
+        assert os.path.exists(f"{defect_dir}/{defect_dir}.yaml")  # energies_file
         energies = loadfn(energies_file)
-        self.assertTrue(-0.35 in energies["distortions"])
-        self.assertFalse(-0.77 in energies["distortions"])
+        assert -0.35 in energies["distortions"]
+        assert -0.77 not in energies["distortions"]
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
@@ -495,7 +478,7 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         # Parse final energies from OUTCAR files and write them to yaml files
         energies_file = io.parse_energies(defect=defect_dir, path="./")
-        self.assertTrue(os.path.exists(energies_file))
+        assert os.path.exists(energies_file)
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
@@ -536,8 +519,8 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
                 f.write(outcar)
 
         # Parse final energies from OUTCAR files and write them to yaml files
-        _energies_file = io.parse_energies(defect=defect_dir, path="./")
-        self.assertTrue(os.path.exists(f"{defect_dir}/{defect_dir}.yaml"))
+        io.parse_energies(defect=defect_dir, path="./")
+        assert os.path.exists(f"{defect_dir}/{defect_dir}.yaml")
 
         defect_charges_dict = energy_lowering_distortions.read_defects_directories()
         defect_charges_dict.pop("vac_1_Ti", None)  # Used for magnetization tests
@@ -545,7 +528,3 @@ class ShakeNBreakTestCase(unittest.TestCase):  # integration testing ShakeNBreak
 
         fig_dict = plotting.plot_all_defects(defect_charges_dict, save_format="png")
         return fig_dict["vac_1_Cd_0"]
-
-
-if __name__ == "__main__":
-    unittest.main()

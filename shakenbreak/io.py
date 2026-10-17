@@ -4,7 +4,7 @@ FHI-aims, CASTEP and CP2K.
 """
 
 import contextlib
-import datetime
+import datetime as dt
 import os
 import warnings
 
@@ -96,7 +96,7 @@ def parse_energies(
         if os.path.exists(filename):
             old_file = loadfn(filename)
             if old_file != energies:
-                current_datetime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+                current_datetime = dt.datetime.now().strftime("%Y-%m-%d-%H-%M")
                 if verbose:
                     print(
                         f"Moving old {filename} to "
