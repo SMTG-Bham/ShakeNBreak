@@ -144,6 +144,7 @@ and/or papers listed in the :ref:`index:Literature` section useful.
 Studies using ``ShakeNBreak``
 =============================
 
+- T\. Wang et al. **Tellurium trioxide as an n-type wide-gap semiconductor with ultrahigh work functions from first principles** `arXiv <https://doi.org/10.48550/arXiv.2610.18076>`__ 2026
 - N\. Singh, V. Agarwal and D. Ghosh **Deep Learning the Defect Landscape: Long-Timescale Vacancy Dynamics in Lead-Free Double Perovskites** `ACS Applied Energy Materials <https://doi.org/10.1021/acsaem.6c02409>`__ 2026
 - H\. Lee et al. **Identification and Structural Decomposition of Hidden Defect Configurations: A Case Study of Charged Oxygen Divacancies in HfO₂** `arXiv <https://doi.org/10.48550/arXiv.2610.04892>`__ 2026
 - S\. Mu et al. **Halide donors in monoclinic- and corundum-phase Ga₂O₃ and Al₂O₃** `arXiv <https://doi.org/10.48550/arXiv.2608.30680>`__ 2026
