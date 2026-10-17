@@ -121,6 +121,11 @@ class EnergyLoweringDistortionsTestCase(unittest.TestCase):
                 f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR_original",
                 f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/Bond_Distortion_-10.0%/CONTCAR",
             )
+        if os.path.exists(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/vac_1_Cd_0_original.yaml"):
+            shutil.move(
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/vac_1_Cd_0_original.yaml",
+                f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0/vac_1_Cd_0.yaml",
+            )
 
     def test__format_distortion_directory_name(self):
         self.assertEqual(
