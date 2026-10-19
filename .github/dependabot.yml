@@ -2,6 +2,8 @@ version: 2
 updates:
 - package-ecosystem: pip
   directory: "/"
+  target-branch: develop                    # PRs land where development happens, not on the release branch
+  versioning-strategy: increase-if-necessary
   schedule:
     interval: daily
   groups:
