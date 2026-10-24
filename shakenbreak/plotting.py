@@ -1287,21 +1287,26 @@ def _plot_distortions(
                 color=_get_color_from_colormap(disp_dict.get(special_entry, colors[0]), colormap, norm),
                 label=special_entry,
                 s=50,
-                marker=style_settings.get("marker", "s" if special_entry == "Dimer" else "o"),
+                marker="P" if special_entry == "Dimer" else style_settings.get("marker", "o"),
                 alpha=1,
             )
 
-    if len(sorted_distortions) > 0 and [
+    if len(sorted_distortions) > 0 and [  # more than just Rattled or Dimer
         key for key in energies_dict["distortions"] if key not in ["Rattled", "Dimer"]
-    ]:  # more than just Rattled or Dimer
-        if imported_indices:  # Exclude datapoints from other charge states
-            non_imported_sorted_indices = [
-                i for i in range(len(sorted_distortions)) if i not in imported_indices.values()
-            ]
-        else:
-            non_imported_sorted_indices = range(len(sorted_distortions))
+    ]:  # Rattled/Dimer are plotted separately above, so exclude from line plot. Matched by value:
+        special_energies = [
+            energies_dict["distortions"][key]
+            for key in ["Rattled", "Dimer"]
+            if key in energies_dict["distortions"]
+        ]
+        non_imported_sorted_indices = [
+            i
+            for i in range(len(sorted_distortions))
+            if not (imported_indices and i in imported_indices.values())  # from other charge states
+            and not (sorted_distortions[i] == 0.0 and sorted_energies[i] in special_energies)
+        ]
 
-        if len(non_imported_sorted_indices) > 1 and not disp_dict:  # multiple points, plotting dataset
+        if len(non_imported_sorted_indices) > 0 and not disp_dict:  # plotting dataset
             (line,) = ax.plot(  # plot non-imported distortions
                 [sorted_distortions[i] for i in non_imported_sorted_indices],
                 [sorted_energies[i] for i in non_imported_sorted_indices],
@@ -1313,7 +1318,7 @@ def _plot_distortions(
                 linewidth=style_settings.get("linewidth"),
             )
 
-        elif len(non_imported_sorted_indices) > 1 and disp_dict:
+        elif len(non_imported_sorted_indices) > 0 and disp_dict:
             for with_disp in [True, False]:
                 indices_list = [
                     i
@@ -1332,16 +1337,15 @@ def _plot_distortions(
                         norm=norm if with_disp else None,
                         alpha=1,
                     )
-            if len(non_imported_sorted_indices) > 1:  # more than one point
-                (line,) = ax.plot(  # Plot line connecting points
-                    [sorted_distortions[i] for i in non_imported_sorted_indices],
-                    [sorted_energies[i] for i in non_imported_sorted_indices],
-                    ls="-",
-                    markersize=1,
-                    marker="o",
-                    color=line_color,
-                    label=legend_label,
-                )
+            (line,) = ax.plot(  # Plot line connecting points (also needed for legend entry if only one)
+                [sorted_distortions[i] for i in non_imported_sorted_indices],
+                [sorted_energies[i] for i in non_imported_sorted_indices],
+                ls="-",
+                markersize=1,
+                marker="o",
+                color=line_color,
+                label=legend_label,
+            )
 
     if imported_indices:
         num_other_charges = len(

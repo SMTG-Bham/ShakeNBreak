@@ -3,6 +3,7 @@
 import datetime as dt
 import os
 import shutil
+import tempfile
 import unittest
 import warnings
 from collections import OrderedDict
@@ -887,26 +888,87 @@ class PlottingDefectsTestCase(unittest.TestCase):
         assert ax.get_legend_handles_labels()[1][0] == "Dimer"
         return fig
 
-    # @pytest.mark.mpl_image_compare(
-    #     baseline_dir=f"{_DATA_DIR}/remote_baseline_plots",
-    #     filename="v_Ca_s0_0_plot_defect_with_colorbar.png",
-    #     style=f"{_file_path}/../shakenbreak/shakenbreak.mplstyle",
-    #     savefig_kwargs={"transparent": True, "bbox_inches": "tight"},
-    # )
-    # def test_plot_defect_dimer_colorbar(self):
-    #     defect_species = "v_Ca_s0_0"
-    #     defect_energies = analysis.get_energies(
-    #         defect_species=defect_species, output_path=self.VASP_DIR
-    #     )
-    #     structures
-    #     fig = plotting.plot_defect(
-    #         defect_species=defect_species,
-    #         energies_dict=defect_energies,
-    #         num_nearest_neighbours=2,
-    #         neighbour_atom="S",
-    #         add_colorbar=True,
-    #     )
-    #     return fig
+    @custom_mpl_image_compare("vac_1_Cd_0_plot_defect_colorbar_dimer_other_charge_states.png")
+    def test_plot_defect_colorbar_dimer_other_charge_states(self):
+        """
+        Test ``plot_defect()`` with ``add_colorbar=True`` for a defect with
+        bond distortions, a ``Dimer`` distortion and a distortion imported
+        from another charge state.
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            defect_dir = shutil.copytree(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0", f"{tmp_dir}/vac_1_Cd_0")
+            # V_Cd^0 Dimer distortion relaxes to the Te-Te dimer ground state, so reuse the (identical)
+            # -55% relaxed structure, and the V_Cd^-1 ground state for the distortion imported from -1:
+            os.mkdir(f"{defect_dir}/Dimer")
+            shutil.copy(f"{defect_dir}/Bond_Distortion_-55.0%/CONTCAR", f"{defect_dir}/Dimer/CONTCAR")
+            os.mkdir(f"{defect_dir}/Bond_Distortion_-7.5%_from_-1")
+            shutil.copy(
+                f"{self.VASP_CDTE_DATA_DIR}/CdTe_V_Cd_-1_vgam_POSCAR",
+                f"{defect_dir}/Bond_Distortion_-7.5%_from_-1/CONTCAR",
+            )
+            energies_dict = loadfn(f"{defect_dir}/vac_1_Cd_0.yaml")
+            energies_dict["distortions"].update({"Dimer": -206.47828, "-7.5%_from_-1": -205.97790694})
+
+            fig = plotting.plot_defect(
+                defect_species="vac_1_Cd_0",
+                energies_dict=energies_dict,
+                output_path=tmp_dir,
+                add_colorbar=True,
+                num_nearest_neighbours=2,
+                neighbour_atom="Te",
+                save_plot=False,
+            )
+
+        ax = fig.gca()
+        labels = ax.get_legend_handles_labels()[1]
+        assert "Dimer" in labels
+        assert "From -1 charge state" in labels
+        (line,) = ax.get_lines()  # Dimer plotted separately, not part of distortions line:
+        assert list(line.get_xdata()).count(0.0) == 1  # only Bond_Distortion_0.0%
+        return fig
+
+    def _plot_single_distortion_and_dimer(self, add_colorbar):
+        """
+        Plot a single bond distortion alongside a ``Dimer`` with
+        ``plot_defect()``, and check the bond distortion is still plotted.
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            defect_dir = shutil.copytree(f"{self.VASP_CDTE_DATA_DIR}/vac_1_Cd_0", f"{tmp_dir}/vac_1_Cd_0")
+            os.mkdir(f"{defect_dir}/Dimer")
+            shutil.copy(f"{defect_dir}/Bond_Distortion_-55.0%/CONTCAR", f"{defect_dir}/Dimer/CONTCAR")
+            fig = plotting.plot_defect(
+                defect_species="vac_1_Cd_0",
+                energies_dict={
+                    "distortions": {-0.3: -206.47774362, "Dimer": -206.47828},
+                    "Unperturbed": -205.72311458,
+                },
+                output_path=tmp_dir,
+                add_colorbar=add_colorbar,
+                num_nearest_neighbours=2,
+                neighbour_atom="Te",
+                save_plot=False,
+            )
+
+        ax = fig.gca()
+        assert "Distortions: 2 Te" in ax.get_legend_handles_labels()[1]
+        assert -0.3 in [x for line in ax.get_lines() for x in line.get_xdata()]
+        return fig
+
+    @custom_mpl_image_compare("vac_1_Cd_0_plot_defect_single_distortion_dimer.png")
+    def test_plot_defect_single_distortion_and_dimer(self):
+        """
+        Test ``plot_defect()`` still plots a single bond distortion (alongside
+        a ``Dimer``).
+        """
+        return self._plot_single_distortion_and_dimer(add_colorbar=False)
+
+    @custom_mpl_image_compare("vac_1_Cd_0_plot_defect_colorbar_single_distortion_dimer.png")
+    def test_plot_defect_colorbar_single_distortion_and_dimer(self):
+        """
+        Test ``plot_defect()`` with ``add_colorbar=True`` still plots a single
+        bond distortion (alongside a ``Dimer``).
+        """
+        return self._plot_single_distortion_and_dimer(add_colorbar=True)
 
     def test_plot_defect_missing_unperturbed_energy(self):
         with warnings.catch_warnings(record=True) as w:
