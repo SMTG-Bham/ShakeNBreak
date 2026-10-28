@@ -9,6 +9,10 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.11"
+  jobs:
+    # Install ShakeNBreak from this checkout first, so docs can depend on unreleased versions
+    pre_install:
+      - python -m pip install --no-deps .
 
 # Build from the docs/ directory with Sphinx
 sphinx:
@@ -17,7 +21,4 @@ sphinx:
 # Explicitly set the version of Python and its requirements
 python:
   install:
-    # Install ShakeNBreak from this checkout first, so docs requirements can depend on unreleased versions
-    - method: pip
-      path: .
     - requirements: docs/docs_requirements.txt
