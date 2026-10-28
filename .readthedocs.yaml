@@ -17,4 +17,7 @@ sphinx:
 # Explicitly set the version of Python and its requirements
 python:
   install:
+    # Install ShakeNBreak from this checkout first, so docs requirements can depend on unreleased versions
+    - method: pip
+      path: .
     - requirements: docs/docs_requirements.txt
