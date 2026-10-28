@@ -70,6 +70,15 @@ html_theme_options = {
         "binderhub_url": "https://mybinder.org",
         "colab_url": "https://colab.research.google.com",
     },
+    # workshop-announcement: start; remove after 16 Dec 2026
+    "announcement": (
+        "<strong>Workshop:</strong> Computational Methods for Defects in Solids, Cambridge, UK, "
+        "6–8 Jan 2027. "
+        "Talk abstracts due 23 Nov; registration open until 16 Dec. "
+        '<a href="https://aichemy.ac.uk/event/computational-methods-for-defects-in-solids-workshop/">'
+        "Details</a>"
+    ),
+    # workshop-announcement: end
 }
 
 html_context = {
