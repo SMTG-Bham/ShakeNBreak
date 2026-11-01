@@ -103,6 +103,7 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- L. Shi et al. **_Defect compensation-limited carrier tuning reveals sulfur vacancy tolerance and an n-type growth window in β-AgBiS<sub>2</sub>_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/d6ta06121d) 2026
 - T. Wang et al. **_Tellurium trioxide as an n-type wide-gap semiconductor with ultrahigh work functions from first principles_** [_arXiv_](https://doi.org/10.48550/arXiv.2610.18076) 2026
 - N. Singh, V. Agarwal and D. Ghosh **_Deep Learning the Defect Landscape: Long-Timescale Vacancy Dynamics in Lead-Free Double Perovskites_** [_ACS Applied Energy Materials_](https://doi.org/10.1021/acsaem.6c02409) 2026
 - H. Lee et al. **_Identification and Structural Decomposition of Hidden Defect Configurations: A Case Study of Charged Oxygen Divacancies in HfO<sub>2</sub>_** [_arXiv_](https://doi.org/10.48550/arXiv.2610.04892) 2026
