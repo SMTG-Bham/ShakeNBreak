@@ -470,7 +470,7 @@ def _create_vasp_input(
             }
         )
     if user_kpoints_settings and 'KSPACING' in incar_settings:
-        warnings.warn('Both KSPACING and user_kpoints_settings are set. KSPACING will be ignored by VASP.')
+        warnings.warn('Both KSPACING and user_kpoints_settings are set. KSPACING will be ignored.')
 
     dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
         single_defect_dict["Defect Structure"],
