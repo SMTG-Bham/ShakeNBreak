@@ -14,7 +14,7 @@ jobs:
 
       matrix:
         os: [ ubuntu-latest, macos-14 ]
-        python-version: [ '3.11', '3.14' ]  # lowest and highest supported Python versions
+        python-version: [ '3.12', '3.14' ]  # lowest and highest supported Python versions (doped v4 needs >= 3.12)
 
     runs-on: ${{matrix.os}}
     steps:
@@ -27,8 +27,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # TODO: temporary until doped v4 released:
-          git clone --depth 1 --branch develop https://github.com/SMTG-Bham/doped.git "$RUNNER_TEMP/doped"
+          # TODO: temporary until doped v4 released; doped ``IO_refactor`` branch for this (SnB ``IO_refactor``)
+          # branch, to switch back to doped ``develop`` once ``IO_refactor`` is merged there:
+          git clone --depth 1 --branch IO_refactor https://github.com/SMTG-Bham/doped.git "$RUNNER_TEMP/doped"
           pip install --no-deps "$RUNNER_TEMP/doped"
           pip install -e .[tests]
 

@@ -15,7 +15,7 @@ import yaml
 
 # Click
 from click.testing import CliRunner
-from doped.vasp import _test_potcar_functional_choice
+from doped.io.vasp.inputs import _test_potcar_functional_choice
 from monty.serialization import dumpfn, loadfn
 
 # Pymatgen

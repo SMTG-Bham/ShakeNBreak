@@ -33,8 +33,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools setuptools_scm wheel
           pip install pydocstyle black flake8 ruff
-          # TODO: temporary until doped v4 released:
-          pip install --no-deps git+https://github.com/SMTG-Bham/doped@develop
+          # TODO: temporary until doped v4 released; doped ``IO_refactor`` branch for this (SnB ``IO_refactor``)
+          # branch, to switch back to doped ``develop`` once ``IO_refactor`` is merged there:
+          pip install --no-deps git+https://github.com/SMTG-Bham/doped@IO_refactor
           pip install -e .[tests]
 
       - name: ruff

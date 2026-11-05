@@ -18,7 +18,7 @@ import pytest
 from ase.build import bulk, make_supercell
 from ase.io import read
 from doped.generation import get_defect_name_from_entry
-from doped.vasp import DefectRelaxSet, _test_potcar_functional_choice
+from doped.io.vasp.inputs import DefectRelaxSet, _test_potcar_functional_choice
 from monty.serialization import dumpfn, loadfn
 from pymatgen.analysis.defects.generators import VacancyGenerator
 from pymatgen.analysis.defects.thermo import DefectEntry
