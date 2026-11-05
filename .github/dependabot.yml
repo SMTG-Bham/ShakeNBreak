@@ -12,3 +12,11 @@ updates:
   allow:
     - dependency-type: direct
     - dependency-type: indirect
+- package-ecosystem: github-actions  # keep the workflow actions (checkout, setup-python etc) up to date
+  directory: "/"
+  schedule:
+    interval: weekly
+  groups:
+    github-actions:
+      patterns:
+        - "*"

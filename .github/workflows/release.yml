@@ -9,42 +9,41 @@ on:
 
   workflow_dispatch:  # or when manually run
 
+permissions:
+  contents: write  # to create the release tag & GitHub release
+
 jobs:
   release:
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
-    # only run when tests have passed (or manually triggered)
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event == 'push') }}
+    # only run when tests have passed (or manually triggered), and only for pushes to this repository
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:  # the commit which passed the tests (rather than the latest on main), if triggered by them
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools setuptools_scm wheel
-          # TODO: temporary until doped v4 released:
-          pip install --no-deps git+https://github.com/SMTG-Bham/doped@develop
-          pip install -e .[tests]
+          python-version: "3.14"
 
       - name: Check if version has changed
         id: check_version
         run: |
-          current_pip_version=$(pip index versions shakenbreak | grep LATEST | awk '{print $NF}')
+          # (first output line is ``shakenbreak (<latest version>)``; the ``LATEST:`` line is only printed if installed)
+          current_pip_version=$(pip index versions shakenbreak | awk 'NR==1 {gsub(/[()]/, "", $2); print $2}')
           current_repo_version=$(grep version setup.py | awk -F\" '{print $2}' | head -1)
           if [ "$current_pip_version" != "$current_repo_version" ]; then
             echo "version_changed=true" >> $GITHUB_ENV
           else
             echo "version_changed=false" >> $GITHUB_ENV
           fi
-      
-      - name: Build packages
+
+      - name: Build packages  # (in an isolated build environment, so ShakeNBreak & its dependencies aren't needed)
         if: env.version_changed == 'true'
         run: |
-          python setup.py sdist bdist_wheel
+          python -m pip install --upgrade build
+          python -m build
 
       - name: Publish
         if: env.version_changed == 'true'
@@ -57,17 +56,12 @@ jobs:
         if: env.version_changed == 'true'
         run: |
           awk 'BEGIN {p = 0} {a = 0 }; /^v\d*.\d*.\d*./ { p += 1; a = 1}; p + a == 1 { print } ' CHANGELOG.rst | sed -e '1,1d' | sed  -e '/./,$!d' -e :a -e '/^\n*$/{$d;N;ba' -e '}' > release_info.txt
-          echo "version=$(grep version setup.py | awk -F\" '{print $2}')" >> $GITHUB_ENV
+          echo "version=$(grep version setup.py | awk -F\" '{print $2}' | head -1)" >> $GITHUB_ENV
 
       - name: Release
         if: env.version_changed == 'true'
-        uses: actions/create-release@v1
-        id: create_release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.version }}
-          release_name: ${{ env.version }}
-          body_path: release_info.txt
-          draft: false
-          prerelease: false
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ env.version }}" --title "${{ env.version }}" --notes-file release_info.txt \
+            --target "${{ github.event.workflow_run.head_sha || github.sha }}"
