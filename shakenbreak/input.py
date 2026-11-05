@@ -462,7 +462,7 @@ def _create_vasp_input(
     num_elements = len(single_defect_dict["Defect Structure"].composition.elements)
     incar_settings.update({"ROPT": f"{num_elements}*1e-3"})
 
-    if not user_kpoints_settings:
+    if user_kpoints_settings is None and 'KSPACING' not in incar_settings:
         user_kpoints_settings = Kpoints().from_dict(
             {
                 "comment": "Γ-only KPOINTS from ShakeNBreak",
@@ -2491,7 +2491,7 @@ class Distortions:
         **kwargs,
     ) -> tuple[dict, dict]:
         r"""
-        Generates the input files for ``vasp_gam`` relaxations of all output
+        Generates the input files for relaxations of all output
         structures from ``Distortions.apply_distortions()``.
 
         See the ``Distortions.apply_distortions()`` docstring for info on
