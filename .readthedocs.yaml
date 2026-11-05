@@ -8,7 +8,7 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "3.11"
+    python: "3.12"  # doped v4 requires Python >= 3.12
   jobs:
     # Install ShakeNBreak from this checkout first, so docs can depend on unreleased versions
     pre_install:

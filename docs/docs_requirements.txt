@@ -16,5 +16,7 @@ hiphive
 monty
 click
 shakenbreak
-doped @ git+https://github.com/SMTG-Bham/doped@develop
+# TODO: doped ``IO_refactor`` branch for this (SnB ``IO_refactor``) branch, to switch back to doped ``develop``
+# once ``IO_refactor`` is merged there:
+doped @ git+https://github.com/SMTG-Bham/doped@IO_refactor
 importlib-metadata
