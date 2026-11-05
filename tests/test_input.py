@@ -1159,6 +1159,27 @@ class InputTestCase(unittest.TestCase):
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
+        # test 'KSPACING' in user_incar_settings ignores gamma-only relaxation
+        input._create_vasp_input(
+            defect_name="vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            user_incar_settings={'KSPACING': 0.2},
+            output_path="kspacing_path",
+        )
+        assert not os.path.exists("kspacing_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        if_present_rm("kspacing_path")
+
+        # test 'user_kpoint_settings' overwrites default gamma-only relaxation
+        input._create_vasp_input(
+            defect_name="vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            user_kpoints_settings=Kpoints.monkhorst_automatic(kpts=(2, 2, 2)),
+            output_path="kpts_path",
+        )
+        kpoints = Kpoints.from_file("kpts_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        self.assertEqual(kpoints.kpts, [(2, 2, 2)])
+        if_present_rm("kpts_path")
+
         # test output_path option
         input._create_vasp_input(
             "vac_1_Cd_0",
