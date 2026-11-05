@@ -141,7 +141,6 @@ setup(
         "Natural Language :: English",
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
         "Programming Language :: Python :: 3.13",
         "Programming Language :: Python :: 3.14",
@@ -150,7 +149,7 @@ setup(
     ],
     keywords="chemistry pymatgen dft defects structure-searching distortions symmetry-breaking",
     packages=find_packages(),
-    python_requires=">=3.11",  # dictated by "pymatgen>=2026.7.16" requirement
+    python_requires=">=3.12",  # dictated by "doped>=4" requirement (from its mp-api>=0.47 requirement)
     install_requires=[
         "numpy",
         "pymatgen-core>=2026.7.16",  # ROPT fix; https://github.com/materialsproject/pymatgen-core/pull/69
