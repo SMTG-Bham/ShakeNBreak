@@ -596,7 +596,7 @@ NOSYMM: (Re-)initialisation of all symmetry stuff for point group C_1.
 
  
  
- KPOINTS: Kpoints from doped.vasp_gam_files       
+ KPOINTS: Γ-only KPOINTS from ShakeNBreak       
 
 Automatic generation of k-mesh.
  Grid dimensions read from file:
@@ -860,10 +860,10 @@ Automatic generation of k-mesh.
 
 
  
- k-points in units of 2pi/SCALE and weight: Kpoints from doped.vasp_gam_files       
+ k-points in units of 2pi/SCALE and weight: Γ-only KPOINTS from ShakeNBreak       
    0.00000000  0.00000000  0.00000000       1.000
  
- k-points in reciprocal lattice and weights: Kpoints from doped.vasp_gam_files       
+ k-points in reciprocal lattice and weights: Γ-only KPOINTS from ShakeNBreak       
    0.00000000  0.00000000  0.00000000       1.000
  
  position of ions in fractional coordinates (direct lattice) 

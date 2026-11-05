@@ -49,18 +49,18 @@ def _potcars_available() -> bool:
 
 def _update_struct_defect_dict(defect_dict: dict, structure: Structure, poscar_comment: str) -> dict:
     """
-    Given a Structure object and POSCAR comment, update the folders dictionary (generated with
-    `doped.vasp_input.prepare_vasp_defect_inputs()`) with the given values.
+    Given a Structure object and POSCAR comment, update the single defect dictionary (as in the
+    ``distorted_defect_dict`` generated in ``Distortions.write_vasp_files()``) with the given values.
 
     Args:
         defect_dict (:obj:`dict`):
-            Dictionary with defect information, as generated with doped prepare_vasp_defect_inputs()
+            Dictionary with defect information, as generated in ``Distortions.write_vasp_files()``
         structure (:obj:`~pymatgen.core.structure.Structure`):
             Defect structure as a pymatgen object
         poscar_comment (:obj:`str`):
             Comment to include in the top line of the POSCAR file
     Returns:
-        single defect dict in the `doped` format.
+        single defect dict, in the ``distorted_defect_dict`` format of ``_create_vasp_input()``.
     """
     defect_dict_copy = copy.deepcopy(defect_dict)
     defect_dict_copy["Defect Structure"] = structure
