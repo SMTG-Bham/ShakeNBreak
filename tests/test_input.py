@@ -1159,6 +1159,44 @@ class InputTestCase(unittest.TestCase):
                 "POTCAR directory not set up with pymatgen" in str(warning.message) for warning in w
             )
 
+        # test 'KSPACING' in user_incar_settings ignores gamma-only relaxation
+        input._create_vasp_input(
+            defect_name="vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            user_incar_settings={"KSPACING": 0.2},
+            output_path="kspacing_path",
+        )
+        assert not os.path.exists("kspacing_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        assert Incar.from_file("kspacing_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR")["KSPACING"] == 0.2
+        if_present_rm("kspacing_path")
+
+        # test both 'KSPACING' and 'user_kpoints_settings' set: warning, KPOINTS used & KSPACING removed
+        with warnings.catch_warnings(record=True) as w:
+            input._create_vasp_input(
+                defect_name="vac_1_Cd_0",
+                distorted_defect_dict=V_Cd_charged_defect_dict,
+                user_incar_settings={"KSPACING": 0.2},
+                user_kpoints_settings={"reciprocal_density": 100},
+                output_path="kspacing_path",
+            )
+        assert any("Both KSPACING and user_kpoints_settings are set" in str(i.message) for i in w)
+        assert Kpoints.from_file("kspacing_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS").kpts == [
+            (2, 2, 2)
+        ]
+        assert "KSPACING" not in Incar.from_file("kspacing_path/vac_1_Cd_0/Bond_Distortion_-50.0%/INCAR")
+        if_present_rm("kspacing_path")
+
+        # test 'user_kpoint_settings' overwrites default gamma-only relaxation
+        input._create_vasp_input(
+            defect_name="vac_1_Cd_0",
+            distorted_defect_dict=V_Cd_charged_defect_dict,
+            user_kpoints_settings=Kpoints.monkhorst_automatic(kpts=(2, 2, 2)),
+            output_path="kpts_path",
+        )
+        kpoints = Kpoints.from_file("kpts_path/vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS")
+        assert kpoints.kpts == [(2, 2, 2)]
+        if_present_rm("kpts_path")
+
         # test output_path option
         input._create_vasp_input(
             "vac_1_Cd_0",
@@ -1722,8 +1760,10 @@ class InputTestCase(unittest.TestCase):
             seed=42,  # old default
         )
         _, distortion_metadata = dist.write_vasp_files(
+            user_kpoints_settings={"reciprocal_density": 100},
             verbose=False,
         )
+        assert Kpoints.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/KPOINTS").kpts == [(2, 2, 2)]
         # check if expected folders were created
         V_Cd_minus0pt5_POSCAR = Poscar.from_file("vac_1_Cd_0/Bond_Distortion_-50.0%/POSCAR")
         assert len(V_Cd_minus0pt5_POSCAR.site_symbols) == len(
