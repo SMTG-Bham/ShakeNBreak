@@ -283,6 +283,7 @@ def _write_distortion_metadata(
             )
     dumpfn(obj=new_metadata, fn=filepath, indent=4)
 
+
 def _create_vasp_input(
     defect_name: str,
     distorted_defect_dict: dict,
@@ -462,15 +463,12 @@ def _create_vasp_input(
     num_elements = len(single_defect_dict["Defect Structure"].composition.elements)
     incar_settings.update({"ROPT": f"{num_elements}*1e-3"})
 
-    if user_kpoints_settings is None and 'KSPACING' not in incar_settings:
-        user_kpoints_settings = Kpoints().from_dict(
-            {
-                "comment": "Γ-only KPOINTS from ShakeNBreak",
-                "generation_style": "Gamma",
-            }
+    if not user_kpoints_settings and incar_settings.get("KSPACING") is None:
+        user_kpoints_settings = Kpoints.from_dict(
+            {"comment": "Γ-only KPOINTS from ShakeNBreak", "generation_style": "Gamma"}
         )
-    if user_kpoints_settings and 'KSPACING' in incar_settings:
-        warnings.warn('Both KSPACING and user_kpoints_settings are set. KSPACING will be ignored.')
+    elif user_kpoints_settings and incar_settings.get("KSPACING") is not None:
+        warnings.warn("Both KSPACING and user_kpoints_settings are set. KSPACING will be ignored.")
 
     dds = DefectDictSet(  # create one DefectDictSet first, then just edit structure & comment for each
         single_defect_dict["Defect Structure"],
