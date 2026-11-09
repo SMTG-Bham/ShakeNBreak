@@ -303,12 +303,13 @@ def _create_vasp_input(
         distorted_defect_dict (:obj:`dict`):
             Dictionary with the distorted structures of charged defect
         user_incar_settings (:obj:`dict`):
-            Dictionary of user VASP INCAR settings, to overwrite/update the
-            ``doped`` defaults.
+            Dictionary of user ``VASP`` ``INCAR`` settings, to overwrite/update
+            the ``doped`` defaults.
         user_kpoints_settings (dict or Kpoints):
-            Dictionary of user KPOINTS settings (e.g.
-            ``{"reciprocal_density": 64}``) or a ``Kpoints`` object.
-            (Default: None, Γ-only)
+            Dictionary of user ``KPOINTS`` settings (e.g.
+            ``{"reciprocal_density": 64}``) or a ``pymatgen`` ``Kpoints``
+            object. If not set (default), Γ-only ``KPOINTS`` are used, unless
+            ``KSPACING`` is set in ``user_incar_settings``.
         user_potcar_functional (str):
             POTCAR functional to use. Default is "PBE" and if this fails,
             tries "PBE_52", then "PBE_54".
@@ -2499,17 +2500,19 @@ class Distortions:
 
         Args:
             user_incar_settings (:obj:`dict`):
-                Dictionary of user VASP INCAR settings (e.g.
+                Dictionary of user ``VASP`` ``INCAR`` settings (e.g.
                 {"ENCUT": 300, ...}), to overwrite the ``ShakenBreak`` defaults
-                for those tags. Highly recommended to look at output ``INCAR``\s,
-                or ``shakenbreak/SnB_input_files/incar.yaml`` to see what the default
-                ``INCAR`` settings are. Note that any flags that aren't numbers or
-                True/False need to be input as strings with quotation marks
-                (e.g. ``{"ALGO": "All"}``). (Default: None)
+                for those tags. Highly recommended to look at output
+                ``INCAR``\s, or ``shakenbreak/SnB_input_files/incar.yaml`` to
+                see what the default ``INCAR`` settings are. Note that any
+                flags that aren't numbers or True/False need to be input as
+                strings with quotation marks (e.g. ``{"ALGO": "All"}``).
+                Default: None.
             user_kpoints_settings (dict or Kpoints):
-                Dictionary of user KPOINTS settings (e.g.
-                ``{"reciprocal_density": 64}``) or a ``Kpoints`` object.
-                (Default: None, Γ-only)
+                Dictionary of user ``KPOINTS`` settings (e.g.
+                ``{"reciprocal_density": 64}``) or a ``pymatgen`` ``Kpoints``
+                object. If not set (default), Γ-only ``KPOINTS`` are used,
+                unless ``KSPACING`` is set in ``user_incar_settings``.
             user_potcar_functional (str):
                 POTCAR functional to use. Default is "PBE" and if this fails,
                 tries "PBE_52", then "PBE_54".
