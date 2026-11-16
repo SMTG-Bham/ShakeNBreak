@@ -103,6 +103,8 @@ and/or papers listed in the [Literature](#literature) section above useful.
 
 ## Studies using `ShakeNBreak`
 
+- R. Claes, A. G. Squires and D. O. Scanlon **_Resonant doping design for ternary n-type oxides: the case of CdSnO<sub>3</sub>_** [_ChemRxiv_](https://doi.org/10.26434/chemrxiv.15012056/v1) 2026
+- M. Kumar, B. S. Ferris, A. Isakov and R. B. Wexler **_Periodic Trends in Oxygen Vacancy Formation Energies Across Binary Main-Group Metal Oxides_** [_arXiv_](https://doi.org/10.48550/arXiv.2611.15297) 2026
 - L. Shi et al. **_Defect compensation-limited carrier tuning reveals sulfur vacancy tolerance and an n-type growth window in β-AgBiS<sub>2</sub>_** [_Journal of Materials Chemistry A_](https://doi.org/10.1039/d6ta06121d) 2026
 - T. Wang et al. **_Tellurium trioxide as an n-type wide-gap semiconductor with ultrahigh work functions from first principles_** [_arXiv_](https://doi.org/10.48550/arXiv.2610.18076) 2026
 - N. Singh, V. Agarwal and D. Ghosh **_Deep Learning the Defect Landscape: Long-Timescale Vacancy Dynamics in Lead-Free Double Perovskites_** [_ACS Applied Energy Materials_](https://doi.org/10.1021/acsaem.6c02409) 2026
