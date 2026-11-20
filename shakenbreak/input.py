@@ -482,7 +482,7 @@ def _create_vasp_input(
 
         dds.write_input(
             f"{output_path}/{defect_name}/{distortion}",
-            poscar=True,
+            positions=True,
             rattle=False,  # way ahead of you pal
             snb=True,
             **kwargs,
