@@ -602,7 +602,7 @@ def _get_line_colors(number_of_colors: int) -> list:
 
     # otherwise use colormap
     return list(
-        mpl.cm.get_cmap("viridis", number_of_colors + 1).colors
+        mpl.colormaps["viridis"].resampled(number_of_colors + 1).colors
     )  # +1 to avoid yellow color (which is at the end of the colormap)
 
 

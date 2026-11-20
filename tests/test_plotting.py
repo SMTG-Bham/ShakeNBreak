@@ -130,6 +130,11 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 output_path=self.VASP_CDTE_DATA_DIR, defect_species="fake_defect_species"
             )
 
+    def test_get_line_colors_many(self):
+        """Test _get_line_colors() when more colors than the default palette are needed."""
+        colors = plotting._get_line_colors(12)
+        assert len(colors) == 13
+
     def test_format_axis(self):
         """Test _format_axis() function."""
         # Test standard behaviour: labels and ticks
