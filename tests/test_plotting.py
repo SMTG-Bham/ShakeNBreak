@@ -130,6 +130,20 @@ class PlottingDefectsTestCase(unittest.TestCase):
                 output_path=self.VASP_CDTE_DATA_DIR, defect_species="fake_defect_species"
             )
 
+    def test_plot_datasets_many_datasets(self):
+        """
+        Test ``plot_datasets()`` with more datasets than the default colour palette (10),
+        where the viridis colormap is used for line colours.
+        """
+        fig = plotting.plot_datasets(
+            datasets=[deepcopy(self.V_O_energies_dict_fm) for _ in range(11)],
+            dataset_labels=[f"Dataset {i}" for i in range(11)],
+            defect_species="vac_1_Cd_0",
+            save_plot=False,
+        )
+        line_colors = {mpl.colors.to_hex(line.get_color()) for line in fig.axes[0].get_lines()}
+        assert len(line_colors) == 11
+
     def test_format_axis(self):
         """Test _format_axis() function."""
         # Test standard behaviour: labels and ticks
